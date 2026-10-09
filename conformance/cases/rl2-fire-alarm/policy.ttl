@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/fire-alarm.md
+
+ex:safetyPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:evacuatePrivilege .
+
+ex:evacuatePrivilege a odrl:Permission ;
+    odrl:assignee ex:Occupant ;
+    odrl:action ex:useEmergencyExit ;
+    odrl:target ex:EmergencyExit ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:fireAlarmActive ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:useEmergencyExit a odrl:Action .
+
+# RL2 path state.fireAlarmActive: a property of the world-state node.
+ex:fireAlarmActive a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:fireAlarmActive ;
+    rdfs:range xsd:boolean .

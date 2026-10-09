@@ -1,0 +1,43 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/deletion-after-use.md
+
+ex:shipmentAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:LogisticsCompany ;
+    odrl:assignee ex:Recipient ;
+    odrl:permission ex:routeOptimization ;
+    odrl:obligation ex:deleteAfterCompletion .
+
+ex:routeOptimization a odrl:Permission ;
+    odrl:action ex:optimizeRoute ;
+    odrl:target ex:ShipmentData .
+
+# Independent clause → root obligation, in force when the processing permission matches and its
+# guard holds. RL2's applicability condition reads a state operand, so it is a guard (workflows
+# §5.2). RL2's window [completedAt, completedAt + P1D) is anchored to a snapshot fact; due2
+# anchors relative deadlines to the instance's activation, which the shell sets to completedAt.
+# The deadline is inclusive where RL2's end is exclusive — a one-instant difference, accepted.
+ex:deleteAfterCompletion a odrl:Duty ;
+    odrl:action ex:delete ;
+    odrl:target ex:ShipmentData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:processingComplete ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] ;
+    dprod:deadline "P1D"^^xsd:duration .
+
+ex:optimizeRoute a odrl:Action .
+ex:delete a odrl:Action .
+
+ex:processingComplete a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:routeOptimizationCompleted ;
+    rdfs:range xsd:boolean .

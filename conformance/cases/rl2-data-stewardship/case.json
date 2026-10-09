@@ -1,0 +1,53 @@
+{
+  "case": "rl2-data-stewardship",
+  "source": "RL2 conformance/usecases/data-stewardship.md",
+  "classification": "partial",
+  "needs": [
+    "not expressible: Offer → Agreement materialisation and rl2:Promise",
+    "not expressible: a condition on another norm's status (rl2:obligationStateOperand) in ex:offeredAccess"
+  ],
+  "notes": "Only the Agreement is written. ex:stewardshipDuty keeps both of its RL2 roles: it is an odrl:obligation of the Agreement (RL2's independent clause) and the odrl:duty of ex:acceptedAccess (rl2:prerequisiteDuty). It is one duty with one status, so the precondition finding and the reported obligation status always agree. The Researcher bears it in both roles. The Offer's ex:offeredAccess, conditioned on the Promise's status, has no counterpart: a duty's status is not an operand in due2. Scenario 2 shows the standing divergence for an unfulfilled precondition (README). Scenario 3 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "stewardship performed",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:SensitiveData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-15T00:00:00Z", "actor": "ex:Researcher", "action": "ex:steward", "object": "ex:SensitiveData" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:stewardshipDuty", "status": "fulfilled" } ], "why": "ex:acceptedAccess applies. ex:ev1 is a witness for ex:stewardshipDuty (actor ex:Researcher, action, object, before effective_at), so the precondition is T and the candidate ready. The permission matches, so the same duty is in force as an obligation and fulfilled (RL2: Fulfilled)." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "no stewardship evidence yet",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:SensitiveData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:stewardshipDuty" ] ], "obligations": [ { "duty": "ex:stewardshipDuty", "status": "outstanding" } ], "why": "ex:acceptedAccess applies; its duty has no witness, so it is outstanding and, with no deadline, never violated. The only alternative is pending. As an obligation in force the duty is likewise outstanding." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "stewardship dated after the decision time",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:SensitiveData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-06-02T00:00:00Z", "actor": "ex:Researcher", "action": "ex:steward", "object": "ex:SensitiveData" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:stewardshipDuty" ] ], "obligations": [ { "duty": "ex:stewardshipDuty", "status": "outstanding" } ], "why": "ex:ev2 occurred after sotw.effective_at, so it is no witness (§5.3); the duty is outstanding in both roles and the candidate pending." }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "case": "rl2-asset-collection-access",
+  "source": "RL2 conformance/usecases/asset-collection-access.md",
+  "classification": "partial",
+  "needs": [
+    "not expressible: direct-only (non-transitive) collection membership"
+  ],
+  "notes": "rl2:AssetCollection with rl2:member → odrl:AssetCollection with odrl:partOf edges from each member, which travel with the policy into the corpus closure; rl2:subject on the clause → odrl:assignee on the permission. The grant itself translates directly. What does not carry over is RL2's direct-only matching: due2 closes partOf transitively (README, standing divergences), and there is no way to declare a collection non-transitive. To exercise this, the policy adds a nested collection ex:Registries (an AssetCollection inside ex:ClinicalOutcomes) with member ex:CancerRegistry: RL2 states nested collections are not expanded, so scenario 3 is NotApplicable in RL2 and Permit in due2. Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "direct member Demographics",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:Demographics", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:Demographics partOf ex:ClinicalOutcomes, an AssetCollection, so the target part holds; action and assignee match; ex:collectionAccess applies with no duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "direct member Outcomes",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:Outcomes", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:Outcomes partOf ex:ClinicalOutcomes; the permission applies with no duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "member of a nested collection",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:CancerRegistry", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:CancerRegistry partOf ex:Registries partOf ex:ClinicalOutcomes; the path passes only through AssetCollections, and the closure is transitive, so ex:CancerRegistry ⊑ ex:ClinicalOutcomes and the permission applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "asset outside the collection",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:Genomics", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No partOf path leads from ex:Genomics to ex:ClinicalOutcomes, so the target part is F and the permission does not apply; no other rule exists." }
+    }
+  ]
+}

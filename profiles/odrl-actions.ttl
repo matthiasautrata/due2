@@ -1,0 +1,47 @@
+# ODRL 2.2 Common Vocabulary action hierarchy: the direct odrl:includedIn edges.
+# Extracted from https://www.w3.org/ns/odrl/2/ODRL22.ttl on 2026-10-09
+# (Creative Commons cc: actions omitted). due2-profiles.md §6 closes them transitively.
+# Verify against the vocabulary file before relying on completeness.
+
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+odrl:acceptTracking    odrl:includedIn odrl:use .
+odrl:aggregate         odrl:includedIn odrl:use .
+odrl:annotate          odrl:includedIn odrl:use .
+odrl:anonymize         odrl:includedIn odrl:use .
+odrl:archive           odrl:includedIn odrl:use .
+odrl:attribute         odrl:includedIn odrl:use .
+odrl:compensate        odrl:includedIn odrl:use .
+odrl:concurrentUse     odrl:includedIn odrl:use .
+odrl:delete            odrl:includedIn odrl:use .
+odrl:derive            odrl:includedIn odrl:use .
+odrl:digitize          odrl:includedIn odrl:use .
+odrl:display           odrl:includedIn odrl:play .
+odrl:distribute        odrl:includedIn odrl:use .
+odrl:ensureExclusivity odrl:includedIn odrl:use .
+odrl:execute           odrl:includedIn odrl:use .
+odrl:extract           odrl:includedIn odrl:reproduce .
+odrl:give              odrl:includedIn odrl:transfer .
+odrl:grantUse          odrl:includedIn odrl:use .
+odrl:include           odrl:includedIn odrl:use .
+odrl:index             odrl:includedIn odrl:use .
+odrl:inform            odrl:includedIn odrl:use .
+odrl:install           odrl:includedIn odrl:use .
+odrl:modify            odrl:includedIn odrl:use .
+odrl:move              odrl:includedIn odrl:use .
+odrl:nextPolicy        odrl:includedIn odrl:use .
+odrl:obtainConsent     odrl:includedIn odrl:use .
+odrl:play              odrl:includedIn odrl:use .
+odrl:present           odrl:includedIn odrl:use .
+odrl:print             odrl:includedIn odrl:use .
+odrl:read              odrl:includedIn odrl:use .
+odrl:reproduce         odrl:includedIn odrl:use .
+odrl:reviewPolicy      odrl:includedIn odrl:use .
+odrl:sell              odrl:includedIn odrl:transfer .
+odrl:stream            odrl:includedIn odrl:use .
+odrl:synchronize       odrl:includedIn odrl:use .
+odrl:textToSpeech      odrl:includedIn odrl:use .
+odrl:transform         odrl:includedIn odrl:use .
+odrl:translate         odrl:includedIn odrl:use .
+odrl:uninstall         odrl:includedIn odrl:use .
+odrl:watermark         odrl:includedIn odrl:use .

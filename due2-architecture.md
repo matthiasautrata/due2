@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.3
+**Status:** Draft v0.5
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.3:** fulfilment on RL2's evidence model, with member- and grant-scoped duty instances (§3.1, §6.1); party-role inheritance (§4 item 4); the case flow and both clocks (§7); §8 widened to prior work, with RL2 added (§8.2).
+**Changes in v0.5:** witness reads made explicit, so a request-source duty condition is a guard (§4 item 5); a duty that is both an obligation and a precondition (§4 items 4–5); §8.2 records what was harvested from RL2, and §8.3 DPROD Contracts; decision record `decisions/0001-rl2-as-donor.md`. v0.4 introduced profiles and operand bindings (`due2-profiles.md`), anonymous rules (§3.1), guard-only hoisting, obligations in force reported with the access answer (§6.3), and the conformance corpus (§10).
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -66,7 +66,7 @@ v0.1 gave every attachment its own atom. That conflicts with ODRL, where a duty 
 
 Normalisation stage 1 keeps authored sharing exactly (normalisation spec, invariant 4). Stage 2 instantiates per binding after parameter substitution (§4). Sharing survives in lineage, which is what lets the canonical duty be edited in one place.
 
-Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. The normaliser therefore requires every rule to be named, and confines content-derived identity to anonymous values — a refined action, a constraint — where content is the only identity there is (normalisation spec §3, §5.2).
+Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. Rules may still be anonymous, as ODRL allows; their identity is then derived from their content, which is the only identity an unnamed thing has (normalisation spec §3, §5.2). A rule whose identity must survive edits — above all a duty that evidence names — should be named.
 
 ### 3.2 Acyclicity **[D]**
 
@@ -88,8 +88,8 @@ Two stages, each with its own preservation property (`due2-workflows.md` §4). T
 **Stage 2 — build:**
 
 3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[O]** — bound it, and decide whether to expand eagerly or keep set-valued match keys where matching is membership anyway. See §9.
-4. **Parameter substitution, role inheritance, and per-binding instantiation.** A duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); one that declares any inherits none. The inherited roles are part of the binding, which settles a tension inside ODRL: a shared duty is "fulfilled once", yet takes its roles from each referrer — referrers with different roles yield different instances. See §5 and §3.1.
-5. **Conditional-duty hoisting.** A duty carrying its own constraint forces the evaluator to answer "what does an inactive duty mean" — is the parent then unconditional, or void? Instead the case split is lifted into the parent's guard at normalisation. "Home lending may read; everyone else must petition first" becomes two atoms: permit with `dept == HomeLending` and no duty, permit with `dept != HomeLending` and the petition duty. Every duty in the corpus is then unconditional relative to its parent, and the evaluator's rule collapses to *parent active ⇒ duty owed*. Cost is one extra atom per conditional duty: additive, not multiplicative. **[O]** — a duty constraint referring to state that only exists after exercise cannot be hoisted, since it is not decidable at decision time. If no real duty does this, make hoistability a normaliser precondition and reject violations rather than supporting an unexercised case.
+4. **Parameter substitution, role inheritance, and per-binding instantiation.** A duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); one that declares any inherits none. The inherited roles are part of the binding, which settles a tension inside ODRL: a shared duty is "fulfilled once", yet takes its roles from each referrer — referrers with different roles yield different instances. A duty that is also a root obligation receives the policy-level values as its own, so it inherits nothing (`due2-profiles.md` §6). See §5 and §3.1.
+5. **Conditional-duty hoisting.** This applies to a duty's *guards* — constraints that read no witness operand (`due2:witnessSource` or `due2:actionTime`). Constraints on the performance itself, such as "paid at least 100" or "attested after 1 January", stay on the duty as witness conditions (`due2-workflows.md` §5.2). A duty that is also a root obligation keeps its guards for that role; hoisting copies them into each parent. A duty carrying its own guard forces the evaluator to answer "what does an inactive duty mean" — is the parent then unconditional, or void? Instead the case split is lifted into the parent's guard at normalisation. "Home lending may read; everyone else must petition first" becomes two atoms: permit with `dept == HomeLending` and no duty, permit with `dept != HomeLending` and the petition duty. Every duty in the corpus is then unconditional relative to its parent, and the evaluator's rule collapses to *parent active ⇒ duty owed*. Cost is one extra atom per conditional duty: additive, not multiplicative. **[O]** — a duty constraint referring to state that only exists after exercise cannot be hoisted, since it is not decidable at decision time. If no real duty does this, make hoistability a normaliser precondition and reject violations rather than supporting an unexercised case.
 6. **Projection and provenance.** Project into the corpus relations, joining stage-1 lineage so that every atom carries its source policy and rule.
 
 **Blowup budget:** `|atoms| ≈ |actions| × |targets| × |parties| × |DNF disjuncts| + |conditional duties| + |duty attachments|`. Only the first term is multiplicative. Stage 1 computes exact counts and fails a limit before materialising anything. **[O]** — the threshold values, and their diagnostic.
@@ -149,7 +149,7 @@ So the interface is two functions over the same corpus:
 - `decide` returns a verdict plus duties that *would become owed*.
 - A separate query returns duties *currently owed* for a party.
 
-In workflow terms, both share W1 and W2's matching, constraint, and fulfilment machinery, and differ in the predicate applied to root atoms and in the W3 reduction. If that split is not in the signature now, it gets bolted on later as a special case.
+In workflow terms, both share W1 and W2's matching, constraint, and fulfilment machinery, and differ in the predicate applied to root atoms and in the W3 reduction. The access answer already reports the obligations *in force* for the request — those of the policy it is made under — with their status (`due2-workflows.md` §5.2, §6.1). What remains open is the request-free query: everything a party owes now. If that split is not in the signature now, it gets bolted on later as a special case.
 
 ---
 
@@ -170,7 +170,7 @@ Every decision is recorded. Because `decide` is pure over `(request, corpus, SOT
 **Re-evaluation trigger [O]:**
 
 - *Recompute all pending on any change.* Trivially correct, no bookkeeping. Pending sets in governance are small and approvals are rare, so this is almost certainly sufficient. **Start here.**
-- *Dependency index.* Index pending entries by the requirements in their `read` relation, which W2 already produces as a byproduct. Justified only when the first option measurably hurts.
+- *Dependency index.* Index pending entries by the state properties in their `read` relation, which W2 already produces as a byproduct. Justified only when the first option measurably hurts.
 
 ---
 
@@ -198,21 +198,28 @@ Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and 
 
 ### 8.2 RL2
 
-RL2 (`~/src/RL2`, `github.com/matthiasautrata/RL2`) is due2's predecessor: an attempt to extend ODRL into a language with formal semantics. due2 does not adopt it wholesale; it takes worked-out material where that answers a due2 question.
+RL2 (`~/src/RL2`, `github.com/matthiasautrata/RL2`) is due2's predecessor: an attempt to extend ODRL into a language of its own, with formal semantics. It is not a superset of ODRL — it has its own vocabulary and a partial translator — and it has never been executed. due2 harvests it rather than adopting it (`decisions/0001-rl2-as-donor.md`).
 
-Adopted:
+Harvested:
 
-- **Evidence and fulfilment** — RL2 Model §4.3–§4.5, §7.3: evidence as records of performed actions; absence means not yet fulfilled; trust verified before evaluation, with a closed signer admissibility record.
-- **Duty instances** — RL2 Semantics §Duty Template Binding: per-member and per-grant occurrence identity, with evidence naming the grant it discharges.
+- **Evidence and fulfilment** — Model §4.3–§4.5, §7.3: evidence as records of performed actions; absence means not yet fulfilled; trust verified before evaluation, with a closed signer admissibility record.
+- **Duty instances** — Semantics §Duty Template Binding: per-member and per-grant occurrence identity, with evidence naming the grant it discharges.
+- **Typed operands** — Model §4.2–§4.4: value types, the missing / invalid / conflict discipline, admissibility and freshness, merged with DPROD's one-hop bindings (`due2-profiles.md` §3).
+- **Guards and witness conditions** — RL2's `condition` and `postCondition` (`due2-workflows.md` §5.2).
+- **The use cases** — all 49, rewritten in ODRL as `conformance/cases/rl2-*` (§10).
+
+Left behind: the vocabulary, Maintain duties, Promises, Offer → Agreement materialisation, and duty status as an operand. The corpus records each case that needs one of them.
 
 Sources for open items:
 
-- operator and operand registry — Semantics §Type System and §`apply`; Compilation §9.1;
 - stage 2 — RL2_Compilation: canonical projection, closed-world rule, diagnostic registry, determinism;
 - conflict resolution and exception patterns — Semantics §Conflict Resolution;
-- deadline windows and `Violated` — Model §7.1 (`due2-workflows.md` §9);
-- replayable policy selection and the re-evaluation loop — ExternalData §6–§7;
-- test vectors — Requirements §4, 49 classified use cases.
+- profile operators — Compilation §9.1 (`due2-profiles.md` §4);
+- replayable policy selection and the re-evaluation loop — ExternalData §6–§7.
+
+### 8.3 DPROD Contracts
+
+DPROD Contracts (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`) is an ODRL 2.2 profile for data contracts with deterministic evaluation — much of RL2's intent, expressed the way ODRL intends. due2 handles it as a profile, with no translation: its operand bindings are due2's (`due2-profiles.md` §3), and its other terms land on due2's extension points (§8.1 there). Where DPROD returns a decision, due2 returns the same one, outside six documented exceptions; where DPROD fails, due2 still decides when the unknowns cannot change the outcome (§8.2 there). Testing DPROD's examples also found gaps in DPROD itself, listed there for upstream.
 
 ---
 
@@ -242,6 +249,7 @@ Contents:
 
 - Hypothesis-generated policies and requests, with a decision table.
 - The laws of `due2-workflows.md` §8, as properties.
+- The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, and DPROD Contracts examples, each with scenarios and hand-derived expected verdicts, checked mechanically by `tools/check_corpus.py` until an evaluator runs them.
 - The semantic-preservation property: `decide(normalise(p), r, w) == interpret_directly(p, r, w)`. Stage 1 now carries its own oracle: the denotation of normalisation spec §8.1, a page of definition, checked through the lineage bijection. **[O]** — a direct interpreter for stage 2 and the evaluator remains a specification artefact to maintain. Real cost, and the only check that the rest of normalisation has not quietly changed meaning.
 - Explicit `Indeterminate` cases with unresolvable operands, asserted per backend. This is the property most likely to be silently lost in a port.
 - Every ledger entry, replayed.

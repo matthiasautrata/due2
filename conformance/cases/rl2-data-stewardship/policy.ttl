@@ -1,0 +1,28 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/data-stewardship.md
+# Only the accepted Agreement is written. The Offer (a Promise and a Privilege conditioned on the
+# Promise's status through rl2:obligationStateOperand) has no due2 counterpart.
+
+ex:stewardshipAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:DataOwner ;
+    odrl:assignee ex:Researcher ;
+    odrl:permission ex:acceptedAccess ;
+    odrl:obligation ex:stewardshipDuty .
+
+ex:acceptedAccess a odrl:Permission ;
+    odrl:action ex:access ;
+    odrl:target ex:SensitiveData ;
+    odrl:duty ex:stewardshipDuty .
+
+# Both an obligation of the Agreement and the permission's precondition, as in RL2 (one duty,
+# one status). It names no parties: as a root rule it takes the policy-level ones, and as a
+# precondition it inherits the permission's — the Researcher bears it, for the DataOwner.
+ex:stewardshipDuty a odrl:Duty ;
+    odrl:action ex:steward ;
+    odrl:target ex:SensitiveData .
+
+ex:access a odrl:Action .
+ex:steward a odrl:Action .

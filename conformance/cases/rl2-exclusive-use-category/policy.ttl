@@ -1,0 +1,40 @@
+@prefix odrl:      <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod:     <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:        <https://example.org/> .
+@prefix licensing: <https://example.org/profile/licensing#> .
+
+# Source: RL2 conformance/usecases/exclusive-use-category.md
+
+ex:license a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:categoryPrivilege .
+
+ex:categoryPrivilege a odrl:Permission ;
+    odrl:assignee ex:Licensee ;
+    odrl:action ex:use ;
+    odrl:target ex:Track ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:xone (
+            [ a odrl:Constraint ; odrl:leftOperand licensing:useCategory ;
+              odrl:operator odrl:eq ; odrl:rightOperand licensing:Advertising ]
+            [ a odrl:Constraint ; odrl:leftOperand licensing:useCategory ;
+              odrl:operator odrl:eq ; odrl:rightOperand licensing:Editorial ]
+            [ a odrl:Constraint ; odrl:leftOperand licensing:useCategory ;
+              odrl:operator odrl:eq ; odrl:rightOperand licensing:Personal ]
+        )
+    ] .
+
+ex:use a odrl:Action .
+
+licensing:Advertising a licensing:UseCategory .
+licensing:Editorial a licensing:UseCategory .
+licensing:Personal a licensing:UseCategory .
+
+# RL2 path context.useCategory: assembler-supplied context, hence state source.
+# A class range requires an IRI value; class membership is only checked by isA (due2-profiles §3).
+licensing:useCategory a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty licensing:contextUseCategory ;
+    rdfs:range licensing:UseCategory .

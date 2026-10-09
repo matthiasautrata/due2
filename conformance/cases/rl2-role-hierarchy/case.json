@@ -1,0 +1,54 @@
+{
+  "case": "rl2-role-hierarchy",
+  "source": "RL2 conformance/usecases/role-hierarchy.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "rl2:anyAgent becomes a permission without assignee; the RL2 path agent.role becomes the state property ex:requesterRole, whose value is a role instance IRI. RL2's isA maps to odrl:isA, which due2 evaluates against declared rdf:type and rdfs:subClassOf edges; the role vocabulary stays in the policy file, as RL2 requires, and only the requester's role assignment is SOTW data. RL2's value type role:Role is carried as rdfs:range: a class range requires an IRI value and otherwise documents intent, since class membership is checked only by isA (due2-profiles.md §3). The type and subclass edges are corpus data read closed-world (due2-workflows.md §3.1, §3.3): an isA that no declared chain establishes is F, never U, so scenario 3 is NotApplicable rather than Indeterminate. This relies on profiles §6 ('isA follows rdf:type and rdfs:subClassOf'); the corpus closure of workflows §3.1 lists rdf:type edges only where they type collections, so the instance's rdf:type edge is assumed to be carried too. role:Viewer and role:ViewerInstance are added to the vocabulary for scenario 3. Scenario 3 is added. No divergence from RL2.",
+  "prefixes": { "ex": "https://example.org/", "role": "https://example.org/profile/role#" },
+  "scenarios": [
+    {
+      "name": "senior analyst reads",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:InternalReport", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterRole": { "status": "resolved", "values": [ { "@id": "role:SeniorAnalystInstance" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "role:SeniorAnalystInstance is typed role:SeniorAnalyst, a subclass of role:Analyst, so isA is T. ex:analystRead has no party to match; action and target match, so it is a ready candidate." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "role fact missing",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:InternalReport", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterRole": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "A missing role makes the isA constraint U, so the permission is U; completions give Permit and NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "role outside the analyst branch",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:InternalReport", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bob" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterRole": { "status": "resolved", "values": [ { "@id": "role:ViewerInstance" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "role:ViewerInstance is typed role:Viewer, which is under role:Role but not role:Analyst, so isA is F and the permission does not apply." }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+@prefix odrl:       <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod:      <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:         <https://example.org/> .
+@prefix compliance: <https://example.org/profile/compliance#> .
+
+# Source: RL2 conformance/usecases/compliance-attestation.md
+
+ex:terms a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:certifiedProcessing .
+
+ex:certifiedProcessing a odrl:Permission ;
+    odrl:assignee ex:Processor ;
+    odrl:action ex:process ;
+    odrl:target ex:SensitiveDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand compliance:processorStatus ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand compliance:Certified
+    ] .
+
+ex:process a odrl:Action .
+
+compliance:Status a rdfs:Class .
+compliance:Certified a compliance:Status .
+compliance:Suspended a compliance:Status .   # added: used by scenarios 4 and 5
+
+# RL2 path agent.complianceStatus, flattened onto the state node for the request subject.
+# Issuer acceptance and validity are applied by the assembler before freezing the SOTW.
+compliance:processorStatus a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterComplianceStatus ;
+    rdfs:range compliance:Status .

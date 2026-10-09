@@ -1,0 +1,62 @@
+# due2 core profile vocabulary and baseline bindings.
+# Spec: due2-profiles.md. Only what ODRL and DPROD do not already define.
+
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+due2: a owl:Ontology ;
+    rdfs:label "due2 core profile" ;
+    rdfs:comment "Extension-point vocabulary for due2 (due2-profiles.md §2) and baseline operand bindings (§3)." .
+
+# --- Operand bindings: cardinality and allowed operators (§3) ---
+due2:cardinality a owl:ObjectProperty ;
+    rdfs:domain odrl:LeftOperand ; rdfs:range due2:Cardinality ;
+    rdfs:comment "due2:one (default) or due2:set." .
+due2:Cardinality a owl:Class .
+due2:one a due2:Cardinality .
+due2:set a due2:Cardinality .
+due2:allowedOperator a owl:ObjectProperty ;
+    rdfs:domain odrl:LeftOperand ; rdfs:range odrl:Operator .
+
+# --- Context built-in (§3) ---
+due2:actionTime a owl:DatatypeProperty ;
+    rdfs:comment "Instant of the action being evaluated: request.at for a rule matched against the request; the witness occurred_at inside a duty's constraints." ;
+    rdfs:range xsd:dateTime .
+
+# --- Party roles (§6) ---
+due2:playsRole a owl:ObjectProperty ; rdfs:range due2:Role .
+due2:Role a owl:Class .
+due2:bearer a due2:Role ; rdfs:comment "Who must perform a duty." .
+due2:beneficiary a due2:Role ; rdfs:comment "Who a duty is performed for." .
+odrl:assignee due2:playsRole due2:bearer .
+odrl:assigner due2:playsRole due2:beneficiary .
+
+# --- Duty instance scope (due2-workflows.md §5.3) ---
+due2:instanceScope a owl:ObjectProperty ;
+    rdfs:domain odrl:Duty ; rdfs:range due2:InstanceScope .
+due2:InstanceScope a owl:Class .
+due2:member a due2:InstanceScope .
+due2:grant a due2:InstanceScope .
+
+# --- Violations and access (§7), declared per profile ---
+due2:violations a owl:ObjectProperty ; rdfs:range due2:ViolationPolicy .
+due2:ViolationPolicy a owl:Class .
+due2:ignore a due2:ViolationPolicy .
+due2:deny a due2:ViolationPolicy .
+
+# --- Baseline bindings for ODRL Common Vocabulary operands (§3) ---
+odrl:dateTime
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty due2:actionTime ;
+    rdfs:range xsd:dateTime .
+odrl:purpose
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty odrl:purpose .
+odrl:recipient
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty odrl:recipient .

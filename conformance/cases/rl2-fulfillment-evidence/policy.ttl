@@ -1,0 +1,43 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/fulfillment-evidence.md
+
+# RL2's grantor and grantee become the policy-level assigner and assignee. They fill only
+# what a rule leaves unstated (normalisation §6.2); the obligation states its own parties,
+# so the Customer does not become a second bearer.
+ex:terms a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Customer ;
+    odrl:obligation ex:deliverReport .
+
+# An independent RL2 clause: a root obligation.
+# Window [2026-08-01, 2026-09-01): the start reads due2:actionTime, so it is a witness
+# condition on the delivery's occurred_at (workflows §5.2); the end is dprod:deadline,
+# inclusive where RL2's end is exclusive. The policy has no permission or prohibition,
+# so the obligation is never in force for a request (see case.json notes).
+ex:deliverReport a odrl:Duty ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Customer ;
+    odrl:action ex:deliver ;
+    odrl:target ex:MonthlyReport ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:performedAt ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2026-08-01T00:00:00Z"^^xsd:dateTime
+    ] ;
+    dprod:deadline "2026-09-01T00:00:00Z"^^xsd:dateTime .
+
+ex:deliver a odrl:Action .
+
+ex:performedAt a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty due2:actionTime ;
+    rdfs:range xsd:dateTime .

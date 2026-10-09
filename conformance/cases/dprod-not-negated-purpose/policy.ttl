@@ -1,0 +1,101 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Constructed: no DPROD example uses dprod:not. Built from DPROD's own vocabulary:
+# the operands ex:classification, ex:environment, ex:retentionPeriod and odrl:purpose are
+# declared exactly as in examples/data-use-policy.ttl and baseline.ttl (no rdfs:range);
+# the policy shape follows the Customer API v2 offer in baseline.ttl.
+# dprod:not takes one constraint, as in dprod-contracts.ttl and specification.md §4.9.
+
+############################# Domain vocabulary (from the examples) #########################
+
+odrl:purpose
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty odrl:purpose .
+
+ex:classification a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "classification" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:classification .
+
+ex:environment a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "environment" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:environment .
+
+ex:retentionPeriod a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "retention period" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:retentionPeriod .
+
+odrl:read odrl:includedIn odrl:use .
+odrl:derive odrl:includedIn odrl:use .
+
+ex:marketing a skos:Concept ; rdfs:label "marketing" .
+ex:advertising a skos:Concept ; rdfs:label "advertising" .
+ex:external a skos:Concept ; rdfs:label "external" .
+ex:confidential a skos:Concept ; rdfs:label "confidential" .
+
+<https://example.org/agents/data-platform> a odrl:Party ; rdfs:label "Data Platform Team" .
+<https://example.org/assets/customer-data> a odrl:Asset ; rdfs:label "Customer Data" .
+
+############################# Policy #########################
+
+<https://example.org/offers/customer-data-negations> a dprod:DataOffer ;
+    rdfs:label "Customer data with negated guards" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner <https://example.org/agents/data-platform> ;
+    odrl:target <https://example.org/assets/customer-data> ;
+    odrl:permission rule:neg-read , rule:neg-derive .
+
+# Read, unless for marketing or advertising, and unless confidential data goes to an
+# external environment.
+rule:neg-read a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        dprod:not [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:purpose ;
+            odrl:operator odrl:isAnyOf ;
+            odrl:rightOperand ( ex:marketing ex:advertising )
+        ]
+    ] , [
+        a odrl:LogicalConstraint ;
+        dprod:not [
+            a odrl:LogicalConstraint ;
+            odrl:and (
+                [
+                    a odrl:Constraint ;
+                    odrl:leftOperand ex:environment ;
+                    odrl:operator odrl:eq ;
+                    odrl:rightOperand ex:external
+                ]
+                [
+                    a odrl:Constraint ;
+                    odrl:leftOperand ex:classification ;
+                    odrl:operator odrl:eq ;
+                    odrl:rightOperand ex:confidential
+                ]
+            )
+        ]
+    ] .
+
+# Derive, unless the derived data is kept longer than a year.
+rule:neg-derive a odrl:Permission ;
+    odrl:action odrl:derive ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        dprod:not [
+            a odrl:Constraint ;
+            odrl:leftOperand ex:retentionPeriod ;
+            odrl:operator odrl:gt ;
+            odrl:rightOperand "P1Y"^^xsd:duration
+        ]
+    ] .

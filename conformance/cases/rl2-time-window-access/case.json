@@ -1,0 +1,52 @@
+{
+  "case": "rl2-time-window-access",
+  "source": "RL2 conformance/usecases/time-window-access.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. Grantor and grantee become policy-level assigner and assignee; the permission states no parties of its own, so interiorisation fills them from the policy level (normalisation 0.12 §6.2), equal to RL2's clause subject. rl2:currentDateTime (state.Clock, the snapshot's evaluationTime) is bound to dprod:clock, i.e. sotw.effective_at, not to odrl:dateTime, which due2-core binds to the action time request.at. xsd:dateTimeStamp becomes xsd:dateTime in UTC. The rl2:and becomes two conjunctive constraints. Scenarios 3 and 4 are added; scenario 4 shows that the window is tested at decision time, not at the proposed action time, since RL2 has only one clock.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "inside the study period",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:HealthDataset", "at": "2026-06-15T10:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-15T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "2026-06-15T10:00 ≥ 2026-01-01 and < 2027-01-01, so ex:studyAccess applies; no duties, no prohibition." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "at the exclusive end",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:HealthDataset", "at": "2027-01-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-01-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "2027-01-01T00:00 < 2027-01-01T00:00 is F, so the permission does not apply; nothing else does." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "at the inclusive start",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:HealthDataset", "at": "2026-01-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-01-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "2026-01-01T00:00 ≥ 2026-01-01T00:00 holds and the end bound holds, so the permission applies." }
+    },
+    {
+      "name": "action proposed inside, decided after the window",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:HealthDataset", "at": "2026-12-31T23:00:00Z",
+        "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-01-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:currentDateTime reads dprod:clock, i.e. effective_at 2027-01-01T00:00, so the end bound is F; request.at is not consulted." }
+    }
+  ]
+}

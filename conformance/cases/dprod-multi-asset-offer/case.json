@@ -1,0 +1,83 @@
+{
+  "case": "dprod-multi-asset-offer",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, Contract 8, https://example.org/offers/multi-asset (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": ["dprod:DataOffer (policy class)"],
+  "notes": "Extracted unchanged except: the eight anonymous rules are named rule:bundle-*; odrl:conflict odrl:prohibit made explicit (profile default); ODRL includedIn edges for read, aggregate and distribute added. The operand-binding properties are not profile terms (conformance README); dprod:offerLifecycleStatus, dprod:effectiveDate and dprod:expirationDate are metadata. DPROD Σ assumed: Σ₀ with clock = request.at; the offer has no duties, so Σ plays no part, no obligation is ever in force, and config.violations has nothing to act on (every scenario uses the default ignore; deny gives the same verdicts). The offer has three policy-level targets, and two permissions name a fourth (multi-asset-bundle) at rule level. DPROD reads the policy target as an applicability gate (formal-semantics.md §7.3: Env.asset matches p.target, read here as 'matches some value', since §7.3 does not say what a multi-valued target means) and a rule-level target as an override of it (the examples' comment 'inherited by rules unless overridden'). Under normalisation spec 0.12 §6.2, due2 reads policy-level values as defaults that fill only what a rule leaves unstated; every rule here states its own target, so nothing is interiorised and rule:bundle-aggregate and rule:bundle-non-display target the bundle alone. Verdict change: scenario 5 was Permit under 0.11, which interiorised by union and gave rule:bundle-aggregate the three policy targets as well; it is now NotApplicable and agrees with DPROD. Scenario 4 still diverges, DPROD NotApplicable against due2 Permit: under DPROD the two bundle permissions are dead rules, since no request can both pass the policy gate and match their target, while due2 does not gate on the policy target at all. This is exactly due2-profiles.md §8.2 exception 5 (policy-level target), which cites this case; every other scenario agrees with DPROD. Scenario 6 shows that neither evaluator reads dprod:expirationDate.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "read a listed asset",
+      "request": {
+        "reference": "req-1", "action": "odrl:read", "target": "asset:market-prices", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The offer names no assignee, so its rules apply to any requester (the policy-level assigner is not a match key). The (read, market-prices) atom applies; the distribute prohibitions do not match read. Permit." },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "read a member of a listed collection",
+      "request": {
+        "reference": "req-2", "action": "odrl:read", "target": "asset:country-codes", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "country-codes partOf reference-data (typed AssetCollection), so the (read, reference-data) atom applies. Permit." },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "distribute a listed asset",
+      "request": {
+        "reference": "req-3", "action": "odrl:distribute", "target": "asset:market-prices", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "rule:bundle-no-distribute-market-prices applies; no permission covers distribute. Deny." },
+      "dprod_expected": "Deny"
+    },
+    {
+      "name": "aggregate the bundle in production",
+      "request": {
+        "reference": "req-4", "action": "odrl:aggregate", "target": "asset:multi-asset-bundle", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:environment": { "@id": "ex:production" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "rule:bundle-aggregate states its own target, so it keeps it and receives none of the policy-level targets; it applies to the bundle with environment = production. No prohibition matches aggregate. due2 does not gate on the policy target (exception 5). Permit." },
+      "dprod_expected": "NotApplicable (step 0: multi-asset-bundle matches none of the three policy targets, so the policy is not applicable)"
+    },
+    {
+      "name": "aggregate a listed asset in production",
+      "request": {
+        "reference": "req-5", "action": "odrl:aggregate", "target": "asset:market-prices", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:environment": { "@id": "ex:production" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "rule:bundle-aggregate targets only the bundle, and no partOf edge leads from market-prices to it, so it is F; no read permission covers aggregate (aggregate is not included in read), and no prohibition matches aggregate. NotApplicable — changed from Permit under normalisation 0.11's union interiorisation." },
+      "dprod_expected": "NotApplicable (policy applicable, but rule:bundle-aggregate's own target, the bundle, does not match market-prices)"
+    },
+    {
+      "name": "read after the offer's expiration date",
+      "request": {
+        "reference": "req-6", "action": "odrl:read", "target": "asset:risk-metrics", "at": "2027-03-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-03-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "dprod:expirationDate is metadata (due2-profiles.md §8.1); nothing in the policy constrains time. The (read, risk-metrics) atom applies. Permit." },
+      "dprod_expected": "Permit (formal-semantics.md never reads effectiveDate or expirationDate)"
+    }
+  ]
+}

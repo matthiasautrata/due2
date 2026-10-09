@@ -1,0 +1,40 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/pass-through-terms.md
+
+ex:distributionAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Vendor ;
+    odrl:assignee ex:Aggregator ;
+    odrl:permission ex:redistributeUnderTerms ;
+    odrl:obligation ex:maintainPassThroughTerms .
+
+ex:redistributeUnderTerms a odrl:Permission ;
+    odrl:action ex:redistribute ;
+    odrl:target ex:LicensedData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:downstreamTermsBound ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+# Independent RL2 clause: a root obligation. Bearer ex:Aggregator and beneficiary
+# ex:Vendor (rl2:counterparty) come from the policy-level assignee and assigner.
+# RL2's rl2:object is the agent ex:Customer; it is kept as the duty's target.
+ex:maintainPassThroughTerms a odrl:Duty ;
+    odrl:action ex:maintainTerms ;
+    odrl:target ex:Customer .
+
+ex:redistribute a odrl:Action .
+ex:maintainTerms a odrl:Action .
+
+# RL2 path context.downstreamTerms.bound, flattened onto the state node.
+ex:downstreamTermsBound a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:downstreamTermsBound ;
+    rdfs:range xsd:boolean .

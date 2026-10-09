@@ -1,0 +1,98 @@
+{
+  "case": "rl2-fire-alarm",
+  "source": "RL2 conformance/usecases/fire-alarm.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. rl2:Set → odrl:Set; rl2:Privilege → odrl:Permission with rl2:subject as odrl:assignee; the RL2 path state.fireAlarmActive becomes a stateSource operand. RL2 configures conflict resolution outside the policy; odrl:prohibit is stated explicitly and has no effect, since the policy has no prohibition. RL2's false, missing, and invalid alarm states are carried over as scenarios 2–4, with the outcomes its text states. Scenarios 5 and 6 are added: a requester who is not the named occupant, and a request that names no assignee, which due2 reads as U rather than F (due2-workflows.md §5.2).",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "alarm active",
+      "request": {
+        "reference": "req-1", "action": "ex:useEmergencyExit", "target": "ex:EmergencyExit", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Occupant" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Action, target, and assignee match and fireAlarmActive = true, so ex:evacuatePrivilege is T; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "alarm inactive",
+      "request": {
+        "reference": "req-2", "action": "ex:useEmergencyExit", "target": "ex:EmergencyExit", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Occupant" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission is F and no candidate remains; nothing else applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "alarm state missing",
+      "request": {
+        "reference": "req-3", "action": "ex:useEmergencyExit", "target": "ex:EmergencyExit", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Occupant" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:fireAlarmActive": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the constraint and the permission are U. The permissive completion gives Permit, the restrictive one NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "alarm state invalid",
+      "request": {
+        "reference": "req-4", "action": "ex:useEmergencyExit", "target": "ex:EmergencyExit", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Occupant" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:fireAlarmActive": { "status": "invalid", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "An invalid fact makes the constraint U, never F (due2-profiles.md §3); the permission is U and its completions give Permit and NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "requester is not the occupant",
+      "request": {
+        "reference": "req-5", "action": "ex:useEmergencyExit", "target": "ex:EmergencyExit", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Visitor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:Visitor ⊑ ex:Occupant does not hold (no closure edge), so the party part is F and the permission is F whatever the alarm state." }
+    },
+    {
+      "name": "request names no assignee",
+      "request": {
+        "reference": "req-6", "action": "ex:useEmergencyExit", "target": "ex:EmergencyExit", "at": "2026-06-01T00:00:00Z",
+        "parties": {}, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The request does not name the assignee function, so the party part is U (absent is not false, due2-workflows.md §5.2); with the constraint T the permission is U, and its completions give Permit and NotApplicable." }
+    }
+  ]
+}

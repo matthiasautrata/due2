@@ -1,0 +1,68 @@
+{
+  "case": "rl2-step-up-auth",
+  "source": "RL2 conformance/usecases/step-up-auth.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. The privilege becomes a permission with a rule-level assignee; the independent step-up duty becomes a root odrl:obligation guarded by level < 2. agent.authentication.level is flattened to the state property ex:requesterAuthenticationLevel. RL2 does not state the level-1 decision; NotApplicable follows from its statement that the privilege is inactive and RL2's default decision. The obligation's constraint reads a state operand, so it is a guard (due2-workflows.md §5.2): ex:stepUpDuty is in force for a request the read permission matches, constraints aside, when the level is below 2, and its status is then reported (§6.1). This reproduces RL2's status-map entry for the read request at level 1 (Active: outstanding) without making the duty an obligation atom of the request — its own action plays no part in in-force, and a request for ex:authenticate matches no rule of the policy, so the obligation is not in force there (scenario 4). Because the duty is independent, not an odrl:duty of the permission, due2 offers no Pending route; authoring it as a precondition would not work either, since authenticating does not change the level fact the permission tests. Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "multi-factor authentication",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:HighRiskDocument", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAuthenticationLevel": { "status": "resolved", "values": [ { "@value": "2", "@type": "xsd:integer" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "2 ≥ 2, so ex:highRiskReadPrivilege applies and has no duties. Ready candidate: Permit. The permission matches, but the obligation's guard 2 < 2 is F, so ex:stepUpDuty is not in force." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "password only",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:HighRiskDocument", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAuthenticationLevel": { "status": "resolved", "values": [ { "@value": "1", "@type": "xsd:integer" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:stepUpDuty", "status": "outstanding" } ], "why": "1 ≥ 2 is F, so the permission does not apply. Nothing applies. The permission still matches (constraints aside) and the guard 1 < 2 is T, so ex:stepUpDuty is in force; no ex:authenticate witness by ex:Employee, so it is outstanding (RL2: Active)." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "authentication level unresolved",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:HighRiskDocument", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAuthenticationLevel": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:stepUpDuty", "status": "unknown" } ], "why": "The level constraint is U, so the permission is U. Permissive completion: Permit; restrictive: NotApplicable. Not invariant. The obligation's guard is U, so it is in force with finding U and reported unknown." }
+    },
+    {
+      "name": "password only, request to authenticate",
+      "request": {
+        "reference": "req-4", "action": "ex:authenticate", "target": "ex:AuthenticationService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAuthenticationLevel": { "status": "resolved", "values": [ { "@value": "1", "@type": "xsd:integer" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No permission covers ex:authenticate (ex:authenticate ⊑ ex:read is F), so no rule of the policy matches and ex:stepUpDuty is not in force, although its guard 1 < 2 holds: an obligation is not matched by its own action (§5.2). Nothing applies." }
+    }
+  ]
+}

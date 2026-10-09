@@ -1,0 +1,68 @@
+{
+  "case": "rl2-purpose-restriction",
+  "source": "RL2 conformance/usecases/purpose-restriction.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. RL2 resolves purpose from context.purpose, a snapshot fact, so the operand ex:purpose is bound to the state property ex:declaredPurpose rather than to the request parameter odrl:purpose that due2-core provides. Either binding gives the same verdicts; the state binding keeps RL2's choice of who supplies the value. Strings compare by code point. Scenarios 3 and 4 are added. No divergence from RL2.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "epidemiological research",
+      "request": {
+        "reference": "req-1", "action": "ex:process", "target": "ex:HealthDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Institution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:declaredPurpose": { "status": "resolved", "values": [ { "@value": "epidemiological-research", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The purpose equals the authored string, and action, target, and assignee match; ex:researchProcessing is T with no duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "unrelated purpose",
+      "request": {
+        "reference": "req-2", "action": "ex:process", "target": "ex:HealthDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Institution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:declaredPurpose": { "status": "resolved", "values": [ { "@value": "marketing", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "\"marketing\" eq \"epidemiological-research\" is F, so the permission does not apply; there is no other rule." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "no purpose declared",
+      "request": {
+        "reference": "req-3", "action": "ex:process", "target": "ex:HealthDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Institution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:declaredPurpose": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "A missing purpose makes the constraint U, so the permission is U; completions give Permit and NotApplicable." }
+    },
+    {
+      "name": "two purposes declared",
+      "request": {
+        "reference": "req-4", "action": "ex:process", "target": "ex:HealthDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Institution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:declaredPurpose": { "status": "conflict", "values": [ { "@value": "epidemiological-research", "@type": "xsd:string" }, { "@value": "marketing", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The operand has cardinality one, so two values are a conflict and the constraint is U, even though one of them matches; completions give Permit and NotApplicable." }
+    }
+  ]
+}

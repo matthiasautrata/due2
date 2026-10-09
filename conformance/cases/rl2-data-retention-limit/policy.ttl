@@ -1,0 +1,56 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/data-retention-limit.md
+
+ex:retentionAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Customer ;
+    odrl:permission ex:retentionUntil2027 ;
+    odrl:obligation ex:deleteAfterRetention .
+
+# RL2's rl2:currentDateTime is the snapshot's evaluation time, so it binds to dprod:clock,
+# not to odrl:dateTime (which due2-core binds to the action time).
+ex:retentionUntil2027 a odrl:Permission ;
+    odrl:action ex:retain ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2027-01-01T00:00:00Z"^^xsd:dateTime
+    ] .
+
+# Independent clause → root obligation, in force whenever the retention permission matches.
+# RL2 window [2027-01-01, 2027-01-02): the start reads due2:actionTime, so it is a witness
+# condition (the deletion must happen on or after it); the end is dprod:deadline, which is
+# inclusive where RL2's end is exclusive — a one-instant difference, accepted.
+ex:deleteAfterRetention a odrl:Duty ;
+    odrl:action ex:delete ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:performedAt ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2027-01-01T00:00:00Z"^^xsd:dateTime
+    ] ;
+    dprod:deadline "2027-01-02T00:00:00Z"^^xsd:dateTime .
+
+ex:retain a odrl:Action .
+ex:delete a odrl:Action .
+
+ex:currentDateTime a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty dprod:clock ;
+    rdfs:range xsd:dateTime .
+
+ex:performedAt a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty due2:actionTime ;
+    rdfs:range xsd:dateTime .

@@ -1,0 +1,40 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/gdpr-erasure.md
+
+# RL2's grantor and grantee become the policy-level assigner and assignee. They fill
+# only what a rule leaves unstated (normalisation §6.2), and the obligation states both
+# of its own parties, so the DataSubject does not become a second bearer.
+ex:privacyPolicy a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Controller ;
+    odrl:assignee ex:DataSubject ;
+    odrl:obligation ex:erasePersonalDataDuty .
+
+# An independent RL2 clause: a root obligation. Its constraint, RL2's applicability
+# condition, reads a state operand, so it is a guard (workflows §5.2). The policy has
+# no permission or prohibition, so the obligation is never in force for a request.
+ex:erasePersonalDataDuty a odrl:Duty ;
+    odrl:assignee ex:Controller ;
+    odrl:assigner ex:DataSubject ;
+    odrl:action ex:erase ;
+    odrl:target ex:PersonalData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:erasureRequestValid ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:erase a odrl:Action .
+
+# RL2 path asset.erasureRequestValid: a fact about the requested asset,
+# flattened onto the state node.
+ex:erasureRequestValid a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:targetErasureRequestValid ;
+    rdfs:range xsd:boolean .

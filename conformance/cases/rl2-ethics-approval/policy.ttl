@@ -1,0 +1,31 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/ethics-approval.md
+
+ex:researchPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:datasetAccessPrivilege .
+
+# rl2:subject rl2:anyAgent: no assignee, so any requester matches; the approval fact
+# delimits the population.
+ex:datasetAccessPrivilege a odrl:Permission ;
+    odrl:action ex:access ;
+    odrl:target ex:SensitiveDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:approvalValid ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:access a odrl:Action .
+
+# RL2 path agent.ethicsApprovalValid, flattened onto the state node for the requester.
+ex:approvalValid a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterEthicsApprovalValid ;
+    rdfs:range xsd:boolean .

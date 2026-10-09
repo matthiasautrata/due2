@@ -1,0 +1,68 @@
+{
+  "case": "rl2-wire-transfer-sod",
+  "source": "RL2 conformance/usecases/wire-transfer-sod.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "rl2:prerequisiteDuty becomes odrl:duty on the permission. RL2's ex:approvalDuty is also an independent rl2:clause of the Set, so the duty is named once and referenced from both odrl:obligation on the policy and odrl:duty on the permission (due2-workflows.md §3.1, root): one atom, a root and the child of an edge, with one instance and one fulfilled finding in both roles. The duty names Bob as assignee, so role inheritance does not apply and only Bob's approval is a witness; the duty's target makes the approval transfer-specific (witness object must equal ex:WireTransfer). Instance scope is the default, member (§5.3). As in RL2, the policy names one transfer; per-transfer instances come from generating one policy per transfer or pair. As an obligation, the duty is in force whenever ex:executePrivilege matches the request (§5.2) — it has no guards — and its status is reported (scenarios 1–3), which gives RL2's 'the approval Duty is Fulfilled' alongside the decision. When no rule of the policy matches (scenario 4, Bob as requester) it is not in force and not reported, where RL2 would still report the clause; a status independent of any request is the open monitoring question (§9 #4). Standing divergence: when Bob has not approved, RL2 reports the privilege inactive (NotApplicable); due2 reports Pending with the approval outstanding. Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "Bob approved the transfer",
+      "request": {
+        "reference": "req-1", "action": "ex:execute", "target": "ex:WireTransfer", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:approval1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:approve", "object": "ex:WireTransfer" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:approvalDuty", "status": "fulfilled" } ], "why": "ex:executePrivilege applies to Alice. ex:approval1 is a witness for ex:approvalDuty (actor Bob, action approve, object ex:WireTransfer, before effective_at), so the duty is T and the candidate ready. The same atom is the root obligation, in force because ex:executePrivilege matches, and fulfilled (RL2: Fulfilled)." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "only Alice approved",
+      "request": {
+        "reference": "req-2", "action": "ex:execute", "target": "ex:WireTransfer", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:approval2", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:approve", "object": "ex:WireTransfer" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:approvalDuty" ] ], "obligations": [ { "duty": "ex:approvalDuty", "status": "outstanding" } ], "why": "ex:approval2's actor is Alice, not the duty's assignee Bob, so it is no witness. The duty is F, outstanding; the permission applies, so the one alternative is pending. As a root obligation it is in force and outstanding." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "Bob approved a different transfer",
+      "request": {
+        "reference": "req-3", "action": "ex:execute", "target": "ex:WireTransfer", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:approval3", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:approve", "object": "ex:OtherTransfer" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:approvalDuty" ] ], "obligations": [ { "duty": "ex:approvalDuty", "status": "outstanding" } ], "why": "ex:approval3's object is ex:OtherTransfer ≠ ex:WireTransfer, so it is no witness. The duty is outstanding, as precondition and as obligation in force." }
+    },
+    {
+      "name": "approver tries to execute",
+      "request": {
+        "reference": "req-4", "action": "ex:execute", "target": "ex:WireTransfer", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bob" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:approval1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:approve", "object": "ex:WireTransfer" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The permission is assigned to Alice; no partOf edge leads from Bob to Alice, so it is F and its precondition is not evaluated. No rule of the policy matches, so the obligation is not in force either (Bob's approval in evidence is not reported). NotApplicable." }
+    }
+  ]
+}

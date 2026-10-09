@@ -1,0 +1,120 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts (EKGF dprod, develop, 50db943),
+#   dprod-contracts/examples/data-contract.ttl, DataContract <https://example.org/agreements/quant-market-data-2026>.
+# Edits:
+#   - the four anonymous rules are named rule:quant-*; the three duties keep their IRIs;
+#   - the dprod:dutyState triples on the duties are removed: they are evaluator output,
+#     not policy input (due2-profiles.md §8.1); the DPROD duty state Σ each scenario
+#     assumes is stated in case.json;
+#   - explicit odrl:conflict odrl:prohibit, equal to the DPROD profile default;
+#   - odrl:display, odrl:derive, odrl:distribute includedIn odrl:use, and odrl:inform
+#     (the parent of ex:notify and ex:report), are taken from the ODRL vocabulary;
+#   - dprod:acceptsOffer is kept; the offer it names is a separate policy and not in this file.
+
+############################# Domain vocabulary (from the example) #########################
+
+ex:deliver a odrl:Action, skos:Concept ;
+  rdfs:label "deliver" ;
+  odrl:includedIn odrl:distribute .
+ex:notify a odrl:Action, skos:Concept ;
+  rdfs:label "notify" ;
+  odrl:includedIn odrl:inform .
+ex:nonDisplay a odrl:Action, skos:Concept ;
+  rdfs:label "non-display" ;
+  odrl:includedIn odrl:use .
+ex:report a odrl:Action, skos:Concept ;
+  rdfs:label "report" ;
+  odrl:includedIn odrl:inform .
+
+odrl:display odrl:includedIn odrl:use .
+odrl:derive odrl:includedIn odrl:use .
+odrl:distribute odrl:includedIn odrl:use .
+
+############################# Parties and assets #########################
+
+<https://example.org/agents/data-platform-team> a odrl:Party ;
+    rdfs:label "Data Platform Team" .
+<https://example.org/agents/quant-research> a odrl:Party ;
+    rdfs:label "Quantitative Research" ;
+    odrl:partOf <https://example.org/agents/trading-division> .
+<https://example.org/agents/trading-division> a odrl:PartyCollection ;
+    rdfs:label "Trading Division" .
+
+<https://example.org/assets/market-prices> a odrl:Asset ;
+    rdfs:label "Market Price Data" ;
+    odrl:partOf <https://example.org/assets/market-data-lake> .
+<https://example.org/assets/market-data-lake> a odrl:AssetCollection ;
+    rdfs:label "Market Data Lake" .
+<https://example.org/assets/schema-changes> a odrl:Asset ;
+    rdfs:label "Schema Changes" .
+<https://example.org/assets/usage-stats> a odrl:Asset ;
+    rdfs:label "Usage Statistics" .
+
+############################# Policy #########################
+
+<https://example.org/agreements/quant-market-data-2026> a dprod:DataContract ;
+    rdfs:label "Quant Research Market Data 2026" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    dprod:acceptsOffer <https://example.org/offers/market-prices-v2> ;
+    odrl:assigner <https://example.org/agents/data-platform-team> ;
+    odrl:assignee <https://example.org/agents/quant-research> ;
+    odrl:target <https://example.org/assets/market-prices> ;
+    dprod:effectiveDate "2026-01-15T00:00:00Z"^^xsd:dateTime ;
+    dprod:expirationDate "2026-12-31T23:59:59Z"^^xsd:dateTime ;
+    # Provider duties
+    odrl:obligation <https://example.org/duties/delivery-2026-001> ,
+                    <https://example.org/duties/notify-2026-001> ;
+    # Consumer rights
+    odrl:permission rule:quant-display , rule:quant-non-display , rule:quant-derive ;
+    # Consumer duty
+    odrl:obligation <https://example.org/duties/report-2026-001> ;
+    odrl:prohibition rule:quant-no-distribute .
+
+rule:quant-display a odrl:Permission ;
+    odrl:assignee <https://example.org/agents/quant-research> ;
+    odrl:action odrl:display .
+
+rule:quant-non-display a odrl:Permission ;
+    odrl:assignee <https://example.org/agents/quant-research> ;
+    odrl:action ex:nonDisplay .
+
+rule:quant-derive a odrl:Permission ;
+    odrl:assignee <https://example.org/agents/quant-research> ;
+    odrl:action odrl:derive .
+
+rule:quant-no-distribute a odrl:Prohibition ;
+    odrl:assignee <https://example.org/agents/quant-research> ;
+    odrl:action odrl:distribute .
+
+<https://example.org/duties/delivery-2026-001> a odrl:Duty ;
+    rdfs:label "Daily delivery duty (2026-01-15)" ;
+    dprod:subjectOfDuty <https://example.org/agents/data-platform-team> ;
+    dprod:objectOfDuty <https://example.org/agents/quant-research> ;
+    odrl:action ex:deliver ;
+    odrl:target <https://example.org/assets/market-prices> ;
+    dprod:recurrence "FREQ=DAILY;BYHOUR=6;BYMINUTE=0" ;
+    dprod:deadline "PT30M"^^xsd:duration .
+
+<https://example.org/duties/notify-2026-001> a odrl:Duty ;
+    rdfs:label "Schema notification duty" ;
+    dprod:subjectOfDuty <https://example.org/agents/data-platform-team> ;
+    dprod:objectOfDuty <https://example.org/agents/quant-research> ;
+    odrl:action ex:notify ;
+    odrl:target <https://example.org/assets/schema-changes> ;
+    dprod:deadline "P14D"^^xsd:duration .
+
+<https://example.org/duties/report-2026-001> a odrl:Duty ;
+    rdfs:label "January usage report" ;
+    dprod:subjectOfDuty <https://example.org/agents/quant-research> ;
+    dprod:objectOfDuty <https://example.org/agents/data-platform-team> ;
+    odrl:action ex:report ;
+    odrl:target <https://example.org/assets/usage-stats> ;
+    dprod:deadline "P30D"^^xsd:duration .

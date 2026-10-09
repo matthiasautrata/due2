@@ -1,0 +1,32 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/geo-restriction.md
+
+ex:regionalAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Customer ;
+    odrl:permission ex:euAccess .
+
+ex:euAccess a odrl:Permission ;
+    odrl:action ex:access ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:jurisdiction ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "EU"
+    ] .
+
+ex:access a odrl:Action .
+
+# RL2 path context.requestJurisdiction: supplied by the assembler's jurisdiction
+# service, not by the requester, so it is a state-node property.
+ex:jurisdiction a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requestJurisdiction ;
+    rdfs:range xsd:string .

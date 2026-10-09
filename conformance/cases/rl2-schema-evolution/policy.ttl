@@ -1,0 +1,67 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/schema-evolution.md
+
+ex:schemaPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:compatibleChangePrivilege , ex:breakingChangePrivilege ;
+    odrl:obligation ex:notifyDuty .
+
+ex:compatibleChangePrivilege a odrl:Permission ;
+    odrl:assignee ex:Provider ;
+    odrl:action ex:deployChange ;
+    odrl:target ex:Schema ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:changeIsBreaking ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand false
+    ] .
+
+# RL2's rl2:and becomes two rule constraints, which ODRL reads conjunctively.
+ex:breakingChangePrivilege a odrl:Permission ;
+    odrl:assignee ex:Provider ;
+    odrl:action ex:deployChange ;
+    odrl:target ex:Schema ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:changeIsBreaking ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] , [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:noticePeriodElapsed ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+# Independent RL2 clause: a root obligation whose constraint is its applicability guard.
+ex:notifyDuty a odrl:Duty ;
+    odrl:assignee ex:Provider ;
+    odrl:action ex:notifyConsumers ;
+    odrl:target ex:Schema ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:changeIsBreaking ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:deployChange a odrl:Action .
+ex:notifyConsumers a odrl:Action .
+
+# RL2 state.schemaChange.breaking, flattened onto the state node.
+ex:changeIsBreaking a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:changeIsBreaking ;
+    rdfs:range xsd:boolean .
+
+# RL2 state.schemaChange.noticePeriodElapsed, flattened onto the state node.
+ex:noticePeriodElapsed a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:noticePeriodElapsed ;
+    rdfs:range xsd:boolean .

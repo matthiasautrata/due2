@@ -1,0 +1,82 @@
+{
+  "case": "rl2-multi-certification",
+  "source": "RL2 conformance/usecases/multi-certification.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. rl2:Set → odrl:Set with rl2:subject as the permission's odrl:assignee. RL2's agent.certifications (a ValueSet) becomes the set-valued state property ex:requesterCertifications, declared due2:cardinality due2:set in the operand binding (extension point 1, so no profile term). RL2's rl2:rightOperandSet becomes repeated odrl:rightOperand values, one constraint_value each. RL2's \"omitting any required member\" sentence becomes scenario 2. Scenarios 3–5 are added: a superset of the required certifications, a contractor who holds none, and an unanswered certification lookup. A set-valued fact may resolve to no members (due2-workflows.md §3.3), so \"holds nothing\" is a resolved empty set and gives NotApplicable, as RL2 would answer from an empty ValueSet; scenario 4 changed from Indeterminate to NotApplicable when the empty set became resolvable. Scenario 5 keeps the unknown case apart: a source that did not answer is unresolved, U, and Indeterminate.",
+  "prefixes": { "ex": "https://example.org/", "certification": "https://example.org/profile/certification#" },
+  "scenarios": [
+    {
+      "name": "holds every required certification",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:ClassifiedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Contractor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [ { "@id": "certification:Clearance" }, { "@id": "certification:ProjectAccess" }, { "@id": "certification:EthicsTraining" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The held set contains all three required members, so isAllOf is T and ex:certifiedAccess is T; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "one required certification missing",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:ClassifiedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Contractor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [ { "@id": "certification:Clearance" }, { "@id": "certification:ProjectAccess" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The held set lacks certification:EthicsTraining, so left ⊇ right is F and the permission is F; nothing else applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "holds a superset",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:ClassifiedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Contractor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [ { "@id": "certification:Clearance" }, { "@id": "certification:ProjectAccess" }, { "@id": "certification:EthicsTraining" }, { "@id": "certification:ExportControl" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "isAllOf tests left ⊇ right, so an extra held certification does not matter; the permission is T." }
+    },
+    {
+      "name": "holds no certifications",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:ClassifiedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Contractor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The set-valued fact resolves to no members (§3.3). {} ⊇ {Clearance, ProjectAccess, EthicsTraining} is F, so the permission is F and nothing else applies." }
+    },
+    {
+      "name": "certification lookup unanswered",
+      "request": {
+        "reference": "req-5", "action": "ex:access", "target": "ex:ClassifiedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Contractor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterCertifications": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The certification source did not answer, so the constraint is U and the permission is U; the completions give Permit and NotApplicable." }
+    }
+  ]
+}

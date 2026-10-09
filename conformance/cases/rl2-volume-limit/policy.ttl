@@ -1,0 +1,40 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/volume-limit.md
+
+ex:volumeSubscription a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Subscriber ;
+    odrl:permission ex:limitedRetrieval .
+
+ex:limitedRetrieval a odrl:Permission ;
+    odrl:action ex:retrieve ;
+    odrl:target ex:DataService ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:requestedRecords ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "20000"^^xsd:integer
+    ] , [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:requestedWithinRemaining ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:retrieve a odrl:Action .
+
+ex:requestedRecords a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:requestedRecords ;
+    rdfs:range xsd:integer .
+
+ex:requestedWithinRemaining a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requestedWithinRemaining ;
+    rdfs:range xsd:boolean .

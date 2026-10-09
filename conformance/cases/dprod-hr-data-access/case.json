@@ -1,0 +1,99 @@
+{
+  "case": "dprod-hr-data-access",
+  "source": "DPROD Contracts dprod-contracts/examples/data-use-policy.ttl, policy https://example.org/policies/hr-data-access (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": ["dprod:deadline (relative)", "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"],
+  "notes": "Extracted unchanged except: the six anonymous rules are named rule:hr-*; odrl:read and odrl:distribute includedIn odrl:use are added from the ODRL vocabulary, which DPROD assumes loaded; odrl:conflict is left absent as in DPROD, so this case also exercises the profile default (due2-profiles.md §8.1). Obligation. rule:hr-audit-logging is a root obligation with its own target (access-log), so it receives no policy-level target; with no assignee anywhere its bearer is the request subject (due2-profiles.md §6). Its classification constraint reads a request-source operand, so it is a guard read against the request (due2-workflows.md v0.4 §5.2) — DPROD's activation reading: the log is owed for requests whose classification is confidential. It is in force when some rule of the policy matches, constraints aside — every scenario here, including scenario 6, since the subject-less odrl:use prohibitions match any read of employee-data — and its guard holds: T in scenarios 1 and 7, U in scenarios 2–6, whose requests state no classification, so the status there is unknown (§6.1). Its PT1H deadline runs from activation, which defaults to effective_at (first owed now, due2-profiles.md §7), so in scenarios 1–6 it is never violated; scenario 7 supplies an earlier activation. DPROD never collects it: step 1 collects a duty only when its own action matches the request, and ex:log never matches read, so Σ' = Σ and step 6 never fires. Violations mode. Scenarios 1–6 use the default violations = ignore; because the obligation is not violated in any of them (nor in any completion of the unknown ones), the DPROD-faithful deny gives the same verdicts. Scenario 7 uses deny with an overdue log: due2 denies a read that DPROD permits. This is due2-profiles.md §8.2 exception 6, which cites this scenario; under the default ignore due2 would agree (Permit). DPROD Σ assumed in scenarios 1–6: Σ₀ with clock = request.at, performed = ∅. Matching direction: formal-semantics.md §7.4 writes `norm.action matches Env.action` and `norm.asset matches Env.asset`, i.e. norm ⊑ request, the reverse of §7.3 (`Env.asset matches p.target`) and of policy-writers-guide §7 ('a permission on odrl:use implicitly permits all actions below it'). dprod_expected uses the intended reading (request ⊑ norm); under the literal §7.4 reading scenarios 2–5 all become Permit or NotApplicable (the odrl:use prohibitions never match a read, and in scenario 2 the rule's collection target never matches the member asset). Scenario 5: DPROD evaluates `∃p ∈ prohibitions. NormActive(p)` over an unordered set, and one prohibition errors while another holds, so its outcome depends on evaluation order — Deny or Failure. Apart from scenario 7 (exception 6), wherever DPROD succeeds due2 agrees.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "HR analytics reads the collection for analytics in production",
+      "request": {
+        "reference": "req-1", "action": "odrl:read", "target": "asset:employee-data", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:environment": { "@id": "ex:production" }, "ex:processingMode": { "@id": "ex:batchReporting" }, "ex:classification": { "@id": "ex:confidential" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "outstanding" } ], "why": "rule:hr-analytics-read applies (assignee, read, employee-data, purpose = analytics). The odrl:use prohibitions match read via includedIn but their constraints are F (batchReporting ≠ modelTraining; production ∈ {production, staging}); distribute does not match read. A ready candidate and no applying prohibition give Permit. The policy matches and the guard holds (the request's classification is confidential), so rule:hr-audit-logging is in force; no ex:log witness, and its deadline (activation = effective_at, + PT1H) has not passed, so it is outstanding." },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "HR analytics reads a member asset of the collection",
+      "request": {
+        "reference": "req-2", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:environment": { "@id": "ex:staging" }, "ex:processingMode": { "@id": "ex:batchReporting" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "unknown" } ], "why": "employee-compensation partOf employee-data (typed AssetCollection), so the target part holds; the rest as in scenario 1, with staging also in the allowed set. Permit. The policy matches but the request states no classification, so the obligation's guard is U and its status unknown." },
+      "dprod_expected": "Permit (intended reading; NotApplicable under the literal §7.4 asset direction)"
+    },
+    {
+      "name": "read from a development environment",
+      "request": {
+        "reference": "req-3", "action": "odrl:read", "target": "asset:employee-data", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:environment": { "@id": "ex:development" }, "ex:processingMode": { "@id": "ex:batchReporting" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "unknown" } ], "why": "rule:hr-production-only applies: read ⊑ use and development ∉ {production, staging}. Under the profile-default conflict odrl:prohibit it eliminates rule:hr-analytics-read, which also applies. Deny. The obligation's guard is U (no classification), so its status is unknown." },
+      "dprod_expected": "Deny"
+    },
+    {
+      "name": "environment not supplied",
+      "request": {
+        "reference": "req-4", "action": "odrl:read", "target": "asset:employee-data", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:processingMode": { "@id": "ex:batchReporting" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "unknown" } ], "why": "ex:environment is missing, so rule:hr-production-only is U; rule:hr-no-ml-training is F and rule:hr-analytics-read is T. Completing the prohibition T gives Deny, F gives Permit, so the verdict is not invariant. The rules match regardless of their U constraints, but the obligation's guard is U (no classification), so its status is unknown." },
+      "dprod_expected": "Failure(MissingValue ex:environment)"
+    },
+    {
+      "name": "development environment and processing mode not supplied",
+      "request": {
+        "reference": "req-5", "action": "odrl:read", "target": "asset:employee-data", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:environment": { "@id": "ex:development" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "unknown" } ], "why": "rule:hr-production-only is T; rule:hr-no-ml-training is U (processingMode missing), which cannot matter: one T prohibition already eliminates the candidate in every completion. Deny. The obligation's guard is U (no classification), so its status is unknown." },
+      "dprod_expected": "Deny or Failure(MissingValue ex:processingMode), depending on the unspecified order in which step 4 visits the prohibition set"
+    },
+    {
+      "name": "compliance team asks for an analytics purpose",
+      "request": {
+        "reference": "req-6", "action": "odrl:read", "target": "asset:employee-data", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:compliance-team" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:environment": { "@id": "ex:production" }, "ex:processingMode": { "@id": "ex:batchReporting" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "unknown" } ], "why": "rule:hr-compliance-read fails on purpose (analytics ≠ compliance); rule:hr-analytics-read fails on assignee. Both prohibitions are F. No candidate, nothing prohibits: NotApplicable. rule:hr-compliance-read matches, constraints aside, but the obligation's guard is U (no classification), so its status is unknown." },
+      "dprod_expected": "NotApplicable"
+    },
+    {
+      "name": "audit log overdue, DPROD-faithful violations",
+      "request": {
+        "reference": "req-7", "action": "odrl:read", "target": "asset:employee-data", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:environment": { "@id": "ex:production" }, "ex:processingMode": { "@id": "ex:batchReporting" }, "ex:classification": { "@id": "ex:confidential" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": { "rule:hr-audit-logging": "2026-06-01T07:00:00Z" }, "closure": [] },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "rule:hr-audit-logging", "status": "violated" } ], "why": "As in scenario 1, rule:hr-analytics-read is ready and no prohibition applies. The guard holds (classification confidential), so the obligation is in force; its deadline 07:00 + PT1H = 08:00 has passed with no witness, so it is violated, and under violations = deny a violated obligation in force denies (§6.4). Under the default ignore the verdict would be Permit." },
+      "dprod_expected": "Permit (step 1 never collects rule:hr-audit-logging for a read, whatever Σ holds for it, so step 6 finds no violation)"
+    }
+  ]
+}

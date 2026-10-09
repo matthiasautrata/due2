@@ -1,0 +1,45 @@
+{
+  "case": "rl2-sla-credit-clause",
+  "source": "RL2 conformance/usecases/sla-credit-clause.md",
+  "classification": "not-expressible",
+  "needs": [
+    "rl2:Promise",
+    "Offer → Agreement materialisation (Acceptance, crystallisation of a Promise into a Duty)",
+    "Maintenance duty: rl2:invariant held over a duty window",
+    "duty status as an operand (rl2:obligationStateOperand with rl2:targetNorm)",
+    "duty status output for obligations of a policy with no permission or prohibition: in force needs a matching Permit or Forbid atom of the policy (due2-workflows.md §5.2), so neither obligation is ever in force for a request and RL2's status for ex:creditDuty_A1 (Active) needs the request-independent monitoring question (§9 #4)"
+  ],
+  "notes": "Only the materialised Agreement is written, as the closest ODRL. RL2's grantor and grantee become the policy-level assigner and assignee; both clauses are root odrl:obligation rules that state their own parties (Provider bears both duties; the Customer, RL2's counterparty, is the assigner), which normalisation 0.12 keeps over the policy-level values (§6.2). The Maintenance duty becomes an obligation on the domain action ex:maintainUptime whose window [2026-07-01, 2026-08-01) is two guards on dprod:clock; its invariant cannot be stated. The credit duty's guard on the uptime duty's status becomes the assembler-computed state property ex:uptimeCommitmentViolated (a guard), so the violation is derived outside due2 rather than from the policy — due2-profiles.md §7 now derives Violated for a duty with a deadline, but there is still no operand that reads another duty's status. Neither duty can affect an access verdict: RL2 returns NotApplicable because duties never grant access. In due2 a root obligation is in force only when a Permit or Forbid atom of its policy matches the request (due2-workflows.md §5.2), never through its own action; this Agreement has none, so neither obligation is in force for any request and expected.obligations is empty. RL2's status for ex:creditDuty_A1 (Active) therefore still has no due2 output: it needs the monitoring question (§9 #4). Scenario 2 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "uptime commitment violated, credit not yet issued",
+      "request": {
+        "reference": "req-1", "action": "ex:issueCredit", "target": "ex:Service", "at": "2026-08-05T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Provider" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-05T00:00:00Z",
+        "facts": { "ex:uptimeCommitmentViolated": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The policy has no permission or prohibition, so no candidate and nothing to deny. Neither obligation is in force: in force needs a Permit or Forbid atom of the policy that matches the request, and an obligation is not matched by its own action (§5.2), so ex:creditDuty_A1 is not reported even though its guard holds (RL2: Active, see notes)." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "violation status unresolved",
+      "request": {
+        "reference": "req-2", "action": "ex:issueCredit", "target": "ex:Service", "at": "2026-08-05T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Provider" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-05T00:00:00Z",
+        "facts": { "ex:uptimeCommitmentViolated": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "As in scenario 1 no rule of the policy matches, so neither obligation is in force and the unresolved guard is never read for access. With no candidate and no prohibition the verdict is NotApplicable, with no U finding to complete." }
+    }
+  ]
+}

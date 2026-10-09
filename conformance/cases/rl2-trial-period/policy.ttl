@@ -1,0 +1,48 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/trial-period.md
+
+ex:trialPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:trialExecutePrivilege , ex:readPrivilege ;
+    odrl:prohibition ex:expiredTrialProhibition .
+
+ex:trialExecutePrivilege a odrl:Permission ;
+    odrl:assignee ex:TrialUser ;
+    odrl:action ex:execute ;
+    odrl:target ex:Application ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2026-08-15T00:00:00Z"^^xsd:dateTime
+    ] .
+
+ex:expiredTrialProhibition a odrl:Prohibition ;
+    odrl:assignee ex:TrialUser ;
+    odrl:action ex:execute ;
+    odrl:target ex:Application ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2026-08-15T00:00:00Z"^^xsd:dateTime
+    ] .
+
+ex:readPrivilege a odrl:Permission ;
+    odrl:assignee ex:TrialUser ;
+    odrl:action ex:read ;
+    odrl:target ex:Application .
+
+ex:execute a odrl:Action .
+ex:read a odrl:Action .
+
+# RL2 core currentDateTime (state.Clock = evaluationTime): due2 decision time.
+ex:currentDateTime a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty dprod:clock ;
+    rdfs:range xsd:dateTime .

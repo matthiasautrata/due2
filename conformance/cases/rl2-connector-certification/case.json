@@ -1,0 +1,53 @@
+{
+  "case": "rl2-connector-certification",
+  "source": "RL2 conformance/usecases/connector-certification.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. rl2:Agreement grantor/grantee → policy-level odrl:assigner/odrl:assignee (compact policy). The agent-scoped path agent.connectorCertification.valid becomes the state property ex:requesterConnectorCertificationValid. RL2 says only that an expired or absent certification 'does not establish the privilege', which leaves the decision open: a registry record stating valid = false gives NotApplicable in both languages (scenario 2), while an absent record, or one whose validity interval has ended (RL2 drops it, so the key is Missing), gives Indeterminate in both (scenario 3). Neither is recorded as rl2_expected because the text states no decision. Scenarios 2 and 3 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "valid certification",
+      "request": {
+        "reference": "req-1", "action": "ex:receive", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ConsumerConnector" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterConnectorCertificationValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The policy-level assignee matches, action and target match, and the certification fact is true, so ex:certifiedConnectorAccess applies with no duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "registry reports the certification invalid",
+      "request": {
+        "reference": "req-2", "action": "ex:receive", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ConsumerConnector" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterConnectorCertificationValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false eq true is F, so the permission does not apply; no other rule exists." }
+    },
+    {
+      "name": "no current certification record",
+      "request": {
+        "reference": "req-3", "action": "ex:receive", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ConsumerConnector" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterConnectorCertificationValid": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The registry has no record valid at effective_at, so the property is missing and the permission U. Completions give Permit and NotApplicable." }
+    }
+  ]
+}

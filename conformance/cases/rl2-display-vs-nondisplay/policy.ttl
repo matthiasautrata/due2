@@ -1,0 +1,21 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/display-vs-nondisplay.md
+
+ex:displayLicence a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Vendor ;
+    odrl:assignee ex:Subscriber ;
+    odrl:target ex:QuotationFeed ;
+    odrl:permission ex:displayQuotation ;
+    odrl:prohibition ex:noAutomatedTrading .
+
+ex:displayQuotation a odrl:Permission ;
+    odrl:action ex:display .
+
+ex:noAutomatedTrading a odrl:Prohibition ;
+    odrl:action ex:automatedTrade .
+
+ex:display a odrl:Action .
+ex:automatedTrade a odrl:Action .

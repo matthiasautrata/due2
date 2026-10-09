@@ -1,0 +1,71 @@
+{
+  "case": "rl2-owner-access",
+  "source": "RL2 conformance/usecases/owner-access.md",
+  "classification": "partial",
+  "needs": [
+    "right-operand reference to the requesting agent (rl2:rightOperandRef rl2:currentAgent): odrl:rightOperandReference is rejected, so the comparison of two runtime values is reduced to an assembler-computed boolean state property (due2-profiles.md §4)"
+  ],
+  "notes": "rl2:anyAgent becomes a permission without assignee. The RL2 condition asset.dataOwner eq rl2:currentAgent compares a state fact with the requester; due2 constraints compare one operand with authored values, and dprod:currentAgent cannot appear on the right. The policy therefore reads ex:requesterIsDataOwner, which the assembler derives by comparing the target's owner with the request subject. What is lost: the comparison moves out of the policy, and the assembler must propagate the owner fact's status — a conflicting owner assertion that disagrees on the requester becomes a conflict on the derived fact, a missing owner a missing derived fact. Under that assembler rule every RL2 outcome is reproduced. Scenario 4 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "Alice reads her own file",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:PersonalFile", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterIsDataOwner": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The assembler found asset.dataOwner = Alice = request subject, so the fact is true; ex:ownerPrivilege has no party to match, action and target match, and the constraint is T. Ready candidate." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "conflicting owner assertions",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:PersonalFile", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterIsDataOwner": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Owner sources say Alice and Bob, so the derived fact is in conflict; the constraint and the permission are U. Completions give Permit and NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "file owned by someone else",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:PersonalFile", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterIsDataOwner": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "asset.dataOwner = Bob ≠ Alice, so the derived fact is false and the constraint F; the permission does not apply and nothing else does." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "no owner recorded",
+      "request": {
+        "reference": "req-4", "action": "ex:read", "target": "ex:PersonalFile", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterIsDataOwner": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "No owner is recorded, so the derived fact is missing and the constraint U; the permission is U and the completions give Permit and NotApplicable." }
+    }
+  ]
+}

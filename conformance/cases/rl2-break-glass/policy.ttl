@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/break-glass.md
+
+ex:emergencyPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:emergencyAccessPrivilege .
+
+ex:emergencyAccessPrivilege a odrl:Permission ;
+    odrl:assignee ex:Employee ;
+    odrl:action ex:accessEmergencyControls ;
+    odrl:target ex:FireControls ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:breakGlassActive ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:accessEmergencyControls a odrl:Action .
+
+# RL2 path agent.breakGlassActive, flattened onto the state node for the request subject.
+ex:breakGlassActive a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterBreakGlassActive ;
+    rdfs:range xsd:boolean .

@@ -1,0 +1,68 @@
+{
+  "case": "rl2-geo-restriction",
+  "source": "RL2 conformance/usecases/geo-restriction.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. Grantor and grantee become the policy-level assigner and assignee (compact policy). RL2's context.requestJurisdiction is an assembler-supplied snapshot fact, not a request parameter, so it binds to the state source as ex:requestJurisdiction. ODRL's odrl:spatial is not used: it has no due2 binding and RL2 compares a plain string. The RL2 non-EU sentence becomes scenario 2. Scenarios 3 and 4 are added: an unresolved jurisdiction and two disagreeing jurisdiction determinations.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "EU jurisdiction",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requestJurisdiction": { "status": "resolved", "values": [ { "@value": "EU", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "\"EU\" = \"EU\", so ex:euAccess is T; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "non-EU jurisdiction",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requestJurisdiction": { "status": "resolved", "values": [ { "@value": "US", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "\"US\" = \"EU\" is F, so the permission is F; nothing else applies, and no rule denies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "jurisdiction unresolved",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requestJurisdiction": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The jurisdiction service did not answer, so the constraint and the permission are U; the completions give Permit and NotApplicable." }
+    },
+    {
+      "name": "jurisdiction in conflict",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requestJurisdiction": { "status": "conflict", "values": [ { "@value": "EU", "@type": "xsd:string" }, { "@value": "US", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one operand give status conflict, so the constraint is U even though one value is \"EU\"; the completions give Permit and NotApplicable." }
+    }
+  ]
+}

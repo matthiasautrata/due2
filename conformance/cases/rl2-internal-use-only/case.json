@@ -1,0 +1,68 @@
+{
+  "case": "rl2-internal-use-only",
+  "source": "RL2 conformance/usecases/internal-use-only.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. RL2's ex:use becomes odrl:use, as the attestation-gating case maps ex:read to odrl:read; narrower ODRL actions then match through ODRL's own odrl:includedIn hierarchy, which travels with every policy in the corpus closure (profiles/odrl-actions.ttl, due2-profiles.md §6). RL2's context.recipient.class is an assembler-supplied fact about the recipient, so it binds to the state source; due2-core's odrl:recipient (a request-source IRI) is not used because the policy tests the recipient's class, not its identity. RL2's \"external\" sentence becomes scenario 2. Scenarios 3 and 4 are added: a missing recipient class, and a narrower action matched through the shipped action hierarchy, with no SOTW closure edge: an action hierarchy is policy-side data, not a fact about the world (due2-workflows.md §3.1, §3.3).",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "internal recipient",
+      "request": {
+        "reference": "req-1", "action": "odrl:use", "target": "ex:ReferenceData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:recipientClass": { "status": "resolved", "values": [ { "@value": "internal", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "\"internal\" = \"internal\", so ex:internalUse is T; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "external recipient",
+      "request": {
+        "reference": "req-2", "action": "odrl:use", "target": "ex:ReferenceData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:recipientClass": { "status": "resolved", "values": [ { "@value": "external", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "\"external\" = \"internal\" is F, so the permission is F. The policy has no prohibition, so external use is not authorised but not denied either." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "recipient class missing",
+      "request": {
+        "reference": "req-3", "action": "odrl:use", "target": "ex:ReferenceData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:recipientClass": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The recipient class is missing, so the constraint and the permission are U; the completions give Permit and NotApplicable." }
+    },
+    {
+      "name": "narrower action through the action closure",
+      "request": {
+        "reference": "req-4", "action": "odrl:read", "target": "ex:ReferenceData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:recipientClass": { "status": "resolved", "values": [ { "@value": "internal", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "odrl:read ⊑ odrl:use by the corpus closure (profiles/odrl-actions.ttl), so the action part is T; with the recipient internal the permission is T and has no duties." }
+    }
+  ]
+}

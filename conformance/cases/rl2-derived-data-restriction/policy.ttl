@@ -1,0 +1,31 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/derived-data-restriction.md
+
+ex:derivativeAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Vendor ;
+    odrl:assignee ex:Bank ;
+    odrl:permission ex:distributeSafeDerivative .
+
+ex:distributeSafeDerivative a odrl:Permission ;
+    odrl:action ex:distribute ;
+    odrl:target ex:MarketIndicator ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:nonReconstructing ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:distribute a odrl:Action .
+
+# RL2 path asset.assessment.nonReconstructing, flattened onto the state node for the target.
+ex:nonReconstructing a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:targetAssessedNonReconstructing ;
+    rdfs:range xsd:boolean .

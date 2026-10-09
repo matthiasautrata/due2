@@ -1,0 +1,37 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/data-freshness-promise.md
+# Only the accepted Agreement is written. The Offer and its rl2:Promise are pre-acceptance
+# content with no due2 counterpart.
+
+ex:freshnessAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:obligation ex:freshnessDuty .
+
+# Closest ODRL to RL2's Maintenance Duty "datasetAge <= PT6H": a remedial obligation that is owed
+# whenever the invariant fails. The age constraint reads a state operand, so it is a guard
+# (due2-workflows §5.2): RL2 Active ≈ not owed, RL2 Violated ≈ owed and outstanding.
+# The bearer is the Provider, the beneficiary the Consumer.
+ex:freshnessDuty a odrl:Duty ;
+    odrl:action ex:refresh ;
+    odrl:target ex:CustomerDataset ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Consumer ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:datasetAge ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "PT6H"^^xsd:dayTimeDuration
+    ] .
+
+ex:refresh a odrl:Action .
+ex:inspect a odrl:Action .
+
+ex:datasetAge a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:customerDatasetAge ;
+    rdfs:range xsd:dayTimeDuration .

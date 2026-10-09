@@ -1,0 +1,70 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/sla-credit-clause.md
+# Closest ODRL to the materialised RL2 Agreement ex:uptimeAgreement. The source Offer, its
+# rl2:Promise, and the Offer -> Agreement materialisation have no due2 counterpart and are not
+# written. RL2's grantor and grantee are the policy-level assigner and assignee. Both duties
+# bind the grantor (Provider), so each states its own parties; policy-level values fill only
+# what a rule leaves unstated (normalisation 0.12 §6.2), so the rule-level ones stand.
+
+ex:uptimeAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Customer ;
+    odrl:obligation ex:uptimeDuty , ex:creditDuty_A1 .
+
+# RL2 Maintenance duty: invariant monthlyUptime >= 99.9 over [2026-07-01, 2026-08-01).
+# ODRL has no invariant body. The closest form is an obligation on a domain action owed during
+# the window: the window constraints read dprod:clock, not a request-source operand or
+# due2:actionTime, so they are guards (due2-workflows.md §5.2). The invariant itself is not
+# expressible and is kept as a comment.
+ex:uptimeDuty a odrl:Duty ;
+    rdfs:comment "RL2 invariant (not expressible): ex:monthlyUptime gte 99.9 throughout the window." ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Customer ;
+    odrl:action ex:maintainUptime ;
+    odrl:target ex:Service ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2026-07-01T00:00:00Z"^^xsd:dateTime
+    ] , [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2026-08-01T00:00:00Z"^^xsd:dateTime
+    ] .
+
+# RL2 guard: obligationStateOperand(ex:uptimeDuty) eq Violated. due2 has no duty-status operand;
+# the closest is a state property the assembler computes ("the July uptime commitment was violated").
+ex:creditDuty_A1 a odrl:Duty ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Customer ;
+    odrl:action ex:issueCredit ;
+    odrl:target ex:Service ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:uptimeCommitmentViolated ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:maintainUptime a odrl:Action .
+ex:issueCredit a odrl:Action .
+
+# RL2 core currentDateTime (state.Clock): decision time.
+ex:currentDateTime a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty dprod:clock ;
+    rdfs:range xsd:dateTime .
+
+# Stand-in for RL2's obligationStateOperand on ex:uptimeDuty, computed outside the evaluator.
+ex:uptimeCommitmentViolated a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:uptimeCommitmentViolated ;
+    rdfs:range xsd:boolean .

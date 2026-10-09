@@ -1,0 +1,99 @@
+{
+  "case": "rl2-derived-data-restriction",
+  "source": "RL2 conformance/usecases/derived-data-restriction.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. The asset-scoped fact asset.assessment.nonReconstructing becomes one state property, ex:targetAssessedNonReconstructing, which the assembler resolves for the requested target. RL2 requires the fact to be attributed to the vendor-approved assessment process; in due2 that is the admissibility record in configuration (admit_source, due2-workflows.md §3.4), and a value failing it is treated as missing. The case format lists config admit_source but gives sotw.facts no attribution field, so no scenario tests it. RL2's prose names five outcomes (true, false, missing, invalid, conflicting); each is a scenario. due2 agrees with all of them. Scenario 6 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "assessment says non-reconstructing",
+      "request": {
+        "reference": "req-1", "action": "ex:distribute", "target": "ex:MarketIndicator", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAssessedNonReconstructing": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The assessment is true, so ex:distributeSafeDerivative applies; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "assessment says reconstructing",
+      "request": {
+        "reference": "req-2", "action": "ex:distribute", "target": "ex:MarketIndicator", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAssessedNonReconstructing": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission does not apply; nothing else applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "no assessment",
+      "request": {
+        "reference": "req-3", "action": "ex:distribute", "target": "ex:MarketIndicator", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAssessedNonReconstructing": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Missing makes the constraint U, so the permission is U: Permit in the permissive completion, NotApplicable in the restrictive one." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "assessment of the wrong type",
+      "request": {
+        "reference": "req-4", "action": "ex:distribute", "target": "ex:MarketIndicator", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAssessedNonReconstructing": { "status": "invalid", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Invalid (TypeMismatch against xsd:boolean) makes the constraint U; the completions disagree as in scenario 3." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "conflicting assessments",
+      "request": {
+        "reference": "req-5", "action": "ex:distribute", "target": "ex:MarketIndicator", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAssessedNonReconstructing": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one property are a conflict, so the constraint is U and the completions disagree." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "unknown assessment for another party's request",
+      "request": {
+        "reference": "req-6", "action": "ex:distribute", "target": "ex:MarketIndicator", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:OtherBank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAssessedNonReconstructing": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The assignee part is F (ex:OtherBank is not ex:Bank), so the permission is F whatever the U constraint is (F ∧ U = F): the unknown does not matter and the verdict is definite." }
+    }
+  ]
+}

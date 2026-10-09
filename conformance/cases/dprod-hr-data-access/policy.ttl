@@ -1,0 +1,140 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts (EKGF dprod, develop, 50db943),
+#   dprod-contracts/examples/data-use-policy.ttl, policy <https://example.org/policies/hr-data-access>.
+# Edits:
+#   - the six anonymous rules are named rule:hr-* (labels unchanged);
+#   - odrl:read and odrl:distribute odrl:includedIn odrl:use are added from the ODRL 2.2
+#     vocabulary, which DPROD assumes loaded (policy-writers-guide §7) but the example omits;
+#   - no odrl:conflict, as in DPROD: the profile default (odrl:prohibit) applies.
+
+############################# Domain vocabulary (from the example) #########################
+
+odrl:purpose
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty odrl:purpose .
+
+ex:log a odrl:Action, skos:Concept ;
+  rdfs:label "log" ;
+  odrl:includedIn odrl:inform .
+
+odrl:read odrl:includedIn odrl:use .
+odrl:distribute odrl:includedIn odrl:use .
+
+ex:classification a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "classification" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:classification .
+
+ex:processingMode a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "processing mode" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:processingMode .
+
+ex:environment a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "environment" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:environment .
+
+ex:analytics a skos:Concept ; rdfs:label "analytics" .
+ex:compliance a skos:Concept ; rdfs:label "compliance" .
+ex:confidential a skos:Concept ; rdfs:label "confidential" .
+ex:modelTraining a skos:Concept ; rdfs:label "model training" .
+ex:production a skos:Concept ; rdfs:label "production" .
+ex:staging a skos:Concept ; rdfs:label "staging" .
+
+############################# Parties and assets #########################
+
+<https://example.org/agents/hr-analytics> a odrl:Party ;
+    rdfs:label "HR Analytics Team" ;
+    odrl:partOf <https://example.org/agents/hr-division> .
+<https://example.org/agents/hr-division> a odrl:PartyCollection ;
+    rdfs:label "Human Resources Division" .
+<https://example.org/agents/compliance-team> a odrl:Party ;
+    rdfs:label "Compliance Team" .
+
+<https://example.org/assets/employee-compensation> a odrl:Asset ;
+    rdfs:label "Employee Compensation Data" ;
+    odrl:partOf <https://example.org/assets/employee-data> .
+<https://example.org/assets/employee-performance> a odrl:Asset ;
+    rdfs:label "Employee Performance Reviews" ;
+    odrl:partOf <https://example.org/assets/employee-data> .
+<https://example.org/assets/employee-data> a odrl:AssetCollection ;
+    rdfs:label "Employee Data Lake" .
+<https://example.org/assets/access-log> a odrl:Asset ;
+    rdfs:label "Access Log" .
+
+############################# Policy #########################
+
+<https://example.org/policies/hr-data-access> a odrl:Set ;
+    rdfs:label "HR Data Access Policy" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:target <https://example.org/assets/employee-data> ;
+    odrl:permission rule:hr-analytics-read , rule:hr-compliance-read ;
+    odrl:obligation rule:hr-audit-logging ;
+    odrl:prohibition rule:hr-no-external-sharing , rule:hr-no-ml-training , rule:hr-production-only .
+
+rule:hr-analytics-read a odrl:Permission ;
+    rdfs:label "HR analytics read access" ;
+    odrl:assignee <https://example.org/agents/hr-analytics> ;
+    odrl:action odrl:read ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:analytics
+    ] .
+
+rule:hr-compliance-read a odrl:Permission ;
+    rdfs:label "Compliance audit access" ;
+    odrl:assignee <https://example.org/agents/compliance-team> ;
+    odrl:action odrl:read ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:compliance
+    ] .
+
+rule:hr-audit-logging a odrl:Duty ;
+    rdfs:label "Mandatory audit logging" ;
+    odrl:action ex:log ;
+    odrl:target <https://example.org/assets/access-log> ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:classification ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:confidential
+    ] ;
+    dprod:deadline "PT1H"^^xsd:duration .
+
+rule:hr-no-external-sharing a odrl:Prohibition ;
+    rdfs:label "No external sharing" ;
+    odrl:action odrl:distribute .
+
+rule:hr-no-ml-training a odrl:Prohibition ;
+    rdfs:label "No ML training" ;
+    odrl:action odrl:use ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:processingMode ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:modelTraining
+    ] .
+
+rule:hr-production-only a odrl:Prohibition ;
+    rdfs:label "Production and staging only" ;
+    odrl:action odrl:use ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:environment ;
+        odrl:operator odrl:isNoneOf ;
+        odrl:rightOperand ( ex:production ex:staging )
+    ] .

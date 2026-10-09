@@ -1,0 +1,99 @@
+{
+  "case": "rl2-legal-review-gate",
+  "source": "RL2 conformance/usecases/legal-review-gate.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. Grantor and grantee become the policy-level assigner and assignee; RL2's global.legalReview.approved becomes the state property ex:legalReviewApproved. RL2's prose outcomes for a false fact (inapplicable) and for missing, invalid, or conflicting evidence (attributed indeterminacy) become scenarios 2–5. Scenario 6 is added for RL2's qualifier \"where evaluation needs that fact\": the request targets another asset, so the target part is F and masks the missing fact (F ∧ U = F).",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "legal review approved",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:CustomerData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Vendor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:legalReviewApproved": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The approval fact is true, so ex:approvedVendorAccess is T; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "legal review not approved",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:CustomerData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Vendor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:legalReviewApproved": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission is F and nothing else applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "approval fact missing",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:CustomerData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Vendor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:legalReviewApproved": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the permission is U; the permissive completion gives Permit and the restrictive one NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "approval fact invalid",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:CustomerData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Vendor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:legalReviewApproved": { "status": "invalid", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "An invalid value makes the constraint U, not F; the permission is U and its completions disagree." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "approval fact in conflict",
+      "request": {
+        "reference": "req-5", "action": "ex:access", "target": "ex:CustomerData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Vendor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:legalReviewApproved": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two disagreeing values give status conflict, so the constraint is U; the completions give Permit and NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "other asset, approval fact missing",
+      "request": {
+        "reference": "req-6", "action": "ex:access", "target": "ex:VendorData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Vendor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:legalReviewApproved": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:VendorData ⊑ ex:CustomerData does not hold, so the relation part is F and the permission is F; F ∧ U = F, so the missing fact cannot change the outcome." }
+    }
+  ]
+}

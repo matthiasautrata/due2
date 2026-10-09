@@ -1,0 +1,22 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/no-ml-training.md
+
+ex:corpusLicence a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Publisher ;
+    odrl:assignee ex:Licensee ;
+    odrl:permission ex:searchCorpus ;
+    odrl:prohibition ex:noTraining .
+
+ex:searchCorpus a odrl:Permission ;
+    odrl:action ex:search ;
+    odrl:target ex:TextCorpus .
+
+ex:noTraining a odrl:Prohibition ;
+    odrl:action ex:trainModel ;
+    odrl:target ex:TextCorpus .
+
+ex:search a odrl:Action .
+ex:trainModel a odrl:Action .

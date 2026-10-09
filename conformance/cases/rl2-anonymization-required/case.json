@@ -1,0 +1,53 @@
+{
+  "case": "rl2-anonymization-required",
+  "source": "RL2 conformance/usecases/anonymization-required.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. rl2:Agreement with grantor/grantee → odrl:Agreement with policy-level assigner/assignee (compact policy); rl2:Privilege → odrl:Permission. The asset-scoped path asset.anonymization.approved becomes the state property ex:targetAnonymizationApproved, which the assembler flattens for the requested asset; RL2's attribution to the designated assessment becomes the assembler's job (admissibility filtering yields missing, due2-profiles.md §3). Scenarios 2 and 3 are added for the text's 'missing or disputed assessment'. RL2 states only that such an assessment is not treated as anonymization; RL2 Semantics resolves both to Unknown and Indeterminate, which agrees with due2, but no decision is stated, so no rl2_expected is recorded for them.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "approved anonymization assessment",
+      "request": {
+        "reference": "req-1", "action": "ex:process", "target": "ex:PatientDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ResearchInstitution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAnonymizationApproved": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Action, target, and assignee match and the anonymization fact is true, so ex:processAnonymizedData applies with no duties; nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "assessment missing",
+      "request": {
+        "reference": "req-2", "action": "ex:process", "target": "ex:PatientDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ResearchInstitution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAnonymizationApproved": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the constraint is U and the permission is U. The permissive completion gives Permit and the restrictive one NotApplicable." }
+    },
+    {
+      "name": "assessments disagree",
+      "request": {
+        "reference": "req-3", "action": "ex:process", "target": "ex:PatientDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ResearchInstitution" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetAnonymizationApproved": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one property are a conflict, so the constraint is U, never F. Completions give Permit and NotApplicable." }
+    }
+  ]
+}

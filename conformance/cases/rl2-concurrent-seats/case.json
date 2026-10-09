@@ -1,0 +1,68 @@
+{
+  "case": "rl2-concurrent-seats",
+  "source": "RL2 conformance/usecases/concurrent-seats.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation: rl2:lt → odrl:lt, rl2:gte → odrl:gteq; the state path state.licence.activeSeatCount becomes the state property ex:licenceActiveSeatCount. The two rules are complementary, so in the stated scenarios at most one applies and the policy's odrl:prohibit strategy decides nothing. As in RL2, the verdict is a decision over a frozen snapshot, not a seat reservation. Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "49 active seats",
+      "request": {
+        "reference": "req-1", "action": "ex:startSession", "target": "ex:Application", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:LicensedUser" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:licenceActiveSeatCount": { "status": "resolved", "values": [ { "@value": "49", "@type": "xsd:integer" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "49 < 50 is T, so ex:seatAvailablePrivilege applies; 49 ≥ 50 is F, so the prohibition does not. The ready candidate gives Permit." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "50 active seats",
+      "request": {
+        "reference": "req-2", "action": "ex:startSession", "target": "ex:Application", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:LicensedUser" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:licenceActiveSeatCount": { "status": "resolved", "values": [ { "@value": "50", "@type": "xsd:integer" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "50 ≥ 50 is T, so ex:capacityProhibition applies and survives; 50 < 50 is F. Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "licence service unavailable",
+      "request": {
+        "reference": "req-3", "action": "ex:startSession", "target": "ex:Application", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:LicensedUser" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:licenceActiveSeatCount": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Both rules are U. Most permissive completion (permission T, prohibition F): Permit. Most restrictive (permission F, prohibition T): Deny. They differ." }
+    },
+    {
+      "name": "seat count of the wrong type",
+      "request": {
+        "reference": "req-4", "action": "ex:startSession", "target": "ex:Application", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:LicensedUser" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:licenceActiveSeatCount": { "status": "invalid", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The source supplied a value not conforming to xsd:integer, so the property is invalid and both constraints are U, never F. Completions give Permit and Deny." }
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/data-product-offer.md
+# The materialized Agreement is written, with RL2's materialized identifiers. The source Offer
+# (Promises plus Privileges) and the Acceptance transformation have no due2 counterpart.
+# Parties sit on the rules: the obligations are borne by the grantor and the permissions held by
+# the grantee. (Policy-level parties would now be defaults per function predicate, normalisation
+# §6.2, but an obligation stating only its assignee would still inherit the grantor as assigner.)
+
+ex:dataProductAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readDailyPortPrivilege_A1 , ex:readHistoryPortPrivilege_A1 ;
+    odrl:obligation ex:dailyPortDuty , ex:historyPortDuty .
+
+ex:readDailyPortPrivilege_A1 a odrl:Permission ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Consumer ;
+    odrl:action ex:read ;
+    odrl:target ex:PortDaily ;
+    odrl:duty ex:attestConformance_A1 .
+
+ex:readHistoryPortPrivilege_A1 a odrl:Permission ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Consumer ;
+    odrl:action ex:read ;
+    odrl:target ex:PortHistory ;
+    odrl:duty ex:attestConformance_A1 .
+
+# One shared precondition, borne by the Provider. It names its own parties, so it inherits none
+# from the permissions (due2-workflows §4); a witness must have the Provider as actor.
+ex:attestConformance_A1 a odrl:Duty ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Consumer ;
+    odrl:action ex:attest ;
+    odrl:target ex:DataProduct .
+
+# Closest ODRL to RL2's Maintenance Duty "portAge <= PT18H": a remedial obligation owed whenever
+# the invariant fails. The age constraint reads a state operand, so it is a guard (workflows §5.2).
+ex:dailyPortDuty a odrl:Duty ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Consumer ;
+    odrl:action ex:refresh ;
+    odrl:target ex:PortDaily ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:portAge ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "PT18H"^^xsd:dayTimeDuration
+    ] .
+
+ex:historyPortDuty a odrl:Duty ;
+    odrl:assignee ex:Provider ;
+    odrl:assigner ex:Consumer ;
+    odrl:action ex:deliverInitialLoad ;
+    odrl:target ex:PortHistory .
+
+ex:read a odrl:Action .
+ex:attest a odrl:Action .
+ex:refresh a odrl:Action .
+ex:deliverInitialLoad a odrl:Action .
+
+ex:portAge a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:portDailyAge ;
+    rdfs:range xsd:dayTimeDuration .

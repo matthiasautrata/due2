@@ -1,0 +1,46 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/logging-notification.md
+
+# Grantor and grantee coincide with the duties' counterparty and subject, so the
+# compact policy-level parties are correct for every rule.
+ex:dataSharingAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Consumer ;
+    odrl:target ex:SharedData ;
+    odrl:permission ex:accessSharedData ;
+    odrl:obligation ex:recordUsageDuty , ex:notifyIncidentDuty .
+
+ex:accessSharedData a odrl:Permission ;
+    odrl:action ex:access .
+
+# Independent RL2 clauses: root obligations, not preconditions of the permission.
+# Both are in force whenever ex:accessSharedData matches the request (workflows §5.2).
+# The incident condition reads a state operand, so it is a guard: it decides whether
+# ex:notifyIncidentDuty is owed, not what fulfils it.
+ex:recordUsageDuty a odrl:Duty ;
+    odrl:action ex:recordUsage .
+
+ex:notifyIncidentDuty a odrl:Duty ;
+    odrl:action ex:notifyIncident ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:securityIncident ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:access a odrl:Action .
+ex:recordUsage a odrl:Action .
+ex:notifyIncident a odrl:Action .
+
+# RL2 path global.securityIncident.confirmed, flattened onto the state node.
+ex:securityIncident a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:securityIncidentConfirmed ;
+    rdfs:range xsd:boolean .

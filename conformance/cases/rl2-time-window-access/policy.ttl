@@ -1,0 +1,37 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/time-window-access.md
+
+ex:studyAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Researcher ;
+    odrl:permission ex:studyAccess .
+
+# Half-open window [2026-01-01, 2027-01-01): RL2's rl2:and becomes two constraints.
+ex:studyAccess a odrl:Permission ;
+    odrl:action ex:access ;
+    odrl:target ex:HealthDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2026-01-01T00:00:00Z"^^xsd:dateTime
+    ] , [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:currentDateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2027-01-01T00:00:00Z"^^xsd:dateTime
+    ] .
+
+ex:access a odrl:Action .
+
+# RL2 core currentDateTime (state.Clock = evaluationTime): due2 decision time.
+ex:currentDateTime a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty dprod:clock ;
+    rdfs:range xsd:dateTime .

@@ -1,0 +1,28 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/team-license.md
+
+ex:teamPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:memberAccessPrivilege ;
+    odrl:obligation ex:teamPaymentDuty .
+
+ex:memberAccessPrivilege a odrl:Permission ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:access ;
+    odrl:target ex:PremiumService ;
+    odrl:duty ex:teamPaymentDuty .
+
+# Named once and referenced twice (due2-workflows.md §3.1 root): RL2's rl2:prerequisiteDuty →
+# odrl:duty on the permission, and its independent rl2:clause → odrl:obligation on the policy.
+# It names its own assignee, so it inherits no party from the permission: only the
+# administrator's payment is a witness, whoever requests access.
+ex:teamPaymentDuty a odrl:Duty ;
+    odrl:assignee ex:TeamAdministrator ;
+    odrl:action ex:pay ;
+    odrl:target ex:TeamLicence .
+
+ex:access a odrl:Action .
+ex:pay a odrl:Action .

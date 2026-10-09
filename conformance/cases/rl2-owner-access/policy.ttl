@@ -1,0 +1,36 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/owner-access.md
+#
+# RL2 compares the asset fact asset.dataOwner with rl2:currentAgent (a right-operand
+# reference). due2 rejects odrl:rightOperandReference, and a constraint compares one
+# operand with authored values only. The comparison is therefore reduced to a state
+# property the assembler computes (due2-profiles.md §4): "the request subject is the
+# recorded data owner of the target".
+
+ex:ownerPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:ownerPrivilege .
+
+# rl2:anyAgent: no assignee, so the permission applies to any requester.
+ex:ownerPrivilege a odrl:Permission ;
+    odrl:action ex:read ;
+    odrl:target ex:PersonalFile ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:requesterIsDataOwner ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:read a odrl:Action .
+
+ex:requesterIsDataOwner a odrl:LeftOperand ;
+    rdfs:comment "True when the request subject equals asset.dataOwner of the target; computed by the assembler." ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterIsDataOwner ;
+    rdfs:range xsd:boolean .

@@ -1,0 +1,41 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:    <https://example.org/> .
+@prefix role:  <https://example.org/profile/role#> .
+
+# Source: RL2 conformance/usecases/role-hierarchy.md
+
+ex:policy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:analystRead .
+
+# rl2:anyAgent: no assignee; the population is delimited by the role constraint.
+ex:analystRead a odrl:Permission ;
+    odrl:action ex:read ;
+    odrl:target ex:InternalReport ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand role:currentRole ;
+        odrl:operator odrl:isA ;
+        odrl:rightOperand role:Analyst
+    ] .
+
+ex:read a odrl:Action .
+
+# Reusable role vocabulary: class hierarchy and agent-agnostic role instances.
+role:Role a rdfs:Class .
+role:Analyst a rdfs:Class ; rdfs:subClassOf role:Role .
+role:SeniorAnalyst a rdfs:Class ; rdfs:subClassOf role:Analyst .
+role:SeniorAnalystInstance a role:SeniorAnalyst .
+# Added for the negative scenario: a role outside the Analyst branch.
+role:Viewer a rdfs:Class ; rdfs:subClassOf role:Role .
+role:ViewerInstance a role:Viewer .
+
+# RL2 path agent.role, flattened onto the state node. A class range requires an IRI;
+# membership of role:Role is checked only by isA, so here it documents intent
+# (due2-profiles.md §3, Defaults).
+role:currentRole a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterRole ;
+    rdfs:range role:Role .

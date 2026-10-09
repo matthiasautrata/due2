@@ -1,0 +1,55 @@
+{
+  "case": "rl2-gdpr-erasure",
+  "source": "RL2 conformance/usecases/gdpr-erasure.md",
+  "classification": "not-expressible",
+  "needs": [
+    "not expressible: a status for an obligation of a policy with no permission or prohibition — it is never in force for a request (due2-workflows.md §5.2), and the request-independent monitoring question is open (§9 #4)"
+  ],
+  "notes": "The RL2 Duty is an independent clause with an applicability condition, so it becomes a root odrl:obligation. rl2:subject → odrl:assignee (bearer); rl2:counterparty → odrl:assigner (beneficiary, due2-profiles.md §6). RL2's grantor and grantee become the Agreement's policy-level assigner and assignee; the obligation states both of its own parties, so the policy-level values fill nothing (normalisation 0.12 §6.2). RL2's asset.erasureRequestValid becomes the state property ex:targetErasureRequestValid; it reads a state operand, so it is a guard (due2-workflows.md §5.2). RL2's expected result is about the obligation alone: the Duty is Active and the envelope carries obligate(erase), which RL2 emits because the request's action matches the Duty's own. due2 cannot reproduce either. An obligation is in force only for a request that some Permit or Forbid of its policy matches, never by its own action (§5.2), and this Agreement has none, so the obligation is never in force and is reported for no request; its request-independent status is the monitoring question, which is open (§9 #4). The decision agrees: RL2 states none, rl2_expected records the one RL2 Semantics gives (resolveDecision ignores duty atoms, so NotApplicable), and due2 returns NotApplicable for every request. It is classified not-expressible because nothing RL2 states about the obligation survives. Scenarios 2 and 3 are added: no valid erasure request, and an unknown one.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "valid erasure request present",
+      "request": {
+        "reference": "req-1", "action": "ex:erase", "target": "ex:PersonalData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Controller" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetErasureRequestValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The policy has no permission or prohibition, so nothing applies and nothing matches the request; ex:erasePersonalDataDuty is not in force, although its guard holds and the request is for its own action (an obligation is not matched by its own action, §5.2). NotApplicable; RL2's obligate(erase) and Active status have no counterpart." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "no valid erasure request",
+      "request": {
+        "reference": "req-2", "action": "ex:erase", "target": "ex:PersonalData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Controller" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetErasureRequestValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No rule of the policy matches, so the obligation is not in force (its guard is F as well). Nothing applies: NotApplicable." }
+    },
+    {
+      "name": "erasure request validity unknown",
+      "request": {
+        "reference": "req-3", "action": "ex:erase", "target": "ex:PersonalData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Controller" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetErasureRequestValid": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No rule of the policy matches, so the obligation is not in force whatever its U guard; it is not reported. Nothing applies, so every completion gives NotApplicable." }
+    }
+  ]
+}

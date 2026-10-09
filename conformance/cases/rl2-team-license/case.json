@@ -1,0 +1,64 @@
+{
+  "case": "rl2-team-license",
+  "source": "RL2 conformance/usecases/team-license.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "ex:teamPaymentDuty is named once and plays both of its RL2 roles (due2-workflows.md §3.1 root): rl2:prerequisiteDuty becomes odrl:duty on the permission, and its independent rl2:clause becomes odrl:obligation on the Set. As an obligation it is in force whenever ex:memberAccessPrivilege matches the request (§5.2) and its status is reported; as a precondition it gates the permission. The duty keeps its own assignee (ex:TeamAdministrator), so role inheritance does not apply and only the administrator's payment is a witness; the frontier and the in-force obligation both report that the bearer is not the requester. Instance scope is the default, member (§5.3; due2-profiles.md §2 point 9): the binding key is the duty with its assignee and target, independent of the requester, so one payment serves every member and both roles. With no deadline the duty is never violated. Scenario 2 renders RL2's remark that the payment grants nothing to an agent no privilege names. Divergence: without a payment, RL2 reports the privilege inactive (NotApplicable); due2 reports Pending with the payment outstanding (scenario 3). Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "administrator has paid",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:PremiumService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:pay1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:TeamAdministrator", "action": "ex:pay", "object": "ex:TeamLicence" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:teamPaymentDuty", "status": "fulfilled" } ], "why": "ex:memberAccessPrivilege applies to Alice. ex:pay1 is a witness for ex:teamPaymentDuty: before effective_at, action pay, object TeamLicence, actor the duty's own assignee. The duty is T, the candidate ready. The permission matches, so the same duty is in force as a root obligation, fulfilled by the same witness." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "payment does not extend to an unnamed agent",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:PremiumService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Carol" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:pay1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:TeamAdministrator", "action": "ex:pay", "object": "ex:TeamLicence" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The party part is F: Carol ⊑ Alice does not hold. The permission is F, so its duty is not evaluated and nothing applies. No rule of the policy matches Carol, so the obligation is not in force." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "licence not yet paid",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:PremiumService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:teamPaymentDuty" ] ], "obligations": [ { "duty": "ex:teamPaymentDuty", "status": "outstanding" } ], "why": "The permission applies; ex:teamPaymentDuty has no witness and no deadline, so it is outstanding. One pending alternative, waiting on ex:TeamAdministrator rather than the requester. As a root obligation the duty is in force and outstanding." }
+    },
+    {
+      "name": "member pays instead of the administrator",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:PremiumService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:pay2", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:Alice", "action": "ex:pay", "object": "ex:TeamLicence" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:teamPaymentDuty" ] ], "obligations": [ { "duty": "ex:teamPaymentDuty", "status": "outstanding" } ], "why": "ex:pay2's actor is Alice, not the duty's assignee ex:TeamAdministrator, so it is no witness. The duty is F: outstanding, as precondition and as in-force obligation." }
+    }
+  ]
+}

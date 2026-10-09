@@ -1,0 +1,38 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/data-sovereignty.md
+
+ex:productionDataAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Manufacturer ;
+    odrl:assignee ex:Supplier ;
+    odrl:permission ex:productionSupportAccess ;
+    odrl:obligation ex:usageRecordDuty .
+
+ex:productionSupportAccess a odrl:Permission ;
+    odrl:action ex:access ;
+    odrl:target ex:ProductionData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "production-support"
+    ] .
+
+# Independent clause → root obligation; the Supplier is its bearer through the policy-level assignee.
+ex:usageRecordDuty a odrl:Duty ;
+    odrl:action ex:submitUsageRecord ;
+    odrl:target ex:ProductionData .
+
+ex:access a odrl:Action .
+ex:submitUsageRecord a odrl:Action .
+
+# RL2 path context.purpose: assembler-supplied snapshot context, hence state source.
+ex:purpose a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:contextPurpose ;
+    rdfs:range xsd:string .

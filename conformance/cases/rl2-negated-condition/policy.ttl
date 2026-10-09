@@ -1,0 +1,40 @@
+@prefix odrl:    <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod:   <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:      <https://example.org/> .
+@prefix account: <https://example.org/profile/account#> .
+
+# Source: RL2 conformance/usecases/negated-condition.md
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:platformAccess .
+
+ex:platformAccess a odrl:Permission ;
+    odrl:assignee ex:User ;
+    odrl:action ex:access ;
+    odrl:target ex:Platform ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        dprod:not [
+            a odrl:Constraint ;
+            odrl:leftOperand account:status ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand account:Suspended
+        ]
+    ] .
+
+ex:access a odrl:Action .
+
+account:Status a rdfs:Class .
+account:Suspended a account:Status .
+account:Active a account:Status .
+
+# RL2 path agent.accountStatus, flattened onto the state node.
+# A class range requires an IRI; values compare by identity, and class membership is
+# checked only by isA (due2-profiles.md §3), so here the range documents intent.
+account:status a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterAccountStatus ;
+    rdfs:range account:Status .

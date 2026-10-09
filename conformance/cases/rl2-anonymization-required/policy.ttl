@@ -1,0 +1,31 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/anonymization-required.md
+
+ex:researchAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Hospital ;
+    odrl:assignee ex:ResearchInstitution ;
+    odrl:permission ex:processAnonymizedData .
+
+ex:processAnonymizedData a odrl:Permission ;
+    odrl:action ex:process ;
+    odrl:target ex:PatientDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:anonymized ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:process a odrl:Action .
+
+# RL2 path asset.anonymization.approved, flattened onto the state node for the requested asset.
+ex:anonymized a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:targetAnonymizationApproved ;
+    rdfs:range xsd:boolean .

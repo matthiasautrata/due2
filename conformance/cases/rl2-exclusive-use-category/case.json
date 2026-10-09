@@ -1,0 +1,84 @@
+{
+  "case": "rl2-exclusive-use-category",
+  "source": "RL2 conformance/usecases/exclusive-use-category.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "rl2:LogicalConstraint with rl2:xone → odrl:LogicalConstraint with odrl:xone over an RDF list; rl2:rightOperandRef to an individual → an IRI right operand. context.useCategory is assembler-supplied context, so the operand reads the state source. RL2's class range licensing:UseCategory is kept as rdfs:range; due2 then requires an IRI value but checks class membership only through isA, so an out-of-class IRI such as licensing:Commercial resolves and is simply unequal to all three, as RL2 expects. W1 rewrites xone into DNF; with a cardinality-one operand at most one disjunct can hold, so xone here behaves as or. Scenario 5 is added: a hit on a non-first operand.",
+  "prefixes": { "ex": "https://example.org/", "licensing": "https://example.org/profile/licensing#" },
+  "scenarios": [
+    {
+      "name": "advertising use",
+      "request": {
+        "reference": "req-1", "action": "ex:use", "target": "ex:Track", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "licensing:contextUseCategory": { "status": "resolved", "values": [ { "@id": "licensing:Advertising" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The three operands are T, F, F; exactly one holds, so the xone is T and ex:categoryPrivilege applies with no duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "category outside the three",
+      "request": {
+        "reference": "req-2", "action": "ex:use", "target": "ex:Track", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "licensing:contextUseCategory": { "status": "resolved", "values": [ { "@id": "licensing:Commercial" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "All three operands are F, so the xone is F and the permission does not apply." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "category missing",
+      "request": {
+        "reference": "req-3", "action": "ex:use", "target": "ex:Track", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "licensing:contextUseCategory": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "All three operands are U, so every DNF disjunct of the xone is U and the permission is U: Permit in the permissive completion, NotApplicable in the restrictive one." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "conflicting categories",
+      "request": {
+        "reference": "req-4", "action": "ex:use", "target": "ex:Track", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "licensing:contextUseCategory": { "status": "conflict", "values": [ { "@id": "licensing:Advertising" }, { "@id": "licensing:Editorial" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one property are a conflict, so every operand is U, the xone is U, and the completions disagree." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "editorial use",
+      "request": {
+        "reference": "req-5", "action": "ex:use", "target": "ex:Track", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "licensing:contextUseCategory": { "status": "resolved", "values": [ { "@id": "licensing:Editorial" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The operands are F, T, F; the DNF disjunct ¬a ∧ b ∧ ¬c is T, so the xone holds and the permission applies." }
+    }
+  ]
+}

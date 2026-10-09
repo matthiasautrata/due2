@@ -1,0 +1,69 @@
+{
+  "case": "rl2-chinese-wall",
+  "source": "RL2 conformance/usecases/chinese-wall.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation: one prohibition and two permissions, each with its own odrl:assignee. The asset-scoped path asset.publication.published becomes the state property ex:targetPublished. RL2 takes its conflict strategy from configuration; the policy states odrl:prohibit. The two banker rules are complementary, so only a completion of scenario 4 makes both T, and there the strategy does not change the verdict. The domain action ex:read is kept rather than odrl:read, as in the RL2 source. Scenario 4 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "banker reads before publication",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:ResearchReport", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:InvestmentBanker" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetPublished": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "ex:unpublishedReportProhibition applies (false eq false). ex:publishedReportPrivilege is F (false eq true) and ex:analystReadPrivilege is F on assignee. A T Forbid survives, so Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "banker reads after publication",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:ResearchReport", "at": "2026-07-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:InvestmentBanker" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-07-01T00:00:00Z",
+        "facts": { "ex:targetPublished": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The prohibition is F (true eq false); ex:publishedReportPrivilege applies with no duties, so it is a ready candidate." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "analyst reads before publication",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:ResearchReport", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:ResearchAnalyst" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetPublished": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The prohibition and ex:publishedReportPrivilege name ex:InvestmentBanker, so both are F on assignee. ex:analystReadPrivilege applies unconditionally and is ready." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "publication status unknown",
+      "request": {
+        "reference": "req-4", "action": "ex:read", "target": "ex:ResearchReport", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:InvestmentBanker" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetPublished": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Both the prohibition and ex:publishedReportPrivilege are U. Most permissive completion (permission T, prohibition F): Permit. Most restrictive (permission F, prohibition T): Deny. They differ." }
+    }
+  ]
+}

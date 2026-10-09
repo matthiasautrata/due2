@@ -1,0 +1,84 @@
+{
+  "case": "rl2-negated-condition",
+  "source": "RL2 conformance/usecases/negated-condition.md",
+  "classification": "odrl-profile",
+  "needs": [ "dprod:not" ],
+  "notes": "rl2:not becomes dprod:not on an odrl:LogicalConstraint with one operand; W1 stage 2 pushes it inward to account:status neq account:Suspended, which keeps U for a missing or conflicting status (due2-profiles.md §5). The RL2 path agent.accountStatus is flattened to the state property ex:requesterAccountStatus. RL2's value type account:Status is carried as rdfs:range: a class range requires an IRI value, compares by identity, and is checked for membership only by isA (due2-profiles.md §3), so it documents intent and changes no outcome here. account:Active is added as a second status for the positive scenario. Scenario 5 is added. No divergence from RL2.",
+  "prefixes": { "ex": "https://example.org/", "account": "https://example.org/profile/account#" },
+  "scenarios": [
+    {
+      "name": "suspended account",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:Platform", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:User" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAccountStatus": { "status": "resolved", "values": [ { "@id": "account:Suspended" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "status eq Suspended is T, so not(…) is F and ex:platformAccess does not apply; no other rule applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "active account",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:Platform", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:User" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAccountStatus": { "status": "resolved", "values": [ { "@id": "account:Active" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Active ≠ Suspended, so the negated constraint is T; action, target, and assignee match, the permission is T with no duties, and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "status missing",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:Platform", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:User" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAccountStatus": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "A missing fact makes the inner eq U, and not(U) = U, so the permission is U. The permissive completion gives Permit, the restrictive one NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "conflicting status",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:Platform", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:User" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAccountStatus": { "status": "conflict", "values": [ { "@id": "account:Active" }, { "@id": "account:Suspended" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Status conflict gives U for the constraint, so the permission is U; the two completions give Permit and NotApplicable." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "another agent with an active account",
+      "request": {
+        "reference": "req-5", "action": "ex:access", "target": "ex:Platform", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:OtherUser" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterAccountStatus": { "status": "resolved", "values": [ { "@id": "account:Active" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:OtherUser ⊑ ex:User is F, so the assignee part is F and the permission is F whatever the constraint; F ∧ T = F." }
+    }
+  ]
+}

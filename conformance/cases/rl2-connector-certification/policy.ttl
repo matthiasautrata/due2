@@ -1,0 +1,32 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/connector-certification.md
+
+ex:connectorAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:ConsumerConnector ;
+    odrl:permission ex:certifiedConnectorAccess .
+
+ex:certifiedConnectorAccess a odrl:Permission ;
+    odrl:action ex:receive ;
+    odrl:target ex:ProductionData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:certificationValid ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:receive a odrl:Action .
+
+# RL2 path agent.connectorCertification.valid, flattened onto the state node
+# for the request subject.
+ex:certificationValid a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterConnectorCertificationValid ;
+    rdfs:range xsd:boolean .

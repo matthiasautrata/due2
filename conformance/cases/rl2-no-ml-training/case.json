@@ -1,0 +1,52 @@
+{
+  "case": "rl2-no-ml-training",
+  "source": "RL2 conformance/usecases/no-ml-training.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. rl2:grantor/grantee become the Agreement's assigner/assignee; by the compact-policy rule they apply to both rules, matching RL2's per-clause rl2:subject ex:Licensee. RL2 states no conflict strategy in the policy; odrl:prohibit is made explicit (it does not matter here, since the two rules never match the same action). Scenarios 3 and 4 are added. Scenario 4 shows that a request naming no assignee leaves the prohibition U, so due2 does not deny it outright. No divergence from RL2.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "licensee trains a model",
+      "request": {
+        "reference": "req-1", "action": "ex:trainModel", "target": "ex:TextCorpus", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "ex:noTraining applies (action, target, assignee all T). ex:searchCorpus fails on action, so there is no candidate; the T Forbid gives Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "licensee searches",
+      "request": {
+        "reference": "req-2", "action": "ex:search", "target": "ex:TextCorpus", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:searchCorpus is T with no duties, so it is a ready candidate; ex:noTraining fails on action." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "a third party trains a model",
+      "request": {
+        "reference": "req-3", "action": "ex:trainModel", "target": "ex:TextCorpus", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Stranger" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:Stranger ⊑ ex:Licensee is F, so the prohibition does not apply; the agreement binds only its assignee. No permission applies either." }
+    },
+    {
+      "name": "training request naming no assignee",
+      "request": {
+        "reference": "req-4", "action": "ex:trainModel", "target": "ex:TextCorpus", "at": "2026-06-01T00:00:00Z",
+        "parties": {}, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The request names no assignee, so the prohibition's party part is U (§5.2) and ex:noTraining is U. No candidate exists. The restrictive completion gives Deny, the permissive one NotApplicable." }
+    }
+  ]
+}

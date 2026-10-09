@@ -1,0 +1,26 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/pay-to-play.md
+
+ex:photoPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:viewPrivilege ;
+    odrl:obligation ex:paymentDuty .
+
+ex:viewPrivilege a odrl:Permission ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:view ;
+    odrl:target ex:PremiumPhoto ;
+    odrl:duty ex:paymentDuty .
+
+# Named once and referenced twice (due2-workflows.md §3.1 root): rl2:prerequisiteDuty →
+# odrl:duty on the permission (precondition), and RL2's independent rl2:clause →
+# odrl:obligation on the policy (root obligation). One duty, one instance.
+ex:paymentDuty a odrl:Duty ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:pay ;
+    odrl:target ex:PhotoLicence .
+
+ex:view a odrl:Action .
+ex:pay a odrl:Action .

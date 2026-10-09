@@ -8,6 +8,11 @@ Specifications for due2, an ODRL policy evaluation runtime.
 |---|---|
 | `due2-architecture.md` | What due2 is and why |
 | `due2-workflows.md` | The three workflows and the reference data model, language-independent |
+| `due2-profiles.md` | Profiles and the operand registry: how ODRL extensions are declared and evaluated, and DPROD Contracts compatibility |
 | `odrl-compound-to-atomic-normalization.md` | Normalisation stage 1, normative |
 | `ways-of-working.md` | Engineering discipline |
+| `decisions/` | Decision records |
+| `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms |
+| `conformance/` | The conformance corpus: RL2 use cases and DPROD examples in ODRL, with scenarios and expected verdicts |
+| `tools/check_corpus.py` | Checks the corpus and any ODRL policy file against the admitted profile, without an evaluator |
 | `Turning MDS Vendor Contracts into Internal Policies Approach and Decisions.md` | Turning MDS vendor contracts into internal policies: approach and decisions |

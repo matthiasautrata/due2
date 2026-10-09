@@ -1,0 +1,99 @@
+{
+  "case": "rl2-attestation-gating",
+  "source": "RL2 conformance/usecases/attestation-gating.md",
+  "classification": "partial",
+  "needs": [
+    "dprod:deadline for the window end",
+    "not expressible: the obligation's status for a request that no Permit or Forbid of the policy matches — RL2 reports dutyStatuses for every request and obligate(ex:attestConformance) for an attest request; request-independent monitoring is open (due2-workflows.md §9 #4)",
+    "not expressible: conflicting evidence records"
+  ],
+  "notes": "ex:attestConformance is named once and plays both RL2 roles (due2-workflows.md §3.1, root): odrl:obligation on the Agreement for the independent rl2:clause, and odrl:duty on both permissions for the agreement-level rl2:prerequisiteDuty. It is one atom with one member-scoped instance (§5.3), so one attestation discharges the obligation and both preconditions — RL2's 'one Duty node, one derived status, two effects'. Its parties are stated on the duty, as RL2 states them, so neither interiorisation nor inheritance supplies them. The RL2 window [2026-01-01, 2027-01-01) becomes a witness condition on ex:performedAt (due2:actionTime, the window start) and an inclusive dprod:deadline (the window end; RL2's end is exclusive, a one-instant difference accepted). The obligation is in force for every read or export request, since a permission of its policy matches (§5.2), and its status is reported with the decision. Two RL2 aspects remain without a counterpart. (1) RL2's status is total over the policy, independent of the request; due2 reports it only while the obligation is in force, so an attest request, which matches no permission, reports nothing where RL2 emits obligate (scenario 7); that is the open monitoring question (§9 #4). (2) RL2's Indeterminate scenario rests on two evidence records that disagree; due2 evidence is existential, so disagreement must be resolved by the assembler. Divergence: before the window opens, RL2 reports the duty Pending and the decision NotApplicable; due2 reports the route, Pending with the attestation outstanding, and the obligation outstanding. After the window closes the violated precondition removes both candidates (due2-profiles.md §7): NotApplicable under the default violations = ignore, Deny under the DPROD-faithful violations = deny (scenarios 5 and 6). Scenarios 3–7 are added; scenario 7 is RL2's attest request.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "attested inside the window",
+      "request": {
+        "reference": "req-1", "action": "odrl:read", "target": "ex:GovernedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-03-01T00:00:00Z", "actor": "ex:DataProcessor", "action": "ex:attest", "object": "ex:GovernedDataset", "issuer": "ex:Regulator" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:attestConformance", "status": "fulfilled" } ], "why": "ex:readPrivilege applies. ex:ev1 is a witness for ex:attestConformance: right actor, action, object, before effective_at and the deadline, and its performedAt 2026-03-01 ≥ 2026-01-01. The precondition is T, so the candidate is ready. The same atom is the root obligation, in force because ex:readPrivilege matches, and fulfilled (RL2: Known(Fulfilled))." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "before the window opens",
+      "request": {
+        "reference": "req-2", "action": "odrl:read", "target": "ex:GovernedDataset", "at": "2025-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": { "effective_at": "2025-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance" ] ], "obligations": [ { "duty": "ex:attestConformance", "status": "outstanding" } ], "why": "ex:readPrivilege applies; ex:attestConformance has no witness and its deadline has not passed, so it is outstanding and the only alternative is pending. The obligation is in force and outstanding (RL2: Known(Pending))." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "inside the window, not yet attested",
+      "request": {
+        "reference": "req-3", "action": "ex:export", "target": "ex:GovernedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance" ] ], "obligations": [ { "duty": "ex:attestConformance", "status": "outstanding" } ], "why": "ex:exportPrivilege applies; its duty has no witness and is not past its deadline, so the route is pending. ex:exportPrivilege matches, so the obligation is in force and outstanding." }
+    },
+    {
+      "name": "attested before the window opened",
+      "request": {
+        "reference": "req-4", "action": "odrl:read", "target": "ex:GovernedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev0", "occurred_at": "2025-12-01T00:00:00Z", "actor": "ex:DataProcessor", "action": "ex:attest", "object": "ex:GovernedDataset", "issuer": "ex:Regulator" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance" ] ], "obligations": [ { "duty": "ex:attestConformance", "status": "outstanding" } ], "why": "ex:ev0 matches actor, action, and object, but performedAt 2025-12-01 ≥ 2026-01-01 is F, so it fails the witness condition. Every witness fails, so the duty is F: outstanding as a precondition and as the obligation in force." }
+    },
+    {
+      "name": "window closed without attestation",
+      "request": {
+        "reference": "req-5", "action": "odrl:read", "target": "ex:GovernedDataset", "at": "2027-02-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-02-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:attestConformance", "status": "violated" } ], "why": "effective_at is past the deadline with no witness, so the instance is violated. As a precondition it removes its candidate (due2-profiles.md §7); no route remains and nothing else applies. As the obligation in force it is reported violated, which under the default violations = ignore does not affect the verdict." }
+    },
+    {
+      "name": "window closed without attestation, DPROD-faithful violations",
+      "request": {
+        "reference": "req-6", "action": "odrl:read", "target": "ex:GovernedDataset", "at": "2027-02-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-02-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "ex:attestConformance", "status": "violated" } ], "why": "As in scenario 5, but under violations = deny the violated obligation in force denies the request (§6.4)." }
+    },
+    {
+      "name": "attest request, attestation fulfilled",
+      "request": {
+        "reference": "req-7", "action": "ex:attest", "target": "ex:GovernedDataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:DataProcessor" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-03-01T00:00:00Z", "actor": "ex:DataProcessor", "action": "ex:attest", "object": "ex:GovernedDataset", "issuer": "ex:Regulator" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:attest is ⊑ neither odrl:read nor ex:export, so neither permission matches and the obligation is not in force: an obligation is not matched by its own action (§5.2). Nothing applies. RL2 agrees on the decision but also emits obligate(ex:attestConformance), which due2 does not report." },
+      "rl2_expected": "NotApplicable"
+    }
+  ]
+}

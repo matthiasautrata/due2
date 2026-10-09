@@ -1,0 +1,41 @@
+{
+  "case": "rl2-universe-selection",
+  "source": "RL2 conformance/usecases/universe-selection.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. RL2's point — that the caller selects an immutable policy universe and its identifier is provenance — maps to due2's case tuple: the corpus id is the digest of W1's output for the selected policy, and selecting another edition is a different corpus and so a different case (due2-workflows.md §2, §7). Nothing about selection belongs in the policy. Scenarios 2 and 3 are added; scenario 3 shows that a request naming no assignee leaves the party part unknown, not false.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "subscriber reads",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:readDataset applies (action, target, assignee) with no constraints or duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "another agent reads",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Stranger" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No partOf edge leads from ex:Stranger to ex:Subscriber, and closure is closed-world (§3.3), so ex:Stranger ⊑ ex:Subscriber is F, the party part is F, and the permission does not apply." }
+    },
+    {
+      "name": "request names no assignee",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:Dataset", "at": "2026-06-01T00:00:00Z",
+        "parties": {}, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The request does not name odrl:assignee, so the party part is U (§5.2) and the permission is U. Permissive completion: Permit; restrictive: NotApplicable." }
+    }
+  ]
+}

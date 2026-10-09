@@ -1,0 +1,69 @@
+{
+  "case": "rl2-check-signing-sod",
+  "source": "RL2 conformance/usecases/check-signing-sod.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "rl2:prerequisiteDuty → odrl:duty on the permission; the duty is also an independent rl2:clause, so it is also an odrl:obligation of the policy, and both roles share one instance. The duty names its own assignee ex:Alice, so it inherits no roles from the permission (architecture §4 item 4) and only evidence with actor ex:Alice is a witness (due2-workflows.md §5.3). Without Alice's preparation, due2 reports Pending with Alice's duty outstanding and Alice as its bearer (workflows §6.3) — the standing Pending/NotApplicable divergence (README). The obligation is in force only when the policy's permission matches the request, so for Alice's own request (scenario 3) it is not reported, whereas RL2 reports the status of every concrete duty in the universe. The text's two side remarks become scenarios 2 and 3; the decision they imply under RL2 is recorded. Scenario 4 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "Alice prepared the check",
+      "request": {
+        "reference": "req-1", "action": "ex:sign", "target": "ex:Check123", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bob" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:prepare", "object": "ex:Check123" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:preparationDuty", "status": "fulfilled" } ], "why": "ex:signPrivilege applies to Bob. ex:ev1 is a witness for ex:preparationDuty: actor ex:Alice is its declared assignee, action and object match, before effective_at. The duty is T and the candidate ready. As an obligation it is in force (the permission matches) and fulfilled." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "Bob prepared the check himself",
+      "request": {
+        "reference": "req-2", "action": "ex:sign", "target": "ex:Check123", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bob" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:prepare", "object": "ex:Check123" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:preparationDuty" ] ], "obligations": [ { "duty": "ex:preparationDuty", "status": "outstanding" } ], "why": "The permission applies. ex:ev2's actor ex:Bob is not the duty's assignee ex:Alice, so there is no witness and the duty is F; the only alternative is pending, waiting on bearer ex:Alice. The obligation is in force and outstanding." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "Alice asks to sign",
+      "request": {
+        "reference": "req-3", "action": "ex:sign", "target": "ex:Check123", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:prepare", "object": "ex:Check123" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The permission's assignee is ex:Bob; ex:Alice ⊑ ex:Bob is F, so the permission is F and is no candidate. No rule of the policy matches, so the obligation is not in force." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "Alice prepared a different check",
+      "request": {
+        "reference": "req-4", "action": "ex:sign", "target": "ex:Check123", "at": "2026-06-01T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bob" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev3", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:prepare", "object": "ex:Check456" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:preparationDuty" ] ], "obligations": [ { "duty": "ex:preparationDuty", "status": "outstanding" } ], "why": "ex:ev3's object ex:Check456 differs from the duty's target ex:Check123, so it is not a witness; the duty is F and the candidate pending. The obligation is in force and outstanding." }
+    }
+  ]
+}

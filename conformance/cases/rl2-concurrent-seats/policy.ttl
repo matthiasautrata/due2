@@ -1,0 +1,42 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/concurrent-seats.md
+
+ex:seatPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:seatAvailablePrivilege ;
+    odrl:prohibition ex:capacityProhibition .
+
+ex:seatAvailablePrivilege a odrl:Permission ;
+    odrl:assignee ex:LicensedUser ;
+    odrl:action ex:startSession ;
+    odrl:target ex:Application ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:activeSeatCount ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "50"^^xsd:integer
+    ] .
+
+ex:capacityProhibition a odrl:Prohibition ;
+    odrl:assignee ex:LicensedUser ;
+    odrl:action ex:startSession ;
+    odrl:target ex:Application ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:activeSeatCount ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "50"^^xsd:integer
+    ] .
+
+ex:startSession a odrl:Action .
+
+# RL2 path state.licence.activeSeatCount, flattened to one state property.
+ex:activeSeatCount a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:licenceActiveSeatCount ;
+    rdfs:range xsd:integer .

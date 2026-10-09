@@ -1,0 +1,54 @@
+{
+  "case": "rl2-usage-metering",
+  "source": "RL2 conformance/usecases/usage-metering.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. Grantor and grantee become policy-level assigner and assignee (equal to the clause's subject). global.quota.requestedPlusUsedWithinLimit becomes the state property ex:quotaAdmitsRequest, which the assembler computes from used + requested ≤ 10,000; due2, like RL2, never updates the counter. Scenario 1 carries RL2's request parameter requestedQueries = 25 although no operand reads it — the checker's warning on it is expected: in the precomputed-fact style the parameter informs the assembler, not the policy. Scenarios 2 and 3 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "quota admits the request",
+      "request": {
+        "reference": "req-1", "action": "ex:query", "target": "ex:AnalyticsService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" },
+        "params": { "ex:requestedQueries": { "@value": "25", "@type": "xsd:integer" } }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:quotaAdmitsRequest": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The quota fact is true, so ex:meteredQuery applies; no duties, no prohibition." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "quota exhausted",
+      "request": {
+        "reference": "req-2", "action": "ex:query", "target": "ex:AnalyticsService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:quotaAdmitsRequest": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission does not apply; nothing else does." }
+    },
+    {
+      "name": "metering service unavailable",
+      "request": {
+        "reference": "req-3", "action": "ex:query", "target": "ex:AnalyticsService", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:quotaAdmitsRequest": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The quota constraint is U, so the permission is U. Permissive completion: Permit; restrictive: NotApplicable." }
+    }
+  ]
+}

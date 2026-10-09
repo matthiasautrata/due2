@@ -1,0 +1,26 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/check-signing-sod.md
+
+ex:checkPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:signPrivilege ;
+    odrl:obligation ex:preparationDuty .
+
+ex:signPrivilege a odrl:Permission ;
+    odrl:assignee ex:Bob ;
+    odrl:action ex:sign ;
+    odrl:target ex:Check123 ;
+    odrl:duty ex:preparationDuty .
+
+# Both an independent obligation of the policy (rl2:clause) and the permission's
+# precondition. Declares its own assignee, so it inherits none from the permission:
+# only Alice's preparation is a witness.
+ex:preparationDuty a odrl:Duty ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:prepare ;
+    odrl:target ex:Check123 .
+
+ex:prepare a odrl:Action .
+ex:sign a odrl:Action .

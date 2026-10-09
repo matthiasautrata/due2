@@ -1,0 +1,44 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/step-up-auth.md
+
+ex:authenticationPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:highRiskReadPrivilege ;
+    odrl:obligation ex:stepUpDuty .
+
+ex:highRiskReadPrivilege a odrl:Permission ;
+    odrl:assignee ex:Employee ;
+    odrl:action ex:read ;
+    odrl:target ex:HighRiskDocument ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:authenticationLevel ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2"^^xsd:integer
+    ] .
+
+# Independent RL2 clause, not a prerequisite: a root obligation guarded by level < 2.
+ex:stepUpDuty a odrl:Duty ;
+    odrl:assignee ex:Employee ;
+    odrl:action ex:authenticate ;
+    odrl:target ex:AuthenticationService ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:authenticationLevel ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2"^^xsd:integer
+    ] .
+
+ex:read a odrl:Action .
+ex:authenticate a odrl:Action .
+
+# RL2 agent.authentication.level, flattened onto the state node for the requester.
+ex:authenticationLevel a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterAuthenticationLevel ;
+    rdfs:range xsd:integer .

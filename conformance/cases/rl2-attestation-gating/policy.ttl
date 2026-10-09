@@ -1,0 +1,54 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/attestation-gating.md
+
+ex:dataGovernanceAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Regulator ;
+    odrl:assignee ex:DataProcessor ;
+    odrl:target ex:GovernedDataset ;
+    odrl:permission ex:readPrivilege , ex:exportPrivilege ;
+    odrl:obligation ex:attestConformance .
+
+ex:readPrivilege a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:duty ex:attestConformance .
+
+ex:exportPrivilege a odrl:Permission ;
+    odrl:action ex:export ;
+    odrl:duty ex:attestConformance .
+
+# One named duty in two roles (workflows §3.1, root): a root obligation of the Agreement
+# (RL2's independent rl2:clause) and the precondition of both permissions (RL2's
+# rl2:prerequisiteDuty). One atom and one member-scoped instance, so one attestation
+# inside the window fulfils the obligation and both preconditions.
+# Its parties are stated, as RL2 states rl2:subject and rl2:counterparty, so neither
+# policy-level interiorisation nor inheritance from a parent permission supplies them.
+# The window start reads due2:actionTime, so it is a witness condition (workflows §5.2).
+ex:attestConformance a odrl:Duty ;
+    odrl:assignee ex:DataProcessor ;
+    odrl:assigner ex:Regulator ;
+    odrl:action ex:attest ;
+    odrl:target ex:GovernedDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:performedAt ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2026-01-01T00:00:00Z"^^xsd:dateTime
+    ] ;
+    dprod:deadline "2027-01-01T00:00:00Z"^^xsd:dateTime .
+
+ex:export a odrl:Action .
+ex:attest a odrl:Action .
+
+# When the attestation was performed: the witness's occurred_at inside a duty.
+ex:performedAt a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty due2:actionTime ;
+    rdfs:range xsd:dateTime .

@@ -1,0 +1,58 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/quality-circuit-breaker.md
+
+ex:qualityPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readFeedPrivilege ;
+    odrl:prohibition ex:poorQualityProhibition ;
+    odrl:obligation ex:reportIncidentDuty .
+
+ex:readFeedPrivilege a odrl:Permission ;
+    odrl:assignee ex:Subscriber ;
+    odrl:action ex:read ;
+    odrl:target ex:MarketDataFeed ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:errorRate ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "0.05"^^xsd:decimal
+    ] .
+
+ex:poorQualityProhibition a odrl:Prohibition ;
+    odrl:assignee ex:Subscriber ;
+    odrl:action ex:read ;
+    odrl:target ex:MarketDataFeed ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:errorRate ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "0.05"^^xsd:decimal
+    ] .
+
+# Independent RL2 duty with an applicability condition: a root obligation. Its constraint
+# reads a state operand, so it is a guard (due2-workflows.md §5.2): the obligation is in
+# force when a rule of this policy matches the request and the error rate exceeds 0.05.
+ex:reportIncidentDuty a odrl:Duty ;
+    odrl:assignee ex:DataTeam ;
+    odrl:action ex:report ;
+    odrl:target ex:QualityIncident ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:errorRate ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "0.05"^^xsd:decimal
+    ] .
+
+ex:read a odrl:Action .
+ex:report a odrl:Action .
+
+# RL2 path asset.quality.errorRate, flattened onto the state node.
+ex:errorRate a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:feedErrorRate ;
+    rdfs:range xsd:decimal .

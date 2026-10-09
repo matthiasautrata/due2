@@ -1,0 +1,43 @@
+@prefix odrl:          <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod:         <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:          <https://w3id.org/due2/profile#> .
+@prefix rdfs:          <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:           <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:            <https://example.org/> .
+@prefix certification: <https://example.org/profile/certification#> .
+
+# Source: RL2 conformance/usecases/multi-certification.md
+
+ex:policy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:certifiedAccess .
+
+# isAllOf: the left set (held) contains every member of the right set (required).
+ex:certifiedAccess a odrl:Permission ;
+    odrl:assignee ex:Contractor ;
+    odrl:action ex:access ;
+    odrl:target ex:ClassifiedDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand certification:held ;
+        odrl:operator odrl:isAllOf ;
+        odrl:rightOperand certification:Clearance ,
+            certification:ProjectAccess ,
+            certification:EthicsTraining
+    ] .
+
+ex:access a odrl:Action .
+
+certification:Type a rdfs:Class .
+certification:Clearance a certification:Type .
+certification:ProjectAccess a certification:Type .
+certification:EthicsTraining a certification:Type .
+
+# RL2 path agent.certifications: the requester's certifications, flattened onto
+# the state node as one set-valued property. No rdfs:range: the values are IRIs,
+# compared by identity.
+certification:held a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterCertifications ;
+    due2:cardinality due2:set ;
+    due2:allowedOperator odrl:isAllOf .

@@ -1,0 +1,11 @@
+# due2 binding module for DPROD Contracts (EKGF, develop, commit 50db943).
+# Adds only what DPROD does not declare itself; see due2-profiles.md §2 and §8.
+# DPROD's own declarations (operand bindings, policy subclasses, conflict default)
+# are read from vendor/dprod/.
+
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+
+dprod:subjectOfDuty due2:playsRole due2:bearer .
+dprod:objectOfDuty  due2:playsRole due2:beneficiary .
+

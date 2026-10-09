@@ -1,0 +1,64 @@
+{
+  "case": "rl2-trial-period",
+  "source": "RL2 conformance/usecases/trial-period.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation, rule-level assignees (an RL2 Set has no grantee). rl2:currentDateTime is bound to dprod:clock (sotw.effective_at). RL2 leaves the conflict strategy to configuration; odrl:prohibit is chosen, though the permission and prohibition on execute have complementary time constraints and never both apply. RL2's single 'before or at/after expiry' snapshot is split into one scenario per instant, plus the read request after expiry. Scenario 5 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "execute before expiry",
+      "request": {
+        "reference": "req-1", "action": "ex:execute", "target": "ex:Application", "at": "2026-08-14T23:59:59Z",
+        "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-08-14T23:59:59Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "clock < 2026-08-15, so ex:trialExecutePrivilege applies and ex:expiredTrialProhibition is F. Ready candidate, no prohibition: Permit." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "execute at expiry",
+      "request": {
+        "reference": "req-2", "action": "ex:execute", "target": "ex:Application", "at": "2026-08-15T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-08-15T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "clock = 2026-08-15T00:00: the permission's lt is F, the prohibition's gteq is T. The T Forbid survives (policy conflict prohibit, combination prohibit-overrides): Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "execute after expiry",
+      "request": {
+        "reference": "req-3", "action": "ex:execute", "target": "ex:Application", "at": "2026-09-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-09-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "The prohibition applies (clock ≥ expiry) and the execute permission does not: Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "read after expiry",
+      "request": {
+        "reference": "req-4", "action": "ex:read", "target": "ex:Application", "at": "2026-09-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-09-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:readPrivilege applies unconditionally. The prohibition is on ex:execute; no odrl:includedIn edge leads from ex:read to ex:execute, and closure is closed-world (§3.3), so it is F." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "other agent executes after expiry",
+      "request": {
+        "reference": "req-5", "action": "ex:execute", "target": "ex:Application", "at": "2026-09-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:OtherUser" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-09-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Every rule is assigned to ex:TrialUser; the party part is F for ex:OtherUser, so neither the permission nor the prohibition applies." }
+    }
+  ]
+}

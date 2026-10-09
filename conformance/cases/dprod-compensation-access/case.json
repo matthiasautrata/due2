@@ -1,0 +1,87 @@
+{
+  "case": "dprod-compensation-access",
+  "source": "DPROD Contracts dprod-contracts/examples/data-use-policy.ttl, policy https://example.org/policies/compensation-access (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Extracted unchanged except: the three anonymous rules are named rule:comp-*; odrl:conflict odrl:prohibit is made explicit (it equals the DPROD profile default). Classified odrl-core: the policy names the DPROD profile, as the original does, but uses only operand-binding vocabulary, which is not a profile term (conformance README). Obligations. Both duties are root obligations; each states no target, so each receives the policy-level target employee-compensation (normalisation spec §6.2), and with no assignee anywhere the bearer is the request subject (due2-profiles.md §6). Both constraints read request-source operands (ex:retentionPeriod, odrl:purpose), so they are guards read against the request (due2-workflows.md v0.4 §5.2) — DPROD's activation reading (D-ACTIVATE): rule:comp-anonymization is owed when the request's purpose is analytics, as the comment intends, and rule:comp-retention-limit when the request states a retention period over P7Y. Each is in force when rule:comp-hr-division-read matches the request, constraints aside, and its guard holds; a missing operand makes the guard U and the status unknown (§6.1). No scenario has delete or anonymize evidence, so an obligation in force is outstanding. DPROD never collects either duty for a read, because step 1 collects a duty only when its own action matches the request (exception 6 of §8.2). Neither duty has a deadline, so neither can be violated: every scenario uses the default violations = ignore, and the DPROD-faithful deny gives the same verdicts, consistent with exception 6 ('the two agree whenever no duty is violated'). Scenario 6 is added to show the retention guard holding. DPROD Σ assumed in every scenario: Σ₀ with clock = request.at, performed = ∅; no duty is collected, so Σ' = Σ. Scenarios 3 and 4 are DPROD Failures that due2 decides or reports Indeterminate: and(error, false) is false in Kleene logic but Failure under DPROD's left-to-right short-circuit (§6.1). Swapping the two conjuncts of the authored odrl:and would turn DPROD's scenario 3 into NotApplicable, which is the order-sensitivity gap of §8.2. These are refinements, not exceptions. Scenario 5 shows DPROD masking the same error structurally, because NormActive checks the subject before the condition.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "division member reads for compliance on legitimate interest",
+      "request": {
+        "reference": "req-1", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:compliance" }, "ex:legalBasis": { "@id": "ex:legitimateInterest" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "rule:comp-retention-limit", "status": "unknown" } ], "why": "hr-analytics partOf hr-division (typed PartyCollection), so the assignee part holds; compliance ∈ {compliance, operations} and the legal basis matches. rule:comp-hr-division-read is ready; no prohibition. Permit. The permission matches. rule:comp-anonymization's guard (purpose eq analytics) is F, so it is not in force; rule:comp-retention-limit's guard reads ex:retentionPeriod, which the request does not state, so it is U and the obligation unknown." },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "analytics purpose is not admitted",
+      "request": {
+        "reference": "req-2", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:analytics" }, "ex:legalBasis": { "@id": "ex:legitimateInterest" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "rule:comp-retention-limit", "status": "unknown" }, { "duty": "rule:comp-anonymization", "status": "outstanding" } ], "why": "analytics ∉ {compliance, operations}, so the permission is F: NotApplicable. It still matches, constraints aside. rule:comp-anonymization's guard reads this request's purpose, analytics, so it is in force; with no anonymize evidence it is outstanding. The retention guard is U (no retention period), so that obligation is unknown." },
+      "dprod_expected": "NotApplicable"
+    },
+    {
+      "name": "purpose missing, legal basis wrong",
+      "request": {
+        "reference": "req-3", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "ex:legalBasis": { "@id": "ex:consent" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "rule:comp-retention-limit", "status": "unknown" }, { "duty": "rule:comp-anonymization", "status": "unknown" } ], "why": "The purpose atom is U (missing) and the legal-basis atom F; U ∧ F = F, so the permission is F whatever the purpose. NotApplicable. The permission matches; both guards read missing request values (purpose, retention period), so both obligations are unknown." },
+      "dprod_expected": "Failure(MissingValue odrl:purpose)"
+    },
+    {
+      "name": "purpose admitted, legal basis missing",
+      "request": {
+        "reference": "req-4", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:compliance" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "rule:comp-retention-limit", "status": "unknown" } ], "why": "T ∧ U = U, so the permission is U. The permissive completion gives Permit, the restrictive one NotApplicable. The permission matches: the anonymization guard is F (compliance), so it is not in force; the retention guard is U, so that obligation is unknown. Neither has a deadline, so neither can change the verdict under either violations mode." },
+      "dprod_expected": "Failure(MissingValue ex:legalBasis)"
+    },
+    {
+      "name": "requester outside the division, purpose missing",
+      "request": {
+        "reference": "req-5", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:compliance-team" },
+        "params": { "ex:legalBasis": { "@id": "ex:legitimateInterest" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No partOf edge leads from compliance-team to hr-division, so the assignee part is F and the permission is F regardless of the U purpose atom. NotApplicable. No rule matches, so neither obligation is in force." },
+      "dprod_expected": "NotApplicable"
+    },
+    {
+      "name": "compliance read stating a long retention period",
+      "request": {
+        "reference": "req-6", "action": "odrl:read", "target": "asset:employee-compensation", "at": "2026-06-01T09:00:00Z",
+        "parties": { "odrl:assignee": "agent:hr-analytics" },
+        "params": { "odrl:purpose": { "@id": "ex:compliance" }, "ex:legalBasis": { "@id": "ex:legitimateInterest" }, "ex:retentionPeriod": { "@value": "P10Y", "@type": "xsd:duration" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "rule:comp-retention-limit", "status": "outstanding" } ], "why": "As in scenario 1, rule:comp-hr-division-read is ready: Permit. P10Y gt P7Y (same single component) is T, so rule:comp-retention-limit's guard holds and it is in force; no delete evidence, no deadline, so outstanding. The anonymization guard is F." },
+      "dprod_expected": "Permit (no duty is collected for a read)"
+    }
+  ]
+}

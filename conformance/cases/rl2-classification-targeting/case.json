@@ -1,0 +1,92 @@
+{
+  "case": "rl2-classification-targeting",
+  "source": "RL2 conformance/usecases/classification-targeting.md",
+  "classification": "partial",
+  "needs": [
+    "not expressible: consequent duty (rl2:consequentDuty) — approximated by a root obligation that repeats the permission's constraint as a guard",
+    "not expressible: duty object bound to the requested asset (rl2:anyAsset on a duty template)"
+  ],
+  "notes": "rl2:anyAgent → no odrl:assignee on the permission. rl2:anyAsset → target ex:AnyAsset, an odrl:AssetCollection; closure is closed-world (due2-profiles.md §6), so the assembler supplies the membership edge for the requested asset in sotw.closure. The classification condition becomes a state-source constraint on ex:targetClassification. The consequent duty becomes a root odrl:obligation. It is in force when the policy's permission matches the request (due2-workflows.md §5.2), constraints aside, so on its own it would be owed for every read of any asset; the permission's classification constraint is repeated on it as a guard, so it is in force exactly when the permission's match and constraint hold — RL2's 'fires only when accessResult is True' — except that an unknown classification makes it in force with an unknown finding, where RL2 emits no obligation. Its bearer defaults to the request subject, which matches RL2's binding of rl2:anyAgent. Its object cannot be bound to the requested asset: with no target, a ex:logAccess by the requester on any object is a witness, where RL2 requires the requested asset. The per-member occurrence identity (agent, asset) has no exact counterpart either. Decisions agree with RL2 in every scenario. Scenarios 4 and 5 are added; scenario 5 is the fulfilment the RL2 text describes.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "home-loan asset",
+      "request": {
+        "action": "ex:read", "target": "ex:LoanBook2026", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Analyst42" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetClassification": { "status": "resolved", "values": [ { "@id": "ex:HomeLoan" } ] } },
+        "evidence": [], "activation": {},
+        "closure": [ [ "odrl:partOf", "ex:LoanBook2026", "ex:AnyAsset" ] ]
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "outstanding" } ], "why": "ex:homeLoanReadPrivilege has no assignee to match; ex:LoanBook2026 ⊑ ex:AnyAsset by the closure; the classification is ex:HomeLoan. It applies with no duties and is ready. The obligation is in force — the permission matches and its guard holds — and outstanding, since no ex:logAccess by ex:Analyst42 is in evidence; under violations = ignore it does not affect the verdict." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "asset with another classification",
+      "request": {
+        "action": "ex:read", "target": "ex:CardLedger", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Analyst42" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetClassification": { "status": "resolved", "values": [ { "@id": "ex:CreditCard" } ] } },
+        "evidence": [], "activation": {},
+        "closure": [ [ "odrl:partOf", "ex:CardLedger", "ex:AnyAsset" ] ]
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:CreditCard eq ex:HomeLoan is F (IRIs by identity), so the permission is F. The permission still matches the request, but the obligation's guard is F, so it is not in force. Nothing applies." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "classification missing",
+      "request": {
+        "action": "ex:read", "target": "ex:LoanBook2026", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Analyst42" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetClassification": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {},
+        "closure": [ [ "odrl:partOf", "ex:LoanBook2026", "ex:AnyAsset" ] ]
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "unknown" } ], "why": "The classification constraint is U, so the permission is U. Completions give Permit and NotApplicable. The obligation's guard is U, so its in-force finding is U and it is reported with status unknown (it has no witness, so it would be outstanding if in force). RL2 emits no obligation here." },
+      "rl2_expected": "Indeterminate"
+    },
+    {
+      "name": "assembler omits the anyAsset membership",
+      "request": {
+        "action": "ex:read", "target": "ex:LoanBook2026", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Analyst42" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetClassification": { "status": "resolved", "values": [ { "@id": "ex:HomeLoan" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Without the closure edge, ex:LoanBook2026 ⊑ ex:AnyAsset is F — a closure is data, not a fact, so its absence is F rather than U — and the permission does not apply despite the classification. No rule of the policy matches, so the obligation is not in force." }
+    },
+    {
+      "name": "home-loan read already logged",
+      "request": {
+        "action": "ex:read", "target": "ex:LoanBook2026", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Analyst42" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:targetClassification": { "status": "resolved", "values": [ { "@id": "ex:HomeLoan" } ] } },
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-31T12:00:00Z", "actor": "ex:Analyst42", "action": "ex:logAccess", "object": "ex:LoanBook2026" } ],
+        "activation": {},
+        "closure": [ [ "odrl:partOf", "ex:LoanBook2026", "ex:AnyAsset" ] ]
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "fulfilled" } ], "why": "As in scenario 1 the permission applies and is ready. The obligation is in force; ex:ev1 is a witness — actor is the request subject (the duty names no assignee), action matches, and with no target the object is not compared — and its guard holds, so it is fulfilled." },
+      "rl2_expected": "Permit"
+    }
+  ]
+}

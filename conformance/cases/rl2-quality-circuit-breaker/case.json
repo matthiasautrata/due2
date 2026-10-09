@@ -1,0 +1,68 @@
+{
+  "case": "rl2-quality-circuit-breaker",
+  "source": "RL2 conformance/usecases/quality-circuit-breaker.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Privilege and prohibition map directly; asset.quality.errorRate becomes the state property ex:feedErrorRate (xsd:decimal, exact). RL2 puts the conflict strategy in configuration; odrl:prohibit is made explicit, and it never decides an outcome here because the two constraints are complementary. The independent RL2 duty becomes a root odrl:obligation. Its constraint reads a state operand, so it is a guard (due2-workflows.md §5.2): the obligation is in force when a rule of the policy matches the request — both the privilege and the prohibition match a Subscriber read — and the error rate exceeds 0.05. Its status is then reported with bearer ex:DataTeam, though the request subject is ex:Subscriber: at 0.08 it is outstanding, which is RL2's Active status-map entry for the independent duty. The duty's own action ex:report plays no part in in-force (§5.2). The access verdicts and the duty status agree with RL2. Monitoring the duty outside any request remains open (§9 #4) but no scenario needs it. Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "error rate 0.02",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:MarketDataFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:feedErrorRate": { "status": "resolved", "values": [ { "@value": "0.02", "@type": "xsd:decimal" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "0.02 ≤ 0.05 makes ex:readFeedPrivilege T, a ready candidate; 0.02 > 0.05 is F, so the prohibition does not apply. Both rules match the request, but the obligation's guard 0.02 > 0.05 is F, so it is not in force." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "error rate 0.08",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:MarketDataFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:feedErrorRate": { "status": "resolved", "values": [ { "@value": "0.08", "@type": "xsd:decimal" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "ex:reportIncidentDuty", "status": "outstanding" } ], "why": "0.08 > 0.05 makes ex:poorQualityProhibition T and it survives; the permission is F. The prohibition matches the request and the obligation's guard 0.08 > 0.05 is T, so ex:reportIncidentDuty is in force; no ex:report by ex:DataTeam on ex:QualityIncident is in evidence, so it is outstanding (RL2: Active), with bearer ex:DataTeam. Under violations = ignore it does not affect the verdict." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "error rate exactly at the threshold",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:MarketDataFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:feedErrorRate": { "status": "resolved", "values": [ { "@value": "0.050", "@type": "xsd:decimal" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "0.050 and 0.05 are the same decimal value, so lteq is T and gt is F: the permission is ready and the prohibition does not apply. The obligation's guard is F, so it is not in force." }
+    },
+    {
+      "name": "error rate not reported",
+      "request": {
+        "reference": "req-4", "action": "ex:read", "target": "ex:MarketDataFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:feedErrorRate": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:reportIncidentDuty", "status": "unknown" } ], "why": "Both the permission and the prohibition are U. The restrictive completion (permission F, prohibition T) gives Deny; the permissive one (permission T, prohibition F) gives Permit. Both rules match, and the obligation's guard is U, so it is in force with finding U and reported unknown." }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case": "rl2-data-product-offer",
+  "source": "RL2 conformance/usecases/data-product-offer.md",
+  "classification": "partial",
+  "needs": [
+    "not expressible: Offer → Agreement materialisation (Acceptance, primaryIds) and rl2:Promise clauses",
+    "not expressible: Maintenance Duty (rl2:invariant) for ex:dailyPortDuty; approximated by a remedial obligation guarded by the invariant's negation"
+  ],
+  "notes": "Only the materialized Agreement is written; RL2 states that the Offer is inert for Eval, and due2 has no Offer-to-Agreement transformation. rl2:prerequisiteDuty on both read Privileges becomes odrl:duty on both permissions, pointing at one named duty, so one attestation serves both (ODRL IM §2.6.5). The attestation is not a clause of the RL2 Agreement, so it is not an obligation here either. It names the Provider as assignee; without it, role inheritance would make the Consumer the bearer and the Provider's attestation would not be a witness. The Promises become root obligations, in force whenever a permission of the Agreement matches the request (§5.2). ex:historyPortDuty is direct: no evidence of ex:deliverInitialLoad means outstanding, RL2's Pending for an unbounded Achievement Duty. ex:dailyPortDuty's Maintain invariant has no due2 form; the closest is a remedial obligation (refresh the port) guarded by portAge > PT18H, so RL2's Active maps to 'not in force' and Violated to 'in force, outstanding'. The standing divergence on unfulfilled preconditions applies to scenarios 2 and 3. Scenarios 2 and 3 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "read daily port after attestation",
+      "request": {
+        "reference": "req-1", "action": "ex:read", "target": "ex:PortDaily", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Consumer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:portDailyAge": { "status": "resolved", "values": [ { "@value": "PT4H", "@type": "xsd:dayTimeDuration" } ] } },
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:Provider", "action": "ex:attest", "object": "ex:DataProduct", "issuer": "ex:Provider" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:historyPortDuty", "status": "outstanding" } ], "why": "ex:readDailyPortPrivilege_A1 applies; ex:ev1 is a witness for ex:attestConformance_A1 (actor ex:Provider, action, object, before effective_at), so the candidate is ready. The permission matches, so the obligations are in force subject to their guards: ex:historyPortDuty has none and no witness (outstanding, RL2 Pending); ex:dailyPortDuty's guard PT4H > PT18H is F, so it is not in force (RL2 Active)." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "read daily port, no attestation yet",
+      "request": {
+        "reference": "req-2", "action": "ex:read", "target": "ex:PortDaily", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Consumer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:portDailyAge": { "status": "resolved", "values": [ { "@value": "PT4H", "@type": "xsd:dayTimeDuration" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance_A1" ] ], "obligations": [ { "duty": "ex:historyPortDuty", "status": "outstanding" } ], "why": "ex:readDailyPortPrivilege_A1 applies; its duty has no witness, so it is outstanding and the candidate is pending (no deadline, never violated). ex:historyPortDuty is in force and outstanding; ex:dailyPortDuty's guard is F." }
+    },
+    {
+      "name": "read history port, attestation by the wrong party, daily port stale",
+      "request": {
+        "reference": "req-3", "action": "ex:read", "target": "ex:PortHistory", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Consumer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:portDailyAge": { "status": "resolved", "values": [ { "@value": "PT20H", "@type": "xsd:dayTimeDuration" } ] } },
+        "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:Consumer", "action": "ex:attest", "object": "ex:DataProduct" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance_A1" ] ], "obligations": [ { "duty": "ex:dailyPortDuty", "status": "outstanding" }, { "duty": "ex:historyPortDuty", "status": "outstanding" } ], "why": "ex:readHistoryPortPrivilege_A1 applies. ex:ev2's actor is ex:Consumer, not the duty's assignee ex:Provider, so it is no witness; the shared duty is outstanding and the candidate pending. The history-port permission matching suffices to put the policy's obligations in force: ex:dailyPortDuty's guard PT20H > PT18H holds and it has no witness (RL2 would call the Maintain duty Violated), and ex:historyPortDuty is outstanding." }
+    }
+  ]
+}

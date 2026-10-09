@@ -1,0 +1,25 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/asset-collection-access.md
+
+ex:catalogTerms a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:collectionAccess .
+
+ex:collectionAccess a odrl:Permission ;
+    odrl:assignee ex:Researcher ;
+    odrl:action ex:access ;
+    odrl:target ex:ClinicalOutcomes .
+
+ex:access a odrl:Action .
+
+# rl2:member edges become typed odrl:partOf edges from member to collection.
+ex:ClinicalOutcomes a odrl:AssetCollection .
+ex:Demographics a odrl:Asset ; odrl:partOf ex:ClinicalOutcomes .
+ex:Outcomes a odrl:Asset ; odrl:partOf ex:ClinicalOutcomes .
+
+# Added (not in the RL2 policy): a nested collection, to exercise RL2's rule that
+# membership is not transitively expanded.
+ex:Registries a odrl:AssetCollection ; odrl:partOf ex:ClinicalOutcomes .
+ex:CancerRegistry a odrl:Asset ; odrl:partOf ex:Registries .

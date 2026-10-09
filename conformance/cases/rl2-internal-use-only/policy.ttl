@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/internal-use-only.md
+
+ex:internalUsePolicy a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Vendor ;
+    odrl:assignee ex:Licensee ;
+    odrl:permission ex:internalUse .
+
+ex:internalUse a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:ReferenceData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:recipientClass ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "internal"
+    ] .
+
+# RL2 path context.recipient.class: the class of the recipient, flattened by the
+# assembler onto the state node (one hop).
+ex:recipientClass a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:recipientClass ;
+    rdfs:range xsd:string .

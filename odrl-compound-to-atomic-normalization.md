@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.11  
+Version: 0.12  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
+Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
 
 ## 1. Goal
 
@@ -49,24 +49,27 @@ The W3C POE normalization notes and research in §11 are informative. They do no
 
 One invocation accepts one finite RDF default graph. The entire graph is the source and identity domain; there is no configurable closure calculation. It MUST contain exactly one Policy `P0` and the complete component graph required to normalize it. Named graphs and unrelated Policies are rejected.
 
-A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy`, `odrl:Set`, `odrl:Offer`, or `odrl:Agreement`. Exactly one such node MUST exist; a node with more than one of these explicit types still counts once. No class inference is performed.
+The invocation also receives the *selected profile modules*: the finite graphs of the profiles `P0` names with `odrl:profile`, together with due2's binding modules for them (`due2-profiles.md` §2). They are read for two things only: declared policy subclasses and a declared conflict default. They are not part of the source graph and do not enter `source_digest`.
+
+A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy`, `odrl:Set`, `odrl:Offer`, or `odrl:Agreement`, or of a class that a selected profile module declares `rdfs:subClassOf` one of these — `dprod:DataContract`, for instance. Only declared edges count; no other class inference is performed. Exactly one such node MUST exist; a node with more than one of these types still counts once.
 
 `P0` MUST:
 
 - be valid in the supported ODRL 2.2 compact/compound fragment;
-- have exactly one `odrl:uid`;
+- have an identity: be an IRI node, or carry exactly one `odrl:uid` (the ODRL JSON-LD context maps `uid` to `@id`, so in RDF the IRI is usually the uid);
 - have at least one `odrl:permission`, `odrl:prohibition`, or `odrl:obligation`;
 - have at most one `odrl:conflict`, whose value is `odrl:prohibit`, `odrl:perm`, or `odrl:invalid`; and
 - be fully materialized and contain no `odrl:inheritFrom`.
 
-An absent term means `odrl:invalid` (ODRL IM §2.10) and is made explicit on every output Atomic Policy. All three values survive decomposition. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids the source Policy when one of its Permissions and one of its Prohibitions both apply, and the source Policy remains identifiable: one `N(P0)` artifact derives from exactly one source Policy, and every downstream atom carries its source Policy (`due2-workflows.md` §3.1).
+An absent term takes the conflict default a selected profile declares with `odrl:conflict` on its profile resource — DPROD declares `odrl:prohibit` — and otherwise means `odrl:invalid` (ODRL IM §2.10). Either way it is made explicit on every output Atomic Policy. All three values survive decomposition. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids the source Policy when one of its Permissions and one of its Prohibitions both apply, and the source Policy remains identifiable: one `N(P0)` artifact derives from exactly one source Policy, and every downstream atom carries its source Policy (`due2-workflows.md` §3.1).
 
-Every identity that later stages key on MUST be authored:
+Anonymous structure must have a local shape:
 
-- every Rule — Permission, Prohibition, Obligation, Duty, Consequence, Remedy — MUST have an authored `odrl:uid` or be an IRI node. Anonymous Rules are rejected with `AnonymousRule`. This is stricter than ODRL, where a Rule's `uid` is optional (IM §2.6): later stages key duty instances and fulfilment evidence on it, so an ODRL-conformant Policy with anonymous Rules is rejected until its Rules are named.
 - every blank node without an authored `odrl:uid` MUST be the object of exactly one triple, and following those triples upward MUST reach an IRI node or a node with an authored `odrl:uid` — its *anchor*. A blank node referenced twice is rejected with `SharedAnonymousNode`. One that reaches no anchor, including any cycle of blank nodes, is rejected with `UnanchoredAnonymousNode`.
 
 Anything shared must be named. Anonymous structure is thus a forest of trees hanging from named nodes, which is what makes its identity local (§5.2).
+
+Rules may be anonymous, as ODRL allows (a Rule's `uid` is optional, IM §2.6). An anonymous Rule's identity is local and content-derived like any anonymous node (§5.2): editing the Rule changes its identity and that of its atoms. A Rule whose identity must survive edits — in particular a duty that evidence names (grant scope, `due2-workflows.md` §5.3) — should be named.
 
 The input graph MUST be self-contained for Rule references. A Rule in the graph MUST NOT depend on an undisclosed parent Policy or an external Rule that would also need transformation. IRIs are never dereferenced.
 
@@ -113,7 +116,7 @@ For each Policy, Rule, Asset, Party, Constraint, or LogicalConstraint, its effec
 2. otherwise its RDF node IRI, if it is an IRI; or
 3. otherwise a generated UUID from §5.2.
 
-By §3, Policies and Rules always take case 1 or 2. Case 3 applies only to anonymous Assets, Parties, Constraints, LogicalConstraints, refined-action nodes, and RDF list cells.
+By §3, a Policy always takes case 1 or 2. Case 3 applies to anonymous Rules, Assets, Parties, Constraints, LogicalConstraints, refined-action nodes, and RDF list cells.
 
 An existing valid authored UID is preserved. Distinct resources MUST NOT claim the same effective identity. A resource with more than one UID is invalid.
 
@@ -203,11 +206,13 @@ The implementation MUST run these phases in order:
 
 ### 6.2 Compact Policy interiorization
 
-Policy-level Actions, relation values, and function values are added by RDF set union to every root Rule and then removed from Policy level. A distinct Policy-level and Rule-level value forms a compound axis.
+Policy-level values fill in what a root Rule leaves unstated, and are then removed from the Policy level. They are grouped in families: the actions; the relations (`odrl:target`, `odrl:output`); and each function predicate separately. A root Rule that states any value of a family keeps its own values for that family. A root Rule that states none receives all the Policy-level values of that family, which may form a compound axis (§6.3).
+
+ODRL IM §2.7.1 says shared properties are "replicated" into Rules but does not say what happens when a Rule already has the property. Filling only unstated families reads the Policy level as a default, which is what authors mean when they override it on one Rule — and what DPROD Contracts specifies ("inherited from policy if absent").
 
 For this profile, “each Rule in the Policy” means each root Rule directly linked from `P0`. Nested Duties retain their own properties and do not inherit Policy-level shortcuts.
 
-The transformer MUST track which values came from Policy-level interiorization. If set union introduces an invalid second relation predicate—for example, Policy-level `odrl:target` added to an Obligation Duty that already has `odrl:output`—validation MUST return `InteriorizationRelationConflict`. The diagnostic MUST identify the Policy shortcut predicate/value, destination Rule, and pre-existing relation predicate/value.
+The transformer MUST record in lineage which values came from Policy-level interiorization; stage 2 needs it to resolve party roles (`due2-workflows.md` §4). Because relations form one family, a Rule that states `odrl:output` never receives a Policy-level `odrl:target`, so interiorization cannot create a Rule with both.
 
 ### 6.3 Atomic expansion
 
@@ -271,7 +276,7 @@ A conforming implementation establishes:
 6. **Determinism:** isomorphic input graphs yield identical primary and lineage bytes.
 7. **Idempotence:** normalizing the test extraction of an already normalized `NP_i` returns the same singleton canonical bytes.
 8. **Boundedness:** limits fail before partial authoritative output.
-9. **Purity:** output depends only on the supplied graph, fixed profile, and limits; there is no I/O or ambient entailment.
+9. **Purity:** output depends only on the supplied graph, the selected profile modules, the fixed profile, and limits; there is no I/O or ambient entailment.
 10. **Locality:** an output IRI depends only on its source identity; for an anonymous node, on its own content, parent, and predicate; and for a generated Rule or Policy, on the selection that produced it. Editing triples elsewhere in the input changes no output IRI.
 
 For invariant 7 only, `Extract(N(P0), NP_i)` is the smallest default graph obtained by starting at `NP_i`, including every triple whose subject has been reached, and recursively reaching each object IRI that is also a subject in `N(P0)`, except any Policy node other than `NP_i`. This includes the complete reachable shared component graph. Extraction is a conformance-test operation, not permission to concatenate, split, or independently deploy normalized artifacts.
@@ -318,7 +323,8 @@ The first implementation MUST include golden positive and negative vectors for:
 - a Permission with no target failing after interiorization;
 - a Duty with `odrl:output` alone succeeding;
 - a Rule with both `odrl:target` and `odrl:output` failing;
-- compact Policy `odrl:target` colliding with a root Duty's `odrl:output` and producing the complete `InteriorizationRelationConflict` diagnostic;
+- compact Policy `odrl:target` not reaching a root Duty that states `odrl:output`, and a Rule-level `odrl:assignee` overriding the Policy-level one;
+- a Policy typed only by a declared profile subclass, and an absent conflict term taking a selected profile's default;
 - multiple values of each recognized function predicate;
 - an IRI-identified compound Rule producing distinct atom node IRIs equal to their distinct `atomic_rule_uid` values;
 - a shared named Duty referenced by two Permissions, remaining one Duty;
@@ -330,7 +336,7 @@ The first implementation MUST include golden positive and negative vectors for:
 - authored UID conflicts;
 - deterministic UUID, skolem, source digest, and lineage values across isomorphic serializations;
 - acceptance of all three conflict values, and of an absent term emitted as explicit `odrl:invalid`; rejection of `odrl:inheritFrom`, named graphs, and multiple Policies;
-- rejection of an anonymous Rule, a multiply referenced anonymous node, and an unanchored anonymous node, each with its diagnostic;
+- acceptance of an anonymous Rule with a local identity; rejection of a multiply referenced anonymous node and an unanchored anonymous node, each with its diagnostic;
 - a Rule-reference cycle rejected, with every Rule and edge of the cycle in the diagnostic;
 - an edit to an annotation, and an edit to one Rule, each leaving every unrelated output IRI unchanged;
 - exact-limit success and over-limit failure;

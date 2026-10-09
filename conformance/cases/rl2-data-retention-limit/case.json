@@ -1,0 +1,71 @@
+{
+  "case": "rl2-data-retention-limit",
+  "source": "RL2 conformance/usecases/data-retention-limit.md",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:deadline for the deletion window end"
+  ],
+  "notes": "The retention privilege translates directly. RL2's rl2:currentDateTime resolves to state.Clock, the snapshot evaluation time, so it is bound to dprod:clock (sotw.effective_at) — a context built-in, not a profile term — rather than odrl:dateTime, which DPROD would rebind anyway; xsd:dateTimeStamp becomes xsd:dateTime. The deletion duty is an independent clause, so it becomes a root odrl:obligation with the Customer as bearer through the policy-level assignee. It is in force for every request the retention permission matches, constraints aside (§5.2), so retain requests after expiry still report it. Its window start reads due2:actionTime, so it is a witness condition: deletion evidence before 2027-01-01 does not fulfil it. Its window end becomes an inclusive dprod:deadline at RL2's exclusive end, a one-instant difference accepted (due2-profiles.md §7). One status difference remains: before the window opens RL2 calls the duty Pending, while due2 has no not-yet-owed state for an obligation in force and reports it outstanding (scenario 1). RL2 states that the privilege is inapplicable from 2027-01-01 and that the duty's status follows the deletion evidence, but gives no decision for those snapshots, so scenarios 2–5 carry no rl2_expected. Scenarios 2–5 are added; scenario 5 is DPROD-faithful (violations = deny).",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "retain before expiry",
+      "request": {
+        "reference": "req-1", "action": "ex:retain", "target": "ex:Dataset", "at": "2026-12-31T12:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-12-31T12:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:deleteAfterRetention", "status": "outstanding" } ], "why": "dprod:clock = 2026-12-31T12:00Z < 2027-01-01, so ex:retentionUntil2027 applies with no duties. It matches the request, so ex:deleteAfterRetention is in force; no witness and its deadline has not passed, so it is outstanding (RL2: Pending, window not yet open). Under violations = ignore it does not affect the verdict." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "retain after expiry, not yet deleted",
+      "request": {
+        "reference": "req-2", "action": "ex:retain", "target": "ex:Dataset", "at": "2027-01-01T06:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-01-01T06:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:deleteAfterRetention", "status": "outstanding" } ], "why": "dprod:clock < 2027-01-01 is F, so the permission does not apply; nothing prohibits. The permission still matches (constraints aside), so the obligation is in force: no witness, deadline 2027-01-02 not passed — outstanding (RL2: Active)." }
+    },
+    {
+      "name": "deleted inside the window",
+      "request": {
+        "reference": "req-3", "action": "ex:retain", "target": "ex:Dataset", "at": "2027-01-01T18:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2027-01-01T18:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2027-01-01T10:00:00Z", "actor": "ex:Customer", "action": "ex:delete", "object": "ex:Dataset" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:deleteAfterRetention", "status": "fulfilled" } ], "why": "The permission is F on its clock constraint. The obligation is in force; ex:ev1 is a witness (actor ex:Customer, action, object, before effective_at and the deadline) and its action time 2027-01-01T10:00Z ≥ 2027-01-01, so it is fulfilled (RL2: Fulfilled)." }
+    },
+    {
+      "name": "deleted before the window opened",
+      "request": {
+        "reference": "req-4", "action": "ex:retain", "target": "ex:Dataset", "at": "2027-01-01T18:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2027-01-01T18:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev0", "occurred_at": "2026-12-30T00:00:00Z", "actor": "ex:Customer", "action": "ex:delete", "object": "ex:Dataset" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:deleteAfterRetention", "status": "outstanding" } ], "why": "ex:ev0 matches actor, action, and object, but its action time 2026-12-30 ≥ 2027-01-01 is F, so it fails the witness condition; every witness fails, so the obligation is outstanding. The permission is F." }
+    },
+    {
+      "name": "deadline missed, DPROD-faithful violations",
+      "request": {
+        "reference": "req-5", "action": "ex:retain", "target": "ex:Dataset", "at": "2027-01-03T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
+      },
+      "sotw": { "effective_at": "2027-01-03T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "ex:deleteAfterRetention", "status": "violated" } ], "why": "The permission is F on its clock constraint but matches, so the obligation is in force; effective_at is past its deadline with no witness, so it is violated (RL2: Violated). Under violations = deny a violated obligation in force denies (§6.4); under the default ignore the verdict would be NotApplicable." }
+    }
+  ]
+}

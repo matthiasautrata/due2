@@ -1,0 +1,430 @@
+# All DPROD-contracts terms are minted in the core dprod: namespace
+# (https://ekgf.org/dprod/spec/develop/); this file contributes additional
+# axioms to the DPROD ontology rather than minting under a separate
+# contracts namespace.
+# imports: https://ekgf.org/dprod/spec/develop/
+# imports: http://www.w3.org/ns/odrl/2/
+# prefix: dprod
+
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+dct:description a owl:AnnotationProperty .
+dct:contributor a owl:AnnotationProperty .
+dct:license a owl:AnnotationProperty .
+dct:modified a owl:AnnotationProperty .
+
+<https://ekgf.org/dprod/spec/develop/contracts/>
+  a owl:Ontology ;
+  dct:title "DPROD Data Contracts — ODRL 2.2 Profile Extension"@en ;
+  rdfs:label "DPROD contracts ontology"@en ;
+  dct:description
+    """DPROD Data Contracts: a proper ODRL 2.2 profile for deterministic data governance.
+
+    Uses ODRL terms for all standard constructs (Rule types, Policy types,
+    Constraint types, operators, core properties). Adds only:
+    - Explicit duty lifecycle (Pending -> Active -> Fulfilled/Violated)
+    - Deadline property on odrl:Duty
+    - Recurrence property on odrl:Duty (RFC 5545 RRULE)
+    - Duty party roles (subject = duty bearer, object = affected party)
+    - Data offer and data contract subtypes
+    - Deterministic transitive matching over ODRL collection membership
+    - One-hop operand bindings to normalized request, state, or context properties
+    - One immutable evaluation context for request and world-state operands
+    - Logical negation (not) on LogicalConstraint
+
+    DPROD contract policies are valid ODRL 2.2 policies. Any ODRL processor
+    can partially understand them; DPROD-aware processors handle the
+    extensions."""@en ;
+  dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+  dct:modified "2026-08-20"^^xsd:date ;
+  dct:publisher <https://www.omg.org/> ;
+  dct:contributor <https://www.linkedin.com/in/matthiasautrata> ;
+  dct:contributor <https://www.linkedin.com/in/natasavaritimou> ;
+  dct:contributor <https://www.linkedin.com/in/peterivett> ;
+  dct:contributor <https://www.linkedin.com/in/jgeluk> ;
+  dct:contributor <https://www.linkedin.com/in/marcel-fr%C3%B6hlich-648a043> ;
+  dct:contributor <https://www.linkedin.com/in/matthias-jurisch> ;
+  dct:contributor <https://www.linkedin.com/in/tonyseale> ;
+  dct:contributor <https://www.linkedin.com/in/joshuacornejo> ;
+  owl:imports dprod: ;
+  owl:imports odrl: ;
+  owl:versionInfo "0.7" ;
+  rdfs:seeAlso <http://www.w3.org/ns/odrl/2/> ;
+.
+
+
+############################# DPROD Contracts Classes #########################
+
+dprod:DataOffer
+  a owl:Class ;
+  dct:description "Policy offer defining data access terms."@en ;
+  rdfs:comment
+    """A DataOffer is an Offer from a data provider.
+    It defines permissions, duties, and prohibitions for data access.
+    When accepted by a consumer, becomes a DataContract (Agreement)."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "data offer" ;
+  rdfs:subClassOf odrl:Offer ;
+.
+
+dprod:DataContract
+  a owl:Class ;
+  dct:description "Activated data offer binding provider and consumer."@en ;
+  rdfs:comment
+    """A DataContract is an activated DataOffer.
+    - assigner: data provider (from offer)
+    - assignee: data consumer
+    Bilateral: both parties may have active duties."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "data contract" ;
+  rdfs:subClassOf odrl:Agreement ;
+  owl:disjointWith dprod:DataOffer ;
+.
+
+dprod:EvaluationContext
+  a owl:Class ;
+  dct:description "Immutable, provenance-bearing input graph for one policy evaluation."@en ;
+  rdfs:comment
+    """The immutable container for runtime operand resolution. An evaluator
+    constructs one EvaluationContext for each evaluation and supplies the
+    authorization request, an immutable state-of-the-world snapshot, the
+    requesting agent, and the evaluation clock through the four normative
+    properties. The context is a prov:Entity so implementations can retain the
+    exact input provenance needed to reproduce and audit a decision. Evaluation
+    never reads a live global graph or dereferences an undeclared source while
+    resolving an operand binding."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "evaluation context" ;
+  rdfs:subClassOf prov:Entity ;
+.
+
+dprod:OperandSource
+  a owl:Class ;
+  dct:description "Closed set of normalized source nodes from which an operand value may be read."@en ;
+  rdfs:comment
+    """An operand reads one direct property from exactly one normalized source:
+    the authorization request, the immutable world snapshot, or the evaluation
+    context itself. No other source and no graph traversal are supported."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "operand source" ;
+  owl:oneOf (dprod:requestSource dprod:stateSource dprod:contextSource) ;
+.
+
+dprod:requestSource
+  a owl:NamedIndividual, dprod:OperandSource ;
+  dct:description "Normalized authorization request node."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "request source" ;
+.
+
+dprod:stateSource
+  a owl:NamedIndividual, dprod:OperandSource ;
+  dct:description "Immutable normalized state-of-the-world snapshot node."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "state source" ;
+.
+
+dprod:contextSource
+  a owl:NamedIndividual, dprod:OperandSource ;
+  dct:description "Evaluation context node containing built-in agent and clock values."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "context source" ;
+.
+
+
+############################# DPROD Lifecycle Status Vocabulary #########################
+# An optional skos:ConceptScheme covering common values. Implementations are free
+# to use it as-is, extend it, or substitute a different vocabulary. Authored
+# lifecycle statuses and evaluator-computed duty state remain distinct properties.
+
+
+dprod:DataContractLifecycleStatus
+  a skos:ConceptScheme ;
+  dct:title "DPROD Data Contract Lifecycle Status"@en ;
+  rdfs:label "DPROD data contract lifecycle status" ;
+  dct:description
+    """Optional reference concept scheme covering common statuses (Pending,
+    Active, Fulfilled, Violated). It can be used with authored offer and contract
+    lifecycle-status properties. Implementations are free to use it, extend it,
+    or use a different skos:ConceptScheme entirely. dprod:dutyState is an
+    evaluator-computed state and is not part of the lifecycle-status hierarchy."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  skos:hasTopConcept dprod:Pending , dprod:Active , dprod:Fulfilled , dprod:Violated ;
+.
+
+dprod:Pending
+  a skos:Concept ;
+  dct:description "Condition not yet satisfied; not yet in force."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "pending" ;
+  skos:prefLabel "pending"@en ;
+  skos:topConceptOf dprod:DataContractLifecycleStatus ;
+.
+
+dprod:Active
+  a skos:Concept ;
+  dct:description "Condition satisfied, action required; in force."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "active" ;
+  skos:prefLabel "active"@en ;
+  skos:topConceptOf dprod:DataContractLifecycleStatus ;
+.
+
+dprod:Fulfilled
+  a skos:Concept ;
+  dct:description "Action performed; obligations complete."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "fulfilled" ;
+  skos:prefLabel "fulfilled"@en ;
+  skos:topConceptOf dprod:DataContractLifecycleStatus ;
+.
+
+dprod:Violated
+  a skos:Concept ;
+  dct:description "Deadline passed without performance; breached."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "violated" ;
+  skos:prefLabel "violated"@en ;
+  skos:topConceptOf dprod:DataContractLifecycleStatus ;
+.
+
+
+#############################  DPROD Contracts Properties ################
+
+
+dprod:offerLifecycleStatus
+  a owl:ObjectProperty ;
+  dct:description "Where this offer sits in its publication lifecycle — typically drafted, published, withdrawn, or superseded; assigned by the publisher."@en ;
+  rdfs:comment
+    """Value is any skos:Concept; dprod:DataContractLifecycleStatus is one
+    example concept scheme shipped with DPROD."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:subPropertyOf dprod:lifecycleStatus ;
+  rdfs:domain dprod:DataOffer ;
+  rdfs:range skos:Concept ;
+  rdfs:label "offer lifecycle status" ;
+.
+
+dprod:contractLifecycleStatus
+  a owl:ObjectProperty ;
+  dct:description "Where this contract sits in its administrative lifecycle — typically pre-effective, in force, completed, or breached; assigned by the contract management process."@en ;
+  rdfs:comment
+    """Value is any skos:Concept; dprod:DataContractLifecycleStatus is one
+    example concept scheme shipped with DPROD."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:subPropertyOf dprod:lifecycleStatus ;
+  rdfs:domain dprod:DataContract ;
+  rdfs:range skos:Concept ;
+  rdfs:label "contract lifecycle status" ;
+.
+
+dprod:dutyState
+  a owl:ObjectProperty ;
+  dct:description "The latest evaluation result for this duty, computed by an evaluator from observable facts; recomputed on demand rather than authored."@en ;
+  rdfs:comment
+    """Value is any skos:Concept. The state machine in formal-semantics §5 is
+    one possible interpretation. Implementations are free to use a different
+    state vocabulary and/or state machine. This evaluator-computed property is
+    deliberately separate from the authored dprod:lifecycleStatus hierarchy."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain odrl:Duty ;
+  rdfs:range skos:Concept ;
+  rdfs:label "duty state" ;
+.
+
+dprod:deadline
+  a owl:DatatypeProperty ;
+  dct:description "Time constraint for duty fulfillment."@en ;
+  rdfs:comment
+    """Supports multiple forms:
+    - xsd:dateTime: absolute deadline (e.g., 2026-12-31T23:59:59Z)
+    - xsd:duration: relative to activation (e.g., P30D, PT24H)
+    For duration: deadline = activationTime + duration.
+    No rdfs:range declared because the range is a union of datatypes;
+    SHACL enforces the allowed types."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain odrl:Duty ;
+  rdfs:label "deadline" ;
+.
+
+dprod:recurrence
+  a owl:DatatypeProperty ;
+  dct:description "RFC 5545 RRULE defining when duty instances are generated."@en ;
+  rdfs:comment
+    """An RFC 5545 RRULE string (e.g., FREQ=DAILY;BYHOUR=6;BYMINUTE=0).
+    Defines the schedule on which duty instances are created.
+    Each instance follows the standard duty lifecycle independently.
+    The deadline property defines the per-instance fulfillment window.
+    Any iCal-compliant library can parse the value."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain odrl:Duty ;
+  rdfs:range xsd:string ;
+  rdfs:label "recurrence" ;
+.
+
+dprod:acceptsOffer
+  a owl:ObjectProperty ;
+  dct:description "The offer this contract activates."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain dprod:DataContract ;
+  rdfs:range dprod:DataOffer ;
+  rdfs:label "accepts offer" ;
+.
+
+dprod:effectiveDate
+  a owl:DatatypeProperty ;
+  dct:description "When the offer or contract becomes effective."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain [ owl:unionOf (dprod:DataOffer dprod:DataContract) ] ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "effective date" ;
+.
+
+dprod:expirationDate
+  a owl:DatatypeProperty ;
+  dct:description "When the offer or contract expires."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain [ owl:unionOf (dprod:DataOffer dprod:DataContract) ] ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "expiration date" ;
+.
+
+dprod:subjectOfDuty
+  a owl:ObjectProperty ;
+  dct:description "Party bearing the duty (must perform the action)."@en ;
+  rdfs:comment
+    "The duty bearer. When omitted, the bearer defaults to the data product owner (dprod:dataProductOwner) of the data product the policy applies to. Sub-property of odrl:function for ODRL processor compatibility."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:subPropertyOf odrl:function ;
+  rdfs:domain odrl:Duty ;
+  rdfs:range odrl:Party ;
+  rdfs:label "subject" ;
+.
+
+dprod:objectOfDuty
+  a owl:ObjectProperty ;
+  dct:description "Party affected by the duty action."@en ;
+  rdfs:comment
+    "The party affected by or receiving the result of the duty action. Sub-property of odrl:function for ODRL processor compatibility."@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:subPropertyOf odrl:function ;
+  rdfs:domain odrl:Duty ;
+  rdfs:range odrl:Party ;
+  rdfs:label "object" ;
+.
+
+dprod:operandSource
+  a owl:ObjectProperty ;
+  dct:description "Normalized graph from which an operand reads its value."@en ;
+  rdfs:comment
+    """Exactly one of dprod:requestSource, dprod:stateSource, or
+    dprod:contextSource. The source is selected before the evaluator performs
+    its single property lookup."""@en ;
+  rdfs:domain odrl:LeftOperand ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "operand source" ;
+  rdfs:range dprod:OperandSource ;
+.
+
+dprod:operandProperty
+  a rdf:Property ;
+  dct:description "Single property read from an operand's normalized source graph."@en ;
+  rdfs:comment
+    """The property MUST be an IRI and is looked up directly on the node selected
+    by dprod:operandSource. Request and state producers MUST normalize every
+    policy-relevant fact onto their respective source node. RDF lists and
+    multi-step traversal are deliberately unsupported."""@en ;
+  rdfs:domain odrl:LeftOperand ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "operand property" ;
+.
+
+dprod:request
+  a owl:ObjectProperty ;
+  dct:description "Authorization request supplied for one policy evaluation."@en ;
+  rdfs:comment
+    """Selects the normalized request node used by dprod:requestSource operand
+    bindings."""@en ;
+  rdfs:domain dprod:EvaluationContext ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "request" ;
+  rdfs:range rdfs:Resource ;
+.
+
+dprod:state
+  a owl:ObjectProperty ;
+  dct:description "Immutable state-of-the-world snapshot supplied for one policy evaluation."@en ;
+  rdfs:comment
+    """Selects the normalized snapshot node used by dprod:stateSource operand
+    bindings. The object is supplied by the evaluator, never an instruction to
+    query live external state."""@en ;
+  rdfs:domain dprod:EvaluationContext ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "state" ;
+  rdfs:range prov:Entity ;
+.
+
+dprod:agent
+  a owl:ObjectProperty ;
+  dct:description "Requesting agent supplied for one policy evaluation."@en ;
+  rdfs:domain dprod:EvaluationContext ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "agent" ;
+  rdfs:range odrl:Party ;
+.
+
+dprod:clock
+  a owl:DatatypeProperty ;
+  dct:description "Immutable timestamp at which policy evaluation occurs."@en ;
+  rdfs:domain dprod:EvaluationContext ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "clock" ;
+  rdfs:range xsd:dateTime ;
+.
+
+dprod:not
+  a owl:ObjectProperty ;
+  dct:description "Logical negation on a constraint."@en ;
+  rdfs:comment
+    """ODRL defines odrl:and and odrl:or on LogicalConstraint but lacks
+    negation. DPROD adds dprod:not following the same pattern:
+      _:lc a odrl:LogicalConstraint ;
+          dprod:not _:c1 ."""@en ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:domain odrl:LogicalConstraint ;
+  rdfs:range [ owl:unionOf (odrl:Constraint odrl:LogicalConstraint) ] ;
+  rdfs:label "not" ;
+.
+
+
+#############################  DPROD Context Operands ################
+
+
+dprod:currentAgent
+  a odrl:LeftOperand ;
+  dct:description "The requesting agent."@en ;
+  rdfs:comment
+    """A normal one-hop left operand for constraint identity comparisons.
+    For rules applying to any requesting agent, omit odrl:assignee (standard
+    ODRL); do not use currentAgent as assignee."""@en ;
+  dprod:operandProperty dprod:agent ;
+  dprod:operandSource dprod:contextSource ;
+  rdfs:isDefinedBy dprod: ;
+  rdfs:label "current agent" ;
+.
+
+# ODRL already defines the evaluation-time operand. DPROD binds it to the
+# common context resolver instead of minting a duplicate DPROD clock operand.
+odrl:dateTime
+  dprod:operandProperty dprod:clock ;
+  dprod:operandSource dprod:contextSource ;
+.

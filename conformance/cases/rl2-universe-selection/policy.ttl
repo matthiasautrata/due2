@@ -1,0 +1,17 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/universe-selection.md
+# The edition, publication status, and selection are application provenance: in due2 the
+# selected policy is identified by the corpus id (the digest of W1's output) in the case tuple.
+
+ex:terms a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readDataset .
+
+ex:readDataset a odrl:Permission ;
+    odrl:assignee ex:Subscriber ;
+    odrl:action ex:read ;
+    odrl:target ex:Dataset .
+
+ex:read a odrl:Action .

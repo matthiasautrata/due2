@@ -1,0 +1,67 @@
+{
+  "case": "rl2-multi-level-approval",
+  "source": "RL2 conformance/usecases/multi-level-approval.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. RL2's global.approvals.requiredSetValid becomes the state property ex:requiredApprovalSetValid; the four approvals, their binding to project P, their order, and their expiry are all computed by the approval service before the SOTW is frozen. Project P is prose in RL2 and is not a request parameter, so it is not modelled. RL2 says only that missing, expired, or conflicting approval evidence \"does not establish the privilege\"; due2 separates the cases. Expiry is assessed by the assembler and arrives as false (scenario 2: NotApplicable); missing or conflicting approval data arrives as a non-resolved status (scenarios 3 and 4: Indeterminate). Neither is Permit, so both agree with RL2's sentence. Scenarios 2–4 carry that sentence over; they have no rl2_expected because RL2 names no decision for them.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "all approvals valid",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:CustomerTransactions", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredApprovalSetValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The approval-set fact is true, so ex:approvedAccess is T; it has no duties and nothing prohibits." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "an approval has expired",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:CustomerTransactions", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredApprovalSetValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The assembler found an expired approval and resolved the fact to false; false = true is F, so the permission is F and nothing else applies." }
+    },
+    {
+      "name": "approval data missing",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:CustomerTransactions", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredApprovalSetValid": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the permission is U; the completions give Permit and NotApplicable." }
+    },
+    {
+      "name": "approval data in conflict",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:CustomerTransactions", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredApprovalSetValid": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two disagreeing values give status conflict, so the constraint is U; the completions give Permit and NotApplicable." }
+    }
+  ]
+}

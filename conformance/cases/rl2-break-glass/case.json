@@ -1,0 +1,53 @@
+{
+  "case": "rl2-break-glass",
+  "source": "RL2 conformance/usecases/break-glass.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. rl2:subject on the clause → odrl:assignee on the permission. The agent-scoped path agent.breakGlassActive becomes the state property ex:requesterBreakGlassActive, which the assembler flattens for the request subject. RL2 keys the fact by AgentScope(requestingAgent); in due2 that scoping is the assembler's job, so 'a record scoped to another agent does not satisfy this operand' becomes: the assembler finds no record for the subject and reports the property missing. RL2 states only that such a record does not satisfy the operand; under RL2 Semantics the key has no candidate, so it is Missing and the decision Indeterminate, which agrees with due2 — but no decision is stated, so no rl2_expected is recorded. Expiry of the activation is likewise the assembler's job. Scenario 3 is added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "break-glass active for the requester",
+      "request": {
+        "reference": "req-1", "action": "ex:accessEmergencyControls", "target": "ex:FireControls", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterBreakGlassActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Assignee, action, and target match and the requester's break-glass fact is true, so ex:emergencyAccessPrivilege applies with no duties." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "only another agent has activated break-glass",
+      "request": {
+        "reference": "req-2", "action": "ex:accessEmergencyControls", "target": "ex:FireControls", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterBreakGlassActive": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The assembler flattens only the subject's record; another agent's activation leaves the property missing, so the constraint and the permission are U. Completions give Permit and NotApplicable." }
+    },
+    {
+      "name": "break-glass not active",
+      "request": {
+        "reference": "req-3", "action": "ex:accessEmergencyControls", "target": "ex:FireControls", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Employee" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requesterBreakGlassActive": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false eq true is F, so the permission does not apply; no other rule exists." }
+    }
+  ]
+}

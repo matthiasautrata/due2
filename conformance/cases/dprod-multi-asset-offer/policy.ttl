@@ -1,0 +1,125 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts (EKGF dprod, develop, 50db943),
+#   dprod-contracts/examples/baseline.ttl, Contract 8 <https://example.org/offers/multi-asset>.
+# Edits:
+#   - the eight anonymous rules are named rule:bundle-*;
+#   - explicit odrl:conflict odrl:prohibit, equal to the DPROD profile default;
+#   - odrl:read, odrl:aggregate, odrl:distribute includedIn odrl:use added from the ODRL
+#     vocabulary; ex:nonDisplay's includedIn edge is the example's own.
+
+############################# Domain vocabulary (from baseline.ttl) #########################
+
+ex:nonDisplay a odrl:Action, skos:Concept ;
+  rdfs:label "non-display" ;
+  odrl:includedIn odrl:use .
+
+odrl:read odrl:includedIn odrl:use .
+odrl:aggregate odrl:includedIn odrl:use .
+odrl:distribute odrl:includedIn odrl:use .
+
+ex:recipientType a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "recipient type" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:recipientType .
+
+ex:environment a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "environment" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:environment .
+
+ex:internal a skos:Concept ; rdfs:label "internal" .
+ex:production a skos:Concept ; rdfs:label "production" .
+
+############################# Parties and assets (from baseline.ttl) #########################
+
+<https://example.org/agents/data-platform> a odrl:Party ;
+    rdfs:label "Data Platform Team" .
+<https://example.org/agents/analytics> a odrl:Party ;
+    rdfs:label "Analytics Team" ;
+    odrl:partOf <https://example.org/agents/trading-division> .
+<https://example.org/agents/trading-division> a odrl:PartyCollection ;
+    rdfs:label "Trading Division" .
+
+<https://example.org/assets/market-data-lake> a odrl:AssetCollection ;
+    rdfs:label "Market Data Lake" .
+<https://example.org/assets/market-prices> a odrl:Asset ;
+    rdfs:label "Market Price Data" ;
+    odrl:partOf <https://example.org/assets/market-data-lake> .
+<https://example.org/assets/reference-data> a odrl:AssetCollection ;
+    rdfs:label "Reference Data" .
+<https://example.org/assets/country-codes> a odrl:Asset ;
+    rdfs:label "Country Reference Table" ;
+    odrl:partOf <https://example.org/assets/reference-data> .
+<https://example.org/assets/risk-metrics> a odrl:Asset ;
+    rdfs:label "Risk Metrics" .
+<https://example.org/assets/multi-asset-bundle> a odrl:Asset ;
+    rdfs:label "Multi-Asset Data Bundle" .
+
+############################# Policy #########################
+
+<https://example.org/offers/multi-asset> a dprod:DataOffer ;
+    rdfs:label "Multi-Asset Data Bundle" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner <https://example.org/agents/data-platform> ;
+    odrl:target <https://example.org/assets/market-prices> ,
+               <https://example.org/assets/reference-data> ,
+               <https://example.org/assets/risk-metrics> ;
+    dprod:offerLifecycleStatus dprod:Active ;
+    dprod:effectiveDate "2026-01-01T00:00:00Z"^^xsd:dateTime ;
+    dprod:expirationDate "2026-12-31T23:59:59Z"^^xsd:dateTime ;
+    odrl:permission rule:bundle-read-market-prices , rule:bundle-read-reference-data ,
+                    rule:bundle-read-risk-metrics , rule:bundle-aggregate , rule:bundle-non-display ;
+    odrl:prohibition rule:bundle-no-distribute-market-prices , rule:bundle-no-distribute-reference-data ,
+                     rule:bundle-no-distribute-risk-metrics .
+
+rule:bundle-read-market-prices a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target <https://example.org/assets/market-prices> .
+
+rule:bundle-read-reference-data a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target <https://example.org/assets/reference-data> .
+
+rule:bundle-read-risk-metrics a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target <https://example.org/assets/risk-metrics> .
+
+rule:bundle-aggregate a odrl:Permission ;
+    odrl:action odrl:aggregate ;
+    odrl:target <https://example.org/assets/multi-asset-bundle> ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:environment ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:production
+    ] .
+
+rule:bundle-non-display a odrl:Permission ;
+    odrl:action ex:nonDisplay ;
+    odrl:target <https://example.org/assets/multi-asset-bundle> ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:recipientType ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:internal
+    ] .
+
+rule:bundle-no-distribute-market-prices a odrl:Prohibition ;
+    odrl:action odrl:distribute ;
+    odrl:target <https://example.org/assets/market-prices> .
+
+rule:bundle-no-distribute-reference-data a odrl:Prohibition ;
+    odrl:action odrl:distribute ;
+    odrl:target <https://example.org/assets/reference-data> .
+
+rule:bundle-no-distribute-risk-metrics a odrl:Prohibition ;
+    odrl:action odrl:distribute ;
+    odrl:target <https://example.org/assets/risk-metrics> .

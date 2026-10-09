@@ -1,0 +1,107 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts (EKGF dprod, develop, 50db943),
+#   dprod-contracts/examples/data-use-policy.ttl, policy <https://example.org/policies/compensation-access>.
+# Edits:
+#   - the three anonymous rules are named rule:comp-* (labels unchanged);
+#   - explicit odrl:conflict odrl:prohibit, equal to the DPROD profile default;
+#   - only the vocabulary this policy uses is kept; party and asset declarations are
+#     copied from the same file.
+
+############################# Domain vocabulary (from the example) #########################
+
+odrl:purpose
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty odrl:purpose .
+
+ex:legalBasis a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "legal basis" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:legalBasis .
+
+ex:retentionPeriod a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "retention period" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:retentionPeriod .
+
+ex:analytics a skos:Concept ; rdfs:label "analytics" .
+ex:compliance a skos:Concept ; rdfs:label "compliance" .
+ex:operations a skos:Concept ; rdfs:label "operations" .
+ex:legitimateInterest a skos:Concept ; rdfs:label "legitimate interest" .
+
+############################# Parties and assets #########################
+
+<https://example.org/agents/hr-analytics> a odrl:Party ;
+    rdfs:label "HR Analytics Team" ;
+    odrl:partOf <https://example.org/agents/hr-division> .
+<https://example.org/agents/hr-division> a odrl:PartyCollection ;
+    rdfs:label "Human Resources Division" .
+<https://example.org/agents/compliance-team> a odrl:Party ;
+    rdfs:label "Compliance Team" .
+
+<https://example.org/assets/employee-compensation> a odrl:Asset ;
+    rdfs:label "Employee Compensation Data" ;
+    odrl:partOf <https://example.org/assets/employee-data> .
+<https://example.org/assets/employee-data> a odrl:AssetCollection ;
+    rdfs:label "Employee Data Lake" .
+
+############################# Policy #########################
+
+<https://example.org/policies/compensation-access> a odrl:Set ;
+    rdfs:label "Compensation Data Access Policy" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:target <https://example.org/assets/employee-compensation> ;
+    odrl:permission rule:comp-hr-division-read ;
+    odrl:obligation rule:comp-retention-limit , rule:comp-anonymization .
+
+# Only HR Division (not just analytics sub-team)
+rule:comp-hr-division-read a odrl:Permission ;
+    rdfs:label "HR Division compensation access" ;
+    odrl:assignee <https://example.org/agents/hr-division> ;
+    odrl:action odrl:read ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:and (
+            [
+                a odrl:Constraint ;
+                odrl:leftOperand odrl:purpose ;
+                odrl:operator odrl:isAnyOf ;
+                odrl:rightOperand ( ex:compliance ex:operations )
+            ]
+            [
+                a odrl:Constraint ;
+                odrl:leftOperand ex:legalBasis ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand ex:legitimateInterest
+            ]
+        )
+    ] .
+
+# Retention limit: delete after 7 years
+rule:comp-retention-limit a odrl:Duty ;
+    rdfs:label "Retention limit" ;
+    odrl:action odrl:delete ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:retentionPeriod ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "P7Y"^^xsd:duration
+    ] .
+
+# Mandatory anonymization for any analytics
+rule:comp-anonymization a odrl:Duty ;
+    rdfs:label "Anonymization required" ;
+    odrl:action odrl:anonymize ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:analytics
+    ] .

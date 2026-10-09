@@ -1,0 +1,68 @@
+{
+  "case": "rl2-data-sovereignty",
+  "source": "RL2 conformance/usecases/data-sovereignty.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. The purpose condition reads RL2's context.purpose, which the assembler supplies in the snapshot, so ex:purpose is bound to the state source (property ex:contextPurpose) rather than to odrl:purpose, which due2-core binds to the request. The usage-record Duty is an independent clause and becomes a root odrl:obligation with the Supplier as bearer. It is in force whenever the access permission matches the request, constraints aside (§5.2), so it is reported even when the purpose fails or is unknown; under violations = ignore it never changes the verdict. RL2 classifies the Duty's status separately but states no value; with no usage-record evidence due2 reports it outstanding. Scenarios 2–4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "production-support purpose",
+      "request": {
+        "reference": "req-1", "action": "ex:access", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Supplier" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:contextPurpose": { "status": "resolved", "values": [ { "@value": "production-support", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:usageRecordDuty", "status": "outstanding" } ], "why": "The purpose equals \"production-support\", so ex:productionSupportAccess applies with no duties. It matches the request, so ex:usageRecordDuty is in force; with no usage-record evidence it is outstanding, which does not affect the verdict." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "usage record submitted",
+      "request": {
+        "reference": "req-2", "action": "ex:access", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Supplier" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:contextPurpose": { "status": "resolved", "values": [ { "@value": "production-support", "@type": "xsd:string" } ] } },
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-31T00:00:00Z", "actor": "ex:Supplier", "action": "ex:submitUsageRecord", "object": "ex:ProductionData" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:usageRecordDuty", "status": "fulfilled" } ], "why": "As in scenario 1; ex:ev1 (actor ex:Supplier, action, object, before effective_at) is a witness, so the obligation in force is fulfilled." }
+    },
+    {
+      "name": "other purpose",
+      "request": {
+        "reference": "req-3", "action": "ex:access", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Supplier" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:contextPurpose": { "status": "resolved", "values": [ { "@value": "marketing", "@type": "xsd:string" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:usageRecordDuty", "status": "outstanding" } ], "why": "\"marketing\" ≠ \"production-support\", so the permission is F and nothing applies. The permission still matches the request with its constraint aside, so the obligation is in force and outstanding." }
+    },
+    {
+      "name": "purpose not supplied",
+      "request": {
+        "reference": "req-4", "action": "ex:access", "target": "ex:ProductionData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Supplier" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:contextPurpose": { "status": "missing", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:usageRecordDuty", "status": "outstanding" } ], "why": "The purpose fact is missing, so the permission is U: Permit in the permissive completion, NotApplicable in the restrictive one. In-force ignores constraints and the obligation has no guard, so it is in force (T) and outstanding." }
+    }
+  ]
+}

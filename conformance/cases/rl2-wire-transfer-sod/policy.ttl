@@ -1,0 +1,27 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/wire-transfer-sod.md
+
+# RL2 lists ex:approvalDuty as a clause of the Set and as the privilege's prerequisite.
+# The duty is named once and referenced twice (due2-workflows.md §3.1, root): as a
+# policy-level obligation and as the permission's precondition.
+ex:wirePolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:executePrivilege ;
+    odrl:obligation ex:approvalDuty .
+
+ex:executePrivilege a odrl:Permission ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:execute ;
+    odrl:target ex:WireTransfer ;
+    odrl:duty ex:approvalDuty .
+
+# RL2 duty with its own assignee: only Bob's approval of this transfer is a witness.
+ex:approvalDuty a odrl:Duty ;
+    odrl:assignee ex:Bob ;
+    odrl:action ex:approve ;
+    odrl:target ex:WireTransfer .
+
+ex:execute a odrl:Action .
+ex:approve a odrl:Action .

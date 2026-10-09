@@ -1,0 +1,99 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Constructed to exercise due2-profiles.md §8.2. Derived from DPROD Contracts
+# (EKGF dprod, develop, 50db943) examples/data-contract.ttl: the parties, target and
+# dates of DataContract quant-market-data-2026, with the consumer rules of the offer it
+# accepts (market-prices-v2) copied verbatim — so, as in the offer, no rule names an
+# assignee. Edits:
+#   - rules named rule:div-* (the offer's are anonymous);
+#   - one constructed prohibition, rule:div-no-long-retention, using ex:retentionPeriod as
+#     declared in examples/data-use-policy.ttl (no rdfs:range);
+#   - the offer's obligations are left out: they cannot affect access in either evaluator
+#     (see dprod-quant-market-data);
+#   - explicit odrl:conflict odrl:prohibit (profile default); ODRL includedIn edges added.
+
+############################# Domain vocabulary (from the examples) #########################
+
+ex:nonDisplay a odrl:Action, skos:Concept ;
+  rdfs:label "non-display" ;
+  odrl:includedIn odrl:use .
+odrl:display odrl:includedIn odrl:use .
+odrl:derive odrl:includedIn odrl:use .
+odrl:distribute odrl:includedIn odrl:use .
+
+ex:recipientType a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "recipient type" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:recipientType .
+
+ex:retentionPeriod a odrl:LeftOperand, skos:Concept ;
+  rdfs:label "retention period" ;
+  dprod:operandSource dprod:requestSource ;
+  dprod:operandProperty ex:retentionPeriod .
+
+ex:internal a skos:Concept ; rdfs:label "internal" .
+
+<https://example.org/agents/data-platform-team> a odrl:Party ;
+    rdfs:label "Data Platform Team" .
+<https://example.org/agents/quant-research> a odrl:Party ;
+    rdfs:label "Quantitative Research" ;
+    odrl:partOf <https://example.org/agents/trading-division> .
+<https://example.org/agents/trading-division> a odrl:PartyCollection ;
+    rdfs:label "Trading Division" .
+
+<https://example.org/assets/market-prices> a odrl:Asset ;
+    rdfs:label "Market Price Data" .
+
+############################# Policy #########################
+
+<https://example.org/agreements/quant-market-data-from-offer> a dprod:DataContract ;
+    rdfs:label "Quant Research Market Data, offer rules copied" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    dprod:acceptsOffer <https://example.org/offers/market-prices-v2> ;
+    odrl:assigner <https://example.org/agents/data-platform-team> ;
+    odrl:assignee <https://example.org/agents/quant-research> ;
+    odrl:target <https://example.org/assets/market-prices> ;
+    dprod:effectiveDate "2026-01-15T00:00:00Z"^^xsd:dateTime ;
+    dprod:expirationDate "2026-12-31T23:59:59Z"^^xsd:dateTime ;
+    odrl:permission rule:div-display , rule:div-non-display , rule:div-derive ;
+    odrl:prohibition rule:div-no-redistribution , rule:div-no-long-retention .
+
+rule:div-display a odrl:Permission ;
+    rdfs:label "Display access" ;
+    odrl:action odrl:display .
+
+rule:div-non-display a odrl:Permission ;
+    rdfs:label "Non-display use" ;
+    odrl:action ex:nonDisplay ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:recipientType ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:internal
+    ] .
+
+rule:div-derive a odrl:Permission ;
+    rdfs:label "Derivation rights" ;
+    odrl:action odrl:derive .
+
+rule:div-no-redistribution a odrl:Prohibition ;
+    rdfs:label "No redistribution" ;
+    odrl:action odrl:distribute .
+
+# Constructed: no derivation whose output is retained for more than a year.
+rule:div-no-long-retention a odrl:Prohibition ;
+    rdfs:label "No long-lived derivatives" ;
+    odrl:action odrl:derive ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:retentionPeriod ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "P1Y"^^xsd:duration
+    ] .

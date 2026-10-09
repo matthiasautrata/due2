@@ -1,0 +1,32 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/purpose-restriction.md
+
+ex:researchAgreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Institution ;
+    odrl:permission ex:researchProcessing .
+
+ex:researchProcessing a odrl:Permission ;
+    odrl:action ex:process ;
+    odrl:target ex:HealthDataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "epidemiological-research"
+    ] .
+
+ex:process a odrl:Action .
+
+# RL2 path context.purpose: a snapshot fact supplied by the requesting application,
+# flattened onto the state node (not odrl:purpose, which due2-core binds to the request).
+ex:purpose a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:declaredPurpose ;
+    rdfs:range xsd:string .

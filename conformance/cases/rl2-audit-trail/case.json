@@ -1,0 +1,66 @@
+{
+  "case": "rl2-audit-trail",
+  "source": "RL2 conformance/usecases/audit-trail.md",
+  "classification": "partial",
+  "needs": [
+    "not expressible: duty status as an operand (rl2:obligationStateOperand with rl2:targetNorm); written as a precondition instead"
+  ],
+  "notes": "RL2 gates ex:executeOrderPrivilege with a condition reading the derived status of ex:recordOrderDuty. due2 has no duty-status operand; the closest encoding, used here, is odrl:duty on the permission (the precondition reading). That is the encoding RL2 itself calls canonical for this pattern (check-signing-sod), and it gives the same decisions apart from the standing Pending/NotApplicable divergence (README). The duty is also an independent rl2:clause, so it is also an odrl:obligation of the policy; both roles share one instance (member scope, the default; same binding, since the duty declares its own assignee and inherits nothing). It is in force whenever the permission matches the request, and its status corresponds to RL2's duty status: fulfilled ↔ Fulfilled, outstanding ↔ Active (no window, so never Violated). RL2's 'audit record for that order' is not modelled in RL2 either (the duty's object is the fixed ex:AuditRecord), so one record serves every execution; grant scope would bind it per request, but then scenario 1 would be Pending because ex:ev1 carries no discharges. Scenarios 3 and 4 are added.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "audit record created",
+      "request": {
+        "reference": "req-1", "action": "ex:execute", "target": "ex:Order", "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "ex:Trader" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T10:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-06-01T09:59:00Z", "actor": "ex:Trader", "action": "ex:record", "object": "ex:AuditRecord" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:recordOrderDuty", "status": "fulfilled" } ], "why": "ex:executeOrderPrivilege applies. ex:ev1 is a witness for ex:recordOrderDuty: actor is its assignee ex:Trader, action and object match, and it occurred before effective_at. The duty has no constraints, so it is T and the candidate is ready. The same duty as an obligation is in force (the permission matches) and fulfilled by the same witness." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "no audit record yet",
+      "request": {
+        "reference": "req-2", "action": "ex:execute", "target": "ex:Order", "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "ex:Trader" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:recordOrderDuty" ] ], "obligations": [ { "duty": "ex:recordOrderDuty", "status": "outstanding" } ], "why": "The permission applies; ex:recordOrderDuty has no witness, so it is F (outstanding). The only alternative is pending; no deadline, so it is never violated. The obligation is in force and outstanding (RL2: Active)." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "record written by someone else",
+      "request": {
+        "reference": "req-3", "action": "ex:execute", "target": "ex:Order", "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "ex:Trader" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T10:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-06-01T09:59:00Z", "actor": "ex:ComplianceBot", "action": "ex:record", "object": "ex:AuditRecord" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:recordOrderDuty" ] ], "obligations": [ { "duty": "ex:recordOrderDuty", "status": "outstanding" } ], "why": "ex:ev2's actor is not the duty's assignee ex:Trader, so it is not a witness. With no witness the duty is F and the candidate pending; the obligation is in force and outstanding." }
+    },
+    {
+      "name": "record logged after the decision instant",
+      "request": {
+        "reference": "req-4", "action": "ex:execute", "target": "ex:Order", "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "ex:Trader" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T10:00:00Z", "facts": {},
+        "evidence": [ { "id": "ex:ev3", "occurred_at": "2026-06-01T10:05:00Z", "actor": "ex:Trader", "action": "ex:record", "object": "ex:AuditRecord" } ],
+        "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:recordOrderDuty" ] ], "obligations": [ { "duty": "ex:recordOrderDuty", "status": "outstanding" } ], "why": "ex:ev3 occurred after effective_at, so it does not count as a witness; the duty is F and the candidate pending; the obligation is in force and outstanding." }
+    }
+  ]
+}

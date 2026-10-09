@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.2
+**Status:** Draft v0.4
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.2:** fulfilment rebuilt on RL2's evidence model (§3.3, §5.3): evidence of performed actions replaces events and completeness claims, absence of evidence means outstanding, and each duty resolves to a member-scoped or grant-scoped instance; signer admissibility (§3.4); party-role inheritance in stage 2 (§4); the two clocks assigned (§3.2, §5.4); monotonicity proved rather than sampled (§6.4); key convention completed (§2).
+**Changes in v0.4:** after the full corpus sweep (`conformance/`): witness conditions read a dedicated witness source, so a request-source duty condition is a guard, as in DPROD (§5.2, §5.3); a duty with both roles keeps its guards for its root role and has one `fulfilled` finding (§5.2, §5.3); witnesses are performed by the duty's bearer (§5.3); obligation status tabulated (§6.1); why a violation acts as a prohibition rather than DPROD's later check (§6.4); `rdf:type` edges for `isA` in the closure (§3.1); §5.5 aligned with §5.2.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -39,7 +39,7 @@ This document fixes *what* each workflow consumes and produces and what it must 
 
 The two *never* clauses are the boundaries. They make W2 parallel and indexable, and W3 testable without a world.
 
-**The boundary that is not a workflow.** Assembling and freezing the SOTW is impure — it fetches, retries, waits — and sits outside all three workflows. W2 reports which requirements it read (§5.4); those with no resolution in the SOTW are the shell's cue to resolve them, freeze a new revision, and run W2–W3 again. That loop is orchestration, not semantics. By L3 (§8) it can change a verdict only by supplying missing information.
+**The boundary that is not a workflow.** Assembling and freezing the SOTW is impure — it fetches, retries, waits — and sits outside all three workflows. W2 reports which state properties it read (§5.4); those with no fact in the SOTW are the shell's cue to resolve them, freeze a new revision, and run W2–W3 again. That loop is orchestration, not semantics. By L3 (§8) it can change a verdict only by supplying missing information.
 
 **One question here, two in the architecture.** Architecture §6.3 separates the access question (*may this request proceed?*) from the monitoring question (*what does this party owe now?*). Both consume W1's corpus and reuse W2's matching, constraint, and fulfilment machinery. They differ in the predicate W2 applies to root atoms and in the reduction W3 performs. This document specifies the access question. Monitoring is **[O]** (§9).
 
@@ -77,7 +77,9 @@ atom_party        (atom_id, function | party)
 constraint        (constraint_id | atom_id, scope, left_operand, operator, datatype, unit?)
 constraint_value  (constraint_id, value)
 edge              (parent_id, child_id)
+root              (atom_id)
 duty              (atom_id | source_duty, scope, binding_key)
+closure           (relation, narrower, broader)
 ```
 
 | Field | Meaning |
@@ -93,14 +95,16 @@ duty              (atom_id | source_duty, scope, binding_key)
 | `constraint` | Conjunctive per atom. W1 has eliminated disjunction. |
 | `constraint_value` | Right-operand values: one tuple for a scalar, several for a set operand. |
 | `edge` | Parent atom → child duty atom. |
-| `duty` | For every `Oblige` atom: the authored duty it instantiates, its instance scope `Enum {member, grant}`, and `binding_key` — the digest of `source_duty` and its ground binding (parameter values, inherited party roles, target). W2 derives the duty instance from these (§5.3). |
+| `root` | The atoms that root an Atomic Policy in W1 stage 1: every `Permit` and `Forbid` atom, and every policy-level obligation. Stored, because it is not derivable: one named duty can be both an obligation of its policy and the precondition of a permission, so a root can also be the child of an edge. |
+| `closure` | Direct hierarchy edges declared in the policy and its profile modules — `odrl:includedIn` between actions, typed `odrl:partOf` between assets or parties and their collections, `rdfs:subClassOf`, and `rdf:type` edges — those that type collections and those of individuals an `isA` constraint can compare. ODRL's own action hierarchy is one such module (`profiles/odrl-actions.ttl`). |
+| `duty` | For every `Oblige` atom: the authored duty it instantiates, its instance scope `Enum {member, grant}`, and `binding_key` — the digest of `source_duty` and its ground binding (parameter values, inherited party roles, target). W2 derives the duty instance from these (§5.3). Scope defaults to `member`. |
 
 Derived, not stored:
 
-- **root(a)** ⇔ no `edge(_, a)`. Roots are what a request is matched against. A root `Oblige` atom is a policy-level obligation.
+- **guard / witness condition** of a duty's constraint, from its bindings (§5.2).
 - **role(d)** of a child follows from its parent's effect: `Permit` → precondition, `Forbid` → remedy, `Oblige` → consequence (architecture §3).
 
-Invariants, established by W1 and trusted downstream: `edge` is acyclic; every child is an `Oblige` atom; every `atom.policy_id` names a `policy`; `Permit` and `Forbid` atoms carry `relation = odrl:target`.
+Invariants, established by W1 and trusted downstream: `edge` is acyclic; every child is an `Oblige` atom; every `Permit` and `Forbid` atom is a root; every `atom.policy_id` names a `policy`; `Permit` and `Forbid` atoms carry `relation = odrl:target`.
 
 ### 3.2 Request
 
@@ -110,50 +114,53 @@ request_party  (function | party)
 request_param  (name | value)
 ```
 
-`reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action — validity time, what ODRL's `dateTime` constrains. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values the operand registry exposes to constraints: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
+`reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action — validity time, what ODRL's `dateTime` constrains. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
 
 ### 3.3 SOTW
 
 ```
 sotw              (| effective_at, revision)
-requirement       (requirement_id | operand)
-requirement_arg   (requirement_id, name | value)
-resolution        (requirement_id | status)
-resolution_value  (requirement_id, value)
-attribution       (requirement_id, source | observed_at)
+fact              (property | status)
+fact_value        (property, value)
+attribution       (property, source | observed_at)
 evidence          (evidence_id | occurred_at, actor, action, object?, issuer?, discharges?)
 evidence_param    (evidence_id, name | value)
+activation        (instance_key | at)
 closure           (module, relation, narrower, broader)
 ```
 
 | Relation | Meaning |
 |---|---|
 | `sotw.effective_at` | The instant at which the world is observed — decision time. Evidence counts only if it occurred no later. |
-| `requirement` | One operand applied to its arguments — "department of alice". `requirement_id` is the digest of operand and arguments, so W2 computes it without consulting the SOTW. |
-| `resolution.status` | `Enum {resolved, missing, invalid, conflict, unresolved}`, never collapsed. *Missing*: the source says no value exists. *Unresolved*: the source could not be asked or did not answer. |
-| `resolution_value` | Exactly one value when `resolved`, two or more when `conflict`, none otherwise. |
+| `fact` | One property of the normalised world-state node, which state-source operands read (`due2-profiles.md` §3), and its `status`: `Enum {resolved, missing, invalid, conflict, unresolved}`, never collapsed. *Missing*: the source says no value exists. *Unresolved*: the source could not be asked or did not answer. Whoever assembles the SOTW flattens onto this node everything the policies read — "the requester's department" becomes one property — so computing values is the assembler's job, never W2's. |
+| `fact_value` | Exactly one value when `resolved` — for a set-valued operand, its members, of which there may be none — two or more when `conflict`, none otherwise. |
 | `evidence` | A record that an action was performed: when, by whom, which action, on what, and who attests it (`issuer`). Approvals, payments, notifications. `discharges` optionally names the duty instance the evidence was submitted against (§5.3). Fulfilment is derived from evidence and never stored as a flag. Signatures and provenance are verified before the SOTW is frozen; W2 only compares `issuer` against configuration (§3.4). |
-| `evidence_param` | Parameters of the performed action — an amount, a recipient — the counterpart of `request_param` for a proposed action. |
-| `closure` | Transitive closure of a named, versioned hierarchy: `odrl:includedIn`, `skos:broader`, class or membership relations. `a ⊑ b` holds when `a = b` or `closure(m, rel, a, b)`. |
+| `evidence_param` | Parameters of the performed action — an amount, a recipient — the counterpart of `request_param` for a proposed action. Read only by witness-source operands (`due2-profiles.md` §3). |
+| `activation` | When a duty instance was first owed, taken from the case history. It anchors relative deadlines (`due2-profiles.md` §7). |
+| `closure` | Direct hierarchy edges from the world rather than from policies — current team membership, say — in a named, versioned module. W2 uses the transitive closure of these together with the corpus's `closure`: `a ⊑ b` holds when `a = b` or a chain of edges leads from `a` to `b`. Closure is closed-world over the declared edges: an edge that is not there does not hold, so the part is `F`, never `U`. |
+
+The SOTW is assembled for one request: flattened properties describe that request's subject and target, and a SOTW is not reused for a request with a different subject or target.
 
 The SOTW is immutable. A later revision may add resolutions. It may not change a terminal one: a re-resolution that disagrees is a `conflict`.
 
 ### 3.4 Config
 
 ```
-config  (| combination, preference?)
-signer  (source_duty, issuer)
+config        (| combination, preference?, violations)
+signer        (source_duty, issuer)
+admit_source  (property, source)
+admit_age     (property | max_age)
 ```
 
-Parameters that are not policy content: the cross-policy `combination` (§6.2), an optional declared `preference` among frontier alternatives (§6.3), and `signer`, the admissibility record for evidence. When a duty has `signer` entries, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2 Model §4.4).
+Parameters that are not policy content: the cross-policy `combination` (§6.2), an optional declared `preference` among frontier alternatives (§6.3), and `signer`, the admissibility record for evidence. When a duty has `signer` entries, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2 Model §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` and `admit_age` are the admissibility record for facts: a value whose `attribution` source is not listed for its property, or that was observed longer than `max_age` before `effective_at`, is treated as absent — `missing` (`due2-profiles.md` §3).
 
 ### 3.5 Trace — output of W2 and W3
 
 ```
 case           (| corpus_id, request_id, sotw_id, config_id)
-finding        (atom_id | truth)
+finding        (atom_id, predicate | truth)
 basis          (atom_id, kind, ref | truth)
-read           (requirement_id)
+read           (property)
 instance       (atom_id | instance_key)
 eliminated     (atom_id | by_atom, rule)
 alternative    (alt_id, permission_id)
@@ -166,9 +173,9 @@ verdict_basis  (atom_id | role)
 | Relation | Written by | Meaning |
 |---|---|---|
 | `case` | shell | The four input collection ids. The case id is the digest of this tuple — derived, not stored. |
-| `finding` | W2 | One truth value per evaluated atom. The predicate depends on the atom's role (§5.1). |
-| `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, requirement}`; `ref` is the constraint, evidence, requirement, or function; `truth` is that part's value. An `F` finding names the part that failed. |
-| `read` | W2 | Every requirement consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
+| `finding` | W2 | One truth value per evaluated atom and predicate — `applies`, `in_force`, or `fulfilled` (§5.1). |
+| `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
+| `read` | W2 | Every state property consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
 | `instance` | W2 | The duty instance each evaluated duty resolves to (§5.3) — the key under which a case records what is owed and evidence is submitted. |
 | `eliminated` | W3 | A candidate or prohibition removed by conflict resolution, the atom that removed it, and the rule applied. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
@@ -193,7 +200,7 @@ Two stages, both pure, each with its own preservation obligation:
 | Stage | Does | Specified in |
 |---|---|---|
 | **1. Atomise** | Compact interiorisation; expansion of multi-valued action, relation, and party axes; identity and skolemisation; lineage. Structure-preserving: shared duties stay shared. | `odrl-compound-to-atomic-normalization.md` |
-| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation; party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); conditional-duty hoisting; projection into §3.1; provenance from stage-1 lineage. | architecture §4–§5 |
+| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation; party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (normalisation spec §6.2); conditional-duty hoisting; projection into §3.1; provenance from stage-1 lineage. | architecture §4–§5 |
 
 **Position decides conjunction.** Expanding a root rule yields independent root atoms — any one may match a request, which is disjunction. Expanding a nested duty fans out the parent's edges — every resulting duty is owed, which is conjunction. Neither stage declares which fields are disjunctive; it follows from where the value sits.
 
@@ -219,8 +226,9 @@ Every finding is the truth value of one predicate, chosen by role:
 
 | Atom | Predicate | `T` | `F` | `U` |
 |---|---|---|---|---|
-| root `Permit`, `Forbid`, `Oblige` | **applies** (§5.2) | every part `T` | some part `F` | no part `F`, some part `U` |
-| precondition duty | **fulfilled** (§5.3) | some witness satisfies the duty | every witness fails, or there is none | otherwise |
+| `Permit`, `Forbid` | **applies** (§5.2) | every part `T` | some part `F` | no part `F`, some part `U` |
+| root `Oblige` | **in_force** (§5.2) | its policy matches the request and its guards hold | its policy does not match, or a guard fails | otherwise |
+| precondition duty; root obligation in force | **fulfilled** (§5.3) | some witness satisfies the duty | every witness fails, or there is none | otherwise |
 
 Duty status reuses the same three values: `T` fulfilled, `F` outstanding, `U` unknown. There is no second status vocabulary.
 
@@ -234,6 +242,10 @@ An atom applies when all of its parts hold, combined by Kleene conjunction (`F �
 - **constraint:** each of the atom's constraints, at its scope (§5.4).
 
 The basis records the determining parts: all of them for `T`, the failing ones for `F`, the unknown ones for `U`.
+
+**Guards and witness conditions.** A duty's constraint is a *witness condition* if it reads a witness operand — one bound to `due2:witnessSource`, or `due2:actionTime` — and a *guard* otherwise. Nothing else is declared: the split follows from the bindings (`due2-profiles.md` §3). A guard reads the request, the SOTW, and the context exactly as a permission's constraint does, so a request-source operand in a duty is a guard — DPROD's reading of a duty condition (`formal-semantics.md` §5.2, D-ACTIVATE). A conjunction may mix the two and splits into its parts. A disjunction or negation that mixes them has no reading as either and is rejected at normalisation (`MixedDutyConstraint`). Guards decide *when* a duty is owed; witness conditions decide *what* fulfils it (§5.3). This is RL2's split between `condition` and `postCondition`, and DPROD's between a duty's condition and its performance. A precondition's guards are hoisted into its parent permission by W1 (architecture §4 item 5). A duty that is also a root obligation keeps its guards for that role: hoisting copies them into each parent, and the obligation's `in_force` still reads them.
+
+**In force.** A root obligation of policy `P` is in force for a request when some `Permit` or `Forbid` atom of `P` *matches* the request — action, relation, and parties as above, constraints aside — and the obligation's guards hold, combined by Kleene logic. An obligation is not matched by its own action: it travels with the policy under which the request is made. A log-every-access obligation is therefore in force for a read, which an action match would never achieve.
 
 ### 5.3 Fulfilled
 
@@ -249,11 +261,13 @@ Fulfilment follows RL2 (`spec/RL2_Model.md` §4.3, §7.3). It is derived from ev
 - `e.occurred_at ≤ sotw.effective_at`;
 - `e.action ⊑ d.action`;
 - `e.object = d.relation_value`, if `d` has one;
-- `e.actor` is `d`'s assignee — after role inheritance (§4) — or the request subject if `d` still names none;
+- `e.actor` is `d`'s bearer — the party in the bearer role (`due2-profiles.md` §6: `odrl:assignee` unless a profile says otherwise), after role inheritance (§4) — or the request subject if `d` still names none;
 - `signer` admits `e.issuer` for `d`'s `source_duty` (§3.4);
 - for scope `grant`, `e.discharges` is `d`'s instance key. For scope `member`, `discharges` is not consulted.
 
-**Truth.** `d`'s constraints are evaluated once per witness, with that witness in scope: a constraint may read its time, actor, and `evidence_param`, as well as the request and the SOTW (§5.4). The finding is the Kleene disjunction, over all witnesses, of the conjunction of `d`'s constraints: `T` if some witness satisfies them all; `F` if every witness fails one, which includes having no witness; `U` otherwise.
+A duty with both roles — an obligation of its policy and a precondition of a permission — is one atom. For a given request it has one instance key in both roles (for scope `grant`, keyed on `request.reference` in both), so it has one `fulfilled` finding, which both roles read.
+
+**Truth.** `d`'s witness conditions are evaluated once per witness: witness-source operands read its `evidence_param`, and `due2:actionTime` is its `occurred_at` (`due2-profiles.md` §3). Every other operand reads the request, the SOTW, or the context as usual. The finding is the Kleene disjunction, over all witnesses, of the conjunction of `d`'s witness conditions: `T` if some witness satisfies them all; `F` if every witness fails one, which includes having no witness; `U` otherwise.
 
 A duty has no applicability guard of its own here. W1 hoists conditional duties into their parent's constraints (architecture §4), so every duty in the corpus is owed whenever its parent applies.
 
@@ -263,10 +277,10 @@ Fulfilment is derivation, not bookkeeping. Evidence is appended to the case and 
 
 For a constraint with left operand `o`:
 
-1. The operand registry (profile metadata) gives `o`'s provider — request field, request parameter, SOTW requirement, or, for a duty's constraints, the witness (§5.3) — its value type, cardinality, and allowed operators.
-2. For a SOTW provider, W2 computes the `requirement_id`, records it in `read`, and looks up its `resolution`.
-3. Status `resolved` → apply the operator to the value(s) and `constraint_value`(s), giving `T` or `F`. Any other status, or no resolution at all → `U`, with basis kind `requirement`.
-4. The shell finds requirements still to resolve as `read` requirements with no `resolution` in the SOTW. Derived, not recorded twice.
+1. `o`'s binding (`due2-profiles.md` §3) gives its source — request, state, or context — its property, value type, cardinality, and allowed operators. Inside a duty's constraints the witness stands in for the request (§5.3).
+2. For a state-source operand, W2 records the property in `read` and looks up its `fact`. A request-source operand reads `request_param`; a context operand reads its built-in.
+3. Status `resolved` → apply the operator to the value(s) and `constraint_value`(s), giving `T` or `F`. Any other status, or no fact at all → `U`, with basis kind `fact`.
+4. The shell finds properties still to resolve as `read` properties with no `fact` in the SOTW. Derived, not recorded twice.
 
 Operators form a closed, typed registry. Strings compare by Unicode code point. No operator consults the clock, the locale, or randomness. Time enters only as `request.at`, `sotw.effective_at`, and evidence times: a constraint on when the action happens (ODRL `dateTime`) reads `request.at` for a permission or prohibition and the witness's `occurred_at` for a duty.
 
@@ -274,8 +288,9 @@ Operators form a closed, typed registry. Strings compare by Unicode code point. 
 
 W2 produces a finding for:
 
-- every root atom whose finding could be other than `F`; and
-- every precondition duty of a root `Permit` whose finding is not `F`.
+- every `Permit` and `Forbid` atom whose finding could be other than `F`;
+- every precondition duty of a `Permit` whose finding is not `F`; and
+- every root obligation of a policy some of whose `Permit` or `Forbid` atoms match the request (§5.2), with its `fulfilled` finding when `in_force` is `T` or `U`.
 
 An index may skip root atoms that are certainly `F` — wrong action, wrong target — because an `F` root is neutral in W3. It may not skip an atom whose match turns on a `U` part. It never skips a precondition of a live permission: an `F` duty is outstanding, which is not neutral. Remedies and consequences are not evaluated for access; they belong to the monitoring question.
 
@@ -299,7 +314,18 @@ Every root `Permit` with finding `T` or `U` is a candidate. Its **outstanding se
 | **pending** | permission `T`; some outstanding, no unknown duty |
 | **uncertain** | permission `U`, or some unknown duty |
 
-Root `Oblige` atoms that apply do not affect the verdict. They are reported in `verdict_basis` with role `obligation`.
+Root obligations in force are reported in `verdict_basis` with role `obligation`, with their bearer and a status that follows from two findings and the deadline (`due2-profiles.md` §7):
+
+| `in_force` | `fulfilled` | Status |
+|---|---|---|
+| `T` | `T` | fulfilled |
+| `T` | `F`, deadline passed | violated |
+| `T` | `F`, otherwise | outstanding |
+| `T` | `U` | unknown |
+| `U` | any | unknown |
+| `F` | — | not reported |
+
+Neither status nor bearer is stored. Under `config.violations = ignore`, obligations never affect the verdict; a violated *precondition* still removes its candidate (`due2-profiles.md` §7).
 
 ### 6.2 Conflict
 
@@ -314,7 +340,7 @@ Alternatives are formed from surviving ready and pending candidates. Uncertain c
 
 1. **Collapse.** Candidates with the same outstanding set — compared by duty id — form one alternative. Two permissions that cost the same are one choice with two grounds, not two choices.
 2. **Order by inclusion.** Alternative `A` dominates `B` when `outstanding(A) ⊊ outstanding(B)`. This needs nothing but duty identity: no weights, no costs, no configuration. A ready candidate has the empty set and so dominates every pending one. Authorisation state is not a separate rule — it falls out of the order.
-3. **Frontier.** The non-dominated alternatives. If there are several, they are incomparable — neither demands a subset of the other's duties — and W3 reports all of them.
+3. **Frontier.** The non-dominated alternatives. If there are several, they are incomparable — neither demands a subset of the other's duties — and W3 reports all of them. Each outstanding duty is reported with its bearer, so a route that waits on someone other than the requester — a second approver — says so.
 
 **Sorting [O].** Inclusion is a partial order, and the frontier is its honest output. A total order needs a declared preference — fewest duties, declared weights, a ranking of duty kinds — in `config.preference`. Without one, alternatives are listed in a deterministic order (outstanding-set size, then `alt_id`) that expresses **no** preference. Storage order, upload time, and evaluation order never break a tie.
 
@@ -328,10 +354,12 @@ For a completion, which has no `U`:
 
 | Verdict | Condition, checked in order |
 |---|---|
-| `Deny` | a `Forbid` survives §6.2 and applies |
+| `Deny` | a `Forbid` survives §6.2 and applies; or `config.violations = deny` and an obligation in force is violated (`due2-profiles.md` §7) |
 | `Permit` | the frontier contains a ready alternative |
 | `Pending(frontier)` | the frontier is non-empty |
 | `NotApplicable` | otherwise |
+
+Under `deny`, a violated obligation in force acts as a surviving prohibition. DPROD instead checks violations only once a permission is active (`formal-semantics.md` §7.2, steps 5–6). Withholding only `Permit` and `Pending` would let a new permission turn `NotApplicable` into `Deny`, which breaks monotonicity and with it the two-completion computation below. due2 keeps monotonicity; the difference is DPROD exception 6 (`due2-profiles.md` §8.2).
 
 **Computing it.** Order the completion verdicts `Deny < NotApplicable < Pending < Permit`. Under all three strategies and the default combination, the verdict is monotone in every finding: making a permission or a duty more true never lowers it, and making a prohibition more true never raises it.
 
@@ -339,9 +367,12 @@ For a completion, which has no `U`:
 
 - **A duty.** §6.2 never looks at duties, so candidates and eliminations are unchanged; one outstanding set shrinks, and a pending candidate may become ready. The verdict stays or rises.
 - **A permission `p` of policy `P`.** Under `prohibit`, `p` is eliminated if `P` has a `T` prohibition and is otherwise a new candidate. Under `perm`, `p` is a new candidate and eliminates `P`'s prohibitions. Under `invalid`, if `P` has a `T` prohibition: either `P` already had a `T` candidate and was void already, so nothing changes, or its prohibition survived before and the verdict was `Deny`, the minimum. Candidates are only added and prohibitions only removed. The verdict stays or rises.
-- **A prohibition `f` of policy `P`.** Under `prohibit`, `f` survives. Under `perm`, `f` is eliminated if `P` has a `T` candidate and survives otherwise. Under `invalid`, if `P` has a `T` candidate, `P` is voided: its candidates go, and so do its prohibitions — which were all `F`, or `P` would already have been void. Candidates are only removed and prohibitions only added. The verdict stays or falls. ∎
+- **A prohibition `f` of policy `P`.** Under `prohibit`, `f` survives. Under `perm`, `f` is eliminated if `P` has a `T` candidate and survives otherwise. Under `invalid`, if `P` has a `T` candidate, `P` is voided: its candidates go, and so do its prohibitions — which were all `F`, or `P` would already have been void. Candidates are only removed and prohibitions only added. The verdict stays or falls.
+- **Under `violations = deny`, an obligation's `in_force` or `fulfilled` finding.** An obligation in force and violated acts as a surviving prohibition. Making `in_force` more true can only add one, and making `fulfilled` more true can only remove one. So `in_force` is completed like a prohibition, and `fulfilled` like any duty. ∎
 
 The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and duties `F`, prohibitions `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative needs its own argument.
+
+**Completions range over findings, not facts.** Two findings that read the same fact are completed independently, including combinations no value of the fact could produce: `x ≤ 5` and `x > 5` both `F`, say. The definition therefore errs only towards `Indeterminate`. A definite verdict is still invariant over every real value of every unknown fact, but some `Indeterminate` verdicts would be definite under an exact reading — two permissions on `x = true` and `x = false` with `x` unknown permit for every value of `x`. Completing over fact values instead would be exact, but it needs each operand's value domain and is not bounded in general. RL2 makes the same approximation (Semantics §Conflict Resolution). **[O]** — an exact refinement for the common case of a shared Boolean or enumerated fact (§9).
 
 `frontier_complete` is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but the listed alternatives may not be all of them.
 
@@ -382,9 +413,11 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 | 1 | Concrete canonical encoding of collections | §2 | Builder design |
 | 2 | Cross-policy combination default | §6.2 | A real multi-policy corpus |
 | 3 | Declared preference among frontier alternatives | §6.3 | First incomparable frontier in practice |
-| 4 | Monitoring question: root predicate and reduction | §1 | Obligation-monitoring requirements |
+| 4 | Monitoring question — duties currently owed by a party, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements |
 | 5 | Deadline windows and a `Violated` status (RL2 Model §7.1): without them, a duty whose deadline has passed still appears as an open route in `Pending` | §5.3 | First duty with a deadline |
 | 6 | Request match keys beyond `assignee` | §5.2 | Survey of real policies |
+| 7 | Exact completion over a shared Boolean or enumerated fact | §6.4 | A real policy where the over-approximation matters |
+| 8 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
 
 ---
 

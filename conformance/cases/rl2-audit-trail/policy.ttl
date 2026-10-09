@@ -1,0 +1,28 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/audit-trail.md
+
+ex:tradingPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:executeOrderPrivilege ;
+    odrl:obligation ex:recordOrderDuty .
+
+# RL2 gates the privilege with a condition on the duty's status
+# (rl2:obligationStateOperand eq rl2:Fulfilled). due2 has no duty-status operand;
+# the closest encoding is the duty as a precondition of the permission.
+ex:executeOrderPrivilege a odrl:Permission ;
+    odrl:assignee ex:Trader ;
+    odrl:action ex:execute ;
+    odrl:target ex:Order ;
+    odrl:duty ex:recordOrderDuty .
+
+# Both an independent obligation of the policy (rl2:clause) and the permission's
+# precondition. It declares its own assignee, so it inherits no party roles.
+ex:recordOrderDuty a odrl:Duty ;
+    odrl:assignee ex:Trader ;
+    odrl:action ex:record ;
+    odrl:target ex:AuditRecord .
+
+ex:execute a odrl:Action .
+ex:record a odrl:Action .

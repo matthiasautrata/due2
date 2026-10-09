@@ -1,0 +1,55 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/classification-targeting.md
+
+ex:homeLoanPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:homeLoanReadPrivilege ;
+    odrl:obligation ex:homeLoanAccessLogDuty .
+
+# rl2:subject rl2:anyAgent → no assignee: the permission applies to any requester.
+# rl2:object rl2:anyAsset → ODRL needs a target, so the permission targets ex:AnyAsset,
+# a collection the assembler makes every asset partOf (sotw.closure).
+# The classification constraint delimits the population, as in RL2.
+ex:homeLoanReadPrivilege a odrl:Permission ;
+    odrl:action ex:read ;
+    odrl:target ex:AnyAsset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:dataClassification ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:HomeLoan
+    ] .
+
+# RL2 rl2:consequentDuty: no ODRL equivalent. Closest is a root obligation. It is
+# in force when the policy's permission matches the request (due2-workflows.md §5.2);
+# repeating the permission's classification constraint as a guard (a state-source
+# operand, so a guard, not a witness condition) keeps it from being owed for reads
+# the permission does not grant. No assignee: the bearer is the request subject.
+# No target: RL2 binds rl2:anyAsset to the requested asset, which due2 cannot.
+ex:homeLoanAccessLogDuty a odrl:Duty ;
+    odrl:action ex:logAccess ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:dataClassification ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:HomeLoan
+    ] .
+
+ex:AnyAsset a odrl:AssetCollection .
+
+ex:read a odrl:Action .
+ex:logAccess a odrl:Action .
+
+ex:Classification a rdfs:Class .
+ex:HomeLoan a ex:Classification .
+ex:CreditCard a ex:Classification .   # added: used by scenario 2
+
+# RL2 path asset.classification, flattened onto the state node for the requested asset.
+ex:dataClassification a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:targetClassification ;
+    rdfs:range ex:Classification .

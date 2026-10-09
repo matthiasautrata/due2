@@ -1,0 +1,68 @@
+{
+  "case": "rl2-no-redistribution",
+  "source": "RL2 conformance/usecases/no-redistribution.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation. The RL2 path context.requiredDisclosure becomes the state property ex:requiredDisclosure. The agreement holds only the prohibition; the use permission the scenario mentions is not part of RL2's policy either, so a plain use request is NotApplicable (scenario 4). RL2 states that with requiredDisclosure = true the prohibition does not match and any permission must come from elsewhere, read here as NotApplicable. Scenarios 3 and 4 are added; scenario 3 shows that an unresolved disclosure fact does not default to Deny. No divergence from RL2.",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "redistribution, no required disclosure",
+      "request": {
+        "reference": "req-1", "action": "ex:redistribute", "target": "ex:MarketData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredDisclosure": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "requiredDisclosure eq false is T, and action, target, and assignee match, so ex:noRedistribution is T and survives; Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "legally required disclosure",
+      "request": {
+        "reference": "req-2", "action": "ex:redistribute", "target": "ex:MarketData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredDisclosure": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "true eq false is F, so the prohibition does not apply; the policy has no permission." },
+      "rl2_expected": "NotApplicable"
+    },
+    {
+      "name": "disclosure status unavailable",
+      "request": {
+        "reference": "req-3", "action": "ex:redistribute", "target": "ex:MarketData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredDisclosure": { "status": "unresolved", "values": [] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The constraint is U, so the prohibition is U. The restrictive completion gives Deny, the permissive one NotApplicable." }
+    },
+    {
+      "name": "ordinary use of the data",
+      "request": {
+        "reference": "req-4", "action": "odrl:use", "target": "ex:MarketData", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Bank" }, "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": { "ex:requiredDisclosure": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
+        "evidence": [], "activation": {}, "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "odrl:use ⊑ ex:redistribute is F (no includedIn edge), so the prohibition does not apply, and the agreement grants no permission for use." }
+    }
+  ]
+}

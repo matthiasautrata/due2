@@ -1,0 +1,52 @@
+{
+  "case": "rl2-display-vs-nondisplay",
+  "source": "RL2 conformance/usecases/display-vs-nondisplay.md",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Direct translation: rl2:Privilege → odrl:Permission, rl2:Prohibition → odrl:Prohibition, with the shared parties and target at policy level (compact policy). The two actions are unrelated — no odrl:includedIn edge — so neither rule reaches the other's requests, which is the use case's point. Scenarios 3 and 4 are added: a different subscriber, and a request that names no subject, which exercises the party part of the applies predicate (absent is U, not F).",
+  "prefixes": { "ex": "https://example.org/" },
+  "scenarios": [
+    {
+      "name": "subscriber displays quotations",
+      "request": {
+        "reference": "req-1", "action": "ex:display", "target": "ex:QuotationFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:displayQuotation applies with no duties; ex:noAutomatedTrading is F on action. The candidate is ready." },
+      "rl2_expected": "Permit"
+    },
+    {
+      "name": "subscriber trades automatically",
+      "request": {
+        "reference": "req-2", "action": "ex:automatedTrade", "target": "ex:QuotationFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Subscriber" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "ex:noAutomatedTrading applies (T) and survives §6.2; ex:displayQuotation is F on action. A surviving applicable Forbid gives Deny." },
+      "rl2_expected": "Deny"
+    },
+    {
+      "name": "another party displays quotations",
+      "request": {
+        "reference": "req-3", "action": "ex:display", "target": "ex:QuotationFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": { "odrl:assignee": "ex:Stranger" }, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:Stranger ⊑ ex:Subscriber does not hold (no closure edge), so the permission's assignee part is F. Nothing applies." }
+    },
+    {
+      "name": "automated trading by an unnamed requester",
+      "request": {
+        "reference": "req-4", "action": "ex:automatedTrade", "target": "ex:QuotationFeed", "at": "2026-06-01T00:00:00Z",
+        "parties": {}, "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The request names no assignee, so the prohibition's party part is U (§5.2) and the prohibition is U. The restrictive completion gives Deny, the permissive one NotApplicable." }
+    }
+  ]
+}

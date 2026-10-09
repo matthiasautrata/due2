@@ -1,0 +1,32 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Source: RL2 conformance/usecases/usage-metering.md
+
+ex:subscription a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Subscriber ;
+    odrl:permission ex:meteredQuery .
+
+ex:meteredQuery a odrl:Permission ;
+    odrl:action ex:query ;
+    odrl:target ex:AnalyticsService ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:quotaAdmitsRequest ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand true
+    ] .
+
+ex:query a odrl:Action .
+
+# RL2 global.quota.requestedPlusUsedWithinLimit, computed by the metering service and
+# flattened onto the state node.
+ex:quotaAdmitsRequest a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:quotaAdmitsRequest ;
+    rdfs:range xsd:boolean .
