@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.2
+**Status:** Draft v0.3
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.2:** §2 tied to the three workflows; §3 schema moved to the workflows data model; §3.1 duty identity by binding, fulfilment by matching; §3.2 decided; §4 split into two stages; §6.1 `Pending(frontier)`; §6.2 all three conflict strategies admitted; §7 pins both normaliser stages; §10 stage-1 oracle; register updated; cross-references corrected. Terms unified across documents: **corpus** (was atom table), **SOTW**.
+**Changes in v0.3:** fulfilment on RL2's evidence model, with member- and grant-scoped duty instances (§3.1, §6.1); party-role inheritance (§4 item 4); the case flow and both clocks (§7); §8 widened to prior work, with RL2 added (§8.2).
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -58,17 +58,15 @@ Three consequences worth stating explicitly, because each was a live alternative
 
 Duties are shared in practice. "Complete annual training" attaches to many permits; "petition the council" attaches to many high-risk datasets. The two must behave differently: one training session should satisfy every permit that asks for it, while a petition about dataset X must not discharge the duty for dataset Y.
 
-v0.1 gave every attachment its own atom. That conflicts with ODRL, where a duty shared by UID across permissions is fulfilled once, and with §8, where fulfilment is a matching event rather than a discharge keyed to an atom. Binding handles both cases correctly:
+v0.1 gave every attachment its own atom. That conflicts with ODRL, where a duty shared by UID across permissions is fulfilled once, and with §8, where fulfilment is derived from evidence rather than discharged against a stored atom. Duty instances handle both cases, following RL2 (§8.2):
 
-- **A duty instance is identified by its authored duty UID and its ground parameter binding** (§5). Attachments with the same binding share one instance; attachments with different bindings are distinct instances.
-- **Fulfilment is matching.** A duty is fulfilled when an event matches its ground content (`due2-workflows.md` §5.3). Two instances with identical content are fulfilled by the same event — correctly, because they demand the same thing.
-- **"About this dataset" is a binding, not an identity.** The petition duty binds its target to its parent's. X and Y bind differently, so their instances demand different events and cannot cross-discharge. An authored duty that names no target asks for one petition, and one petition satisfies it everywhere — which is what it says.
+- **A duty instance is the authored duty plus its scope.** Scope `member`: the authored duty UID and its ground binding (§5). Attachments that bind the duty identically share one instance, and one fulfilment serves all of them. Scope `grant`: the authored duty UID and the request — one instance per request, for "pay per use".
+- **Fulfilment is derived from evidence.** A duty is fulfilled by a record that its obligated party performed its action on its object, admitted by the duty's signer configuration (`due2-workflows.md` §5.3). A grant-scoped instance accepts only evidence submitted against it.
+- **"About this dataset" is a binding, not an identity.** The petition duty binds its target to its parent's. X and Y bind differently, so their instances need evidence about different objects and cannot cross-discharge. An authored duty that names no target asks for one petition, and one petition satisfies it everywhere — which is what it says.
 
 Normalisation stage 1 keeps authored sharing exactly (normalisation spec, invariant 4). Stage 2 instantiates per binding after parameter substitution (§4). Sharing survives in lineage, which is what lets the canonical duty be edited in one place.
 
 Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. The normaliser therefore requires every rule to be named, and confines content-derived identity to anonymous values — a refined action, a constraint — where content is the only identity there is (normalisation spec §3, §5.2).
-
-**[O]** — a duty that must be performed once *per* attachment ("pay per use") is not expressible by matching. Deferred until a real duty needs it (`due2-workflows.md` §9).
 
 ### 3.2 Acyclicity **[D]**
 
@@ -90,7 +88,7 @@ Two stages, each with its own preservation property (`due2-workflows.md` §4). T
 **Stage 2 — build:**
 
 3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[O]** — bound it, and decide whether to expand eagerly or keep set-valued match keys where matching is membership anyway. See §9.
-4. **Parameter substitution and per-binding instantiation.** See §5 and §3.1.
+4. **Parameter substitution, role inheritance, and per-binding instantiation.** A duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); one that declares any inherits none. The inherited roles are part of the binding, which settles a tension inside ODRL: a shared duty is "fulfilled once", yet takes its roles from each referrer — referrers with different roles yield different instances. See §5 and §3.1.
 5. **Conditional-duty hoisting.** A duty carrying its own constraint forces the evaluator to answer "what does an inactive duty mean" — is the parent then unconditional, or void? Instead the case split is lifted into the parent's guard at normalisation. "Home lending may read; everyone else must petition first" becomes two atoms: permit with `dept == HomeLending` and no duty, permit with `dept != HomeLending` and the petition duty. Every duty in the corpus is then unconditional relative to its parent, and the evaluator's rule collapses to *parent active ⇒ duty owed*. Cost is one extra atom per conditional duty: additive, not multiplicative. **[O]** — a duty constraint referring to state that only exists after exercise cannot be hoisted, since it is not decidable at decision time. If no real duty does this, make hoistability a normaliser precondition and reject violations rather than supporting an unexercised case.
 6. **Projection and provenance.** Project into the corpus relations, joining stage-1 lineage so that every atom carries its source policy and rule.
 
@@ -132,7 +130,7 @@ Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 - **`NotApplicable`** is required regardless, because an obligation-only atom matching a request is applicable to duty and not to access. Having it removes any temptation to read "no permit matched" as Deny by accident rather than by policy.
 - **`Indeterminate`** is per §5.1 of the companion document. An unresolvable operand is not false. A denial caused by a missing lookup and a denial caused by a rule must be distinguishable in the ledger afterwards. Precisely: the verdict is `Indeterminate` exactly when resolving the unknowns one way or another could change it (`due2-workflows.md` §6.4).
 
-`Pending` is derivable rather than special: a permission applies, and its outstanding duties are known — no matching event within a complete evidence scope. Fulfilment is derived from events in the SOTW (§8), never stored.
+`Pending` is derivable rather than special: a permission applies, and some of its duties have no admissible evidence of performance yet. Absence of evidence means *not yet fulfilled*, not unknown; evidence arrives through the case (§7), and fulfilment is derived from it, never stored.
 
 ### 6.2 Combination **[O]**
 
@@ -165,7 +163,9 @@ Every decision is recorded. Because `decide` is pure over `(request, corpus, SOT
 
 **The direction is not only upward.** Re-evaluation can turn Permit into Deny — a role changed, a dataset was reclassified, a policy was amended. A mechanism built as "upgrade pending to permit" has no path for that, and revocation matters more to a control function than issuance. The operation is verdict-agnostic and the ledger records transitions both ways.
 
-**Two clocks, and two events.** "What is the verdict now" and "what did we decide on 3 March, and why" are different queries; decision time and validity time are both first-class or the audit answer gets reconstructed from today's policy and is wrong. Separately, decision and exercise are distinct events: revoking a permit does not unmake access already taken under it.
+**Two clocks, and two events.** "What is the verdict now" and "what did we decide on 3 March, and why" are different queries; decision time and validity time are both first-class or the audit answer gets reconstructed from today's policy and is wrong. Separately, decision and exercise are distinct events: revoking a permit does not unmake access already taken under it. In the data model, decision time is `sotw.effective_at` and validity time is `request.at` (`due2-workflows.md` §3).
+
+**The case flow.** A request whose verdict is `Pending` records the duty instances it awaits — the trace's `instance` and `alt_duty` relations. Evidence submitted later names the instance it answers. The next evaluation, over a new SOTW, finds it and may return `Permit`; nothing in the earlier trace changes.
 
 **Re-evaluation trigger [O]:**
 
@@ -174,7 +174,9 @@ Every decision is recorded. Because `decide` is pure over `(request, corpus, SOT
 
 ---
 
-## 8. Relation to the Southampton work **[D]**
+## 8. Relation to prior work **[D]**
+
+### 8.1 The Southampton work
 
 Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and Comparison Semantics for ODRL* (arXiv:2509.05139). We should track it; we cannot adopt it wholesale.
 
@@ -186,13 +188,31 @@ Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and 
 |---|---|---|
 | Modality | Monitoring: is this state of the world violating? Access control reduces to it only if the post-action state can be predicted | Access control at request time, where that prediction is exactly what is unavailable |
 | Nulls | An unspecified feature makes any condition false, following SPARQL filter semantics | `Indeterminate` is a distinct verdict (§6.1) |
-| Absence of a duty event | Violation | Outstanding only within a complete evidence scope; otherwise unknown (`due2-workflows.md` §5.3) |
+| Absence of a duty event | Violation | Not yet fulfilled: the duty is outstanding and the verdict `Pending` (`due2-workflows.md` §5.3) |
 | Verdict | Per-policy boolean, valid or violated | Per-request, five-valued |
 | Conflict | Prohibited-by-default, structurally; prohibitions carve out subsets of permissions | `conflict` strategy read from the policy (§6.2) |
 
 **One restriction to check our policies against:** they require each boolean combination of constraints to use features of a single ODRL component. Constraints on the requester's department satisfy this. A constraint *relating* two components — requester's department equals the dataset's owning department — does not.
 
 **The part worth taking.** Because matching is a boolean query, policy comparison becomes query containment and equivalence: deciding whether one policy is equivalent to, more restrictive than, or more permissive than another. That gives a **policy diff** — "is this amendment strictly more restrictive than the version it replaces" — which is hard to build any other way and directly useful for change control. **[O]** — worth a spike; it is a capability, not a dependency.
+
+### 8.2 RL2
+
+RL2 (`~/src/RL2`, `github.com/matthiasautrata/RL2`) is due2's predecessor: an attempt to extend ODRL into a language with formal semantics. due2 does not adopt it wholesale; it takes worked-out material where that answers a due2 question.
+
+Adopted:
+
+- **Evidence and fulfilment** — RL2 Model §4.3–§4.5, §7.3: evidence as records of performed actions; absence means not yet fulfilled; trust verified before evaluation, with a closed signer admissibility record.
+- **Duty instances** — RL2 Semantics §Duty Template Binding: per-member and per-grant occurrence identity, with evidence naming the grant it discharges.
+
+Sources for open items:
+
+- operator and operand registry — Semantics §Type System and §`apply`; Compilation §9.1;
+- stage 2 — RL2_Compilation: canonical projection, closed-world rule, diagnostic registry, determinism;
+- conflict resolution and exception patterns — Semantics §Conflict Resolution;
+- deadline windows and `Violated` — Model §7.1 (`due2-workflows.md` §9);
+- replayable policy selection and the re-evaluation loop — ExternalData §6–§7;
+- test vectors — Requirements §4, 49 classified use cases.
 
 ---
 
@@ -210,7 +230,7 @@ See companion §10 for the general rule. Specific to due2:
 
 ### 9.1 Measurement before argument **[O]**
 
-Record before the debate: p99 with the resolver excluded, atoms evaluated per request, candidate event-set size, and whether every decision must carry an explanation. If kernel time is not a clear majority of the budget at realistic volume, a compiled hot path buys nothing.
+Record before the debate: p99 with the resolver excluded, atoms evaluated per request, evidence-set size, and whether every decision must carry an explanation. If kernel time is not a clear majority of the budget at realistic volume, a compiled hot path buys nothing.
 
 ---
 
@@ -231,7 +251,7 @@ Contents:
 
 ## 11. Open decisions register
 
-Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, per-attachment discharge, request match keys — are registered in `due2-workflows.md` §9.
+Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, deadline windows, request match keys — are registered in `due2-workflows.md` §9.
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
@@ -241,5 +261,5 @@ Workflow-level decisions — canonical encoding, cross-policy combination, prefe
 | 4 | What a void (`invalid`) policy contributes: nothing (default) or `Indeterminate` with a cause | §6.2 | Real policy requiring it |
 | 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | Measurement once pending volume is known |
 | 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Cost estimate |
-| 7 | Policy-diff via query containment | §8 | Spike |
+| 7 | Policy-diff via query containment | §8.1 | Spike |
 | 8 | Execution target beyond indexed Python | §9 | Measurement per §9.1 |

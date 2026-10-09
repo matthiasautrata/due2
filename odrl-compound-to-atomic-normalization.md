@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.10  
+Version: 0.11  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
+Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
 
 ## 1. Goal
 
@@ -63,7 +63,7 @@ An absent term means `odrl:invalid` (ODRL IM §2.10) and is made explicit on eve
 
 Every identity that later stages key on MUST be authored:
 
-- every Rule — Permission, Prohibition, Obligation, Duty, Consequence, Remedy — MUST have an authored `odrl:uid` or be an IRI node. Anonymous Rules are rejected with `AnonymousRule`.
+- every Rule — Permission, Prohibition, Obligation, Duty, Consequence, Remedy — MUST have an authored `odrl:uid` or be an IRI node. Anonymous Rules are rejected with `AnonymousRule`. This is stricter than ODRL, where a Rule's `uid` is optional (IM §2.6): later stages key duty instances and fulfilment evidence on it, so an ODRL-conformant Policy with anonymous Rules is rejected until its Rules are named.
 - every blank node without an authored `odrl:uid` MUST be the object of exactly one triple, and following those triples upward MUST reach an IRI node or a node with an authored `odrl:uid` — its *anchor*. A blank node referenced twice is rejected with `SharedAnonymousNode`. One that reaches no anchor, including any cycle of blank nodes, is rejected with `UnanchoredAnonymousNode`.
 
 Anything shared must be named. Anonymous structure is thus a forest of trees hanging from named nodes, which is what makes its identity local (§5.2).
