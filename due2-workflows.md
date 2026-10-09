@@ -3,7 +3,7 @@
 **Status:** Draft v0.5
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.5:** duty timing landed — `deadline` and `recurrence` are corpus fields (§3.1), W2 computes the effective deadline and a per-instance status (§5.3, following DPROD `formal-semantics.md` §5.2–5.5), the trace's `instance` carries occurrence and status (§3.5), W3 reads the status and never re-derives it, a violated precondition removes its candidate (§6.1), and the §6.4 proof covers timing.
+**Changes in v0.5:** duty timing landed — `deadline` and `recurrence` are corpus fields (§3.1), W2 computes the effective deadline and a per-instance status (§5.3, following DPROD `formal-semantics.md` §5.2–5.5), the trace's `instance` carries occurrence and status (§3.5), W3 reads the status and never re-derives it, a violated precondition removes its candidate (§6.1), and the §6.4 proof covers timing. RDF confined to the boundary (appendix; ways-of-working §2.4).
 
 **Changes in v0.4:** after the full corpus sweep (`conformance/`): witness conditions read a dedicated witness source, so a request-source duty condition is a guard, as in DPROD (§5.2, §5.3); a duty with both roles keeps its guards for its root role and has one `fulfilled` finding (§5.2, §5.3); witnesses are performed by the duty's bearer (§5.3); obligation status tabulated (§6.1); why a violation acts as a prohibition rather than DPROD's later check (§6.4); `rdf:type` edges for `isA` in the closure (§3.1); §5.5 aligned with §5.2.
 
@@ -443,4 +443,4 @@ Three representations were credible.
 | RDF graph | an atom is a subgraph | SPARQL | skolem IRIs | Already the stage-1 form. A finding with truth and basis is n-ary and needs reification, and SPARQL filter semantics turn evaluation errors into false — the collapse ways-of-working §5.1 forbids. |
 | Nested documents | natural | joins in application code | natural | Fits one policy; fights the cross-policy fold and the grouping into alternatives. |
 
-The builder projects stage-1 RDF into relations. Nothing downstream of W1 sees RDF.
+The builder projects the lifted stage-1 form into relations. RDF is a boundary format, not a working representation (ways-of-working §2.4): stage 1 parses the authored graph into a tree, transforms the tree, and emits canonical N-Quads as its artifact; stage 2 consumes the lifted form, and nothing downstream of the parse sees RDF.
