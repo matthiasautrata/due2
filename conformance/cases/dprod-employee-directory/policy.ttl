@@ -1,0 +1,73 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/offers/employee-directory> (EKGF dprod, develop, 50db943).
+
+offer:employee-directory a dprod:DataOffer ;
+    rdfs:label "Employee Directory" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner agent:hr ;
+    odrl:target asset:employee-directory ;
+
+    odrl:obligation rule:emp-notify ;
+
+    odrl:permission rule:emp-read ;
+
+    odrl:prohibition rule:emp-no-distribute ;
+    odrl:prohibition rule:emp-no-model-training .
+
+rule:emp-notify a odrl:Duty ;
+    rdfs:label "Schema change notification (90 days)" ;
+    dprod:subjectOfDuty agent:hr ;
+    odrl:action ex:notify ;
+    odrl:target asset:schema-changes ;
+    dprod:deadline "P90D"^^xsd:duration .
+
+rule:emp-read a odrl:Permission ;
+    rdfs:label "Operational read access" ;
+    odrl:action odrl:read ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:operations
+    ] .
+
+rule:emp-no-distribute a odrl:Prohibition ;
+    rdfs:label "No distribution" ;
+    odrl:action odrl:distribute .
+
+rule:emp-no-model-training a odrl:Prohibition ;
+    rdfs:label "No model training" ;
+    odrl:action odrl:use ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:processingMode ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:modelTraining
+    ] .
+
+# --- domain vocabulary (from the source file) ---
+ex:notify a odrl:Action ; rdfs:label "notify" ; odrl:includedIn odrl:inform .
+
+ex:processingMode a odrl:LeftOperand ;
+    rdfs:label "processing mode" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:processingMode .
+
+ex:operations a ex:Purpose ; rdfs:label "operations" .
+ex:modelTraining a ex:ProcessingMode ; rdfs:label "model training" .
+ex:Purpose a rdfs:Class .
+ex:ProcessingMode a rdfs:Class .
+
+agent:hr a odrl:Party ; rdfs:label "HR Team" .
+asset:employee-directory a odrl:Asset ; rdfs:label "Employee Directory" .
+asset:schema-changes a odrl:Asset ; rdfs:label "Schema Change Notifications" .

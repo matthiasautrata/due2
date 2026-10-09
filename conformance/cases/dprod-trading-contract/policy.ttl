@@ -1,0 +1,93 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix duty:  <https://example.org/duties/> .
+@prefix agree: <https://example.org/agreements/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/agreements/trading-market-data-2026> (EKGF dprod, develop, 50db943).
+# The two named duty nodes are carried in this file; their dprod:dutyState
+# triples (input state in DPROD) are dropped — due2 derives status from
+# evidence and activation instead (due2-profiles.md §8.1, exception 2).
+
+agree:trading-market-data-2026 a dprod:DataContract ;
+    rdfs:label "Trading Market Data 2026" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    dprod:acceptsOffer offer:market-data-feed ;
+    odrl:assigner agent:trading-data ;
+    odrl:assignee agent:analytics ;
+    odrl:target asset:market-prices ;
+    dprod:effectiveDate "2026-01-15T00:00:00Z"^^xsd:dateTime ;
+    dprod:expirationDate "2026-12-31T23:59:59Z"^^xsd:dateTime ;
+
+    odrl:obligation duty:mkt-delivery-2026-001 ;
+    odrl:obligation duty:mkt-schema-2026-001 ;
+
+    odrl:permission rule:tm-display ;
+    odrl:permission rule:tm-non-display ;
+
+    odrl:prohibition rule:tm-no-distribute .
+
+rule:tm-display a odrl:Permission ;
+    rdfs:label "Display access" ;
+    odrl:assignee agent:analytics ;
+    odrl:action odrl:display .
+
+rule:tm-non-display a odrl:Permission ;
+    rdfs:label "Non-display use" ;
+    odrl:assignee agent:analytics ;
+    odrl:action ex:nonDisplay ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:recipientType ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:internal
+    ] .
+
+rule:tm-no-distribute a odrl:Prohibition ;
+    rdfs:label "No distribution" ;
+    odrl:assignee agent:analytics ;
+    odrl:action odrl:distribute .
+
+# --- duty nodes referenced by the contract ---
+duty:mkt-delivery-2026-001 a odrl:Duty ;
+    rdfs:label "Market data delivery" ;
+    dprod:subjectOfDuty agent:trading-data ;
+    dprod:objectOfDuty agent:analytics ;
+    odrl:action ex:deliver ;
+    odrl:target asset:market-prices ;
+    dprod:recurrence "FREQ=MINUTELY;INTERVAL=15" ;
+    dprod:deadline "PT5M"^^xsd:duration .
+
+duty:mkt-schema-2026-001 a odrl:Duty ;
+    rdfs:label "Market data schema conformance" ;
+    dprod:subjectOfDuty agent:trading-data ;
+    dprod:objectOfDuty agent:analytics ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:market-data-schema .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+ex:nonDisplay a odrl:Action ; rdfs:label "non-display" ; odrl:includedIn odrl:use .
+
+ex:recipientType a odrl:LeftOperand ;
+    rdfs:label "recipient type" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:recipientType .
+
+ex:internal a ex:RecipientType ; rdfs:label "internal" .
+ex:RecipientType a rdfs:Class .
+
+agent:trading-data a odrl:Party ; rdfs:label "Trading Data Team" .
+agent:analytics a odrl:Party ; rdfs:label "Analytics Team" .
+asset:market-prices a odrl:Asset ; rdfs:label "Market Price Data" ;
+    odrl:partOf asset:market-data-lake .
+asset:market-data-lake a odrl:AssetCollection ; rdfs:label "Market Data Lake" .
+asset:market-data-schema a odrl:Asset ; rdfs:label "Market Data Schema" .

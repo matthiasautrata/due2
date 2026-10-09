@@ -1,0 +1,137 @@
+{
+  "case": "dprod-audit-logs",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/audit-logs> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "Extracted unchanged except the five anonymous rules are named rule:audit-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. The retention obligation is the interesting structure: its constraint reads a request-source operand (ex:retentionPeriod), so inside a duty it is a guard read against the request (due2-workflows.md §5.2) — DPROD's activation condition (D-ACTIVATE) — and the obligation is in force for requests whose stated retention period exceeds P7Y. It has no dprod:subjectOfDuty, so its bearer is the request subject (due2-profiles.md §6), and no deadline, so it is never violated. The duration comparison is the other point: P8Y against P7Y is decidable (both year-month); P730D against P7Y is not (mixed kinds, due2-profiles.md §4) — the operand is invalid, the guard U, the obligation's status unknown. DPROD's apply returns false for incomparable operands (§6.2), so the duty condition is false there — the same disagreement as exception 1, here on a guard: due2 keeps the question open, DPROD answers it. DPROD duty collection (§7.2 step 1): odrl:delete never matches a read, so the retention duty is never collected; ex:export matches only an export request. DPROD Σ assumed: Σ₀ with clock = request.at; dprod_expected uses the intended §7.4 reading (request ⊑ rule).",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "compliance read of an eight-year retention",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "asset:audit-logs",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:compliance" },
+          "ex:retentionPeriod": { "@value": "P8Y", "@type": "xsd:duration" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:audit-retention", "status": "outstanding" }
+        ],
+        "why": "rule:audit-read applies (purpose = compliance) and no prohibition matches read (modify and export are both outside). Permit. The retention obligation is in force: the read permission matches the request, and its guard holds — P8Y > P7Y, both year-month durations, decidable. No deletion witness, and with no deadline the duty is never violated: outstanding, with the request subject as bearer."
+      },
+      "dprod_expected": "Permit (delete never matches read, so the duty is neither collected nor activated; the permission is active)"
+    },
+    {
+      "name": "compliance read of a two-year retention",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:read",
+        "target": "asset:audit-logs",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:compliance" },
+          "ex:retentionPeriod": { "@value": "P2Y", "@type": "xsd:duration" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "The read is permitted as in scenario 1, but the retention guard is false (P2Y is not > P7Y), so the obligation is not in force and is not reported: no deletion is owed for a retention within the limit. Permit, no obligations."
+      },
+      "dprod_expected": "Permit (the duty's activation condition is false, so it stays Pending; and it is never collected for a read)"
+    },
+    {
+      "name": "read without stating the purpose",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:read",
+        "target": "asset:audit-logs",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "ex:retentionPeriod": { "@value": "P8Y", "@type": "xsd:duration" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:audit-retention", "status": "outstanding" }
+        ],
+        "why": "The purpose operand is missing, so the permission is U; no prohibition matches read, so nothing else can decide it. Completing purpose = compliance permits and any other value does not: Indeterminate. The retention obligation is in force (the read permission matches, constraints aside; guard P8Y > P7Y holds) and outstanding."
+      },
+      "dprod_expected": "Failure(MissingValue odrl:purpose) (due2 decides more often, due2-profiles.md §8.2)"
+    },
+    {
+      "name": "retention stated in days against a limit in years",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:read",
+        "target": "asset:audit-logs",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:compliance" },
+          "ex:retentionPeriod": { "@value": "P730D", "@type": "xsd:duration" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:audit-retention", "status": "unknown" }
+        ],
+        "why": "The permission is definite (purpose = compliance) and nothing denies the read: Permit. The retention guard is U: P730D is a day-time duration, P7Y a year-month one, and gt is undefined across kinds (due2-profiles.md §4) — the operand is invalid, not false, so the constraint is U and the obligation in force is reported unknown. Whether a 730-day retention exceeds seven years is a real question with a real answer (it does, barely), but it is not decidable from these two terms, and due2 says so rather than guessing."
+      },
+      "dprod_expected": "Permit (the duty is never collected for a read; its condition would evaluate apply(gt, P730D, P7Y) = false — the incomparable-operands reading of due2-profiles.md §8.2 exception 1)"
+    },
+    {
+      "name": "export the audit logs",
+      "request": {
+        "reference": "req-5",
+        "action": "ex:export",
+        "target": "asset:audit-logs",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:compliance" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "why": "rule:audit-no-export matches ex:export by equality; ex:export also sits under odrl:distribute, but that only adds nothing here. The read permission does not match (export is not below read). A surviving, applying prohibition: Deny. The retention obligation is not in force — no permission or prohibition of the policy matches an export, which is what in force turns on (§5.2)."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    }
+  ]
+}

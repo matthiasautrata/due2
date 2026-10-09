@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.3
+**Status:** Draft v0.4
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.3:** after the full corpus sweep: a witness source replaces the request source's double reading inside duties (§3); duration kinds (§4); `rdf:type` for `isA` and parties of a duty with both roles (§6); activation defaults to first owed, recurring instances bounded below, anchor rule restated (§7); DPROD exception 6 and the duty-condition correction (§8.2); not-yet-open windows registered (§9).
+**Changes in v0.4:** duty timing landed — `deadline` and `recurrence` are corpus fields and W2 computes the effective deadline, the per-instance status, and the occurrences (`due2-workflows.md` §3.1, §5.3); §7 now fixes the vocabulary's readings and points there for the computation, replacing its own status table; violation is derived, not remembered, against DPROD's terminal `Violated` (§7); the DPROD example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the corpus (§8.1). v0.3: a witness source replaces the request source's double reading inside duties (§3); duration kinds (§4); `rdf:type` for `isA` and parties of a duty with both roles (§6); activation defaults to first owed, recurring instances bounded below, anchor rule restated (§7); DPROD exception 6 and the duty-condition correction (§8.2); not-yet-open windows registered (§9).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -31,7 +31,7 @@ A profile may extend ODRL at exactly these points. Anything else a profile defin
 | 3 | Logical connective | `odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not` | W1 stage 2 |
 | 4 | Policy class | `rdfs:subClassOf` an ODRL policy class | W1 stage 1 |
 | 5 | Party role | `due2:playsRole` on a function property | W1 stage 2, W2 §5.3 |
-| 6 | Duty timing | `dprod:deadline`, `dprod:recurrence` | W2 §5.3 |
+| 6 | Duty timing | `dprod:deadline`, `dprod:recurrence` | W1 stage 2 (corpus `duty`), W2 `due2-workflows.md` §5.3 |
 | 7 | Hierarchy | `odrl:includedIn` (actions), typed `odrl:partOf` (assets, parties) | SOTW closure |
 | 8 | Conflict default | `odrl:conflict` on the profile resource | W1 stage 1 |
 | 9 | Duty instance scope | `due2:instanceScope` (default `due2:member`) | W1 stage 2, W2 §5.3 |
@@ -149,26 +149,19 @@ Edges declared in the policy and in its profile modules travel with the policy i
 
 ## 7. Duties: timing and lifecycle **[D]**
 
-DPROD's timing vocabulary is adopted. It closes `due2-workflows.md` open decision #5.
+DPROD's timing vocabulary is adopted. It closes what was `due2-workflows.md` open decision #5.
 
 - `dprod:deadline` — an `xsd:dateTime` (absolute) or an `xsd:duration` (relative to activation).
 - `dprod:recurrence` — an RFC 5545 RRULE generating instances of a duty.
 
-Timing applies to preconditions and to obligations in force alike (`due2-workflows.md` §5.2). A deadline is inclusive: a witness at exactly `D` fulfils, and violation needs `effective_at > D`, as in DPROD. RL2's window ends are exclusive, so an RL2 window ending at `E` maps to a deadline one tick before `E`, or to `E` with that one-instant difference accepted.
+Both land in the corpus (`due2-workflows.md` §3.1, `duty`), projected by W1 stage 2 from the authored duty onto every atom it instantiates. W2 computes the effective deadline, the per-instance status, and the occurrences (`due2-workflows.md` §5.3), following DPROD's duty lifecycle (`formal-semantics.md` §5.2–§5.5). Timing applies to preconditions and to obligations in force alike. The vocabulary's readings:
 
-**Activation.** A duty instance is *activated* at the instant it was first owed: the first trace in which it appears. The case history records it, and the shell supplies it in the SOTW as `activation (instance_key | at)`. An instance with no entry is first owed now: its activation is `effective_at`. A relative deadline is `activation + duration`. No hidden evaluator state is needed. Instances are activated separately, so two obligations whose guards first held at different times have different activations.
-
-**Status.** For a duty instance with deadline `D`:
-
-| Status | Condition | Finding |
-|---|---|---|
-| Fulfilled | a witness (`due2-workflows.md` §5.3) with `occurred_at ≤ min(effective_at, D)` | `T` |
-| Violated | no such witness, and `effective_at > D` | `F`, and the instance is closed |
-| Outstanding | otherwise | `F` |
-
-A violated precondition removes its candidate: W3 does not offer a route that can no longer be taken. Without a deadline, a duty is never violated.
-
-**Recurrence.** A recurring duty yields one instance for each occurrence `t ≤ effective_at` of its RRULE. The anchor is the rule's `DTSTART` or, without one, the duty's activation — which always exists, by the default above. An anchor the rule itself does not generate is not an occurrence (RFC 5545 leaves that case undefined). Each instance's key extends with `t`, its activation is `t`, and its deadline is per instance. A witness for an instance must also have `occurred_at ≥ t`: one delivery does not fulfil every later instance. Occurrences are bounded by `effective_at` and a configured horizon. The first time a recurring duty is owed, its activation defaults to now, so its first instance is the rule's next occurrence; later evaluations read the recorded activation from the case history. DPROD's `expand` is unbounded as written, and its `performed` check has no lower bound (§8.2).
+- **A deadline is inclusive.** A witness at exactly `D` fulfils; violation needs `effective_at > D`, as in DPROD. RL2's window ends are exclusive, so an RL2 window ending at `E` maps to a deadline one tick before `E`, or to `E` with that one-instant difference accepted.
+- **Activation is first owed.** A duty instance is activated at the instant it was first owed — the first trace in which it appears. The case history records it, and the shell supplies it in the SOTW as `activation (instance_key | at)`. An instance with no entry is first owed now: its activation is `effective_at`. No hidden evaluator state. Instances activate separately, so two obligations whose guards first held at different times have different activations.
+- **Recurrence anchors.** The occurrences of a recurring duty are anchored on the rule's `DTSTART`, or the duty's activation without one — which always exists, by the default above. An anchor the rule itself does not generate is not an occurrence (RFC 5545 leaves that case undefined). The first time a recurring duty is owed, its activation defaults to now, so its first instance is the rule's next occurrence; later evaluations read the recorded activation from the case history.
+- **Violation is derived, not remembered** (`due2-workflows.md` §5.3). DPROD's `Violated` is terminal in its duty state Σ (`formal-semantics.md` §9.4); due2 recomputes per evaluation from evidence, so timely evidence found late fulfils. That disagreement is exception 2 (§8.2).
+- **A violated precondition removes its candidate** (`due2-workflows.md` §6.1): W3 does not offer a route that can no longer be taken. Without a deadline, a duty is never violated.
+- **Occurrences are bounded by `effective_at`.** DPROD's `expand` is unbounded as written, and its `performed` check has no lower bound, so one performance fulfils every later instance there (§8.2). due2 generates only instances already owed; reporting future ones is the not-yet-owed question (§9).
 
 **Violations and access [D].** DPROD denies a request when a duty matched to it is violated (`formal-semantics.md` §7.2, step 6). due2 makes this configuration, not profile semantics: `config.violations ∈ {ignore, deny}`, default `ignore`. Under `ignore`, duties gate access only as preconditions, and obligations in force are reported. Under `deny`, an obligation in force that is violated denies the request (`due2-workflows.md` §6.4). Selecting the DPROD profile does not switch it on; a DPROD-faithful deployment sets `violations = deny`. due2's "in force" — the obligation's policy matches the request — replaces DPROD's "the duty's own action matches the request", which rarely holds (§8.2).
 
@@ -191,7 +184,7 @@ With `profiles/dprod.ttl` selected:
 | a duty's `odrl:constraint` | guards, read against the request (§3; `due2-workflows.md` §5.2) — DPROD's activation condition |
 | `dprod:not` | connective (§5) |
 | `dprod:subjectOfDuty`, `dprod:objectOfDuty` | `due2:bearer`, `due2:beneficiary` (§6) |
-| `dprod:deadline`, `dprod:recurrence` | duty timing (§7) |
+| `dprod:deadline`, `dprod:recurrence` | duty timing (§7): corpus fields and the W2 computation are `due2-workflows.md` §3.1, §5.3 |
 | `odrl:conflict odrl:prohibit` on the profile | conflict default (§2, point 8) |
 | typed `odrl:partOf`, `odrl:includedIn` | closure modules (§6) |
 | `dprod:dutyState` | output, not input: due2 derives it (§7) |
@@ -239,7 +232,7 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
 | 1 | General mechanism for profile operators | §4 | First operator that cannot be reduced |
-| 2 | Recurrence horizon value | §7 | First recurring duty in production |
+| 2 | Whether instances beyond `effective_at` — not yet owed — are ever generated and reported, and under what horizon | §7 | First recurring duty where the future window matters |
 | 3 | Bearer default for policy-level obligations without a bearer | §6 | Survey of real obligations |
 | 4 | Maintain duties and Promises | §7 | A real policy that needs one |
 | 5 | A not-yet-owed state for an obligation in force whose window has not opened (RL2's `Pending` before the window starts); today it is reported `outstanding` | §7 | A real duty with a future window |

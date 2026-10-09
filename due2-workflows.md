@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.4
+**Status:** Draft v0.5
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.5:** duty timing landed — `deadline` and `recurrence` are corpus fields (§3.1), W2 computes the effective deadline and a per-instance status (§5.3, following DPROD `formal-semantics.md` §5.2–5.5), the trace's `instance` carries occurrence and status (§3.5), W3 reads the status and never re-derives it, a violated precondition removes its candidate (§6.1), and the §6.4 proof covers timing.
 
 **Changes in v0.4:** after the full corpus sweep (`conformance/`): witness conditions read a dedicated witness source, so a request-source duty condition is a guard, as in DPROD (§5.2, §5.3); a duty with both roles keeps its guards for its root role and has one `fulfilled` finding (§5.2, §5.3); witnesses are performed by the duty's bearer (§5.3); obligation status tabulated (§6.1); why a violation acts as a prohibition rather than DPROD's later check (§6.4); `rdf:type` edges for `isA` in the closure (§3.1); §5.5 aligned with §5.2.
 
@@ -78,7 +80,7 @@ constraint        (constraint_id | atom_id, scope, left_operand, operator, datat
 constraint_value  (constraint_id, value)
 edge              (parent_id, child_id)
 root              (atom_id)
-duty              (atom_id | source_duty, scope, binding_key)
+duty              (atom_id | source_duty, scope, binding_key, deadline?, recurrence?)
 closure           (relation, narrower, broader)
 ```
 
@@ -98,6 +100,8 @@ closure           (relation, narrower, broader)
 | `root` | The atoms that root an Atomic Policy in W1 stage 1: every `Permit` and `Forbid` atom, and every policy-level obligation. Stored, because it is not derivable: one named duty can be both an obligation of its policy and the precondition of a permission, so a root can also be the child of an edge. |
 | `closure` | Direct hierarchy edges declared in the policy and its profile modules — `odrl:includedIn` between actions, typed `odrl:partOf` between assets or parties and their collections, `rdfs:subClassOf`, and `rdf:type` edges — those that type collections and those of individuals an `isA` constraint can compare. ODRL's own action hierarchy is one such module (`profiles/odrl-actions.ttl`). |
 | `duty` | For every `Oblige` atom: the authored duty it instantiates, its instance scope `Enum {member, grant}`, and `binding_key` — the digest of `source_duty` and its ground binding (parameter values, inherited party roles, target). W2 derives the duty instance from these (§5.3). Scope defaults to `member`. |
+| `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
+| `duty.recurrence` | An RFC 5545 RRULE string; the duty is owed once per occurrence. W2 derives the instances (§5.3). |
 
 Derived, not stored:
 
@@ -136,7 +140,7 @@ closure           (module, relation, narrower, broader)
 | `fact_value` | Exactly one value when `resolved` — for a set-valued operand, its members, of which there may be none — two or more when `conflict`, none otherwise. |
 | `evidence` | A record that an action was performed: when, by whom, which action, on what, and who attests it (`issuer`). Approvals, payments, notifications. `discharges` optionally names the duty instance the evidence was submitted against (§5.3). Fulfilment is derived from evidence and never stored as a flag. Signatures and provenance are verified before the SOTW is frozen; W2 only compares `issuer` against configuration (§3.4). |
 | `evidence_param` | Parameters of the performed action — an amount, a recipient — the counterpart of `request_param` for a proposed action. Read only by witness-source operands (`due2-profiles.md` §3). |
-| `activation` | When a duty instance was first owed, taken from the case history. It anchors relative deadlines (`due2-profiles.md` §7). |
+| `activation` | When a duty instance was first owed, taken from the case history. It anchors relative deadlines and recurrence occurrences (§5.3). |
 | `closure` | Direct hierarchy edges from the world rather than from policies — current team membership, say — in a named, versioned module. W2 uses the transitive closure of these together with the corpus's `closure`: `a ⊑ b` holds when `a = b` or a chain of edges leads from `a` to `b`. Closure is closed-world over the declared edges: an edge that is not there does not hold, so the part is `F`, never `U`. |
 
 The SOTW is assembled for one request: flattened properties describe that request's subject and target, and a SOTW is not reused for a request with a different subject or target.
@@ -161,7 +165,7 @@ case           (| corpus_id, request_id, sotw_id, config_id)
 finding        (atom_id, predicate | truth)
 basis          (atom_id, kind, ref | truth)
 read           (property)
-instance       (atom_id | instance_key)
+instance       (instance_key | atom_id, occurrence?, status)
 eliminated     (atom_id | by_atom, rule)
 alternative    (alt_id, permission_id)
 alt_duty       (alt_id, duty_id)
@@ -176,7 +180,7 @@ verdict_basis  (atom_id | role)
 | `finding` | W2 | One truth value per evaluated atom and predicate — `applies`, `in_force`, or `fulfilled` (§5.1). |
 | `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
 | `read` | W2 | Every state property consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
-| `instance` | W2 | The duty instance each evaluated duty resolves to (§5.3) — the key under which a case records what is owed and evidence is submitted. |
+| `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), and its status `Enum {fulfilled, outstanding, violated, unknown}`. The instance key is the key under which a case records what is owed and evidence is submitted. |
 | `eliminated` | W3 | A candidate or prohibition removed by conflict resolution, the atom that removed it, and the rule applied. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
@@ -230,7 +234,7 @@ Every finding is the truth value of one predicate, chosen by role:
 | root `Oblige` | **in_force** (§5.2) | its policy matches the request and its guards hold | its policy does not match, or a guard fails | otherwise |
 | precondition duty; root obligation in force | **fulfilled** (§5.3) | some witness satisfies the duty | every witness fails, or there is none | otherwise |
 
-Duty status reuses the same three values: `T` fulfilled, `F` outstanding, `U` unknown. There is no second status vocabulary.
+Duty status reuses the same three values: `T` fulfilled, `F` outstanding, `U` unknown. There is no second status vocabulary. Timing adds a fourth reported state — `violated` — derived in §5.3, not a truth value: it does not enter Kleene combination.
 
 ### 5.2 Applies
 
@@ -269,6 +273,23 @@ A duty with both roles — an obligation of its policy and a precondition of a p
 
 **Truth.** `d`'s witness conditions are evaluated once per witness: witness-source operands read its `evidence_param`, and `due2:actionTime` is its `occurred_at` (`due2-profiles.md` §3). Every other operand reads the request, the SOTW, or the context as usual. The finding is the Kleene disjunction, over all witnesses, of the conjunction of `d`'s witness conditions: `T` if some witness satisfies them all; `F` if every witness fails one, which includes having no witness; `U` otherwise.
 
+**Deadline and status.** A duty atom may carry timing (§3.1): a `deadline` — an absolute `xsd:dateTime`, or an `xsd:duration` relative to the instance's activation — and a `recurrence`. For an instance with activation `A` (the SOTW's `activation` relation, defaulting to `effective_at`: an instance first owed now):
+
+- the **effective deadline** is `D = deadline` when absolute, `A + duration` when relative, and absent when the duty has none (DPROD `formal-semantics.md` §5.3). Durations are single-kind — day-time or year-month — as §4 of `due2-profiles.md` requires;
+- a witness must be timely: it counts only with `occurred_at ≤ min(effective_at, D)`. Performance after `D` does not fulfil — DPROD's D-FULFILL (§5.2 there) — and a late witness does not reopen a deadline;
+- the instance's **status**, which W2 writes to the trace (§3.5):
+
+| witness finding | deadline | status |
+|---|---|---|
+| `T` | any, or none | `fulfilled` |
+| `F` | none, or `effective_at ≤ D` | `outstanding` |
+| `F` | `effective_at > D` | `violated` |
+| `U` | — | `unknown` |
+
+Without a deadline a duty is never violated. Status is derived, never remembered: an evaluation computes it from its evidence, `effective_at`, and `D`, so timely evidence — a witness with `occurred_at ≤ D` — found in a later SOTW makes the instance fulfilled in that evaluation. DPROD instead keeps `Violated` terminal in its duty state Σ (`formal-semantics.md` §9.4); that disagreement is exception 2 (`due2-profiles.md` §8.2). W3 reads the status from the trace and never re-derives it: the deadline comparison is thereby fixed per case — it is a fact of the SOTW, not a finding — which is what keeps W3 pure and the completions of §6.4 well-defined.
+
+**Recurrence.** A duty with `recurrence` is owed once per occurrence of its RRULE. W2 generates the occurrences `t ≤ effective_at` — the anchor is the rule's `DTSTART`, or the duty's activation without one (`due2-profiles.md` §7) — and derives one instance per occurrence: the instance key extends with `t`, the trace's `occurrence` is `t`, the instance's activation is `t`, and a relative deadline is `t + duration`. A witness for an occurrence must also satisfy `occurred_at ≥ t`: one delivery does not fulfil every later instance. DPROD's `performed` check has no lower bound, so one performance fulfils every later instance there — a gap found in DPROD (`due2-profiles.md` §8.2). Occurrences beyond `effective_at` — instances not yet owed — are not generated; reporting them is the open window question (§9, `due2-profiles.md` §9).
+
 A duty has no applicability guard of its own here. W1 hoists conditional duties into their parent's constraints (architecture §4), so every duty in the corpus is owed whenever its parent applies.
 
 Fulfilment is derivation, not bookkeeping. Evidence is appended to the case and the case is evaluated again; no status is ever flipped in place.
@@ -290,7 +311,8 @@ W2 produces a finding for:
 
 - every `Permit` and `Forbid` atom whose finding could be other than `F`;
 - every precondition duty of a `Permit` whose finding is not `F`; and
-- every root obligation of a policy some of whose `Permit` or `Forbid` atoms match the request (§5.2), with its `fulfilled` finding when `in_force` is `T` or `U`.
+- every root obligation of a policy some of whose `Permit` or `Forbid` atoms match the request (§5.2), with its `fulfilled` finding when `in_force` is `T` or `U`; and
+- one `instance` tuple (§3.5) for every duty instance derived above — for a recurring duty, one per occurrence (§5.3).
 
 An index may skip root atoms that are certainly `F` — wrong action, wrong target — because an `F` root is neutral in W3. It may not skip an atom whose match turns on a `U` part. It never skips a precondition of a live permission: an `F` duty is outstanding, which is not neutral. Remedies and consequences are not evaluated for access; they belong to the monitoring question.
 
@@ -306,7 +328,7 @@ Four steps in fixed order. The order is normative: conflict resolution runs befo
 
 ### 6.1 Candidates
 
-Every root `Permit` with finding `T` or `U` is a candidate. Its **outstanding set** is its precondition duties with finding `F`; its **unknown set**, those with `U`. Each candidate is in exactly one state:
+A root `Permit` with finding `T` or `U` is a candidate — unless one of its precondition duty instances is `violated` (§5.3). A violated precondition removes its parent's candidacy outright: the route can no longer be taken, and `Pending` must not offer it. A surviving candidate's **outstanding set** is its precondition duties with finding `F` — a violated one removed the candidate instead of joining the set; its **unknown set**, those with `U`. Each candidate is in exactly one state:
 
 | State | Condition |
 |---|---|
@@ -314,18 +336,7 @@ Every root `Permit` with finding `T` or `U` is a candidate. Its **outstanding se
 | **pending** | permission `T`; some outstanding, no unknown duty |
 | **uncertain** | permission `U`, or some unknown duty |
 
-Root obligations in force are reported in `verdict_basis` with role `obligation`, with their bearer and a status that follows from two findings and the deadline (`due2-profiles.md` §7):
-
-| `in_force` | `fulfilled` | Status |
-|---|---|---|
-| `T` | `T` | fulfilled |
-| `T` | `F`, deadline passed | violated |
-| `T` | `F`, otherwise | outstanding |
-| `T` | `U` | unknown |
-| `U` | any | unknown |
-| `F` | — | not reported |
-
-Neither status nor bearer is stored. Under `config.violations = ignore`, obligations never affect the verdict; a violated *precondition* still removes its candidate (`due2-profiles.md` §7).
+Root obligations in force are reported in `verdict_basis` with role `obligation`, with their bearer and, for each of their instances, the status W2 computed (§5.3) — `fulfilled`, `outstanding`, `violated`, or `unknown` — which is what §6.4's `deny` reads. An obligation whose `in_force` is `U` is reported `unknown`, whatever its instance status; one not in force is not reported. Neither status nor bearer is stored beyond the trace. Under `config.violations = ignore`, obligations never affect the verdict; a violated *precondition* still removes its candidate (`due2-profiles.md` §7).
 
 ### 6.2 Conflict
 
@@ -354,7 +365,7 @@ For a completion, which has no `U`:
 
 | Verdict | Condition, checked in order |
 |---|---|
-| `Deny` | a `Forbid` survives §6.2 and applies; or `config.violations = deny` and an obligation in force is violated (`due2-profiles.md` §7) |
+| `Deny` | a `Forbid` survives §6.2 and applies; or `config.violations = deny` and some instance of an obligation in force has status `violated` (§5.3) |
 | `Permit` | the frontier contains a ready alternative |
 | `Pending(frontier)` | the frontier is non-empty |
 | `NotApplicable` | otherwise |
@@ -365,10 +376,10 @@ Under `deny`, a violated obligation in force acts as a surviving prohibition. DP
 
 *Proof*, by cases on one finding changing from `F` to `T`. The verdict rises with the candidate set and falls with the set of surviving `T` prohibitions, so it suffices to track those two sets.
 
-- **A duty.** §6.2 never looks at duties, so candidates and eliminations are unchanged; one outstanding set shrinks, and a pending candidate may become ready. The verdict stays or rises.
+- **A duty.** §6.2 never looks at duties, so candidates and eliminations are unchanged; one outstanding set shrinks, a pending candidate may become ready, and a candidate removed by a violated precondition re-enters. The verdict stays or rises.
 - **A permission `p` of policy `P`.** Under `prohibit`, `p` is eliminated if `P` has a `T` prohibition and is otherwise a new candidate. Under `perm`, `p` is a new candidate and eliminates `P`'s prohibitions. Under `invalid`, if `P` has a `T` prohibition: either `P` already had a `T` candidate and was void already, so nothing changes, or its prohibition survived before and the verdict was `Deny`, the minimum. Candidates are only added and prohibitions only removed. The verdict stays or rises.
 - **A prohibition `f` of policy `P`.** Under `prohibit`, `f` survives. Under `perm`, `f` is eliminated if `P` has a `T` candidate and survives otherwise. Under `invalid`, if `P` has a `T` candidate, `P` is voided: its candidates go, and so do its prohibitions — which were all `F`, or `P` would already have been void. Candidates are only removed and prohibitions only added. The verdict stays or falls.
-- **Under `violations = deny`, an obligation's `in_force` or `fulfilled` finding.** An obligation in force and violated acts as a surviving prohibition. Making `in_force` more true can only add one, and making `fulfilled` more true can only remove one. So `in_force` is completed like a prohibition, and `fulfilled` like any duty. ∎
+- **Under `violations = deny`, an obligation's `in_force` finding, or a duty's `fulfilled` finding.** A violated instance of an obligation in force acts as a surviving prohibition. The status is computed by W2 from the `fulfilled` finding and the deadline, which the case fixes (§5.3); it is not itself a finding, so it does not vary between completions — within a completion, the violated instances are exactly the `F` duties whose deadline has passed. Making `in_force` more true can only add a violated obligation, and making `fulfilled` more true can only remove one — a violated precondition also restores its candidate. So `in_force` is completed like a prohibition, and `fulfilled` like any duty. ∎
 
 The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and duties `F`, prohibitions `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative needs its own argument.
 
@@ -414,10 +425,11 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 | 2 | Cross-policy combination default | §6.2 | A real multi-policy corpus |
 | 3 | Declared preference among frontier alternatives | §6.3 | First incomparable frontier in practice |
 | 4 | Monitoring question — duties currently owed by a party, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements |
-| 5 | Deadline windows and a `Violated` status (RL2 Model §7.1): without them, a duty whose deadline has passed still appears as an open route in `Pending` | §5.3 | First duty with a deadline |
-| 6 | Request match keys beyond `assignee` | §5.2 | Survey of real policies |
-| 7 | Exact completion over a shared Boolean or enumerated fact | §6.4 | A real policy where the over-approximation matters |
-| 8 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
+| 5 | Request match keys beyond `assignee` | §5.2 | Survey of real policies |
+| 6 | Exact completion over a shared Boolean or enumerated fact | §6.4 | A real policy where the over-approximation matters |
+| 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
+
+Deadline windows and the `violated` status, open as #5 until v0.4, are decided in §5.3: timing is in the corpus, W2 computes the effective deadline and the per-instance status, and a violated precondition removes its candidate. What stays open is the *not-yet-owed* state of an instance whose occurrence or window is in the future (`due2-profiles.md` §9).
 
 ---
 

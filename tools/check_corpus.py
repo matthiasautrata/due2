@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -105,6 +106,50 @@ def members(g: Graph, node) -> list:
     if (node, RDF.first, None) in g or node == RDF.nil:
         return list(Collection(g, node))
     return [node]
+
+
+DURATION_RE = re.compile(
+    r"^-?P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?"
+    r"(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$"
+)
+DATETIME_RE = re.compile(
+    r"^-?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$"
+)
+
+
+def single_kind_duration(lexical: str) -> bool:
+    """A duration of one kind only: year-month, or day-time (due2-profiles.md §4)."""
+    m = DURATION_RE.match(lexical)
+    if not m:
+        return False
+    ym = bool(m.group(1) or m.group(2))
+    dt = bool(m.group(3) or m.group(4) or m.group(5) or m.group(6) or m.group(7))
+    return ym != dt  # exactly one kind present
+
+
+def check_duty_timing(g: Graph, rule, kind, r: Report) -> None:
+    """dprod:deadline and dprod:recurrence — duty timing (due2-profiles.md §7)."""
+    dl = list(g.objects(rule, DPROD.deadline))
+    rc = list(g.objects(rule, DPROD.recurrence))
+    if kind != ODRL.Duty and (dl or rc):
+        r.err(f"{q(g, rule)}: dprod:deadline and dprod:recurrence are duty terms, "
+              f"not terms of {q(g, kind)}")
+        return
+    if len(dl) > 1:
+        r.err(f"{q(g, rule)}: more than one dprod:deadline")
+    if len(rc) > 1:
+        r.err(f"{q(g, rule)}: more than one dprod:recurrence")
+    for v in dl:
+        if not isinstance(v, Literal) or v.datatype not in (XSD.dateTime, XSD.duration):
+            r.err(f"{q(g, rule)}: dprod:deadline must be an xsd:dateTime (absolute) or "
+                  f"xsd:duration (relative to activation), got {v!r}")
+        elif v.datatype == XSD.duration and not single_kind_duration(str(v)):
+            r.err(f"{q(g, rule)}: duration deadline {v!r} mixes year-month and "
+                  f"day-time components (due2-profiles.md §4)")
+    for v in rc:
+        if not isinstance(v, Literal) or "FREQ=" not in str(v):
+            r.err(f"{q(g, rule)}: dprod:recurrence must be an RFC 5545 RRULE string "
+                  f"containing FREQ=, got {v!r}")
 
 
 class Bindings:
@@ -229,6 +274,7 @@ def check_rule(g: Graph, rule, kind, policy, b: Bindings, r: Report, used: dict,
     for pred, label in REJECTED.items():
         if (rule, pred, None) in g:
             r.err(f"{q(g, rule)}: {label} is not admitted")
+    check_duty_timing(g, rule, kind, r)
     actions = list(g.objects(rule, ODRL.action)) or list(g.objects(policy, ODRL.action))
     if not actions and not path:
         r.err(f"{q(g, rule)}: no action, at rule or policy level")
@@ -264,6 +310,9 @@ def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report
     for pred, label in REJECTED.items():
         if (policy, pred, None) in g:
             r.err(f"{q(g, policy)}: {label} is not admitted")
+    for term in (DPROD.deadline, DPROD.recurrence):
+        if (policy, term, None) in g:
+            r.err(f"{q(g, policy)}: {q(g, term)} on a Policy is not an extension point (duties only)")
     conflicts = list(g.objects(policy, ODRL.conflict))
     if len(conflicts) > 1:
         r.err(f"{q(g, policy)}: more than one odrl:conflict")
@@ -404,6 +453,10 @@ def check_case(case_dir: Path) -> list[Report]:
             for k in ev.get("params", {}):
                 if expand(k, prefixes) not in witness_props:
                     r.warn(f"{tag}: evidence param {k} is read by no witness-source operand")
+        has_deadline = (None, DPROD.deadline, None) in g
+        for k, at in sotw.get("activation", {}).items():
+            if not DATETIME_RE.match(str(at)):
+                r.err(f"{tag}: activation of {k} is not an xsd:dateTime instant: {at!r}")
         exp = sc.get("expected", {})
         if exp.get("verdict") not in VERDICTS:
             r.err(f"{tag}: expected.verdict must be one of {sorted(VERDICTS)}")
@@ -418,6 +471,11 @@ def check_case(case_dir: Path) -> list[Report]:
                 r.err(f"{tag}: obligation {ob.get('duty')} is not a typed node in policy.ttl")
             if ob.get("status") not in ("fulfilled", "outstanding", "violated", "unknown"):
                 r.err(f"{tag}: obligation status {ob.get('status')!r} is not one of fulfilled, outstanding, violated, unknown")
+            if ob.get("status") == "violated" and not has_deadline:
+                r.err(f"{tag}: obligation {ob.get('duty')} is violated, but the policy has no "
+                      f"dprod:deadline — without one, a duty is never violated")
+            if "instance" in ob and not DATETIME_RE.match(str(ob["instance"])):
+                r.err(f"{tag}: obligation instance {ob['instance']!r} is not an xsd:dateTime instant")
         if exp.get("verdict") == "Pending" and not exp.get("frontier"):
             r.err(f"{tag}: Pending needs a frontier")
     return reports

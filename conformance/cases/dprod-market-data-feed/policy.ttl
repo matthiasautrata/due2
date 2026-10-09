@@ -1,0 +1,79 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/offers/market-data-feed> (EKGF dprod, develop, 50db943).
+
+offer:market-data-feed a dprod:DataOffer ;
+    rdfs:label "Market Data Feed" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner agent:trading-data ;
+    odrl:target asset:market-prices ;
+    dprod:offerLifecycleStatus dprod:Active ;
+    dprod:effectiveDate "2026-01-01T00:00:00Z"^^xsd:dateTime ;
+    dprod:expirationDate "2026-12-31T23:59:59Z"^^xsd:dateTime ;
+
+    odrl:obligation rule:feed-delivery ;
+    odrl:obligation rule:feed-schema ;
+
+    odrl:permission rule:feed-display ;
+    odrl:permission rule:feed-non-display ;
+
+    odrl:prohibition rule:feed-no-distribute .
+
+rule:feed-delivery a odrl:Duty ;
+    rdfs:label "15-minute market data delivery" ;
+    dprod:subjectOfDuty agent:trading-data ;
+    odrl:action ex:deliver ;
+    dprod:recurrence "FREQ=MINUTELY;INTERVAL=15" ;
+    dprod:deadline "PT5M"^^xsd:duration .
+
+rule:feed-schema a odrl:Duty ;
+    rdfs:label "Market data schema conformance" ;
+    dprod:subjectOfDuty agent:trading-data ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:market-data-schema .
+
+rule:feed-display a odrl:Permission ;
+    rdfs:label "Display access" ;
+    odrl:action odrl:display .
+
+rule:feed-non-display a odrl:Permission ;
+    rdfs:label "Non-display use" ;
+    odrl:action ex:nonDisplay ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:recipientType ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:internal
+    ] .
+
+rule:feed-no-distribute a odrl:Prohibition ;
+    rdfs:label "No distribution" ;
+    odrl:action odrl:distribute .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+ex:nonDisplay a odrl:Action ; rdfs:label "non-display" ; odrl:includedIn odrl:use .
+
+ex:recipientType a odrl:LeftOperand ;
+    rdfs:label "recipient type" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:recipientType .
+
+ex:internal a ex:RecipientType ; rdfs:label "internal" .
+ex:RecipientType a rdfs:Class .
+
+agent:trading-data a odrl:Party ; rdfs:label "Trading Data Team" .
+asset:market-prices a odrl:Asset ; rdfs:label "Market Price Data" ;
+    odrl:partOf asset:market-data-lake .
+asset:market-data-lake a odrl:AssetCollection ; rdfs:label "Market Data Lake" .
+asset:market-data-schema a odrl:Asset ; rdfs:label "Market Data Schema" .

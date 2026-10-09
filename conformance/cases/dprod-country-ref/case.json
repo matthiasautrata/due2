@@ -1,0 +1,96 @@
+{
+  "case": "dprod-country-ref",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/country-ref> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Extracted unchanged except the three anonymous rules are named rule:ref-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. ex:query is declared includedIn odrl:read as in the source vocabulary; odrl:modify includedIn odrl:use comes from the shipped ODRL action hierarchy. The offer's permissions name no assignee, so any request subject matches (due2-workflows.md §5.2: no party part to fail; DPROD formal-semantics.md §7.4: subject = ⊥ applies to any agent). DPROD Σ assumed: Σ₀ with clock = request.at. Action hierarchy is the point: a query request matches the read permission too (query ⊑ read), never the reverse; and the modify prohibition does not reach read or distribute.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "query the reference table",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:query",
+        "target": "asset:country-codes",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "ex:query ⊑ odrl:read, so rule:ref-query matches by equality and rule:ref-read matches by hierarchy; either gives a ready candidate, and no prohibition matches (modify does not subsume query). Permit."
+      },
+      "dprod_expected": "Permit (both permissions active: query matches query, and query ⊑ read under the intended §7.4 reading)"
+    },
+    {
+      "name": "read the reference table",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:read",
+        "target": "asset:country-codes",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "rule:ref-read matches by equality. rule:ref-query does not: read is not below query, and the hierarchy never widens a rule upward. The prohibition does not match. Permit."
+      },
+      "dprod_expected": "Permit (only the read permission is active; under the literal §7.4 direction the query permission would also match, which the intended reading rejects)"
+    },
+    {
+      "name": "modify the reference table",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:modify",
+        "target": "asset:country-codes",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "why": "rule:ref-no-modify matches by equality (read and query are not below modify, so no permission matches). A surviving, applying prohibition gives Deny."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    },
+    {
+      "name": "distribute the reference table",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:distribute",
+        "target": "asset:country-codes",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "No rule matches: distribute is below none of read, query, or modify (each sits under use, a sibling). The policy does not govern this action here, which is NotApplicable, not Deny."
+      },
+      "dprod_expected": "NotApplicable"
+    }
+  ]
+}

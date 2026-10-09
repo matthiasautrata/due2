@@ -1,0 +1,174 @@
+{
+  "case": "dprod-customer-api-v2",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/customer-api-v2> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:recurrence (daily delivery)",
+    "dprod:deadline (relative, per-instance PT30M and one P30D)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "Extracted unchanged except the six anonymous rules are named rule:cust-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. dprod:effectiveDate and dprod:offerLifecycleStatus are metadata (never evaluated in either system). This is the duty-timing case: rule:cust-delivery is recurring (daily 07:00, deadline PT30M per occurrence), so W2 derives one instance per occurrence t ≤ effective_at, each with deadline t + PT30M and witnesses bounded by occurred_at ≥ t (due2-workflows.md §5.3). DPROD's expand is anchored on the clock with no DTSTART and its performed check has no lower bound (§8.2 gaps), so its instance set is not determined by the rule alone; where the scenarios supply activation, dprod_expected assumes the same occurrences (exception 2: Σ produced from the same evidence, in order). rule:cust-report has no dprod:subjectOfDuty and no recurrence: as a root obligation with no stated parties after policy-level interiorisation (assigner only), its bearer is the request subject (due2-profiles.md §6). DPROD duty collection (§7.2 step 1) requires the duty's own action to match the request: deliver, conformTo, and report never match read or derive, so no duty is ever collected, Σ' = Σ, and step 6 never denies — the duty-collection gap behind exceptions 3 and 6. Matching direction: dprod_expected uses the intended §7.4 reading (request ⊑ rule).",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "first read: one delivery owed today, not yet due",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "asset:customer-data",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:cust-schema", "status": "outstanding" },
+          { "duty": "rule:cust-report", "status": "outstanding" }
+        ],
+        "why": "rule:cust-read is ready and rule:cust-no-distribute does not match read, so Permit. All three obligations are in force (the read permission matches). rule:cust-delivery is recurring with no DTSTART, so its anchor is its activation, which defaults to effective_at (first owed now): the rule's next occurrence is 2026-06-02T07:00, after effective_at, so no instance is owed yet and none is reported — the not-yet-owed state (due2-profiles.md §9). rule:cust-schema has no deadline and no witness: outstanding, never violated. rule:cust-report's relative P30D runs from activation = effective_at, so it is also outstanding."
+      },
+      "dprod_expected": "Permit (no duty collected for a read, so no violation; the offer's permission is active)"
+    },
+    {
+      "name": "third day: yesterday's delivery missed, today's window still open",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:read",
+        "target": "asset:customer-data",
+        "at": "2026-06-03T07:10:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-03T07:10:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:ev-delivery-0601",
+            "occurred_at": "2026-06-01T07:10:00Z",
+            "actor": "agent:data-platform",
+            "action": "ex:deliver",
+            "object": "asset:customer-data",
+            "issuer": "agent:analytics"
+          }
+        ],
+        "activation": { "rule:cust-delivery": "2026-06-01T07:00:00Z" },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:cust-delivery", "status": "fulfilled", "instance": "2026-06-01T07:00:00Z" },
+          { "duty": "rule:cust-delivery", "status": "violated", "instance": "2026-06-02T07:00:00Z" },
+          { "duty": "rule:cust-delivery", "status": "outstanding", "instance": "2026-06-03T07:00:00Z" },
+          { "duty": "rule:cust-schema", "status": "outstanding" },
+          { "duty": "rule:cust-report", "status": "outstanding" }
+        ],
+        "why": "Anchored at 2026-06-01T07:00, the daily rule yields three occurrences ≤ effective_at: 06-01, 06-02, 06-03, each with deadline t + PT30M. ex:ev-delivery-0601 witnesses the 06-01 instance (actor, action, object, occurred_at 07:10 within [07:00, 07:30]): fulfilled. The 06-02 instance has no witness and effective_at 07:10 on 06-03 is past its 07:30 deadline: violated. The 06-03 instance's window (07:00–07:30) is still open: outstanding. Under the default violations = ignore the violated instance is reported and does not affect the verdict, and rule:cust-read remains ready: Permit."
+      },
+      "dprod_expected": "Permit (deliver never matches read, so step 1 collects no duty and step 6 never fires, whatever the missed window)"
+    },
+    {
+      "name": "the same read under DPROD-faithful violations = deny",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:read",
+        "target": "asset:customer-data",
+        "at": "2026-06-03T07:10:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-03T07:10:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:ev-delivery-0601",
+            "occurred_at": "2026-06-01T07:10:00Z",
+            "actor": "agent:data-platform",
+            "action": "ex:deliver",
+            "object": "asset:customer-data",
+            "issuer": "agent:analytics"
+          }
+        ],
+        "activation": { "rule:cust-delivery": "2026-06-01T07:00:00Z" },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:cust-delivery", "status": "fulfilled", "instance": "2026-06-01T07:00:00Z" },
+          { "duty": "rule:cust-delivery", "status": "violated", "instance": "2026-06-02T07:00:00Z" },
+          { "duty": "rule:cust-delivery", "status": "outstanding", "instance": "2026-06-03T07:00:00Z" },
+          { "duty": "rule:cust-schema", "status": "outstanding" },
+          { "duty": "rule:cust-report", "status": "outstanding" }
+        ],
+        "why": "The same findings as scenario 2, but config.violations = deny: the violated 06-02 instance of an obligation in force acts as a surviving prohibition (due2-workflows.md §6.4), so the read is denied while the window of today's instance is still open. The status is computed by W2 from the deadline, so the Deny reads a finding-adjacent fact, not the SOTW."
+      },
+      "dprod_expected": "Permit (the violated delivery instance is never collected — duty-collection gap, due2-profiles.md §8.2 — so DPROD denies nothing; exception 6)"
+    },
+    {
+      "name": "derivation without stating the type",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:derive",
+        "target": "asset:customer-data",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:cust-schema", "status": "outstanding" },
+          { "duty": "rule:cust-report", "status": "outstanding" }
+        ],
+        "why": "rule:cust-derive's constraint reads ex:derivationType, which the request does not state: the part is U, not false (due2-profiles.md §3 resolution table), so the permission is U. rule:cust-no-distribute does not match derive. Completing the unknown either way changes the answer — derivationType = nonSubstitutive permits, anything else does not — so the verdict is Indeterminate. The obligations are in force (the derive permission matches, constraints aside): as in scenario 1, the recurring delivery has no owed instance yet (its anchor, effective_at 10:00, is not a 07:00 occurrence, and the next one is after effective_at), so it is not reported; schema and report are outstanding."
+      },
+      "dprod_expected": "Failure(MissingValue ex:derivationType) (lookupOne finds no value; due2 decides more often, due2-profiles.md §8.2)"
+    },
+    {
+      "name": "distribute customer data",
+      "request": {
+        "reference": "req-5",
+        "action": "odrl:distribute",
+        "target": "asset:customer-data",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "why": "rule:cust-no-distribute matches by equality; no permission reaches distribute from below (read, derive, and ex:deliver ⊑ distribute do not help the requester). A surviving, applying prohibition: Deny."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    }
+  ]
+}

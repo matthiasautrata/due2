@@ -5,6 +5,7 @@ Cases are input/expected-output pairs in the reference data model of `due2-workf
 ```bash
 python3 tools/check_corpus.py conformance/cases          # every case
 python3 tools/check_corpus.py conformance/cases/<case>   # one case
+python3 tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # the vendored DPROD examples, as policies
 ```
 
 ## Layout
@@ -17,12 +18,19 @@ conformance/cases/<case>/
 
 Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/matthiasautrata/RL2`, `conformance/usecases/`), `dprod-` for DPROD Contracts examples (`github.com/EKGF/dprod`, `develop`, `dprod-contracts/examples/`).
 
+## Vendored DPROD examples
+
+The upstream example policies themselves are vendored unmodified under `profiles/vendor/dprod/examples/` — four files, sixteen policies: eleven offers and contracts in `baseline.ttl`, two in `data-contract.ttl`, two in `data-use-policy.ttl`, one in `odcs.ttl` — so the DPROD-compatibility claims are reproducible locally: the command above checks all sixteen against due2's admitted input profile, the DPROD profile selected by their own `odrl:profile`.
+
+The `dprod-*` cases cover every one of the sixteen vendored policies with scenarios and hand-derived verdicts, plus constructed cases (`dprod-divergences`, `dprod-not-negated-purpose`) that demonstrate the six documented divergences. Cases extract their policy from the vendored file, naming anonymous rules and dropping DPROD's input `dprod:dutyState` triples (due2 derives status from evidence and activation instead); the `source` field names the file and policy, and `notes` records every such change.
+
 ## `policy.ttl`
 
 - Exactly one policy, typed `odrl:Set`, `odrl:Offer`, `odrl:Agreement`, or a profile subclass such as `dprod:DataContract`.
 - ODRL 2.2 vocabulary for everything ODRL has. Profile terms only from the extension points of `due2-profiles.md` §2, and the policy names its profiles with `odrl:profile`.
 - Every rule is named (an IRI), so expected results can refer to it.
 - Every left operand used is bound with `dprod:operandSource` and `dprod:operandProperty` (`due2-profiles.md` §3), either in the file or in a selected profile. Give `rdfs:range` wherever the type matters.
+- Duty timing on duty rules only: `dprod:deadline` — an `xsd:dateTime`, or a single-kind `xsd:duration` relative to activation — and `dprod:recurrence`, an RRULE string containing `FREQ=` (`due2-profiles.md` §7).
 - An explicit `odrl:conflict` unless the case is about the default.
 - Self-contained: actions, parties, assets, and hierarchy edges the case needs are in the file — except what the shipped profile modules in `profiles/` already supply, such as ODRL's action hierarchy (`odrl:read ⊑ odrl:use`).
 - Domain actions, assets, parties, and operands (`ex:retrieve`, `ex:requestedRecords`) are domain vocabulary. They do not count as profile terms for classification.
@@ -77,12 +85,12 @@ Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/ma
 | `request.params` | Values of `dprod:requestSource` properties, keyed by property IRI. Absent means `missing`. |
 | `sotw.facts` | Values of `dprod:stateSource` properties: `status` is `resolved`, `missing`, `invalid`, `conflict`, or `unresolved`; `values` has one entry when resolved (any number, including none, for an operand declared `due2:cardinality due2:set`), two or more when in conflict, none otherwise. |
 | `sotw.evidence` | `id`, `occurred_at`, `actor`, `action`, optional `object`, `issuer`, `discharges`, `params` (`due2-workflows.md` §3.3). `params` are read by `due2:witnessSource` operands in a duty's constraints (`due2-profiles.md` §3). |
-| `sotw.activation` | Duty instance key or rule IRI → activation instant, for relative deadlines (`due2-profiles.md` §7). |
+| `sotw.activation` | Duty instance key or rule IRI → activation instant, an `xsd:dateTime`, for relative deadlines and recurrence anchors (`due2-workflows.md` §5.3, `due2-profiles.md` §7). |
 | `sotw.closure` | `[relation, narrower, broader]` triples, for hierarchy edges not in the policy file. |
 | `config` | `combination`; optional `preference`, `signers`, `violations` (`ignore` by default, `deny` for DPROD-faithful evaluation), `admit_source`, `admit_age`. |
 | `expected.verdict` | `Permit`, `Deny`, `Pending`, `NotApplicable`, or `Indeterminate`, derived by hand from `due2-workflows.md` §5–§6 and `due2-profiles.md`. |
 | `expected.frontier` | For `Pending`: a list of alternatives, each a list of outstanding duty IRIs. |
-| `expected.obligations` | Obligations in force for the request (`due2-workflows.md` §5.2, §6.1): `{"duty": IRI, "status": "fulfilled" \| "outstanding" \| "violated" \| "unknown"}`, plus `"instance": <occurrence instant>` for an instance of a recurring duty. Statuses follow the table in `due2-workflows.md` §6.1; include `unknown` ones too. |
+| `expected.obligations` | Obligations in force for the request (`due2-workflows.md` §5.2, §6.1): `{"duty": IRI, "status": "fulfilled" \| "outstanding" \| "violated" \| "unknown"}`, plus `"instance": <occurrence instant>` for an instance of a recurring duty. Statuses follow §5.3's table — W2 computes them from the witness finding and the deadline; include `unknown` ones too, and remember that a recurring obligation with no instance owed yet is not reported. |
 | `expected.why` | The derivation in one or two sentences — which atoms applied, which were unknown, why the verdict follows. |
 | `rl2_expected`, `dprod_expected` | The origin's own expected result, where it states one. A difference from `expected.verdict` is explained in `notes`. |
 
@@ -95,5 +103,7 @@ Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/ma
 - due2 closes `odrl:partOf` transitively; RL2 core matches only direct members.
 - due2 evidence is existential: any witness fulfils a duty, so RL2's conflicting-evidence scenarios have no counterpart.
 - Completion is over findings, so two permissions on complementary values of one unknown fact give `Indeterminate` (`due2-workflows.md` §6.4).
+
+**Standing divergences from DPROD,** which a `dprod-*` case need not re-explain: the six exceptions of `due2-profiles.md` §8.2 — Kleene masking and errors in rules that do not apply, incomparable operands, duty state derived from evidence, Agreement parties, policy-level targets, and violated duties — together with DPROD's duty-collection rule (`formal-semantics.md` §7.2 step 1: a duty is collected only when its own action matches the request), which is why no DPROD duty is ever collected for a read.
 
 Expected results are hand-derived until an evaluator exists. The derivation in `why` is what a reviewer checks.

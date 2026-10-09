@@ -27,7 +27,7 @@ The rewrite tested that claim directly:
 | Origin | Cases | ODRL core | ODRL + profile | Partial | Not expressible | Scenarios |
 |---|---|---|---|---|---|---|
 | RL2 use cases | 49 | 35 | 2 | 8 | 4 | 203 |
-| DPROD Contracts examples | 6 | 1 | 5 | — | — | 39 |
+| DPROD Contracts examples | 17 | 3 | 14 | — | — | 88 |
 
 - **RL2.** 37 of 49 use cases are fully expressible in ODRL, with at most a profile term. Of the 110 scenarios that state an RL2 outcome, 104 get the same verdict in due2. The remaining 6 are standing divergences, mainly `Pending` with a route where RL2 says `NotApplicable`.
 - **What ODRL plus due2 cannot express,** by theme:
@@ -39,7 +39,7 @@ The rewrite tested that claim directly:
   - one case each for conflicting evidence records, direct-only collection membership, consequent duties, and a duty object bound to the requested asset.
 
   None of these is needed by a real policy yet.
-- **DPROD.** All 16 policies in DPROD's example files pass the corpus checker unchanged, with the DPROD profile selected by their own `odrl:profile`. Of the 39 scenarios that state a DPROD outcome, 26 agree. The other 13 fall under the six exceptions: Kleene masking and errors that do not stop evaluation, incomparable operands, duty state from evidence, Agreement parties, policy-level targets, and violated duties.
+- **DPROD.** All 16 policies in DPROD's example files pass the corpus checker unchanged, with the DPROD profile selected by their own `odrl:profile`; since 2026-10-10 the four example files are vendored unmodified under `profiles/vendor/dprod/examples/`, so this is reproducible locally, and all 16 policies are covered by corpus cases (`conformance/cases/dprod-*`, together with the constructed `dprod-divergences` and `dprod-not-negated-purpose`). Of the 88 scenarios that state a DPROD outcome, 66 agree. The other 22 fall under the six exceptions and DPROD's duty-collection rule: 10 are `Failure`-to-decision refinements (missing values that due2 completes rather than fails on), and 12 are verdict divergences — six of them a violated duty denying under `violations = deny` where DPROD never collects the duty for the requested action.
 
 ## Consequences
 

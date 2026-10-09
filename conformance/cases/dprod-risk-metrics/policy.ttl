@@ -1,0 +1,78 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/offers/risk-metrics> (EKGF dprod, develop, 50db943).
+
+offer:risk-metrics a dprod:DataOffer ;
+    rdfs:label "Risk Metrics" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner agent:data-platform ;
+    odrl:target asset:risk-metrics ;
+
+    odrl:obligation rule:risk-delivery ;
+    odrl:obligation rule:risk-timeliness ;
+    odrl:obligation rule:risk-notify ;
+
+    odrl:permission rule:risk-display ;
+    odrl:permission rule:risk-non-display .
+
+rule:risk-delivery a odrl:Duty ;
+    rdfs:label "Real-time risk metrics delivery" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    odrl:action ex:deliver ;
+    dprod:recurrence "FREQ=MINUTELY;INTERVAL=1" ;
+    dprod:deadline "PT30S"^^xsd:duration .
+
+rule:risk-timeliness a odrl:Duty ;
+    rdfs:label "Quality SLA: real-time conformance" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:risk-metrics-schema ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:timeliness ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:realtime
+    ] .
+
+rule:risk-notify a odrl:Duty ;
+    rdfs:label "Schema change notification" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    odrl:action ex:notify ;
+    odrl:target asset:schema-changes ;
+    dprod:deadline "P14D"^^xsd:duration .
+
+rule:risk-display a odrl:Permission ;
+    rdfs:label "Display access" ;
+    odrl:action odrl:display .
+
+rule:risk-non-display a odrl:Permission ;
+    rdfs:label "Non-display use" ;
+    odrl:action ex:nonDisplay .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+ex:notify a odrl:Action ; rdfs:label "notify" ; odrl:includedIn odrl:inform .
+ex:nonDisplay a odrl:Action ; rdfs:label "non-display" ; odrl:includedIn odrl:use .
+
+ex:timeliness a odrl:LeftOperand ;
+    rdfs:label "timeliness" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:timeliness .
+
+ex:realtime a ex:Timeliness ; rdfs:label "real-time" .
+ex:Timeliness a rdfs:Class .
+
+agent:data-platform a odrl:Party ; rdfs:label "Data Platform Team" .
+asset:risk-metrics a odrl:Asset ; rdfs:label "Risk Metrics" .
+asset:risk-metrics-schema a odrl:Asset ; rdfs:label "Risk Metrics Schema" .
+asset:schema-changes a odrl:Asset ; rdfs:label "Schema Change Notifications" .

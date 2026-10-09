@@ -1,0 +1,104 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix duty:  <https://example.org/duties/> .
+@prefix agree: <https://example.org/agreements/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/agreements/analytics-customer-2026> (EKGF dprod, develop, 50db943).
+# The three named duty nodes are carried in this file; their dprod:dutyState
+# triples (input state in DPROD) are dropped — due2 derives status from
+# evidence and activation instead (due2-profiles.md §8.1, exception 2).
+
+agree:analytics-customer-2026 a dprod:DataContract ;
+    rdfs:label "Analytics Customer Data 2026" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    dprod:acceptsOffer offer:customer-api-v2 ;
+    odrl:assigner agent:data-platform ;
+    odrl:assignee agent:analytics ;
+    odrl:target asset:customer-data ;
+    dprod:effectiveDate "2026-02-01T00:00:00Z"^^xsd:dateTime ;
+    dprod:expirationDate "2026-12-31T23:59:59Z"^^xsd:dateTime ;
+
+    odrl:obligation duty:cust-delivery-2026-001 ;
+    odrl:obligation duty:cust-schema-2026-001 ;
+
+    odrl:permission rule:an-read ;
+
+    odrl:permission rule:an-derive ;
+
+    odrl:obligation duty:cust-report-2026-001 ;
+
+    odrl:prohibition rule:an-no-distribute .
+
+rule:an-read a odrl:Permission ;
+    rdfs:label "Analytics read access" ;
+    odrl:assignee agent:analytics ;
+    odrl:action odrl:read .
+
+rule:an-derive a odrl:Permission ;
+    rdfs:label "Non-substitutive derivation" ;
+    odrl:assignee agent:analytics ;
+    odrl:action odrl:derive ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:derivationType ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:nonSubstitutive
+    ] .
+
+rule:an-no-distribute a odrl:Prohibition ;
+    rdfs:label "No distribution" ;
+    odrl:assignee agent:analytics ;
+    odrl:action odrl:distribute .
+
+# --- duty nodes referenced by the contract ---
+duty:cust-delivery-2026-001 a odrl:Duty ;
+    rdfs:label "Customer data delivery" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    dprod:objectOfDuty agent:analytics ;
+    odrl:action ex:deliver ;
+    odrl:target asset:customer-data ;
+    dprod:recurrence "FREQ=DAILY;BYHOUR=7;BYMINUTE=0" ;
+    dprod:deadline "PT30M"^^xsd:duration .
+
+duty:cust-schema-2026-001 a odrl:Duty ;
+    rdfs:label "Customer API schema conformance" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    dprod:objectOfDuty agent:analytics ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:customer-api-schema .
+
+duty:cust-report-2026-001 a odrl:Duty ;
+    rdfs:label "Analytics usage report" ;
+    dprod:subjectOfDuty agent:analytics ;
+    dprod:objectOfDuty agent:data-platform ;
+    odrl:action ex:report ;
+    odrl:target asset:usage-stats ;
+    dprod:deadline "P30D"^^xsd:duration .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+ex:report a odrl:Action ; rdfs:label "report" ; odrl:includedIn odrl:inform .
+
+ex:derivationType a odrl:LeftOperand ;
+    rdfs:label "derivation type" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:derivationType .
+
+ex:nonSubstitutive a ex:DerivationType ; rdfs:label "non-substitutive" .
+ex:DerivationType a rdfs:Class .
+
+agent:data-platform a odrl:Party ; rdfs:label "Data Platform Team" .
+agent:analytics a odrl:Party ; rdfs:label "Analytics Team" .
+asset:customer-data a odrl:Asset ; rdfs:label "Customer Data" .
+asset:customer-api-schema a odrl:Asset ; rdfs:label "Customer API Schema v2" .
+asset:usage-stats a odrl:Asset ; rdfs:label "Usage Statistics" .

@@ -1,0 +1,76 @@
+{
+  "case": "dprod-customer-api-v1",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/customer-api-v1> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Extracted unchanged except the anonymous permission is named rule:v1-use. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. This offer's only rule is an unconstrained odrl:use permission, and everything else on the policy — dprod:offerLifecycleStatus dprod:Fulfilled (retired), prov:wasRevisionOf — is metadata: not at any extension point of due2-profiles.md §2, so it is preserved and never evaluated (dprod:effectiveDate/expirationDate are likewise never evaluated in DPROD, formal-semantics.md §3.4 leaving them unmapped). The scenarios therefore show a 'retired' offer still permitting every use: lifecycle status must gate deployment of the policy, not evaluation, in both systems. odrl:read, odrl:display, and odrl:distribute sit under odrl:use in the shipped action hierarchy. DPROD Σ assumed: Σ₀ with clock = request.at. Matching direction: dprod_expected uses the intended §7.4 reading (request ⊑ rule); under the literal reading the use permission never matches a narrower action.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "read customer data under a retired offer",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "asset:customer-data",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "odrl:read ⊑ odrl:use, so rule:v1-use matches and is ready. No prohibition exists. dprod:Fulfilled is lifecycle metadata, not evaluated (due2-profiles.md §2), so retirement does not reach the verdict — in due2 or in DPROD."
+      },
+      "dprod_expected": "Permit (the offer has no prohibition and the permission is active; lifecycle status is outside evaluation state, formal-semantics.md §4.1)"
+    },
+    {
+      "name": "display customer data",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:display",
+        "target": "asset:customer-data",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "odrl:display ⊑ odrl:use (shipped hierarchy), so the single permission matches. Permit."
+      },
+      "dprod_expected": "Permit (under the intended §7.4 reading; the literal reading never matches)"
+    },
+    {
+      "name": "export customer data",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:distribute",
+        "target": "asset:customer-data",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "odrl:distribute ⊑ odrl:use, so even redistribution is permitted by this offer — unlike customer-api-v2, v1 carries no distribute prohibition. The retirement flag is metadata. Both systems read the policy the same way."
+      },
+      "dprod_expected": "Permit (unconstrained use permission; no prohibition in this offer)"
+    }
+  ]
+}

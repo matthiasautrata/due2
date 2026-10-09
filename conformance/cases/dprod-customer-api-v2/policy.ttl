@@ -1,0 +1,89 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/offers/customer-api-v2> (EKGF dprod, develop, 50db943).
+
+offer:customer-api-v2 a dprod:DataOffer ;
+    rdfs:label "Customer API v2" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner agent:data-platform ;
+    odrl:target asset:customer-data ;
+    dprod:offerLifecycleStatus dprod:Active ;
+    dprod:effectiveDate "2026-01-01T00:00:00Z"^^xsd:dateTime ;
+    prov:wasRevisionOf offer:customer-api-v1 ;
+
+    odrl:obligation rule:cust-delivery ;
+    odrl:obligation rule:cust-schema ;
+
+    odrl:permission rule:cust-read ;
+
+    odrl:permission rule:cust-derive ;
+    # refinement-style constraint on the permission, as in the source
+
+    odrl:obligation rule:cust-report ;
+
+    odrl:prohibition rule:cust-no-distribute .
+
+rule:cust-delivery a odrl:Duty ;
+    rdfs:label "Daily customer data delivery" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    odrl:action ex:deliver ;
+    dprod:recurrence "FREQ=DAILY;BYHOUR=7;BYMINUTE=0" ;
+    dprod:deadline "PT30M"^^xsd:duration .
+
+rule:cust-schema a odrl:Duty ;
+    rdfs:label "Schema conformance" ;
+    dprod:subjectOfDuty agent:data-platform ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:customer-api-schema .
+
+rule:cust-read a odrl:Permission ;
+    rdfs:label "Read access" ;
+    odrl:action odrl:read .
+
+rule:cust-derive a odrl:Permission ;
+    rdfs:label "Non-substitutive derivation" ;
+    odrl:action odrl:derive ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:derivationType ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:nonSubstitutive
+    ] .
+
+rule:cust-report a odrl:Duty ;
+    rdfs:label "Usage reporting" ;
+    odrl:action ex:report ;
+    odrl:target asset:usage-stats ;
+    dprod:deadline "P30D"^^xsd:duration .
+
+rule:cust-no-distribute a odrl:Prohibition ;
+    rdfs:label "No distribution" ;
+    odrl:action odrl:distribute .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+ex:report a odrl:Action ; rdfs:label "report" ; odrl:includedIn odrl:inform .
+
+ex:derivationType a odrl:LeftOperand ;
+    rdfs:label "derivation type" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:derivationType .
+
+ex:nonSubstitutive a ex:DerivationType ; rdfs:label "non-substitutive" .
+ex:DerivationType a rdfs:Class .
+
+agent:data-platform a odrl:Party ; rdfs:label "Data Platform Team" .
+asset:customer-data a odrl:Asset ; rdfs:label "Customer Data" .
+asset:customer-api-schema a odrl:Asset ; rdfs:label "Customer API Schema v2" .
+asset:usage-stats a odrl:Asset ; rdfs:label "Usage Statistics" .

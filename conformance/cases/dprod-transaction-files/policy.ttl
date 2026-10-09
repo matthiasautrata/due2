@@ -1,0 +1,59 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/baseline.ttl,
+# policy <https://example.org/offers/transaction-files> (EKGF dprod, develop, 50db943).
+
+offer:transaction-files a dprod:DataOffer ;
+    rdfs:label "Transaction Files" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner agent:finance ;
+    odrl:target asset:transaction-files ;
+    dprod:offerLifecycleStatus dprod:Active ;
+    dprod:effectiveDate "2026-01-01T00:00:00Z"^^xsd:dateTime ;
+
+    odrl:obligation rule:tx-delivery ;
+
+    odrl:permission rule:tx-read ;
+
+    odrl:obligation rule:tx-report ;
+
+    odrl:prohibition rule:tx-no-export .
+
+rule:tx-delivery a odrl:Duty ;
+    rdfs:label "Monthly transaction file delivery" ;
+    dprod:subjectOfDuty agent:finance ;
+    odrl:action ex:deliver ;
+    dprod:recurrence "FREQ=MONTHLY;BYMONTHDAY=1" ;
+    dprod:deadline "P3D"^^xsd:duration .
+
+rule:tx-read a odrl:Permission ;
+    rdfs:label "Read access" ;
+    odrl:action odrl:read .
+
+rule:tx-report a odrl:Duty ;
+    rdfs:label "Monthly reconciliation report" ;
+    odrl:action ex:report ;
+    odrl:target asset:monthly-report ;
+    dprod:recurrence "FREQ=MONTHLY;BYMONTHDAY=15" ;
+    dprod:deadline "P5D"^^xsd:duration .
+
+rule:tx-no-export a odrl:Prohibition ;
+    rdfs:label "No export" ;
+    odrl:action ex:export .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:report a odrl:Action ; rdfs:label "report" ; odrl:includedIn odrl:inform .
+ex:export a odrl:Action ; rdfs:label "export" ; odrl:includedIn odrl:distribute .
+
+agent:finance a odrl:Party ; rdfs:label "Finance Team" .
+asset:transaction-files a odrl:Asset ; rdfs:label "Transaction Files" .
+asset:monthly-report a odrl:Asset ; rdfs:label "Monthly Transaction Report" .

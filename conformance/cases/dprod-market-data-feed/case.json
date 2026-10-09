@@ -1,0 +1,152 @@
+{
+  "case": "dprod-market-data-feed",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/market-data-feed> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:recurrence (15-minute delivery)",
+    "dprod:deadline (relative, per-instance PT5M)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "Extracted unchanged except the five anonymous rules are named rule:feed-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies; effectiveDate and expirationDate are metadata in both systems. The delivery duty recurs every 15 minutes with a PT5M per-instance deadline: anchored at 09:00, occurrences are 09:00, 09:15, 09:30, …, each owing a delivery within five minutes (due2-workflows.md §5.3). DPROD's expand is anchored on the clock without a DTSTART and its performed check has no lower bound (§8.2), so where the scenarios supply activation, dprod_expected assumes the same occurrences and Σ produced from the same evidence (exception 2). display and ex:nonDisplay are siblings under use, so the distribute prohibition reaches neither; dprod_expected uses the intended §7.4 reading (request ⊑ rule).",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "display the feed",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:display",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:02:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:feed-delivery", "status": "outstanding", "instance": "2026-06-01T09:02:00Z" },
+          { "duty": "rule:feed-schema", "status": "outstanding" }
+        ],
+        "why": "rule:feed-display matches display by equality, is unconstrained, and so is ready; the prohibition does not match display (display and distribute are siblings under use, neither below the other). Permit. Both obligations are in force (the display permission matches). The delivery duty's anchor defaults to effective_at 09:02, and an INTERVAL rule generates its anchor — unlike a BYHOUR rule (contrast dprod-customer-api-v2 scenario 1) — so exactly one instance is owed, at 09:02, its five-minute window open: outstanding. rule:feed-schema has no deadline and no witness: outstanding."
+      },
+      "dprod_expected": "Permit (no duty collected for a display; the permission is active)"
+    },
+    {
+      "name": "non-display use by an internal recipient",
+      "request": {
+        "reference": "req-2",
+        "action": "ex:nonDisplay",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:02:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:recipientType": { "@id": "ex:internal" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:feed-delivery", "status": "outstanding", "instance": "2026-06-01T09:02:00Z" },
+          { "duty": "rule:feed-schema", "status": "outstanding" }
+        ],
+        "why": "ex:nonDisplay matches rule:feed-non-display by equality and its constraint holds (recipientType = internal), so the candidate is ready; distribute does not match nonDisplay. Permit, with the delivery instance at 09:02 and the schema obligation outstanding, as in scenario 1."
+      },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "non-display use without stating the recipient type",
+      "request": {
+        "reference": "req-3",
+        "action": "ex:nonDisplay",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:02:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:feed-delivery", "status": "outstanding", "instance": "2026-06-01T09:02:00Z" },
+          { "duty": "rule:feed-schema", "status": "outstanding" }
+        ],
+        "why": "The recipientType operand is missing from the request, so the constraint is U and the permission with it; no other rule matches nonDisplay, and completing the unknown either way changes the answer. Indeterminate — a missing request fact is never read as a denial (due2-workflows.md §5.1). The obligations are in force (the non-display permission matches, constraints aside): the delivery instance at 09:02 and the schema obligation, both outstanding."
+      },
+      "dprod_expected": "Failure(MissingValue ex:recipientType) (due2 decides more often, due2-profiles.md §8.2)"
+    },
+    {
+      "name": "non-display use by an external recipient",
+      "request": {
+        "reference": "req-4",
+        "action": "ex:nonDisplay",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:02:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:recipientType": { "@id": "ex:externalRecipient" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:feed-delivery", "status": "outstanding", "instance": "2026-06-01T09:02:00Z" },
+          { "duty": "rule:feed-schema", "status": "outstanding" }
+        ],
+        "why": "The constraint is resolved and false (external ≠ internal), so rule:feed-non-display does not apply — a real false, not a missing value. Nothing else matches nonDisplay: the distribute prohibition does not, and display matches only display. The policy does not govern this request: NotApplicable. The obligations stay in force: §5.2 matches rules to the request constraints aside, and the non-display permission does match action, target, and party."
+      },
+      "dprod_expected": "NotApplicable (the permission is inactive; no prohibition matches)"
+    },
+    {
+      "name": "two intervals missed, the third still open, under deny",
+      "request": {
+        "reference": "req-5",
+        "action": "odrl:display",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:40:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T09:40:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:ev-delivery-0900",
+            "occurred_at": "2026-06-01T09:02:00Z",
+            "actor": "agent:trading-data",
+            "action": "ex:deliver",
+            "object": "asset:market-prices",
+            "issuer": "agent:analytics"
+          }
+        ],
+        "activation": { "rule:feed-delivery": "2026-06-01T09:00:00Z" },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:feed-delivery", "status": "fulfilled", "instance": "2026-06-01T09:00:00Z" },
+          { "duty": "rule:feed-delivery", "status": "violated", "instance": "2026-06-01T09:15:00Z" },
+          { "duty": "rule:feed-delivery", "status": "violated", "instance": "2026-06-01T09:30:00Z" },
+          { "duty": "rule:feed-schema", "status": "outstanding" }
+        ],
+        "why": "Anchored at 09:00 on the 15-minute grid, occurrences ≤ 09:40 are 09:00, 09:15, 09:30, each with deadline t + PT5M. ex:ev-delivery-0900, delivered at 09:02, witnesses the 09:00 instance: fulfilled. The 09:15 and 09:30 instances have no witness and their deadlines (09:20, 09:35) are past: violated. Under violations = deny a violated instance of an obligation in force denies the request. The next occurrence (09:45) is after effective_at, so it is not owed."
+      },
+      "dprod_expected": "Permit (deliver never matches display, so no duty is collected and no violation denies; exception 6)"
+    }
+  ]
+}

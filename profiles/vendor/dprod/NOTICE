@@ -1,6 +1,7 @@
-dprod-contracts.ttl and dprod-contracts-prof.ttl are copied unmodified from
-https://github.com/EKGF/dprod, branch develop, commit 50db943 (2026-10-01),
-directory dprod-contracts/.
+dprod-contracts.ttl, dprod-contracts-prof.ttl, and the files under examples/
+(baseline.ttl, data-contract.ttl, data-use-policy.ttl, odcs.ttl) are copied
+unmodified from https://github.com/EKGF/dprod, branch develop, commit 50db943
+(2026-10-01), directory dprod-contracts/ and dprod-contracts/examples/.
 
 Copyright (c) 2024-2026 Enterprise Knowledge Graph Forum, EDM Council, Inc.
 Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).

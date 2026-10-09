@@ -1,7 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.5
+**Status:** Draft v0.6
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
+
+**Changes in v0.6:** duty timing landed in the corpus and is computed by W2, which restores W3 purity and the §6.4 monotonicity shortcut (`due2-workflows.md` §3.1, §5.3, §6.4); DPROD's example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the conformance corpus (§10).
 
 **Changes in v0.5:** witness reads made explicit, so a request-source duty condition is a guard (§4 item 5); a duty that is both an obligation and a precondition (§4 items 4–5); §8.2 records what was harvested from RL2, and §8.3 DPROD Contracts; decision record `decisions/0001-rl2-as-donor.md`. v0.4 introduced profiles and operand bindings (`due2-profiles.md`), anonymous rules (§3.1), guard-only hoisting, obligations in force reported with the access answer (§6.3), and the conformance corpus (§10).
 
@@ -249,7 +251,7 @@ Contents:
 
 - Hypothesis-generated policies and requests, with a decision table.
 - The laws of `due2-workflows.md` §8, as properties.
-- The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, and DPROD Contracts examples, each with scenarios and hand-derived expected verdicts, checked mechanically by `tools/check_corpus.py` until an evaluator runs them.
+- The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, and DPROD Contracts examples — now vendored unmodified under `profiles/vendor/dprod/examples/` and covered as cases — each with scenarios and hand-derived expected verdicts, checked mechanically by `tools/check_corpus.py` until an evaluator runs them.
 - The semantic-preservation property: `decide(normalise(p), r, w) == interpret_directly(p, r, w)`. Stage 1 now carries its own oracle: the denotation of normalisation spec §8.1, a page of definition, checked through the lineage bijection. **[O]** — a direct interpreter for stage 2 and the evaluator remains a specification artefact to maintain. Real cost, and the only check that the rest of normalisation has not quietly changed meaning.
 - Explicit `Indeterminate` cases with unresolvable operands, asserted per backend. This is the property most likely to be silently lost in a port.
 - Every ledger entry, replayed.
@@ -259,7 +261,7 @@ Contents:
 
 ## 11. Open decisions register
 
-Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, deadline windows, request match keys — are registered in `due2-workflows.md` §9.
+Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|

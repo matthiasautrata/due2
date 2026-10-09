@@ -1,0 +1,133 @@
+{
+  "case": "dprod-risk-metrics",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/risk-metrics> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:recurrence (per-minute delivery)",
+    "dprod:deadline (relative, per-instance PT30S and one P14D)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "Extracted unchanged except the five anonymous rules are named rule:risk-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. Three structural points. First, the delivery duty recurs every minute with a PT30S deadline, and unlike dprod-customer-api-v2 the anchor default matters in the other direction: activation defaults to effective_at, and every instant is a MINUTELY occurrence, so the first evaluation already owes the instance at effective_at itself (due2-workflows.md §5.3). Second, rule:risk-timeliness carries a constraint on a request-source operand — inside a duty that is a guard read against the request (§5.2), so the conformance obligation is in force only for requests whose timeliness is real-time; DPROD never evaluates it, because conformTo never matches the requested action and step 1 collects no duty (§7.2). Third, there is no prohibition, so a Deny can only come from violations = deny. DPROD's expand is clock-anchored with no DTSTART and performed has no lower bound (§8.2); where scenarios supply activation, dprod_expected assumes the same occurrences and Σ produced from the same evidence (exception 2). Intended §7.4 reading throughout.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "real-time display, first evaluation",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:display",
+        "target": "asset:risk-metrics",
+        "at": "2026-06-01T09:05:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:timeliness": { "@id": "ex:realtime" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:05:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:risk-delivery", "status": "outstanding", "instance": "2026-06-01T09:05:00Z" },
+          { "duty": "rule:risk-timeliness", "status": "outstanding" },
+          { "duty": "rule:risk-notify", "status": "outstanding" }
+        ],
+        "why": "rule:risk-display is unconstrained and ready: Permit. All three obligations are in force. The delivery duty's anchor defaults to effective_at, and 09:05:00 is itself a MINUTELY occurrence — the rule generates every minute — so exactly one instance is owed, at 09:05, its 30-second window open: outstanding. This is the opposite of dprod-customer-api-v2 scenario 1, where the anchor default was not an occurrence and nothing was owed yet. The timeliness guard holds (real-time), so the conformance obligation is in force, with no witness: outstanding. The notification's P14D runs from activation = effective_at: outstanding."
+      },
+      "dprod_expected": "Permit (no prohibition exists; no duty is collected for a display)"
+    },
+    {
+      "name": "display of non-real-time data",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:display",
+        "target": "asset:risk-metrics",
+        "at": "2026-06-01T09:05:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:timeliness": { "@id": "ex:batch" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:05:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:risk-delivery", "status": "outstanding", "instance": "2026-06-01T09:05:00Z" },
+          { "duty": "rule:risk-notify", "status": "outstanding" }
+        ],
+        "why": "Permit as in scenario 1 — the timeliness constraint sits on the conformance obligation, not on the display permission, so it never gates the read. The guard is false (batch ≠ real-time), so rule:risk-timeliness is not in force and is not reported: the SLA is not owed for non-real-time data. Delivery and notification are in force and outstanding as before."
+      },
+      "dprod_expected": "Permit (the duty is not collected, so its condition is never evaluated; the permission is unconstrained)"
+    },
+    {
+      "name": "timeliness not stated",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:display",
+        "target": "asset:risk-metrics",
+        "at": "2026-06-01T09:05:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:05:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:risk-delivery", "status": "outstanding", "instance": "2026-06-01T09:05:00Z" },
+          { "duty": "rule:risk-timeliness", "status": "unknown" },
+          { "duty": "rule:risk-notify", "status": "outstanding" }
+        ],
+        "why": "The permission is unconstrained: Permit, whatever the data's freshness. The timeliness operand is missing, so the conformance obligation's guard is U and it is in force with unknown status — reported, not silently dropped. A U guard on an obligation never touches the verdict under violations = ignore; here there is also no deny configuration at all."
+      },
+      "dprod_expected": "Permit (the duty is not collected, so the missing operand never surfaces — due2 reports the unknown, DPROD never looks)"
+    },
+    {
+      "name": "two minutes missed under DPROD-faithful deny",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:display",
+        "target": "asset:risk-metrics",
+        "at": "2026-06-01T09:03:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:timeliness": { "@id": "ex:realtime" } }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T09:03:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:ev-delivery-0900",
+            "occurred_at": "2026-06-01T09:00:20Z",
+            "actor": "agent:data-platform",
+            "action": "ex:deliver",
+            "object": "asset:risk-metrics",
+            "issuer": "agent:analytics"
+          }
+        ],
+        "activation": { "rule:risk-delivery": "2026-06-01T09:00:00Z" },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:risk-delivery", "status": "fulfilled", "instance": "2026-06-01T09:00:00Z" },
+          { "duty": "rule:risk-delivery", "status": "violated", "instance": "2026-06-01T09:01:00Z" },
+          { "duty": "rule:risk-delivery", "status": "violated", "instance": "2026-06-01T09:02:00Z" },
+          { "duty": "rule:risk-delivery", "status": "outstanding", "instance": "2026-06-01T09:03:00Z" },
+          { "duty": "rule:risk-timeliness", "status": "outstanding" },
+          { "duty": "rule:risk-notify", "status": "outstanding" }
+        ],
+        "why": "Anchored at 09:00, the per-minute rule yields 09:00, 09:01, 09:02, 09:03 by effective_at, each with a 30-second deadline. ex:ev-delivery-0900 at 09:00:20 witnesses the first: fulfilled. The 09:01 and 09:02 instances have no witness and their deadlines are past: violated. The 09:03 instance's window is open: outstanding. Under violations = deny, a violated instance of an obligation in force denies the display — the SLA has teeth in due2. The conformance and notification obligations are in force and outstanding as in scenario 1."
+      },
+      "dprod_expected": "Permit (deliver never matches display, so no duty is collected and no violation denies — exception 6)"
+    }
+  ]
+}

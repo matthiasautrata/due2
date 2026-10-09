@@ -1,0 +1,325 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+@prefix offer: <https://example.org/offers/> .
+@prefix agent: <https://example.org/agents/> .
+@prefix asset: <https://example.org/assets/> .
+@prefix rule:  <https://example.org/rules/> .
+
+# Source: DPROD Contracts dprod-contracts/examples/odcs.ttl (ODCS v3.1.0 translation),
+# policy <https://example.org/contract-seller-quantum> (EKGF dprod, develop, 50db943).
+
+offer:contract-seller-quantum a dprod:DataOffer ;
+    rdfs:label "Seller Data Contract (My Quantum)" ;
+    dct:description "Views built on top of the seller tables. Predict sales over time." ;
+    dct:hasVersion "1.1.0" ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner agent:seller-data-team ;
+    odrl:target asset:seller-data ;
+    dprod:offerLifecycleStatus dprod:Active ;
+    dprod:effectiveDate "2022-05-12T09:30:10-08:00"^^xsd:dateTime ;
+    dprod:expirationDate "2032-05-12T09:30:10-08:00"^^xsd:dateTime ;
+
+    odrl:obligation rule:ocs-delivery ;
+    odrl:obligation rule:ocs-latency ;
+    odrl:obligation rule:ocs-completeness ;
+    odrl:obligation rule:ocs-volume ;
+    odrl:obligation rule:ocs-retention ;
+    odrl:obligation rule:ocs-support-slack ;
+    odrl:obligation rule:ocs-support-email ;
+    odrl:obligation rule:ocs-support-teams ;
+    odrl:obligation rule:ocs-report ;
+
+    odrl:permission rule:ocs-read-microstrategy ;
+    odrl:permission rule:ocs-read-bigquery ;
+    odrl:permission rule:ocs-read-risk ;
+    odrl:permission rule:ocs-write-unica ;
+
+    odrl:prohibition rule:ocs-no-external-restricted ;
+    odrl:prohibition rule:ocs-no-buyer-analytics ;
+    odrl:prohibition rule:ocs-no-model-training ;
+    odrl:prohibition rule:ocs-no-env .
+
+
+# --- SLA: delivery, daily by 09:00, for regulatory purposes ---
+rule:ocs-delivery a odrl:Duty ;
+    rdfs:label "Daily data delivery by 09:00" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:deliver ;
+    dprod:recurrence "FREQ=DAILY;BYHOUR=9;BYMINUTE=0" ;
+    dprod:deadline "PT1H"^^xsd:duration ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:regulatory
+    ] .
+
+# --- SLA: latency, at most 4 days ---
+rule:ocs-latency a odrl:Duty ;
+    rdfs:label "Data latency SLA (max 4 days)" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:conformTo ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:timeliness ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "P4D"^^xsd:duration
+    ] .
+
+# --- Data quality: completeness, checked daily at 20:00 ---
+rule:ocs-completeness a odrl:Duty ;
+    rdfs:label "No null values in transaction date" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:tbl-core-payments ;
+    dprod:recurrence "FREQ=DAILY;BYHOUR=20;BYMINUTE=0" ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:completeness ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "100"^^xsd:decimal
+    ] .
+
+# --- Data quality: volume ---
+rule:ocs-volume a odrl:Duty ;
+    rdfs:label "Row count above 1M" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:conformTo ;
+    odrl:target asset:tbl-core-payments ;
+    dprod:recurrence "FREQ=DAILY;BYHOUR=20;BYMINUTE=0" ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:volumeCount ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "1000000"^^xsd:integer
+    ] .
+
+# --- Retention: delete beyond 3 years ---
+rule:ocs-retention a odrl:Duty ;
+    rdfs:label "Data retention limit (3 years)" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action odrl:delete ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:retentionPeriod ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand "P3Y"^^xsd:duration
+    ] .
+
+# --- Support channels ---
+rule:ocs-support-slack a odrl:Duty ;
+    rdfs:label "Slack support (#product-help)" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:notify ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:channel ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "slack"
+    ] .
+
+rule:ocs-support-email a odrl:Duty ;
+    rdfs:label "Email support (datacontract-ann)" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:notify ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:channel ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "email"
+    ] .
+
+rule:ocs-support-teams a odrl:Duty ;
+    rdfs:label "Teams issue support (9-5 CET)" ;
+    dprod:subjectOfDuty agent:seller-data-team ;
+    odrl:action ex:notify ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:and (
+            [
+                a odrl:Constraint ;
+                odrl:leftOperand ex:channel ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand "teams"
+            ]
+            [
+                a odrl:Constraint ;
+                odrl:leftOperand ex:serviceWindow ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand "business-hours"
+            ]
+        )
+    ] .
+
+# --- Consumer reporting, monthly ---
+rule:ocs-report a odrl:Duty ;
+    rdfs:label "Monthly usage reporting" ;
+    odrl:action ex:report ;
+    dprod:recurrence "FREQ=MONTHLY;BYMONTHDAY=5" ;
+    dprod:deadline "P5D"^^xsd:duration .
+
+# --- Roles and access control ---
+rule:ocs-read-microstrategy a odrl:Permission ;
+    rdfs:label "MicroStrategy read access" ;
+    odrl:assignee agent:microstrategy-users ;
+    odrl:action odrl:read .
+
+rule:ocs-read-bigquery a odrl:Permission ;
+    rdfs:label "BigQuery read access" ;
+    odrl:assignee agent:bq-queryman-users ;
+    odrl:action odrl:read .
+
+rule:ocs-read-risk a odrl:Permission ;
+    rdfs:label "Risk data read access" ;
+    odrl:assignee agent:risk-data-users ;
+    odrl:action odrl:read .
+
+rule:ocs-write-unica a odrl:Permission ;
+    rdfs:label "BigQuery Unica write access" ;
+    odrl:assignee agent:bq-unica-users ;
+    odrl:action odrl:modify .
+
+# --- Prohibitions ---
+rule:ocs-no-external-restricted a odrl:Prohibition ;
+    rdfs:label "No external distribution of restricted data" ;
+    odrl:action odrl:distribute ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:and (
+            [
+                a odrl:Constraint ;
+                odrl:leftOperand ex:classification ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand ex:restricted
+            ]
+            [
+                a odrl:Constraint ;
+                odrl:leftOperand ex:recipientType ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand ex:externalRecipient
+            ]
+        )
+    ] .
+
+rule:ocs-no-buyer-analytics a odrl:Prohibition ;
+    rdfs:label "No use as buyer data source" ;
+    odrl:action odrl:use ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "buyer-analytics"
+    ] .
+
+rule:ocs-no-model-training a odrl:Prohibition ;
+    rdfs:label "No ML model training" ;
+    odrl:action odrl:use ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:processingMode ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:modelTraining
+    ] .
+
+rule:ocs-no-env a odrl:Prohibition ;
+    rdfs:label "Production and staging only" ;
+    odrl:action odrl:use ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:environment ;
+        odrl:operator odrl:isNoneOf ;
+        odrl:rightOperand ( ex:production ex:staging )
+    ] .
+
+# --- domain vocabulary (from the source file) ---
+ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
+ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+ex:notify a odrl:Action ; rdfs:label "notify" ; odrl:includedIn odrl:inform .
+ex:report a odrl:Action ; rdfs:label "report" ; odrl:includedIn odrl:inform .
+
+ex:timeliness a odrl:LeftOperand ;
+    rdfs:label "timeliness" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:timeliness ;
+    rdfs:range xsd:duration .
+
+ex:completeness a odrl:LeftOperand ;
+    rdfs:label "completeness" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:completeness ;
+    rdfs:range xsd:decimal .
+
+ex:volumeCount a odrl:LeftOperand ;
+    rdfs:label "volume count" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:volumeCount ;
+    rdfs:range xsd:integer .
+
+ex:retentionPeriod a odrl:LeftOperand ;
+    rdfs:label "retention period" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:retentionPeriod ;
+    rdfs:range xsd:duration .
+
+ex:channel a odrl:LeftOperand ;
+    rdfs:label "channel" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:channel .
+
+ex:serviceWindow a odrl:LeftOperand ;
+    rdfs:label "service window" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:serviceWindow .
+
+ex:classification a odrl:LeftOperand ;
+    rdfs:label "classification" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:classification .
+
+ex:recipientType a odrl:LeftOperand ;
+    rdfs:label "recipient type" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:recipientType .
+
+ex:processingMode a odrl:LeftOperand ;
+    rdfs:label "processing mode" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:processingMode .
+
+ex:environment a odrl:LeftOperand ;
+    rdfs:label "environment" ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:environment .
+
+ex:regulatory a ex:Purpose ; rdfs:label "regulatory" .
+ex:restricted a ex:Classification ; rdfs:label "restricted" .
+ex:externalRecipient a ex:RecipientType ; rdfs:label "external recipient" .
+ex:modelTraining a ex:ProcessingMode ; rdfs:label "model training" .
+ex:production a ex:Environment ; rdfs:label "production" .
+ex:staging a ex:Environment ; rdfs:label "staging" .
+ex:Purpose a rdfs:Class .
+ex:Classification a rdfs:Class .
+ex:RecipientType a rdfs:Class .
+ex:ProcessingMode a rdfs:Class .
+ex:Environment a rdfs:Class .
+
+# --- parties and assets (from the source file) ---
+agent:seller-data-team a odrl:Party ;
+    rdfs:label "Seller Data Team" ;
+    odrl:partOf agent:climate-quantum-inc .
+
+agent:climate-quantum-inc a odrl:PartyCollection ; rdfs:label "Climate Quantum Inc" .
+
+agent:microstrategy-users a odrl:Party ; rdfs:label "MicroStrategy Users" .
+agent:bq-queryman-users a odrl:Party ; rdfs:label "BigQuery Query Users" .
+agent:risk-data-users a odrl:Party ; rdfs:label "Risk Data Access Users" .
+agent:bq-unica-users a odrl:Party ; rdfs:label "BigQuery Unica Users" .
+
+asset:seller-data a odrl:AssetCollection ; rdfs:label "Seller Data Product" .
+asset:tbl-core-payments a odrl:Asset ;
+    rdfs:label "Core Payment Metrics" ;
+    odrl:partOf asset:seller-data .

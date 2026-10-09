@@ -1,0 +1,205 @@
+{
+  "case": "dprod-odcs-seller-contract",
+  "source": "DPROD Contracts dprod-contracts/examples/odcs.ttl (ODCS v3.1.0 translation), policy <https://example.org/contract-seller-quantum> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:recurrence (daily delivery and checks, monthly report)",
+    "dprod:deadline (relative, per-instance PT1H and P5D)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "The ODCS-to-DPROD translation, extracted unchanged except the anonymous rules are named rule:ocs-* and the delivery duty's odrl:target (the source states none, so the policy-level target is its own after interiorisation... the source states no target on the delivery duty and no policy-level output: the duty keeps the target it declares, which is none — a duty may have no relation, normalisation spec §6.3). ODCS's schema, servers, pricing, and approver chains have no policy equivalent and are absent here too. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies; effectiveDate and expirationDate are metadata, never evaluated (a DPROD gap, due2-profiles.md §8.2), so the 2032 expiration gates nothing in these scenarios. Structure: every duty constraint that reads a request-source operand is a guard read against the request (due2-workflows.md §5.2) — the delivery duty is owed only for regulatory requests (DPROD's D-ACTIVATE condition), the latency duty only for requests within the 4-day freshness, the support duties only through their channel, the retention duty only when the stated retention exceeds 3 years. rule:ocs-report names no subjectOfDuty, so its bearer is the request subject. The three 20:00 duties and the delivery duty are recurring with BYHOUR anchors: at first evaluation their anchor defaults to effective_at 21:00, which a BYHOUR rule does not generate, so no instance is owed yet — the not-yet-owed state (due2-profiles.md §9); the report duty, anchored likewise, owes nothing until the 5th of a month passes. DPROD duty collection (§7.2 step 1): deliver, conformTo, notify, report, and delete never match read, modify, use, or distribute, so no duty is ever collected and no violation denies; the use prohibitions reach every action below use, which is how the prohibitions speak on reads and modifications. DPROD Σ assumed: Σ₀ with clock = request.at. Intended §7.4 reading throughout.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "a MicroStrategy user reads the seller data product",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "asset:seller-data",
+        "at": "2026-06-01T21:00:00Z",
+        "parties": { "odrl:assignee": "agent:microstrategy-users" },
+        "params": {
+          "odrl:purpose": { "@value": "analytics" },
+          "ex:timeliness": { "@value": "P4D", "@type": "xsd:duration" },
+          "ex:processingMode": { "@id": "ex:batch" },
+          "ex:environment": { "@id": "ex:production" },
+          "ex:classification": { "@id": "ex:public" },
+          "ex:recipientType": { "@id": "ex:internal" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T21:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:ocs-latency", "status": "outstanding" },
+          { "duty": "rule:ocs-retention", "status": "unknown" },
+          { "duty": "rule:ocs-support-slack", "status": "unknown" },
+          { "duty": "rule:ocs-support-email", "status": "unknown" },
+          { "duty": "rule:ocs-support-teams", "status": "unknown" }
+        ],
+        "why": "rule:ocs-read-microstrategy matches by equality (assignee, read, seller-data) and is ready. The use prohibitions reach read (read ⊑ use) but their constraints are false — purpose analytics, batch mode, production environment — and the distribute prohibition does not match a read. Permit. The obligations are in force. The latency guard holds (P4D ≤ P4D): outstanding. The retention guard is U (no retention stated): unknown. Each support duty's channel guard is U (no channel stated), and the teams duty's and-conjunction with it: unknown. The recurring duties owe nothing yet: their BYHOUR anchors (09:00, 20:00) are not generated from the default anchor 21:00, and the monthly report's first occurrence is the 5th, still ahead — all not-yet-owed, unreported."
+      },
+      "dprod_expected": "Permit (the permission is active for the agent; no duty is collected for a read, so the guard unknowns never surface)"
+    },
+    {
+      "name": "a BigQuery Unica user modifies the seller data",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:modify",
+        "target": "asset:seller-data",
+        "at": "2026-06-01T21:00:00Z",
+        "parties": { "odrl:assignee": "agent:bq-unica-users" },
+        "params": {
+          "odrl:purpose": { "@value": "analytics" },
+          "ex:processingMode": { "@id": "ex:batch" },
+          "ex:environment": { "@id": "ex:production" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T21:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:ocs-latency", "status": "unknown" },
+          { "duty": "rule:ocs-retention", "status": "unknown" },
+          { "duty": "rule:ocs-support-slack", "status": "unknown" },
+          { "duty": "rule:ocs-support-email", "status": "unknown" },
+          { "duty": "rule:ocs-support-teams", "status": "unknown" }
+        ],
+        "why": "Write access is granted by name: rule:ocs-write-unica matches modify by equality. The use prohibitions reach modify (modify ⊑ use) with false constraints; the read permissions do not match modify; distribute does not. Permit. The obligations are in force, the modify permission matching the request, but this request states no timeliness, so the latency guard is U and the latency obligation is reported unknown alongside the rest."
+      },
+      "dprod_expected": "Permit (the write permission is active; the use prohibitions are inactive on their constraints)"
+    },
+    {
+      "name": "use in a development environment",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:use",
+        "target": "asset:seller-data",
+        "at": "2026-06-01T21:00:00Z",
+        "parties": { "odrl:assignee": "agent:microstrategy-users" },
+        "params": {
+          "odrl:purpose": { "@value": "analytics" },
+          "ex:processingMode": { "@id": "ex:batch" },
+          "ex:environment": { "@id": "ex:development" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T21:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:ocs-latency", "status": "unknown" },
+          { "duty": "rule:ocs-retention", "status": "unknown" },
+          { "duty": "rule:ocs-support-slack", "status": "unknown" },
+          { "duty": "rule:ocs-support-email", "status": "unknown" },
+          { "duty": "rule:ocs-support-teams", "status": "unknown" }
+        ],
+        "why": "rule:ocs-no-env matches use by equality and its set-membership constraint holds: development is none of {production, staging}. The other use prohibitions are false on their constraints, and no permission matches use. A surviving, applying prohibition: Deny. The obligations are in force — a Forbid of the policy matches the request — and all are reported unknown: the request states no timeliness, so even the latency guard is U."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    },
+    {
+      "name": "use for model training",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:use",
+        "target": "asset:seller-data",
+        "at": "2026-06-01T21:00:00Z",
+        "parties": { "odrl:assignee": "agent:microstrategy-users" },
+        "params": {
+          "odrl:purpose": { "@value": "analytics" },
+          "ex:processingMode": { "@id": "ex:modelTraining" },
+          "ex:environment": { "@id": "ex:production" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T21:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:ocs-latency", "status": "unknown" },
+          { "duty": "rule:ocs-retention", "status": "unknown" },
+          { "duty": "rule:ocs-support-slack", "status": "unknown" },
+          { "duty": "rule:ocs-support-email", "status": "unknown" },
+          { "duty": "rule:ocs-support-teams", "status": "unknown" }
+        ],
+        "why": "rule:ocs-no-model-training matches use and its constraint holds (processingMode = model training): Deny, with the environment and purpose prohibitions false and no permission matching use. The obligations are in force (a Forbid matches) and all reported unknown: the request states no timeliness, so even the latency guard is U."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    },
+    {
+      "name": "external distribution of restricted data",
+      "request": {
+        "reference": "req-5",
+        "action": "odrl:distribute",
+        "target": "asset:seller-data",
+        "at": "2026-06-01T21:00:00Z",
+        "parties": { "odrl:assignee": "agent:microstrategy-users" },
+        "params": {
+          "odrl:purpose": { "@value": "analytics" },
+          "ex:processingMode": { "@id": "ex:batch" },
+          "ex:environment": { "@id": "ex:production" },
+          "ex:classification": { "@id": "ex:restricted" },
+          "ex:recipientType": { "@id": "ex:externalRecipient" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T21:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:ocs-latency", "status": "unknown" },
+          { "duty": "rule:ocs-retention", "status": "unknown" },
+          { "duty": "rule:ocs-support-slack", "status": "unknown" },
+          { "duty": "rule:ocs-support-email", "status": "unknown" },
+          { "duty": "rule:ocs-support-teams", "status": "unknown" }
+        ],
+        "why": "The ODCS classification becomes enforceable here: rule:ocs-no-external-restricted matches distribute, and its conjunction holds — the data is restricted and the recipient external. The use prohibitions also reach distribute but are false on their constraints; no permission matches distribute. Deny. The obligations are in force — a Forbid matches — all unknown: no timeliness is stated."
+      },
+      "dprod_expected": "Deny (prohibition overrides; the and-conjunction holds)"
+    },
+    {
+      "name": "a party outside every role reads the product",
+      "request": {
+        "reference": "req-6",
+        "action": "odrl:read",
+        "target": "asset:seller-data",
+        "at": "2026-06-01T21:00:00Z",
+        "parties": { "odrl:assignee": "agent:climate-quantum-inc" },
+        "params": {
+          "odrl:purpose": { "@value": "analytics" },
+          "ex:processingMode": { "@id": "ex:batch" },
+          "ex:environment": { "@id": "ex:production" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T21:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:ocs-latency", "status": "unknown" },
+          { "duty": "rule:ocs-retention", "status": "unknown" },
+          { "duty": "rule:ocs-support-slack", "status": "unknown" },
+          { "duty": "rule:ocs-support-email", "status": "unknown" },
+          { "duty": "rule:ocs-support-teams", "status": "unknown" }
+        ],
+        "why": "The requesting party is the seller team's parent collection; no permission assigns to it, and no party closure makes it below any of the four role groups, so no permission matches: NotApplicable. Party closure runs one way — a member matches a rule on its collection, never the reverse (due2-workflows.md §5.2). The use prohibitions still match the read by action with false constraints, and that is enough for the obligations to be in force (§5.2: some Permit or Forbid of the policy matches the request), so they are reported, all unknown — the request states no timeliness. An answer can be NotApplicable and still carry what the policy owes."
+      },
+      "dprod_expected": "NotApplicable (no norm is active for an agent outside the role groups; the prohibitions are inactive on their constraints)"
+    }
+  ]
+}

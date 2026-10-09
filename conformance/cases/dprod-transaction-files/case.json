@@ -1,0 +1,126 @@
+{
+  "case": "dprod-transaction-files",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/transaction-files> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:recurrence (two monthly duties)",
+    "dprod:deadline (relative, per-instance P3D and P5D)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "Extracted unchanged except the four anonymous rules are named rule:tx-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. Two recurring duties with different bearers: rule:tx-delivery names the finance team (the grantor, so DPROD would put it in grantorDuties were it ever collected); rule:tx-report names no subjectOfDuty, so after policy-level interiorisation (assigner only) its bearer is the request subject (due2-profiles.md §6) — the consumer's reporting duty, in DPROD's shape but collected by neither party set (the no-subject gap, due2-profiles.md §8.2). Monthly recurrence from anchor 2026-05-01 (delivery, BYMONTHDAY=1) and 2026-05-15 (report, BYMONTHDAY=15): occurrences on the same day-of-month as the anchor, at the anchor's time. DPROD's expand is clock-anchored with no DTSTART and performed has no lower bound (§8.2); where activation is supplied, dprod_expected assumes the same occurrences and Σ from the same evidence (exception 2). DPROD duty collection (§7.2 step 1): deliver and report never match read. Intended §7.4 reading throughout.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "June read: last month's cycle missed, this month's open",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "asset:transaction-files",
+        "at": "2026-06-02T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-02T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {
+          "rule:tx-delivery": "2026-05-01T00:00:00Z",
+          "rule:tx-report": "2026-05-15T00:00:00Z"
+        },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:tx-delivery", "status": "violated", "instance": "2026-05-01T00:00:00Z" },
+          { "duty": "rule:tx-delivery", "status": "outstanding", "instance": "2026-06-01T00:00:00Z" },
+          { "duty": "rule:tx-report", "status": "violated", "instance": "2026-05-15T00:00:00Z" }
+        ],
+        "why": "rule:tx-read is ready and the export prohibition does not match read: Permit. Both obligations are in force. From anchor 2026-05-01, BYMONTHDAY=1 yields 05-01 and 06-01 by effective_at, each with a three-day deadline: the first is past with no witness (violated), the second's window runs to 06-04 (outstanding). From anchor 2026-05-15, BYMONTHDAY=15 yields 05-15 by effective_at, deadline 05-20 passed, no witness: violated; the 06-15 occurrence is not yet owed. Under the default violations = ignore the two violations are reported and cost nothing."
+      },
+      "dprod_expected": "Permit (neither deliver nor report matches read, so no duty is collected; the permission is active)"
+    },
+    {
+      "name": "the same read under DPROD-faithful deny",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:read",
+        "target": "asset:transaction-files",
+        "at": "2026-06-02T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-02T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {
+          "rule:tx-delivery": "2026-05-01T00:00:00Z",
+          "rule:tx-report": "2026-05-15T00:00:00Z"
+        },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides", "violations": "deny" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:tx-delivery", "status": "violated", "instance": "2026-05-01T00:00:00Z" },
+          { "duty": "rule:tx-delivery", "status": "outstanding", "instance": "2026-06-01T00:00:00Z" },
+          { "duty": "rule:tx-report", "status": "violated", "instance": "2026-05-15T00:00:00Z" }
+        ],
+        "why": "Same findings as scenario 1; under violations = deny the violated May instances — one provider, one consumer-side — act as surviving prohibitions (due2-workflows.md §6.4). The report duty's bearer is the request subject, so the consumer is denied for its own missed report as much as for the provider's missed delivery."
+      },
+      "dprod_expected": "Permit (no duty is collected, so no violation denies — exception 6)"
+    },
+    {
+      "name": "export transaction files",
+      "request": {
+        "reference": "req-3",
+        "action": "ex:export",
+        "target": "asset:transaction-files",
+        "at": "2026-06-02T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-02T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "why": "rule:tx-no-export matches ex:export by equality; the read permission does not match (export is not below read). Deny. No obligation is in force: no permission or prohibition of the policy matches an export, which is what in force turns on."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    },
+    {
+      "name": "modify transaction files",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:modify",
+        "target": "asset:transaction-files",
+        "at": "2026-06-02T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-02T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "Nothing matches modify: it is not below read or export (all three sit under use as siblings), and modify is below no rule here. The policy governs reads and exports of this asset, not modifications: NotApplicable."
+      },
+      "dprod_expected": "NotApplicable"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "case": "dprod-trading-contract",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/agreements/trading-market-data-2026> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:DataContract (policy class)",
+    "dprod:subjectOfDuty, dprod:objectOfDuty",
+    "dprod:recurrence (15-minute delivery)",
+    "dprod:deadline (relative, per-instance PT5M)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "The bilateral twin of dprod-market-data-feed: the same offer's rules as an accepted Agreement, with the two duties referenced by IRI (duty:mkt-*-2026-001) as in the source and the anonymous rules named rule:tm-*. The duty nodes' dprod:dutyState triples are dropped (due2 derives status; exception 2). Both duties name the trading team as subjectOfDuty — grantorDuties in DPROD; the grantee has no duty here, so the bilateral partition is one-sided. Every rule names analytics as assignee, so a grantor request is NotApplicable in both systems (the exception-4 divergence needs a subject-less rule; dprod-divergences covers it). DPROD duty collection (§7.2 step 1): deliver and conformTo never match display or nonDisplay, so no duty is collected and no violation denies. Intended §7.4 reading throughout; DPROD Σ assumed produced from the same evidence where scenarios supply it.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "duty": "https://example.org/duties/",
+    "agree": "https://example.org/agreements/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "analytics displays the feed, one interval missed",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:display",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:40:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T09:40:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:ev-delivery-0900",
+            "occurred_at": "2026-06-01T09:02:00Z",
+            "actor": "agent:trading-data",
+            "action": "ex:deliver",
+            "object": "asset:market-prices",
+            "issuer": "agent:analytics"
+          }
+        ],
+        "activation": { "duty:mkt-delivery-2026-001": "2026-06-01T09:00:00Z" },
+        "closure": []
+      },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "duty:mkt-delivery-2026-001", "status": "fulfilled", "instance": "2026-06-01T09:00:00Z" },
+          { "duty": "duty:mkt-delivery-2026-001", "status": "violated", "instance": "2026-06-01T09:15:00Z" },
+          { "duty": "duty:mkt-delivery-2026-001", "status": "violated", "instance": "2026-06-01T09:30:00Z" },
+          { "duty": "duty:mkt-schema-2026-001", "status": "outstanding" }
+        ],
+        "why": "rule:tm-display applies (assignee analytics, display) and the distribute prohibition does not match display: Permit. The delivery instances are as in dprod-market-data-feed scenario 5 — the 09:00 delivery at 09:02 fulfils the first, the 09:15 and 09:30 intervals are violated — but here the default violations = ignore applies, so the missed intervals are reported and cost nothing. The schema obligation is in force and outstanding."
+      },
+      "dprod_expected": "Permit (no duty collected for a display; the permission is active for the grantee)"
+    },
+    {
+      "name": "analytics runs non-display analytics internally",
+      "request": {
+        "reference": "req-2",
+        "action": "ex:nonDisplay",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:40:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": { "ex:recipientType": { "@id": "ex:internal" } }
+      },
+      "sotw": { "effective_at": "2026-06-01T09:40:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "duty:mkt-delivery-2026-001", "status": "outstanding", "instance": "2026-06-01T09:40:00Z" },
+          { "duty": "duty:mkt-schema-2026-001", "status": "outstanding" }
+        ],
+        "why": "ex:nonDisplay matches rule:tm-non-display by equality and assignee, and its constraint holds (internal): Permit. The distribute prohibition does not match nonDisplay. The delivery duty's anchor defaults to effective_at 09:40, and an INTERVAL rule generates its anchor, so one instance is owed at 09:40 with its five-minute window open: outstanding. The schema obligation is in force and outstanding."
+      },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "analytics distributes market data externally",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:distribute",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:40:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:40:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "duty:mkt-schema-2026-001", "status": "outstanding" }
+        ],
+        "why": "rule:tm-no-distribute matches by equality and assignee: Deny. The schema obligation remains in force — a Forbid of the policy matches the request."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    },
+    {
+      "name": "the grantor displays under its own contract",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:display",
+        "target": "asset:market-prices",
+        "at": "2026-06-01T09:40:00Z",
+        "parties": { "odrl:assignee": "agent:trading-data" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T09:40:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "Every rule names analytics as assignee; the trading team is the assigner, and no party closure makes it below analytics. Nothing matches: NotApplicable, and no obligation is in force. DPROD agrees — the agreement is applicable for either party (§7.3), but no norm is active for the grantor (§7.4)."
+      },
+      "dprod_expected": "NotApplicable (applicable agreement, but every norm names the grantee)"
+    }
+  ]
+}

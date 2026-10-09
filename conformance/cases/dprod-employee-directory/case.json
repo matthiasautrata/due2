@@ -1,0 +1,140 @@
+{
+  "case": "dprod-employee-directory",
+  "source": "DPROD Contracts dprod-contracts/examples/baseline.ttl, policy <https://example.org/offers/employee-directory> (EKGF dprod, develop, 50db943)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:deadline (relative, P90D)",
+    "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
+  ],
+  "notes": "Extracted unchanged except the five anonymous rules are named rule:emp-*. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. The constrained use prohibition is the interesting structure: its action is odrl:use, so it reaches every narrower action including read (read ⊑ use), and whether it applies turns on the processingMode constraint. The notify obligation is a root obligation of the offer with its own subjectOfDuty (hr); its P90D deadline runs from activation, which defaults to effective_at (first owed now), so it is never violated in these scenarios. DPROD duty collection (§7.2 step 1) requires the duty's own action to match the request: notify never matches read or use, so no duty is collected. dprod_expected uses the intended §7.4 reading (request ⊑ rule); under the literal reading the use prohibition never matches a read and scenarios 4–5 change. DPROD Σ assumed: Σ₀ with clock = request.at.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "offer": "https://example.org/offers/",
+    "agent": "https://example.org/agents/",
+    "asset": "https://example.org/assets/",
+    "rule": "https://example.org/rules/"
+  },
+  "scenarios": [
+    {
+      "name": "operational read of the directory",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "asset:employee-directory",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:operations" },
+          "ex:processingMode": { "@id": "ex:batchReporting" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:emp-notify", "status": "outstanding" }
+        ],
+        "why": "rule:emp-read applies: purpose = operations. The use prohibition matches read by hierarchy (read ⊑ use) but its constraint is false (batchReporting ≠ modelTraining), so it does not apply; distribute does not match read. A ready candidate and no applying prohibition: Permit. The notify obligation is in force (the read permission matches) with no witness and its P90D window (activation = effective_at) open: outstanding."
+      },
+      "dprod_expected": "Permit"
+    },
+    {
+      "name": "read without stating the purpose",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:read",
+        "target": "asset:employee-directory",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {}
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:emp-notify", "status": "outstanding" }
+        ],
+        "why": "Two unknowns: the read permission's purpose operand is missing (U), and the use prohibition's processingMode operand is missing (U), and that prohibition does match read by hierarchy. A completion where purpose = operations and processingMode = modelTraining denies; a completion where both resolve the other way permits. The verdict varies with the completion, so it is Indeterminate. The notify obligation is in force (the read permission matches, constraints aside) with no witness and an open P90D window: outstanding, as in scenario 1."
+      },
+      "dprod_expected": "Failure(MissingValue odrl:purpose) (the permission errors first; due2 decides more often, due2-profiles.md §8.2)"
+    },
+    {
+      "name": "read for a purpose the policy does not admit",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:read",
+        "target": "asset:employee-directory",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:analytics" },
+          "ex:processingMode": { "@id": "ex:batchReporting" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:emp-notify", "status": "outstanding" }
+        ],
+        "why": "The purpose constraint is resolved and false (analytics ≠ operations), so rule:emp-read does not apply — a real false, not a missing value. Nothing else matches read: the use prohibition's constraint is false and distribute does not reach read. The policy does not govern: NotApplicable. The notify obligation remains in force and outstanding — §5.2 matches the read permission to the request constraints aside."
+      },
+      "dprod_expected": "NotApplicable (no active prohibition or permission)"
+    },
+    {
+      "name": "model training on the directory",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:use",
+        "target": "asset:employee-directory",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:analytics" },
+        "params": {
+          "odrl:purpose": { "@id": "ex:analytics" },
+          "ex:processingMode": { "@id": "ex:modelTraining" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:emp-notify", "status": "outstanding" }
+        ],
+        "why": "The use prohibition matches use by equality and its constraint holds (processingMode = modelTraining): a surviving, applying prohibition gives Deny. The read permission does not help: use is not below read, and the hierarchy never widens a rule upward. The notify obligation is in force — some rule of the policy matches the request — and outstanding."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    },
+    {
+      "name": "distribute the directory",
+      "request": {
+        "reference": "req-5",
+        "action": "odrl:distribute",
+        "target": "asset:employee-directory",
+        "at": "2026-06-01T10:00:00Z",
+        "parties": { "odrl:assignee": "agent:finance" },
+        "params": {
+          "ex:processingMode": { "@id": "ex:batchReporting" }
+        }
+      },
+      "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
+      "config": { "combination": "prohibit-overrides" },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [
+          { "duty": "rule:emp-notify", "status": "outstanding" }
+        ],
+        "why": "rule:emp-no-distribute matches by equality. The use prohibition also matches (distribute ⊑ use) but its constraint is false; it changes nothing. Deny."
+      },
+      "dprod_expected": "Deny (prohibition overrides)"
+    }
+  ]
+}
