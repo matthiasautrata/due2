@@ -38,8 +38,13 @@ PROFILES = ROOT / "profiles"
 CORE = [PROFILES / "due2-core.ttl", PROFILES / "odrl-actions.ttl"]
 MODULES = {
     str(DPROD): sorted((PROFILES / "vendor" / "dprod").glob("*.ttl")) + [PROFILES / "dprod.ttl"],
+    str(DUE2): [PROFILES / "due2-core.ttl"],
 }
-ALIASES = {"dprod": str(DPROD)}
+ALIASES = {"dprod": str(DPROD), "due2": str(DUE2)}
+# IM 2.1: a policy uses only Core terms, or declares the profiles whose terms
+# it uses. Normalisation selects a profile's binding module by odrl:profile
+# (normalisation spec 3), so an undeclared namespace is a W1 input error.
+NAMESPACED_PROFILES = {str(DPROD): "DPROD Contracts", str(DUE2): "due2 core"}
 
 POLICY_CLASSES = {ODRL.Policy, ODRL.Set, ODRL.Offer, ODRL.Agreement}
 RULE_EDGES = {ODRL.permission: ODRL.Permission, ODRL.prohibition: ODRL.Prohibition,
@@ -302,9 +307,24 @@ def check_rule(g: Graph, rule, kind, policy, b: Bindings, r: Report, used: dict,
             check_rule(g, d, ODRL.Duty, policy, b, r, used, seen, path + [rule], named)
 
 
+def ns_terms(g: Graph, ns: str) -> int:
+    n = 0
+    for _, p, o in g:
+        if str(p).startswith(ns):
+            n += 1
+        elif isinstance(o, URIRef) and str(o).startswith(ns):
+            n += 1
+    return n
+
+
 def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report,
                  named: bool) -> dict:
     used: dict = {}
+    declared = {str(p) for p in g.objects(policy, ODRL.profile)}
+    for ns, label in NAMESPACED_PROFILES.items():
+        if ns_terms(g, ns) and ns not in declared:
+            r.err(f"{q(g, policy)}: uses {label} terms but declares no "
+                  f"odrl:profile <{ns}>; normalisation will not select its module")
     if isinstance(policy, BNode) and len(list(g.objects(policy, ODRL.uid))) != 1:
         r.err(f"{q(g, policy)}: policy has no identity (IRI or exactly one odrl:uid)")
     for pred, label in REJECTED.items():

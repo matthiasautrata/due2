@@ -15,5 +15,8 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `decisions/` | Decision records |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus: RL2 use cases and DPROD examples in ODRL, with scenarios and expected verdicts |
+| `conformance/odrl22-shape.ttl` | due2's SHACL encoding of the ODRL Information Model 2.2 — validates authored policies (compact and compound forms included), every constraint cited to its IM section |
+| `conformance/odrl22-conformance.md` | The ODRL 2.2 conformance protocol, results, and the community-shape findings |
 | `tools/check_corpus.py` | Checks the corpus and any ODRL policy file against the admitted profile, without an evaluator |
+| `tools/check_odrl22.py` | Validates policies against ODRL 2.2 itself: `odrl22-shape.ttl` plus the vendored official vocabulary (`profiles/vendor/w3c/ODRL22.ttl`), via pyshacl |
 | `Turning MDS Vendor Contracts into Internal Policies Approach and Decisions.md` | Turning MDS vendor contracts into internal policies: approach and decisions |

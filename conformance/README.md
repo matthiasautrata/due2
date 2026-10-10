@@ -96,7 +96,9 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 
 **Values.** A literal is `{"@value": ..., "@type": ...}`, an IRI `{"@id": ...}` — the JSON-LD forms. Prefixed names expand through `prefixes`.
 
-**Classification.** Context built-ins (`dprod:clock`, `dprod:agent`, `due2:actionTime`), `due2:witnessSource`, and the binding properties themselves are operand-binding vocabulary, not profile terms: a case that uses only them is `odrl-core` and needs no `odrl:profile`. Profile terms are the extension points of `due2-profiles.md` §2 — `dprod:not`, `dprod:deadline`, `dprod:recurrence`, `dprod:subjectOfDuty`, policy subclasses.
+**Classification.** Context built-ins (`dprod:clock`, `dprod:agent`, `due2:actionTime`), `due2:witnessSource`, and the binding properties themselves are operand-binding vocabulary, not profile terms: a case that uses only them still classifies as `odrl-core`. Profile terms are the extension points of `due2-profiles.md` §2 — `dprod:not`, `dprod:deadline`, `dprod:recurrence`, `dprod:subjectOfDuty`, policy subclasses.
+
+**Profile declaration is separate from classification.** IM §2.1 requires a policy that uses non-Core vocabulary to declare the profiles whose terms it uses — and the binding properties (`dprod:operandSource`, `dprod:operandProperty`) are DPROD-vocabulary terms appearing in the policy. So a case can classify `odrl-core` and still carry `odrl:profile <https://ekgf.org/dprod/spec/develop/>` (and `<https://w3id.org/due2/profile#>` when it uses `due2:` terms). `tools/check_corpus.py` rejects an undeclared namespace as a W1 input error — normalisation selects a profile's binding module by `odrl:profile` — and `tools/check_odrl22.py` checks the same rule against the IM directly.
 
 **Standing divergences from RL2,** which a case need not re-explain:
 - An unfulfilled precondition gives due2 `Pending` with the route, where RL2 gives `NotApplicable`.

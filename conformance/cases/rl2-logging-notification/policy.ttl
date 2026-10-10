@@ -9,6 +9,7 @@
 # Grantor and grantee coincide with the duties' counterparty and subject, so the
 # compact policy-level parties are correct for every rule.
 ex:dataSharingAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Provider ;
     odrl:assignee ex:Consumer ;

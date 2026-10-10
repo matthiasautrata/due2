@@ -12,6 +12,7 @@
 # §6.2, but an obligation stating only its assignee would still inherit the grantor as assigner.)
 
 ex:dataProductAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:permission ex:readDailyPortPrivilege_A1 , ex:readHistoryPortPrivilege_A1 ;
     odrl:obligation ex:dailyPortDuty , ex:historyPortDuty .

@@ -9,6 +9,7 @@
 # content with no due2 counterpart.
 
 ex:freshnessAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:obligation ex:freshnessDuty .
 

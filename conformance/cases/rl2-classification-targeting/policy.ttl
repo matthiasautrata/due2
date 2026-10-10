@@ -6,6 +6,7 @@
 # Source: RL2 conformance/usecases/classification-targeting.md
 
 ex:homeLoanPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:permission ex:homeLoanReadPrivilege ;
     odrl:obligation ex:homeLoanAccessLogDuty .

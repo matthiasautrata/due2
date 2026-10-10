@@ -7,6 +7,7 @@
 # Source: RL2 conformance/usecases/geo-restriction.md
 
 ex:regionalAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Provider ;
     odrl:assignee ex:Customer ;

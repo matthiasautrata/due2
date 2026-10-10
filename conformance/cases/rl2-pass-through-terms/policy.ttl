@@ -7,6 +7,7 @@
 # Source: RL2 conformance/usecases/pass-through-terms.md
 
 ex:distributionAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Vendor ;
     odrl:assignee ex:Aggregator ;

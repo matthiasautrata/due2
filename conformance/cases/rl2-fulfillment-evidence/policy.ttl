@@ -11,7 +11,7 @@
 # what a rule leaves unstated (normalisation §6.2); the obligation states its own parties,
 # so the Customer does not become a second bearer.
 ex:terms a odrl:Agreement ;
-    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Provider ;
     odrl:assignee ex:Customer ;

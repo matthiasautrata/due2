@@ -7,6 +7,7 @@
 # Source: RL2 conformance/usecases/data-sovereignty.md
 
 ex:productionDataAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Manufacturer ;
     odrl:assignee ex:Supplier ;

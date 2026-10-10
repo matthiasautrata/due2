@@ -1,0 +1,385 @@
+# due2's ODRL 2.2 SHACL shape — a validator for *authored* ODRL 2.2 policies.
+#
+# This shape encodes the ODRL Information Model 2.2 (W3C Recommendation,
+# https://www.w3.org/TR/odrl-model/) as written. Every constraint cites the IM
+# section it implements. It validates the authored form — compact (IM §2.7.1)
+# and compound (IM §2.7) policies included — so it checks what authors write,
+# not the atomic form a normaliser produces (whose cardinalities IM §2.6 notes
+# hold after expansion).
+#
+# It validates ODRL 2.2 only. Whether a policy is admissible *due2* input is
+# tools/check_corpus.py's job (due2 rejects some valid ODRL — inheritFrom,
+# andSequence, rightOperandReference, odrl:source, floating-point operands —
+# with diagnostics, never silently; architecture §1). The two checks together
+# are the conformance claim: standard ODRL in, due2 admissible in.
+#
+# Known deviations of the best-known community shape (woutslabbinck/ODRL-shape)
+# from the Rec, all corrected here and recorded in odrl22-conformance.md:
+#   * rightOperand lists for set-based operators are IM §2.5.1's own encoding;
+#   * logical-constraint operands are lists per IM §2.5.2 ("its value is a list
+#     of the existing Constraint instances");
+#   * the Policy edge for obligations is odrl:obligation (IM §2.1), not
+#     odrl:duty (a Permission→Duty edge);
+#   * in RDF the node IRI is the uid (IM: "the ODRL Information Model uid and
+#     type attributes are mapped to the JSON-LD @id and @type tokens").
+#
+# Profile terms: this shape recognises the DPROD logical connective dprod:not
+# (IM §2.5.2: "Additional operand sub-properties MAY be defined by ODRL
+# Profiles exclusively for the use of Logical Constraints") and the profile
+# policy subclasses (IM §2.1: "An ODRL Policy MAY be subclassed"), the latter
+# through rdfs:subClassOf edges present in the merged graph.
+
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix odrl22: <https://w3id.org/due2/odrl22-shape#> .
+
+# ---------------------------------------------------------------------------
+# Policy (IM §2.1) — target classes include declared subclasses via the
+# rdfs:subClassOf edges of the merged graph (profile modules are merged by
+# the harness, so dprod:DataOffer etc. are covered as IM §2.1 subclasses).
+# ---------------------------------------------------------------------------
+
+odrl22:PolicyShape a sh:NodeShape ;
+  sh:targetClass odrl:Policy, odrl:Set, odrl:Offer, odrl:Agreement ;
+  sh:property [
+    # IM §2.1: a Policy MUST have one uid (of type IRI). In RDF the node IRI
+    # is the uid (JSON-LD maps uid to @id); an explicit odrl:uid also satisfies.
+    sh:path odrl:uid ;
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1
+  ] ;
+  sh:or ( [ sh:nodeKind sh:IRI ]
+          [ sh:property [ sh:path odrl:uid ; sh:minCount 1 ] ] ) ;
+  sh:property [
+    # IM §2.1: at least one permission, prohibition, or obligation.
+    sh:path [ sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation) ] ;
+    sh:minCount 1 ;
+    sh:or ( [ sh:class odrl:Permission ] [ sh:class odrl:Prohibition ] [ sh:class odrl:Duty ] )
+  ] ;
+  sh:property [
+    sh:path odrl:profile ;       # IM §2.1: none, one, or many; type IRI.
+    sh:nodeKind sh:IRI
+  ] ;
+  sh:property [
+    sh:path odrl:inheritFrom ;   # IM §2.1: none, one, or many; type IRI.
+    sh:nodeKind sh:IRI
+  ] ;
+  sh:property [
+    # IM §2.1: none or one conflict term; IM §2.10: the three values.
+    sh:path odrl:conflict ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:in ( odrl:prohibit odrl:perm odrl:invalid )
+  ] .
+
+# The disjointness pair, stated plainly:
+odrl22:OfferShape a sh:NodeShape ;
+  sh:targetClass odrl:Offer ;
+  sh:not [ sh:class odrl:Agreement ] .
+
+odrl22:AgreementShape a sh:NodeShape ;
+  sh:targetClass odrl:Agreement ;
+  sh:not [ sh:class odrl:Offer ] .
+
+# ---------------------------------------------------------------------------
+# Rules (IM §2.6, §2.6.1–2.6.3). Authored form: repeated properties are
+# compound form (IM §2.7); compact policy-level values are IM §2.7.1 shared
+# properties, so each rule may take its action/target from the policy.
+# ---------------------------------------------------------------------------
+
+odrl22:RuleShape a sh:NodeShape ;
+  sh:targetClass odrl:Permission, odrl:Prohibition, odrl:Duty ;
+  sh:property [
+    # IM §2.6: a Rule MUST have one action of type Action. Compact form
+    # (IM §2.7.1) supplies it from the policy level; compound form may repeat.
+    sh:path odrl:action ;
+    sh:class odrl:Action
+  ] ;
+  sh:or (
+    [ sh:property [ sh:path odrl:action ; sh:minCount 1 ] ]
+    [ sh:property [
+        sh:path ( [ sh:inversePath [ sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation) ] ] odrl:action ) ;
+        sh:minCount 1 ] ]
+  ) ;
+  sh:property [
+    sh:path odrl:uid ;           # IM §2.6: none or one, type IRI.
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    # IM §2.6 + §2.5.3: constraint values are Constraints or Logical Constraints.
+    sh:path odrl:constraint ;
+    sh:or ( [ sh:class odrl:Constraint ] [ sh:class odrl:LogicalConstraint ] )
+  ] ;
+  sh:property [
+    # IM §2.5.4: an Action's refinement values are Constraints/Logical Constraints.
+    sh:path ( odrl:action odrl:refinement ) ;
+    sh:or ( [ sh:class odrl:Constraint ] [ sh:class odrl:LogicalConstraint ] )
+  ] .
+
+# IM §2.6: Rule subclasses MUST be disjoint.
+odrl22:PermissionShape a sh:NodeShape ;
+  sh:targetClass odrl:Permission ;
+  sh:not [ sh:class odrl:Prohibition ] ;
+  sh:not [ sh:class odrl:Duty ] ;
+  sh:property [
+    # IM §2.6.1: a Permission MUST have one target. Compact form supplies it
+    # from the policy level; compound form may repeat.
+    sh:path odrl:target ;
+    sh:nodeKind sh:IRI
+  ] ;
+  sh:or (
+    [ sh:property [ sh:path odrl:target ; sh:minCount 1 ] ]
+    [ sh:property [
+        sh:path ( [ sh:inversePath [ sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation) ] ] odrl:target ) ;
+        sh:minCount 1 ] ]
+  ) ;
+  sh:property [
+    # IM §2.6.5: duty values are Duties.
+    sh:path odrl:duty ;
+    sh:class odrl:Duty
+  ] .
+
+odrl22:ProhibitionShape a sh:NodeShape ;
+  sh:targetClass odrl:Prohibition ;
+  sh:not [ sh:class odrl:Permission ] ;
+  sh:not [ sh:class odrl:Duty ] ;
+  sh:property [
+    # IM §2.6.2: a Prohibition MUST have one target (compact/compound as above).
+    sh:path odrl:target ;
+    sh:nodeKind sh:IRI
+  ] ;
+  sh:or (
+    [ sh:property [ sh:path odrl:target ; sh:minCount 1 ] ]
+    [ sh:property [
+        sh:path ( [ sh:inversePath [ sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation) ] ] odrl:target ) ;
+        sh:minCount 1 ] ]
+  ) ;
+  sh:property [
+    # IM §2.6.7: remedy values are Duties.
+    sh:path odrl:remedy ;
+    sh:class odrl:Duty
+  ] .
+
+odrl22:DutyShape a sh:NodeShape ;
+  sh:targetClass odrl:Duty ;
+  sh:not [ sh:class odrl:Permission ] ;
+  sh:not [ sh:class odrl:Prohibition ] ;
+  sh:property [
+    # IM §2.6.3: a Duty MAY have none or one target. Authored/compound form
+    # may repeat (IM §2.7 note); the atomic cardinality holds after expansion.
+    sh:path odrl:target ;
+    sh:nodeKind sh:IRI
+  ] ;
+  sh:property [
+    # IM §2.6.6: consequence values are Duties (permitted only on duties
+    # referenced by duty/obligation; that placement rule is check_corpus's).
+    sh:path odrl:consequence ;
+    sh:class odrl:Duty
+  ] .
+
+# ---------------------------------------------------------------------------
+# Constraint (IM §2.5.1) and Logical Constraint (IM §2.5.2)
+# ---------------------------------------------------------------------------
+
+odrl22:ConstraintShape a sh:NodeShape ;
+  sh:targetClass odrl:Constraint ;
+  sh:property [
+    sh:path odrl:uid ;           # IM §2.5.1: none or one.
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    # IM §2.5.1: exactly one leftOperand of type LeftOperand.
+    sh:path odrl:leftOperand ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class odrl:LeftOperand
+  ] ;
+  sh:property [
+    # IM §2.5.1: exactly one operator of type Operator.
+    sh:path odrl:operator ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class odrl:Operator
+  ] ;
+  # IM §2.5.1: "Only one of rightOperand or rightOperandReference MUST appear."
+  sh:xone (
+    [ sh:property [ sh:path odrl:rightOperand ; sh:minCount 1 ] ]
+    [ sh:property [ sh:path odrl:rightOperandReference ; sh:minCount 1 ] ]
+  ) ;
+  sh:property [
+    # IM §2.5.1: rightOperand is a literal, IRI, or RightOperand — or, for
+    # set-based operators, a list of them (the IM's own encoding).
+    sh:path odrl:rightOperand ;
+    sh:or (
+      [ sh:nodeKind sh:Literal ]
+      [ sh:nodeKind sh:IRI ]
+      [ sh:class odrl:RightOperand ]
+      [ sh:and (
+          [ sh:property [ sh:path rdf:first ; sh:minCount 1 ] ]
+          [ sh:property [
+              sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+              sh:or ( [ sh:nodeKind sh:Literal ] [ sh:nodeKind sh:IRI ] [ sh:class odrl:RightOperand ] ) ] ]
+        ) ]
+    )
+  ] ;
+  sh:property [
+    # IM §2.5.1: rightOperandReference is an IRI — or, for set-based
+    # operators, a list of IRIs.
+    sh:path odrl:rightOperandReference ;
+    sh:or (
+      [ sh:nodeKind sh:IRI ]
+      [ sh:and (
+          [ sh:property [ sh:path rdf:first ; sh:minCount 1 ] ]
+          [ sh:property [
+              sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+              sh:nodeKind sh:IRI ] ]
+        ) ]
+    )
+  ] ;
+  sh:property [ sh:path odrl:dataType ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;  # IM §2.5.1
+  sh:property [ sh:path odrl:unit ;      sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;  # IM §2.5.1
+  sh:property [ sh:path odrl:status ;    sh:maxCount 1 ] ;  # IM §2.5.1
+  sh:sparql [
+    # IM §2.5.1 ties list-valued right operands to set-based operators. The IM
+    # does not enumerate the set; the reading here is due2-profiles.md §4:
+    # isAnyOf, isNoneOf, isAllOf. (isPartOf/hasPart take single IRIs there.)
+    sh:message "IM 2.5.1: a list-valued odrl:rightOperand is allowed only for set-based operators (isAnyOf, isNoneOf, isAllOf)" ;
+    sh:select """
+      SELECT ?this ?list WHERE {
+        ?this <http://www.w3.org/ns/odrl/2/rightOperand> ?list .
+        ?list <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?f .
+        ?this <http://www.w3.org/ns/odrl/2/operator> ?op .
+        FILTER (?op != <http://www.w3.org/ns/odrl/2/isAnyOf>
+             && ?op != <http://www.w3.org/ns/odrl/2/isNoneOf>
+             && ?op != <http://www.w3.org/ns/odrl/2/isAllOf>)
+      }
+    """
+  ] .
+
+odrl22:LogicalConstraintShape a sh:NodeShape ;
+  sh:targetClass odrl:LogicalConstraint ;
+  sh:property [
+    sh:path odrl:uid ;           # IM §2.5.2: none or one.
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    # IM §2.5.2: MUST have one operand sub-property. The Rec's four are
+    # listed; dprod:not is a profile connective (IM §2.5.2: additional
+    # operand sub-properties MAY be defined by ODRL Profiles).
+    sh:path [ sh:alternativePath (odrl:and odrl:or odrl:xone odrl:andSequence dprod:not) ] ;
+    sh:minCount 1
+  ] ;
+  sh:property [
+    # IM §2.5.2: the operand value "is a list of the existing Constraint
+    # instances". The repeated-triple form is also accepted (identical
+    # semantics for the commutative connectives; andSequence order is
+    # preserved only by lists, IM §2.5.2 note).
+    sh:path [ sh:alternativePath (odrl:and odrl:or odrl:xone odrl:andSequence dprod:not) ] ;
+    sh:or (
+      [ sh:class odrl:Constraint ]
+      [ sh:class odrl:LogicalConstraint ]
+      [ sh:and (
+          [ sh:property [ sh:path rdf:first ; sh:minCount 1 ] ]
+          [ sh:property [
+              sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+              sh:or ( [ sh:class odrl:Constraint ] [ sh:class odrl:LogicalConstraint ] ) ] ]
+        ) ]
+    )
+  ] ;
+  sh:sparql [
+    # IM §2.5.2 validation requirement 2: "All of the operand values MUST be
+    # unique Constraint instances." RDF set semantics hides duplicates in the
+    # repeated-triple form, so this checks the list form.
+    sh:message "IM 2.5.2: logical-constraint operand members must be unique" ;
+    sh:select """
+      SELECT DISTINCT ?this ?member WHERE {
+        ?this <http://www.w3.org/ns/odrl/2/and>|<http://www.w3.org/ns/odrl/2/or>|<http://www.w3.org/ns/odrl/2/xone>|<http://www.w3.org/ns/odrl/2/andSequence>|<https://ekgf.org/dprod/spec/develop/not> ?list .
+        ?list <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>* ?r1 .
+        ?r1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?member .
+        ?list <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>* ?r2 .
+        ?r2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?member .
+        FILTER (?r1 != ?r2)
+      }
+    """
+  ] .
+
+# ---------------------------------------------------------------------------
+# Offer and Agreement party requirements (IM §2.1.2, §2.1.3). The MUSTs
+# read "in the same Rules"; after IM §2.7.1 replication a rule-level or
+# policy-level value satisfies them. Stated as SPARQL because the condition
+# is per-rule and policy-typed.
+# ---------------------------------------------------------------------------
+
+odrl22:OfferPartyShape a sh:NodeShape ;
+  sh:targetClass odrl:Offer ;
+  sh:sparql [
+    sh:message "IM 2.1.2: an Offer must identify the assigner (at the Policy or Rule level)" ;
+    sh:select """
+      SELECT ?this ?rule WHERE {
+        ?this <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?ct .
+        ?ct <http://www.w3.org/2000/01/rdf-schema#subClassOf>* <http://www.w3.org/ns/odrl/2/Offer> .
+        ?this <http://www.w3.org/ns/odrl/2/permission>|<http://www.w3.org/ns/odrl/2/prohibition>|<http://www.w3.org/ns/odrl/2/obligation> ?rule .
+        FILTER NOT EXISTS { ?rule <http://www.w3.org/ns/odrl/2/assigner> ?ra }
+        FILTER NOT EXISTS { ?this <http://www.w3.org/ns/odrl/2/assigner> ?pa }
+      }
+    """
+  ] .
+
+odrl22:AgreementPartyShape a sh:NodeShape ;
+  sh:targetClass odrl:Agreement ;
+  sh:sparql [
+    sh:message "IM 2.1.3: an Agreement must identify the assigner (at the Policy or Rule level)" ;
+    sh:select """
+      SELECT ?this ?rule WHERE {
+        ?this <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?ct .
+        ?ct <http://www.w3.org/2000/01/rdf-schema#subClassOf>* <http://www.w3.org/ns/odrl/2/Agreement> .
+        ?this <http://www.w3.org/ns/odrl/2/permission>|<http://www.w3.org/ns/odrl/2/prohibition>|<http://www.w3.org/ns/odrl/2/obligation> ?rule .
+        FILTER NOT EXISTS { ?rule <http://www.w3.org/ns/odrl/2/assigner> ?ra }
+        FILTER NOT EXISTS { ?this <http://www.w3.org/ns/odrl/2/assigner> ?pa }
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:message "IM 2.1.3: an Agreement must identify the assignee (at the Policy or Rule level)" ;
+    sh:select """
+      SELECT ?this ?rule WHERE {
+        ?this <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?ct .
+        ?ct <http://www.w3.org/2000/01/rdf-schema#subClassOf>* <http://www.w3.org/ns/odrl/2/Agreement> .
+        ?this <http://www.w3.org/ns/odrl/2/permission>|<http://www.w3.org/ns/odrl/2/prohibition>|<http://www.w3.org/ns/odrl/2/obligation> ?rule .
+        FILTER NOT EXISTS { ?rule <http://www.w3.org/ns/odrl/2/assignee> ?re }
+        FILTER NOT EXISTS { ?this <http://www.w3.org/ns/odrl/2/assignee> ?pe }
+      }
+    """
+  ] .
+
+# ---------------------------------------------------------------------------
+# Collections (IM §2.5.5, §2.5.6): with a refinement, the source property
+# MUST be used to reference the collection (and uid MUST NOT identify it —
+# the uid check is on the referencing use, not shapeable here).
+# ---------------------------------------------------------------------------
+
+odrl22:AssetCollectionShape a sh:NodeShape ;
+  sh:targetClass odrl:AssetCollection ;
+  sh:xone (
+    [ sh:property [ sh:path odrl:refinement ; sh:maxCount 0 ] ]
+    [ sh:and (
+        [ sh:property [ sh:path odrl:refinement ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path odrl:source ; sh:minCount 1 ; sh:nodeKind sh:IRI ] ]
+      ) ]
+  ) .
+
+odrl22:PartyCollectionShape a sh:NodeShape ;
+  sh:targetClass odrl:PartyCollection ;
+  sh:xone (
+    [ sh:property [ sh:path odrl:refinement ; sh:maxCount 0 ] ]
+    [ sh:and (
+        [ sh:property [ sh:path odrl:refinement ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path odrl:source ; sh:minCount 1 ; sh:nodeKind sh:IRI ] ]
+      ) ]
+  ) .

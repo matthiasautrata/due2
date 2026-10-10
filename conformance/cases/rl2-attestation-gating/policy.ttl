@@ -8,7 +8,7 @@
 # Source: RL2 conformance/usecases/attestation-gating.md
 
 ex:dataGovernanceAgreement a odrl:Agreement ;
-    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Regulator ;
     odrl:assignee ex:DataProcessor ;

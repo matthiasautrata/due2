@@ -10,6 +10,7 @@
 # only what a rule leaves unstated (normalisation §6.2), and the obligation states both
 # of its own parties, so the DataSubject does not become a second bearer.
 ex:privacyPolicy a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:assigner ex:Controller ;
     odrl:assignee ex:DataSubject ;

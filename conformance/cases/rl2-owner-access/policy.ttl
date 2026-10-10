@@ -13,6 +13,7 @@
 # recorded data owner of the target".
 
 ex:ownerPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
     odrl:permission ex:ownerPrivilege .
 

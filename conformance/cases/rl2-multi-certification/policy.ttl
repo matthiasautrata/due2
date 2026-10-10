@@ -9,6 +9,7 @@
 # Source: RL2 conformance/usecases/multi-certification.md
 
 ex:policy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
     odrl:conflict odrl:prohibit ;
     odrl:permission ex:certifiedAccess .
 
