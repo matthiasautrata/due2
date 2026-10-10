@@ -43,11 +43,17 @@ due2:InstanceScope a owl:Class .
 due2:member a due2:InstanceScope .
 due2:grant a due2:InstanceScope .
 
-# --- Violations and access (§7), declared per profile ---
-due2:violations a owl:ObjectProperty ; rdfs:range due2:ViolationPolicy .
-due2:ViolationPolicy a owl:Class .
-due2:ignore a due2:ViolationPolicy .
-due2:deny a due2:ViolationPolicy .
+# --- Witness source (§3) ---
+# Used by policies whose duty constraints read the witness; declared here
+# because no other vocabulary defines it. Deliberately outside DPROD's closed
+# source set (dprod-contracts.ttl owl:oneOf) — profiles §3.
+due2:Source a owl:Class .
+due2:witnessSource a due2:Source, owl:NamedIndividual ;
+    rdfs:comment "A parameter of the witness, read inside a duty's constraints only (due2-workflows.md §5.3); a policy that must also validate against DPROD's shapes cannot use it, and then its duty constraints are all guards." .
+
+# --- Violations and access (§7) ---
+# No terms: violations = ignore | deny is configuration (config.violations,
+# due2-workflows.md §3.4), not profile semantics, and no profile declares it.
 
 # --- Baseline bindings for ODRL Common Vocabulary operands (§3) ---
 odrl:dateTime

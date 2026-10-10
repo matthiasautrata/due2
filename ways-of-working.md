@@ -5,6 +5,8 @@
 
 **Changes in v0.3:** new §2.4 — RDF at the boundary: parse and emit at the edges, plain frozen structures everywhere between.
 
+**Coherence updates, 2026-10-10:** §9's blocker resolved — Dafny is installable here, and `decisions/0002` records the track (register #9, #12); §7.1's preservation property restated as the refinement of `due2-workflows.md` §8 L9, whose L9 oracle is a direct interpreter over the lifted (authored) form.
+
 **Changes in v0.2:** §2.3 (where exhaustiveness actually pays), new §5.1 (absent / unknown / false), §7.1 (semantic-preservation property), §9 (verification retargeted at the normaliser), §10 (rewritten around the two-stage split; Rego/OPA added), §11 (generated-code rule generalised), §13 (register extended). Companion document: `due2-architecture.md`.
 
 Each item is marked:
@@ -171,7 +173,7 @@ Design-by-contract is a first-class part of this discipline, not an optional ext
 
 - **Unit tests** — pytest. Example-based, fast, deterministic. Cover the specific and the regression-worthy.
 - **Property tests** — Hypothesis. The primary correctness instrument for the core. Test algebraic laws: idempotence, commutativity where claimed, round-tripping (parse ∘ render = id), invariant preservation, monotonicity.
-- **Semantic preservation** — where a pipeline rewrites a rich input into a normal form before acting on it, the load-bearing property is that the rewrite changes nothing observable: for all inputs `p` and requests `r`, `interpret(normalise(p), r) == interpret_directly(p, r)`. This is worth more than any number of tests against the normal form itself, because it is the only check that the rewrite has not quietly changed meaning. It requires maintaining a direct interpreter as a specification artefact, which is a real cost and a justified one.
+- **Semantic preservation** — where a pipeline rewrites a rich input into a normal form before acting on it, the load-bearing property is that the rewrite changes nothing observable: for all inputs `p` and requests `r`, `interpret(normalise(p), r)` refines `interpret_directly(p, r)` — equal when every finding is definite; with unknowns, a definite pipeline verdict still equals the direct one, and the pipeline may return `Indeterminate` where the direct one decides (`due2-workflows.md` §8 L9, restated 2026-10-10). This is worth more than any number of tests against the normal form itself, because it is the only check that the rewrite has not quietly changed meaning. It requires maintaining a direct interpreter as a specification artefact, which is a real cost and a justified one.
 - **Model-based / stateful** — Hypothesis `RuleBasedStateMachine`, comparing an implementation against a simple reference model. For an evaluator, the declarative semantics *are* the model; this is worth more than any amount of example-based testing.
 - **Differential** — where two implementations exist (reference vs optimised, Python vs extracted backend), cross-check them on generated inputs. See §10.
 - **Mutation testing** — `mutmut`. Coverage measures execution; mutation measures whether the tests would *notice* a bug. Scoped to kernel modules only; unaffordable repo-wide.
@@ -210,7 +212,7 @@ Placement is *tool × scope*. Scope is the cheaper lever: mutation testing is un
 
 ---
 
-## 9. Verification track **[F]**
+## 9. Verification track **[D]** (Dafny confirmed installable 2026-10-10; see `decisions/0002`)
 
 Everything above reduces defect probability. None of it produces a proof. Where a control function needs the word "verified", the route is a verification-aware language with extraction.
 

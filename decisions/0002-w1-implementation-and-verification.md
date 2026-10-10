@@ -33,6 +33,15 @@ W1 is the pipeline's highest-risk step: every semantically interesting rewrite h
 - Architecture §11 #1 and #6 and ways-of-working §13 #9 and #12 move from open to decided; the registers now say so.
 - The MDS ambiguity stage has a named implementation candidate for its stage-0 tool, parked with that project.
 
+## Amendment (2026-10-10, coherence review)
+
+Two clarifications, both correcting imprecision in the original record rather than its direction:
+
+1. **The L9 oracle is a direct interpreter over the lifted (authored) form, not a W2/W3 evaluator over the corpus.** Decision 7 named "a Python reference evaluator for stage 2 and W2/W3" as the interpreter. A W2/W3 evaluator over the corpus checks L1–L8 and the case scenarios, but L9's `I` is `interpret_directly(p, r, s, c)` over the *authored* policy (architecture §10): compound rules, nested duties, no hoisting. The maintained oracle is therefore a Python direct interpreter over the lifted tree that stage 1 parses into — the authored policy, evaluated as written. The W2/W3 reference evaluator remains, as the L1–L8 differential target.
+2. **L9 itself is restated as a refinement** (`due2-workflows.md` §8, same date): equality holds when every finding is definite; with unknowns, a definite pipeline verdict still equals the direct one, but the pipeline may return `Indeterminate` where the direct interpreter decides — conditional-duty hoisting splits one unknown fact into correlated findings that §6.4 completes independently. Equality under unknowns is restored only by exact completion over the shared fact (workflows §9 #6), which stays open.
+
+The Dafny scope is unchanged — the `Den` oracle and stage-1 expansion functions first, extending to stage 2's rewriting (hoisting, DNF, instantiation) once the oracle exists.
+
 ## Revisit when
 
 - Dafny's automation stalls on the stage-1 obligations (timeouts, solver-version sensitivity) → adopt OCaml + Why3, same oracle scope.

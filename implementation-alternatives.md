@@ -130,6 +130,8 @@ The underlying principle: *executability confers no authority; proved or tested 
 5. **Clingo for MDS stage 0** when that project starts, as its own workstream.
 6. **`xone` stays eager**, bounded by the existing exact-count limit check; set-valued match keys are built only when a real policy demands them.
 
+**Addendum (2026-10-10, coherence review).** Two clarifications recorded in the `decisions/0002` amendment: the L9 oracle is a *direct interpreter over the lifted (authored) form* — a W2/W3 evaluator over the corpus checks L1–L8 but cannot play `I`, which reads authored policies as written — and L9 is restated as a refinement: equality when every finding is definite; under unknowns, hoisting splits one fact into correlated findings completed independently, so the pipeline may say `Indeterminate` where the direct interpreter decides, and exact completion over the shared fact (workflows §9 #6) is what would restore equality. The Dafny scope itself is unchanged.
+
 ## 10. What stays open
 
 - The conformance suite's backend parameterisation remains the standing obligation (`ways-of-working.md` §10.2): a second backend must port a parser, not a semantics.

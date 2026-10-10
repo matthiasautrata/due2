@@ -9,6 +9,8 @@
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
+**Coherence updates, 2026-10-10** (after `decisions/0002`): L9 restated as a refinement — conditional-duty hoisting splits one unknown into correlated findings completed independently, so the equality as previously written cannot hold under unknowns; L6 scoped to §6.2's conflict eliminations, because `eliminated` now also records `violated_precondition` removals (§3.5, §6.1), which give a closed route visibility in `verdict_basis` (role `closed`); the absent conflict term takes a selected profile's declared default first (normalisation spec §3); §5.3's no-guard sentence scoped to the parent relation.
+
 This document fixes *what* each workflow consumes and produces and what it must preserve. It fixes no algorithm, storage engine, wire format, or language. Any implementation whose outputs satisfy §3–§8 on the conformance suite conforms.
 
 ---
@@ -86,7 +88,7 @@ closure           (relation, narrower, broader)
 
 | Field | Meaning |
 |---|---|
-| `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. W1 makes an absent term explicit as `invalid`. |
+| `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (normalisation spec §3); W1 makes the result explicit. |
 | `atom.effect` | `Enum {Permit, Forbid, Oblige}` — one required field (architecture §3). |
 | `atom.action` | The atom's single action, unrefined. Refinements are constraints with scope `action`. |
 | `atom.relation`, `relation_value` | At most one relation, `odrl:target` or `odrl:output`, and its value. |
@@ -181,11 +183,11 @@ verdict_basis  (atom_id | role)
 | `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
 | `read` | W2 | Every state property consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
 | `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), and its status `Enum {fulfilled, outstanding, violated, unknown}`. The instance key is the key under which a case records what is owed and evidence is submitted. |
-| `eliminated` | W3 | A candidate or prohibition removed by conflict resolution, the atom that removed it, and the rule applied. |
+| `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
 | `verdict` | W3 | The verdict, and whether the reported alternatives are known to be all of them. |
-| `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation`. |
+| `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
 
 ### 3.6 Lineage
 
@@ -292,7 +294,7 @@ Without a deadline a duty is never violated. Status is derived, never remembered
 
 **Recurrence.** A duty with `recurrence` is owed once per occurrence of its RRULE. W2 generates the occurrences `t ≤ effective_at` — the anchor is the rule's `DTSTART`, or the duty's activation without one (`due2-profiles.md` §7) — and derives one instance per occurrence: the instance key extends with `t`, the trace's `occurrence` is `t`, the instance's activation is `t`, and a relative deadline is `t + duration`. A witness for an occurrence must also satisfy `occurred_at ≥ t`: one delivery does not fulfil every later instance. DPROD's `performed` check has no lower bound, so one performance fulfils every later instance there — a gap found in DPROD (`due2-profiles.md` §8.2). Occurrences beyond `effective_at` — instances not yet owed — are not generated; reporting them is the open window question (§9, `due2-profiles.md` §9).
 
-A duty has no applicability guard of its own here. W1 hoists conditional duties into their parent's constraints (architecture §4), so every duty in the corpus is owed whenever its parent applies.
+Relative to its parent, a duty has no applicability guard of its own here. W1 hoists conditional duties into their parent's constraints (architecture §4), so every duty in the corpus is owed whenever its parent applies. (A duty that is also a root obligation keeps its guards for that role, §5.2.)
 
 Fulfilment is derivation, not bookkeeping. Evidence is appended to the case and the case is evaluated again; no status is ever flipped in place.
 
@@ -330,7 +332,7 @@ Four steps in fixed order. The order is normative: conflict resolution runs befo
 
 ### 6.1 Candidates
 
-A root `Permit` with finding `T` or `U` is a candidate — unless one of its precondition duty instances is `violated` (§5.3). A violated precondition removes its parent's candidacy outright: the route can no longer be taken, and `Pending` must not offer it. A surviving candidate's **outstanding set** is its precondition duties with finding `F` — a violated one removed the candidate instead of joining the set; its **unknown set**, those with `U`. Each candidate is in exactly one state:
+A root `Permit` with finding `T` or `U` is a candidate — unless one of its precondition duty instances is `violated` (§5.3). A violated precondition removes its parent's candidacy outright: the route can no longer be taken, and `Pending` must not offer it. The removal is recorded in `eliminated` with rule `violated_precondition`, and `verdict_basis` carries it with role `closed` (§3.5), so the answer distinguishes *a route that closed* from *nothing that matched*. A surviving candidate's **outstanding set** is its precondition duties with finding `F` — a violated one removed the candidate instead of joining the set; its **unknown set**, those with `U`. Each candidate is in exactly one state:
 
 | State | Condition |
 |---|---|
@@ -385,11 +387,11 @@ Under `deny`, a violated obligation in force acts as a surviving prohibition. DP
 
 The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and duties `F`, prohibitions `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative needs its own argument.
 
-**Completions range over findings, not facts.** Two findings that read the same fact are completed independently, including combinations no value of the fact could produce: `x ≤ 5` and `x > 5` both `F`, say. The definition therefore errs only towards `Indeterminate`. A definite verdict is still invariant over every real value of every unknown fact, but some `Indeterminate` verdicts would be definite under an exact reading — two permissions on `x = true` and `x = false` with `x` unknown permit for every value of `x`. Completing over fact values instead would be exact, but it needs each operand's value domain and is not bounded in general. RL2 makes the same approximation (Semantics §Conflict Resolution). **[O]** — an exact refinement for the common case of a shared Boolean or enumerated fact (§9).
+**Completions range over findings, not facts.** Two findings that read the same fact are completed independently, including combinations no value of the fact could produce: `x ≤ 5` and `x > 5` both `F`, say. The definition therefore errs only towards `Indeterminate` — and normalisation can widen the error: conditional-duty hoisting splits one unknown fact into two findings completed independently, so the normalised verdict can be `Indeterminate` where the authored policy decides (L9 records this as refinement; #6's exact completion over the shared fact restores equality). A definite verdict is still invariant over every real value of every unknown fact, but some `Indeterminate` verdicts would be definite under an exact reading — two permissions on `x = true` and `x = false` with `x` unknown permit for every value of `x`. Completing over fact values instead would be exact, but it needs each operand's value domain and is not bounded in general. RL2 makes the same approximation (Semantics §Conflict Resolution). **[O]** — an exact refinement for the common case of a shared Boolean or enumerated fact (§9).
 
 `frontier_complete` is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but the listed alternatives may not be all of them.
 
-`verdict_basis` names the determining atoms: the surviving prohibition for `Deny`; the ready alternative's permissions for `Permit`; the frontier's permissions and outstanding duties for `Pending`; the `U` atoms whose completion changes the outcome for `Indeterminate`.
+`verdict_basis` names the determining atoms: the surviving prohibition for `Deny`; the ready alternative's permissions for `Permit`; the frontier's permissions and outstanding duties for `Pending`; the `U` atoms whose completion changes the outcome for `Indeterminate`; and, for a `NotApplicable` where candidates were removed by violated preconditions, those candidates with role `closed` (§3.5).
 
 ---
 
@@ -410,10 +412,10 @@ Acceptance criteria for any implementation, checked by property tests over gener
 | **L3** | **Prefetch neutrality.** Adding resolutions W2 does not read leaves the trace unchanged. Adding ones it reads can only turn `U` into `T` or `F`. |
 | **L4** | **Information monotonicity.** Resolving an unknown never turns `Permit` into `Deny` or back; it can only replace `Indeterminate`. |
 | **L5** | **Prohibition monotonicity.** Adding an applicable prohibition never raises the verdict. |
-| **L6** | **Duty neutrality.** Adding, removing, or fulfilling duties never changes `eliminated`. |
+| **L6** | **Duty neutrality.** Conflict resolution (§6.2) never looks at duties: its eliminations are unchanged by adding, removing, or fulfilling them. (The `violated_precondition` eliminations of §6.1 are duty-driven by design and outside this law.) |
 | **L7** | **Readiness.** If some candidate is ready after §6.2 and no surviving `Forbid` is `T` or `U`, the verdict is `Permit`. |
 | **L8** | **Skip soundness.** Evaluating more root atoms that are certainly `F` leaves the trace unchanged. |
-| **L9** | **Preservation.** For a direct interpreter `I` over authored policies, `W3(W2(W1(p), r, s), c) = I(p, r, s, c)` — wherever that interpreter is maintained (architecture §10). |
+| **L9** | **Preservation (refinement).** For a direct interpreter `I` over authored policies (architecture §10): when every finding is definite, `W3(W2(W1(p), r, s), c) = I(p, r, s, c)`. With unknowns, a definite pipeline verdict still equals `I`'s — the real fact values induce one completion, and if all completions agree, so does that one — but the pipeline may return `Indeterminate` where `I` decides: conditional-duty hoisting splits one unknown fact into correlated findings that §6.4 completes independently. Equality under unknowns is restored only by the exact completion over the shared fact (§9 #6). |
 
 ---
 

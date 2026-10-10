@@ -5,6 +5,8 @@
 
 **Changes in v0.6:** duty timing landed in the corpus and is computed by W2, which restores W3 purity and the completion shortcut of `due2-workflows.md` §6.4 (§3.1, §5.3 there); DPROD's example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the conformance corpus (§10). Readability: new §0 orientation (reading order, glossary, worked example); **SOTW** and **atom** glossed at first use (§1, §3); the representation story stated once — lifted tree in W1 stage 1, relations everywhere after (`due2-workflows.md` §4); external §-references named (RL2 legend in §8.2, DPROD legend in `due2-profiles.md` §8.2).
 
+**Coherence updates, 2026-10-10** (after `decisions/0002`): §6.2's absent conflict term takes a selected profile's declared default first (normalisation spec §3); §4 item 1 states fill-only-unstated interiorisation (normalisation spec §6.2); §10's preservation property restated as the refinement of workflows §8 L9, its direct-interpreter slot resolved by the `decisions/0002` amendment — a Python direct interpreter over the lifted form; reading order gains `implementation-alternatives.md`.
+
 **Changes in v0.5:** witness reads made explicit, so a request-source duty condition is a guard (§4 item 5); a duty that is both an obligation and a precondition (§4 items 4–5); §8.2 records what was harvested from RL2, and §8.3 DPROD Contracts; decision record `decisions/0001-rl2-as-donor.md`. v0.4 introduced profiles and operand bindings (`due2-profiles.md`), anonymous rules (§3.1), guard-only hoisting, obligations in force reported with the access answer (§6.3), and the conformance corpus (§10).
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
@@ -15,7 +17,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 
 **The one-sentence story.** An author writes a policy in ODRL; due2 turns it once into a flat corpus of atoms, and then answers each request by evaluating every relevant atom against the request and a frozen snapshot of the world, and folding the results into one verdict with reasons.
 
-**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `ways-of-working.md` (engineering discipline). `decisions/` holds the standing decision records; `conformance/` the case corpus that an implementation must satisfy; `profiles/` the shipped profile modules.
+**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `ways-of-working.md` (engineering discipline) → `implementation-alternatives.md` (the W1 implementation-alternatives review behind `decisions/0002`). `decisions/` holds the standing decision records; `conformance/` the case corpus that an implementation must satisfy; `profiles/` the shipped profile modules.
 
 **Glossary.** Each term is defined in the section named; this is the map, not the definition.
 
@@ -124,7 +126,7 @@ Two stages, each with its own preservation property (`due2-workflows.md` §4). T
 
 **Stage 1 — atomise** (`odrl-compound-to-atomic-normalization.md`):
 
-1. **Interiorisation and cross-product expansion.** Policy-level actions, targets, and parties are copied into each root rule. Multi-valued action, relation, and party fields then expand into one atomic rule per combination. Conjunction versus disjunction is not declared per field; it follows from position. Expanding a root rule yields independent atoms, any one of which may match — disjunction. Expanding a nested duty fans out its parent's edges, so every resulting duty is owed — conjunction. Constraints and duties are never expansion axes: splitting a permission with three duties into three atoms would be a semantic error.
+1. **Interiorisation and cross-product expansion.** Policy-level actions, targets, and parties fill what a root rule leaves unstated, per family — a rule that states any value of a family keeps its own (normalisation spec §6.2). Multi-valued action, relation, and party fields then expand into one atomic rule per combination. Conjunction versus disjunction is not declared per field; it follows from position. Expanding a root rule yields independent atoms, any one of which may match — disjunction. Expanding a nested duty fans out its parent's edges, so every resulting duty is owed — conjunction. Constraints and duties are never expansion axes: splitting a permission with three duties into three atoms would be a semantic error.
 2. **Identity, skolemisation, lineage, acyclicity.**
 
 **Stage 2 — build:**
@@ -169,7 +171,7 @@ Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 ```
 
 - **`Pending`** is the escape hatch made visible. When a permission is gated on a duty that has not been fulfilled, the answer is neither Permit nor Deny; it is deny-with-a-discharge-path. Flattening it into Deny is a real product failure: the requester never learns the route exists. In governance this case is common, not exotic. Several permissions may each offer a route; `Pending` carries the **frontier** — every route whose outstanding duties are not a strict superset of another route's (`due2-workflows.md` §6.3). Routes are not ranked unless a preference is declared.
-- **`NotApplicable`** is required regardless, because an obligation-only atom matching a request is applicable to duty and not to access. Having it removes any temptation to read "no permit matched" as Deny by accident rather than by policy.
+- **`NotApplicable`** is required regardless, because an obligation-only atom matching a request is applicable to duty and not to access. Having it removes any temptation to read "no permit matched" as Deny by accident rather than by policy. A `NotApplicable` where a violated precondition closed a matched route is distinguishable from one where nothing matched: the trace records the closure (`due2-workflows.md` §6.1).
 - **`Indeterminate`** is the absent/unknown/false discipline of `ways-of-working.md` §5.1 made a verdict. An unresolvable operand is not false. A denial caused by a missing lookup and a denial caused by a rule must be distinguishable in the ledger afterwards. Precisely: the verdict is `Indeterminate` exactly when resolving the unknowns one way or another could change it (`due2-workflows.md` §6.4).
 
 `Pending` is derivable rather than special: a permission applies, and some of its duties have no admissible evidence of performance yet. Absence of evidence means *not yet fulfilled*, not unknown; evidence arrives through the case (§7), and fulfilment is derived from it, never stored.
@@ -178,7 +180,7 @@ Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 
 Prohibit-wins is a **default, not a law**. ODRL's `conflict` term takes `perm`, `prohibit`, or `invalid`, and it is a property of the source policy. Once atoms from several source policies are in one corpus they cannot be folded uniformly: the fold is per originating policy, then a combination across policies (`due2-workflows.md` §6.2). This is one of the reasons provenance is a required field rather than a nicety.
 
-**[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term means `invalid`, and the normaliser writes it explicitly.
+**[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term takes a selected profile's declared default first, then `invalid` (normalisation spec §3); the normaliser writes the result explicitly.
 
 **[O]** — what a void policy contributes. *Nothing* is the default: it is ODRL's reading (the policy does not govern), and it keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). *`Indeterminate` with a cause* is the fail-safe alternative; it adds a value outside that order and needs its own computation.
 
@@ -292,7 +294,7 @@ Contents:
 - Hypothesis-generated policies and requests, with a decision table.
 - The laws of `due2-workflows.md` §8, as properties.
 - The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, and DPROD Contracts examples — now vendored unmodified under `profiles/vendor/dprod/examples/` and covered as cases — each with scenarios and hand-derived expected verdicts, checked mechanically by `tools/check_corpus.py` until an evaluator runs them.
-- The semantic-preservation property: `decide(normalise(p), r, w) == interpret_directly(p, r, w)`. Stage 1 now carries its own oracle: the denotation of normalisation spec §8.1, a page of definition, checked through the lineage bijection. **[O]** — a direct interpreter for stage 2 and the evaluator remains a specification artefact to maintain. Real cost, and the only check that the rest of normalisation has not quietly changed meaning.
+- The semantic-preservation property: `decide(normalise(p), r, w)` refines `interpret_directly(p, r, w)` — equal when every finding is definite; with unknowns, a definite pipeline verdict still equals the direct one, and the pipeline may return `Indeterminate` where the direct one decides (workflows §8 L9, restated 2026-10-10). Stage 1 now carries its own oracle: the denotation of normalisation spec §8.1, a page of definition, checked through the lineage bijection. **Resolved 2026-10-10** (`decisions/0002` and its amendment): a Python direct interpreter over the lifted (authored) form is the maintained L9 oracle; the Dafny extraction covers the `Den` oracle and stage-1 expansion first, extending to stage 2's rewriting second. Real cost, and still the only check that the rest of normalisation has not quietly changed meaning.
 - Explicit `Indeterminate` cases with unresolvable operands, asserted per backend. This is the property most likely to be silently lost in a port.
 - Every ledger entry, replayed.
 - Differential mode across backends, once there is more than one.

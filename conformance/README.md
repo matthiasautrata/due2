@@ -87,7 +87,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 | `sotw.evidence` | `id`, `occurred_at`, `actor`, `action`, optional `object`, `issuer`, `discharges`, `params` (`due2-workflows.md` §3.3). `params` are read by `due2:witnessSource` operands in a duty's constraints (`due2-profiles.md` §3). |
 | `sotw.activation` | Duty instance key or rule IRI → activation instant, an `xsd:dateTime`, for relative deadlines and recurrence anchors (`due2-workflows.md` §5.3, `due2-profiles.md` §7). |
 | `sotw.closure` | `[relation, narrower, broader]` triples, for hierarchy edges not in the policy file. |
-| `config` | `combination`; optional `preference`, `signers`, `violations` (`ignore` by default, `deny` for DPROD-faithful evaluation), `admit_source`, `admit_age`. |
+| `config` | `combination`; optional `preference`, `signers`, `violations` (`ignore` by default, `deny` for DPROD-aligned evaluation — exception 6 of `due2-profiles.md` §8.2 still diverges), `admit_source`, `admit_age`. |
 | `expected.verdict` | `Permit`, `Deny`, `Pending`, `NotApplicable`, or `Indeterminate`, derived by hand from `due2-workflows.md` §5–§6 and `due2-profiles.md`. |
 | `expected.frontier` | For `Pending`: a list of alternatives, each a list of outstanding duty IRIs. |
 | `expected.obligations` | Obligations in force for the request (`due2-workflows.md` §5.2, §6.1): `{"duty": IRI, "status": "fulfilled" \| "outstanding" \| "violated" \| "unknown"}`, plus `"instance": <occurrence instant>` for an instance of a recurring duty. Statuses follow §5.3's table — W2 computes them from the witness finding and the deadline; include `unknown` ones too, and remember that a recurring obligation with no instance owed yet is not reported. |
@@ -109,3 +109,16 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 **Standing divergences from DPROD,** which a `dprod-*` case need not re-explain: the six exceptions of `due2-profiles.md` §8.2 — Kleene masking and errors in rules that do not apply, incomparable operands, duty state derived from evidence, Agreement parties, policy-level targets, and violated duties — together with DPROD's duty-collection rule (`formal-semantics.md` §7.2 step 1: a duty is collected only when its own action matches the request), which is why no DPROD duty is ever collected for a read.
 
 Expected results are hand-derived until an evaluator exists. The derivation in `why` is what a reviewer checks.
+
+## Coverage gaps
+
+Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus.
+
+- **`due2:witnessSource` and `evidence_param`** — no corpus policy uses a witness source; every duty condition in the corpus is a guard. `WitnessOutsideDuty` is therefore unexercised.
+- **Grant scope and `discharges`** — two cases (`rl2-attestation-gating`, `rl2-audit-trail`) note *why* they fall back to member scope; no scenario submits evidence against a grant.
+- **`signers`** — no case configures an admissibility record for evidence.
+- **`admit_source` / `admit_age`** — a case-format gap: `sotw.facts` carries no attribution (`source`, `observed_at`), so the filter cannot be shown at work; three cases note this in `notes`. Fixing it needs a fact-attribution extension to the case format.
+- **`config.preference`** — no case has an incomparable frontier, so ordering is never exercised.
+- **`odrl:or`** — no corpus policy uses a disjunction.
+- **Several policies per case** — workflows §9 #7; blocked on a case-format extension.
+- **Conflict-strategy variety** — every explicit `odrl:conflict` in the corpus is `prohibit` (58), 11 DPROD cases rely on the profile's `prohibit` default, and `combination` is always `prohibit-overrides`. `perm`, `invalid`, and the other cross-policy combinations have no case.
