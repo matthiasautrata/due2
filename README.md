@@ -11,6 +11,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `due2-profiles.md` | Profiles and the operand registry: how ODRL extensions are declared and evaluated, and DPROD Contracts compatibility |
 | `odrl-compound-to-atomic-normalization.md` | Normalisation stage 1, normative |
 | `ways-of-working.md` | Engineering discipline |
+| `implementation-alternatives.md` | The 2026-10-10 W1 alternatives review: Python+Dafny, Lean, Clingo, OCaml+Why3 — what each buys, why the documented path stands, what triggers revisiting |
 | `decisions/` | Decision records |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus: RL2 use cases and DPROD examples in ODRL, with scenarios and expected verdicts |

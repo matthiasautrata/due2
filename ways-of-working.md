@@ -233,7 +233,7 @@ Three usage modes, ranked by value/cost:
 - Cost is in the proofs, not the codegen. Loop invariants and quantifier triggers dominate. Budget 3–10× on the verified portion, front-loaded.
 - Pin Z3 and use resource limits (`--resource-limit`) rather than wall-clock timeouts, or verification becomes machine-dependent and CI goes flaky in a way that is very hard to defend to a control function.
 
-**[F] Blocking unknown:** whether Dafny is installable in our environment at all. Until resolved, everything here is contingent and the answer is Python plus §1–§8.
+**Resolved 2026-10-10** (`decisions/0002`, with the full alternatives review in `implementation-alternatives.md`): Dafny is installable here — Homebrew ships Apple-Silicon bottles (4.11.0, .NET 8 + Z3) — so the oracle mode below is unblocked. The recommendation stands: oracle only, scoped to the `Den` oracle and the stage-1 expansion functions, with OCaml+Why3 as the designated upgrade and Lean as the recorded fallback for the preservation metatheorem.
 
 ---
 
@@ -323,8 +323,8 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 | 6 | Contracts in production: preconditions-only or off | §6 | Risk posture |
 | 7 | `icontract` vs `deal` | §6 | Trial on one module |
 | 8 | Slow tier: nightly vs merge-queue | §8 | Observed merge frequency |
-| 9 | Dafny availability | §9 | Environment approval |
+| 9 | Dafny availability | §9 | Resolved 2026-10-10 (`decisions/0002`): installable — Homebrew Apple-Silicon bottle 4.11.0, .NET 8 + Z3 |
 | 10 | Rust toolchain in the build image | §10.3 | Platform team conversation |
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume |
-| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Cost estimate against value of the preservation property |
+| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option |

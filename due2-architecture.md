@@ -129,7 +129,7 @@ Two stages, each with its own preservation property (`due2-workflows.md` §4). T
 
 **Stage 2 — build:**
 
-3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[O]** — bound it, and decide whether to expand eagerly or keep set-valued match keys where matching is membership anyway. See §9.
+3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[D]** (2026-10-10, `decisions/0002`) — expansion stays eager: the exact-count limit check below fails a pathological policy before materialising anything, and the corpus has yet to contain one. Set-valued match keys reopen only on the first real policy that needs them.
 4. **Parameter substitution, role inheritance, and per-binding instantiation.** A duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); one that declares any inherits none. The inherited roles are part of the binding, which settles a tension inside ODRL: a shared duty is "fulfilled once", yet takes its roles from each referrer — referrers with different roles yield different instances. A duty that is also a root obligation receives the policy-level values as its own, so it inherits nothing (`due2-profiles.md` §6). See §5 and §3.1.
 5. **Conditional-duty hoisting.** This applies to a duty's *guards* — constraints that read no witness operand (`due2:witnessSource` or `due2:actionTime`). Constraints on the performance itself, such as "paid at least 100" or "attested after 1 January", stay on the duty as witness conditions (`due2-workflows.md` §5.2). A duty that is also a root obligation keeps its guards for that role; hoisting copies them into each parent. A duty carrying its own guard forces the evaluator to answer "what does an inactive duty mean" — is the parent then unconditional, or void? Instead the case split is lifted into the parent's guard at normalisation. "Home lending may read; everyone else must petition first" becomes two atoms: permit with `dept == HomeLending` and no duty, permit with `dept != HomeLending` and the petition duty. Every duty in the corpus is then unconditional relative to its parent, and the evaluator's rule collapses to *parent active ⇒ duty owed*. Cost is one extra atom per conditional duty: additive, not multiplicative. **[O]** — a duty constraint referring to state that only exists after exercise cannot be hoisted, since it is not decidable at decision time. If no real duty does this, make hoistability a normaliser precondition and reject violations rather than supporting an unexercised case.
 6. **Projection and provenance.** Project into the corpus relations, joining stage-1 lineage so that every atom carries its source policy and rule.
@@ -305,11 +305,11 @@ Workflow-level decisions — canonical encoding, cross-policy combination, prefe
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
-| 1 | Eager DNF expansion vs set-valued match keys | §4 item 3 | Blowup measurement on real policies |
+| 1 | Eager DNF expansion vs set-valued match keys | §4 item 3 | Resolved by default (`decisions/0002`): eager, limit-enforced; set-valued keys reopen on the first pathological policy |
 | 2 | Atom-count threshold values and diagnostic | §4 | First pathological policy |
 | 3 | Whether any duty constraint is genuinely non-hoistable | §4 item 5 | Survey of real duties |
 | 4 | What a void (`invalid`) policy contributes: nothing (default) or `Indeterminate` with a cause | §6.2 | Real policy requiring it |
 | 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | Measurement once pending volume is known |
-| 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Cost estimate |
+| 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle (stage 1) plus a Python reference evaluator (stage 2, W2, W3) until a verified backend passes the corpus |
 | 7 | Policy-diff via query containment | §8.1 | Spike |
 | 8 | Execution target beyond indexed Python | §9 | Measurement per §9.1 |
