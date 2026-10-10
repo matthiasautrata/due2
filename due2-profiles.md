@@ -141,7 +141,7 @@ A function property takes a role through `due2:playsRole` in a profile or bindin
 
 A duty with both roles is one atom with one set of parties. As a root obligation it receives the policy-level values (normalisation spec §6.2), and those count as its own: it then declares function properties and inherits nothing from the permissions that reference it. Parties stated on the duty itself are the clearest form.
 
-**Hierarchies.** Actions follow the `odrl:includedIn` closure. Assets and parties follow the typed `odrl:partOf` closure: an asset path may pass only through `odrl:AssetCollection`, a party path only through `odrl:PartyCollection`, and a cross-kind path is invalid (DPROD §5.4). `isA` follows `rdf:type` and `rdfs:subClassOf`; the `rdf:type` edges of the individuals it compares travel in the closure like any other edge (`due2-workflows.md` §3.1).
+**Hierarchies.** Actions follow the `odrl:includedIn` closure. Assets and parties follow the typed `odrl:partOf` closure: an asset path may pass only through `odrl:AssetCollection`, a party path only through `odrl:PartyCollection`, and a cross-kind path is invalid (`formal-semantics.md` §5.4). `isA` follows `rdf:type` and `rdfs:subClassOf`; the `rdf:type` edges of the individuals it compares travel in the closure like any other edge (`due2-workflows.md` §3.1).
 
 Edges declared in the policy and in its profile modules travel with the policy into the corpus `closure`. ODRL's own action hierarchy is shipped as one such module, `profiles/odrl-actions.ttl`, so `odrl:read ⊑ odrl:use` holds without each policy restating it. Edges about the world — who is in which team today — arrive in the SOTW `closure`. W2 uses the transitive closure of both (`due2-workflows.md` §3.1, §3.3). The reading is closed-world over the declared edges: a membership that no edge establishes does not hold. A catch-all collection therefore needs its membership edges supplied, or nothing matches it.
 
@@ -192,7 +192,7 @@ With `profiles/dprod.ttl` selected:
 | Policy-level target and parties | shared defaults that a rule's own value overrides — DPROD's "inherited from policy if absent" (normalisation spec §6.2) |
 | Anonymous rules | admitted, with content-derived identity (normalisation spec §3) |
 | ODRL action hierarchy (`odrl:read` ⊑ `odrl:use`) | `profiles/odrl-actions.ttl`, which DPROD's examples assume |
-| `Policy.condition` (formal-semantics §3.4) | no RDF encoding in DPROD, so nothing to map (§8.2) |
+| `Policy.condition` (`formal-semantics.md` §3.4) | no RDF encoding in DPROD, so nothing to map (§8.2) |
 | `odrl:Request` as a policy | rejected — so does DPROD |
 | `odrl:source`, collection `odrl:refinement` | rejected — so does DPROD |
 
@@ -212,10 +212,10 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 2. **DPROD-only state.** DPROD keeps duty state Σ between evaluations; due2 derives it from evidence and activation (§7). They agree when Σ was produced from the same evidence, in order.
 3. **`Pending`.** due2 offers routes for preconditions. DPROD's semantics attaches no duties to permissions, so its examples never yield `Pending` in due2. A DPROD-profile policy that does use `odrl:duty` on a permission gets `Pending` in due2 where DPROD ignores the duty; no case exercises this yet.
 4. **Agreement parties.** DPROD lets either party of an Agreement match a rule that names no assignee (`formal-semantics.md` §7.3). due2 reads the policy-level assignee as that rule's assignee. A grantor's request is therefore permitted, or denied by a prohibition, in DPROD where due2 returns `NotApplicable`.
-5. **Policy-level target.** DPROD treats the policy target as an applicability gate *and* lets a rule's own target override it (§7.3, §7.4). due2 reads it only as a default. A rule whose target differs from the policy's is unreachable in DPROD and applies in due2 (`dprod-multi-asset-offer`).
+5. **Policy-level target.** DPROD treats the policy target as an applicability gate *and* lets a rule's own target override it (`formal-semantics.md` §7.3, §7.4). due2 reads it only as a default. A rule whose target differs from the policy's is unreachable in DPROD and applies in due2 (`dprod-multi-asset-offer`).
 6. **Violated duties.** DPROD collects a duty only when the duty's own action matches the request, and denies for a violation only after a permission is active (`formal-semantics.md` §7.2, steps 1 and 6). due2 reports obligations *in force* — their policy matches the request — and, under `violations = deny`, treats a violated one as a prohibition, which keeps the verdict monotone (`due2-workflows.md` §6.4). Under `ignore`, due2 never denies for a violation, where DPROD does. The two agree whenever no duty is violated (`dprod-hr-data-access` scenario 7).
 
-**Gaps found in DPROD, worth reporting upstream:**
+**Gaps found in DPROD, worth reporting upstream** — bare section numbers below are `dprod-contracts/docs/formal-semantics.md`:
 
 - Matching direction. §7.4 writes `norm.action matches Env.action` and `norm.asset matches Env.asset`, the reverse of §7.3 and of the authoring guide. Read literally, a prohibition on `odrl:use` never matches a `read`.
 - Determinism. Step 4 asks whether some prohibition is active, over an unordered set, and fails on the first error. When one prohibition holds and another errors, the outcome depends on order, contradicting the determinism theorem (§9.2).

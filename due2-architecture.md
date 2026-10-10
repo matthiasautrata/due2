@@ -3,7 +3,7 @@
 **Status:** Draft v0.6
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.6:** duty timing landed in the corpus and is computed by W2, which restores W3 purity and the §6.4 monotonicity shortcut (`due2-workflows.md` §3.1, §5.3, §6.4); DPROD's example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the conformance corpus (§10).
+**Changes in v0.6:** duty timing landed in the corpus and is computed by W2, which restores W3 purity and the completion shortcut of `due2-workflows.md` §6.4 (§3.1, §5.3 there); DPROD's example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the conformance corpus (§10). Readability: new §0 orientation (reading order, glossary, worked example); **SOTW** and **atom** glossed at first use (§1, §3); the representation story stated once — lifted tree in W1 stage 1, relations everywhere after (`due2-workflows.md` §4); external §-references named (RL2 legend in §8.2, DPROD legend in `due2-profiles.md` §8.2).
 
 **Changes in v0.5:** witness reads made explicit, so a request-source duty condition is a guard (§4 item 5); a duty that is both an obligation and a precondition (§4 items 4–5); §8.2 records what was harvested from RL2, and §8.3 DPROD Contracts; decision record `decisions/0001-rl2-as-donor.md`. v0.4 introduced profiles and operand bindings (`due2-profiles.md`), anonymous rules (§3.1), guard-only hoisting, obligations in force reported with the access answer (§6.3), and the conformance corpus (§10).
 
@@ -11,9 +11,49 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 
 ---
 
+## 0. Orientation
+
+**The one-sentence story.** An author writes a policy in ODRL; due2 turns it once into a flat corpus of atoms, and then answers each request by evaluating every relevant atom against the request and a frozen snapshot of the world, and folding the results into one verdict with reasons.
+
+**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `ways-of-working.md` (engineering discipline). `decisions/` holds the standing decision records; `conformance/` the case corpus that an implementation must satisfy; `profiles/` the shipped profile modules.
+
+**Glossary.** Each term is defined in the section named; this is the map, not the definition.
+
+| Term | One line | Where |
+|---|---|---|
+| policy | An authored ODRL document: permissions, prohibitions, obligations | workflows §3.1 |
+| request | One access question: subject, action, target, time, parameters | workflows §3.2 |
+| SOTW | The state of the world, frozen for one evaluation | workflows §3.3 |
+| W1 / W2 / W3 | Normalise · evaluate every atom · fold findings into a verdict | workflows §1 |
+| atom | A rule narrowed to one action, one target, one party per function, conjunctive constraints | §3 |
+| corpus | The flat relations of atoms W1 emits and W2/W3 read | workflows §3.1 |
+| root / edge | An atom a request matches directly / a parent→duty edge | workflows §3.1 |
+| duty | An obligation; as a child of a permission, a precondition that gates it | workflows §5.3 |
+| duty instance | One owed occurrence of a duty — per member, or per request (grant) | workflows §5.3 |
+| guard / witness condition | A duty's constraint on *when* it is owed / on *what* fulfils it | workflows §5.2 |
+| evidence | A record that a party performed an action — the only fulfilment source | workflows §3.3 |
+| activation | When an instance was first owed; anchors relative deadlines | workflows §3.3 |
+| finding | One atom's three-valued result: applies / in force / fulfilled | workflows §5.1 |
+| `T` / `F` / `U` | Kleene truth: true, false, unknown — never collapse `U` to `F` | workflows §2 |
+| verdict | Permit · Deny · Pending(frontier) · NotApplicable · Indeterminate | §6.1 |
+| frontier | The `Pending` answer's routes, incomparable ones all listed | workflows §6.3 |
+| in force | An obligation travels with its policy: in force when that policy matches | workflows §5.2 |
+| profile | An ODRL extension, declared as data and compiled mechanically | profiles §1 |
+
+**A request through the pipeline** (from `conformance/cases/dprod-customer-api-v2`, scenario 3; the full derivation is the case's `why`):
+
+1. *Authored.* An offer grants `read` on the customer-data asset — and carries a delivery obligation: *deliver the data every day by 07:30* (`dprod:recurrence` daily 07:00, `dprod:deadline` 30 minutes).
+2. *W1.* The offer normalises into two atoms: the permission, and the delivery obligation as a root duty atom carrying its timing. Nothing else in the policy survives into the corpus as behaviour.
+3. *The request.* Analytics asks to `read` customer data on 2026-06-03 at 07:10. The SOTW freezes: the delivery owed on 06-01 was performed at 07:10 that morning — admissible evidence — and the deployment answers under `violations = deny`.
+4. *W2.* The permission atom *applies* (action, target, party all match). The delivery atom is *in force* (its policy matches the request) and resolves to three instances — 06-01, 06-02, 06-03: the first fulfilled by the evidence, the second **violated** (no witness, deadline 07:30 on 06-02 passed), the third outstanding (its window is still open).
+5. *W3.* The candidate is ready, no prohibition applies — but under `violations = deny` a violated instance of an obligation in force acts as a surviving prohibition.
+6. ***Deny***, with `verdict_basis` naming the violated 06-02 instance — and with the 06-03 instance still outstanding, so the answer explains both what went wrong and what is still owed.
+
+---
+
 ## 1. Scope
 
-due2 evaluates ODRL policies against requests and a state of the world, for governance-oriented access control and obligation management.
+due2 evaluates ODRL policies against requests and a state of the world — the **SOTW** of the pipeline below — for governance-oriented access control and obligation management.
 
 **In scope:** access decisions with reasons; duties, including duties that gate a permission; a durable record of every decision that supports re-evaluation and audit.
 
@@ -48,7 +88,7 @@ This asymmetry drives §10 (where verification effort goes) and §9 (why perform
 
 ## 3. Normal form **[D]**
 
-`normalise` emits the corpus and nothing else: flat relations of atoms, their parties and constraints, and parent→child edges. The schema is `due2-workflows.md` §3.1. Every atom carries required provenance — source policy and source rule — because every verdict must be explainable back to authored text. Full lineage is a separate collection, and the ledger pins the normaliser versions (§7).
+`normalise` emits the corpus and nothing else: flat relations of atoms, their parties and constraints, and parent→child edges. An **atom** is a rule narrowed to one action, at most one relation value, at most one party per function, and conjunctive constraints — the unit a request is matched against; ODRL's atomic Rule (IM §2.6). The schema is `due2-workflows.md` §3.1. Every atom carries required provenance — source policy and source rule — because every verdict must be explainable back to authored text. Full lineage is a separate collection, and the ledger pins the normaliser versions (§7).
 
 Three consequences worth stating explicitly, because each was a live alternative:
 
@@ -130,7 +170,7 @@ Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 
 - **`Pending`** is the escape hatch made visible. When a permission is gated on a duty that has not been fulfilled, the answer is neither Permit nor Deny; it is deny-with-a-discharge-path. Flattening it into Deny is a real product failure: the requester never learns the route exists. In governance this case is common, not exotic. Several permissions may each offer a route; `Pending` carries the **frontier** — every route whose outstanding duties are not a strict superset of another route's (`due2-workflows.md` §6.3). Routes are not ranked unless a preference is declared.
 - **`NotApplicable`** is required regardless, because an obligation-only atom matching a request is applicable to duty and not to access. Having it removes any temptation to read "no permit matched" as Deny by accident rather than by policy.
-- **`Indeterminate`** is per §5.1 of the companion document. An unresolvable operand is not false. A denial caused by a missing lookup and a denial caused by a rule must be distinguishable in the ledger afterwards. Precisely: the verdict is `Indeterminate` exactly when resolving the unknowns one way or another could change it (`due2-workflows.md` §6.4).
+- **`Indeterminate`** is the absent/unknown/false discipline of `ways-of-working.md` §5.1 made a verdict. An unresolvable operand is not false. A denial caused by a missing lookup and a denial caused by a rule must be distinguishable in the ledger afterwards. Precisely: the verdict is `Indeterminate` exactly when resolving the unknowns one way or another could change it (`due2-workflows.md` §6.4).
 
 `Pending` is derivable rather than special: a permission applies, and some of its duties have no admissible evidence of performance yet. Absence of evidence means *not yet fulfilled*, not unknown; evidence arrives through the case (§7), and fulfilment is derived from it, never stored.
 
@@ -202,7 +242,7 @@ Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and 
 
 RL2 (`~/src/RL2`, `github.com/matthiasautrata/RL2`) is due2's predecessor: an attempt to extend ODRL into a language of its own, with formal semantics. It is not a superset of ODRL — it has its own vocabulary and a partial translator — and it has never been executed. due2 harvests it rather than adopting it (`decisions/0001-rl2-as-donor.md`).
 
-Harvested:
+Harvested — section numbers cite RL2's specs (`Model` = `spec/RL2_Model.md`, `Semantics` = `spec/RL2_Semantics.md`, `Compilation` = `spec/RL2_Compilation.md`):
 
 - **Evidence and fulfilment** — Model §4.3–§4.5, §7.3: evidence as records of performed actions; absence means not yet fulfilled; trust verified before evaluation, with a closed signer admissibility record.
 - **Duty instances** — Semantics §Duty Template Binding: per-member and per-grant occurrence identity, with evidence naming the grant it discharges.
@@ -233,7 +273,7 @@ See companion §10 for the general rule. Specific to due2:
 
 **First optimisation, if needed:** index the corpus by action and target. Most of the available speedup is in not evaluating irrelevant atoms, and the candidate set drops from thousands to a handful. It is sound because a root atom that certainly does not apply is neutral in W3 (`due2-workflows.md` §5.5, L8). Same language, same conformance suite, available now. Exhaust this before adopting a second semantics.
 
-**Only then**, and only against measurement: Rego/OPA, Rust via PyO3, or SQL compilation, with the trade-offs in companion §10.3. Note that for entitlement-scale work the interesting property of Rego is *partial evaluation* — a residual condition pushed into a query, so one call returns what a party may see — not raw throughput. If Rego earns its place, that is why.
+**Only then**, and only against measurement: Rego/OPA, Rust via PyO3, or SQL compilation, with the trade-offs in `ways-of-working.md` §10.3. Note that for entitlement-scale work the interesting property of Rego is *partial evaluation* — a residual condition pushed into a query, so one call returns what a party may see — not raw throughput. If Rego earns its place, that is why.
 
 **What none of these fix.** Entitlements and realtime do not fail on Python being slow. They fail on cardinality (millions of resource-party pairs stop fitting the expand-everything model — a normalisation-strategy problem), on SOTW freshness (a p99 dominated by resolving whether someone is still in home lending), and on explanation cost (building a full reason per decision is affordable in governance and may not be at volume). A faster evaluator addresses none of the three.
 
