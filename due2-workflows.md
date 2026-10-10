@@ -423,6 +423,8 @@ Acceptance criteria for any implementation, checked by property tests over gener
 
 Scope decisions — which ODRL constructs are admitted, including `invalid` — are registered in the architecture (§11).
 
+**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`). This register remains the specification record: a resolution lands here, and the issue closes.
+
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
 | 1 | Concrete canonical encoding of collections | §2 | Builder design |

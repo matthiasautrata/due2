@@ -305,6 +305,8 @@ Contents:
 
 Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
 
+**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`); the execution-target cluster (#8) covers ways-of-working §13 #10/#11/#13. This register remains the specification record: a resolution lands here, and the issue closes.
+
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
 | 1 | Eager DNF expansion vs set-valued match keys | §4 item 3 | Resolved by default (`decisions/0002`): eager, limit-enforced; set-valued keys reopen on the first pathological policy |

@@ -315,6 +315,8 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 
 ## 13. Open decisions register
 
+**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`); #1–#8 below are one implementation-start checklist issue, and #10/#11/#13 belong to the execution-target cluster. This register remains the specification record: a resolution lands here, and the issue closes.
+
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
 | 1 | Static type checker (editor + gate) | §4 | Environment approval |

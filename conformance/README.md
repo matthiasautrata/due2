@@ -112,7 +112,7 @@ Expected results are hand-derived until an evaluator exists. The derivation in `
 
 ## Coverage gaps
 
-Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus.
+Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus. **Tracked as GitHub issues** (label `corpus`); this section remains the specification record.
 
 - **`due2:witnessSource` and `evidence_param`** — no corpus policy uses a witness source; every duty condition in the corpus is a guard. `WitnessOutsideDuty` is therefore unexercised.
 - **Grant scope and `discharges`** — two cases (`rl2-attestation-gating`, `rl2-audit-trail`) note *why* they fall back to member scope; no scenario submits evidence against a grant.

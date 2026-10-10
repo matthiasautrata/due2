@@ -231,6 +231,8 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 
 ## 9. Open decisions
 
+**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`). This register remains the specification record: a resolution lands here, and the issue closes.
+
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
 | 1 | General mechanism for profile operators | §4 | First operator that cannot be reduced |
