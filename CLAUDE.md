@@ -35,4 +35,4 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 ## Next
 
-Adopt `correctness-strategy.md` (§9 register). Then issue #9: the L9 oracle, a Python direct interpreter over the authored (lifted) form. It completes unknown literals by the workflows §6.4 definition (enumeration is the recommendation in correctness-strategy §3, still open) and runs the corpus; first target, all 98 cases. Then #8, the Dafny `Den` oracle (`decisions/0002`). Tooling picks still open at implementation start: issue #23.
+Settle the remaining `correctness-strategy.md` §9 items. Then issue #9: the L9 oracle, a Python direct interpreter over the authored (lifted) form. Slow mode first: it completes unknown literals by the workflows §6.4 definition, enumerating every assignment below a cap (correctness-strategy §3), and runs the corpus; first target, all 98 cases. Then #8, the Dafny `Den` oracle (`decisions/0002`). Tooling picks still open at implementation start: issue #23.

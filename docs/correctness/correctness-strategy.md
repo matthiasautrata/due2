@@ -1,6 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** Draft v0.2, 2026-10-11. Every item that is new here is marked **[O]** until adopted.
+**Status:** Draft v0.3, 2026-10-11. Every item that is new here is marked **[O]** until adopted.
+
+**Changes in v0.3:** `I` comes in two modes, slow first (§3); the disagreement protocol (§6) and the generator coverage check (§5) adopted.
 
 **Changes in v0.2:** critical features and the three testing modes decided (§1.1): atomization, evaluation, and case history get bounded-exhaustive, generated, and differential testing. Case history added as a component (§4.7, risk R10). Parser sharing decided (§4.1). Invalid-input twins for every generator (§5).
 **Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L9) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
@@ -91,9 +93,11 @@ An oracle is only as useful as it is independent. The question for each one is w
 | `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, no `violations = deny`, no frontier | **[D]**, exists |
 | Laws L1–L9, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
-**Principle: the oracle implements the definition, the implementation implements the algorithm.** **[O]** (recommended **[D]**) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
+**Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
-- `I` completes unknowns **by enumerating every assignment of the literal variables** (the definition at the top of workflows §6.4), not by the two-extreme computation or the uniform/mixed split. It declines above a variable cap (for example 16) rather than falling back. A disagreement between `I` and the pipeline then exposes R3 as well as R1. With the shortcut inside `I`, a flaw in the monotonicity argument would be invisible to it.
+- `I` has two modes over one interpreter, differing only in how they complete unknowns.
+  - **Slow `I`, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation. Above a variable cap (for example 16) it declines rather than falling back. Against slow `I`, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
+  - **Fast `I`, later.** It uses §6.4's computation, so it has no cap and can run large generated inputs. Slow and fast `I` are differentially tested against each other below the cap, which checks the shortcut on authored policies.
 - The `Den` oracle has no memoization or fan-out bookkeeping, as §8.1 already requires.
 - A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.
 
@@ -110,7 +114,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation.
 - **Oracles for the oracle.** The corpus (98 cases), with disagreements triaged per §6. Its own laws: `I` must satisfy L4 (information monotonicity) and L5 (prohibition monotonicity) on generated inputs; failing them means `I` or the spec is wrong.
 - **Properties.** L4 and L5 on `I`. Exhaustive Kleene truth tables for `and`, `or`, `xone`, and `dprod:not` over `{T, F, U}`, which are small enough to enumerate.
-- **Golden vectors.** The corpus.
+- **Golden vectors.** The corpus. Slow `I` must decide every case below the cap; a case above it is reported, not skipped silently.
 - **Generators.** None needed for the first gate. The §5 generators come in for L9 against the pipeline (§4.3).
 - **Parser.** **[D]** (2026-10-11) `I` and W1 share the RDF-to-lifted-tree parser. Because L9 cannot see a parser bug, the parser is tested on its own: round trip (parse, render, parse gives the same tree), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts and rejects, over the corpus, the vendored policies, and the external suites.
 - **Done.** 98 of 98 cases agree, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or `I`.
@@ -167,7 +171,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 
 ---
 
-## 5. Generators **[O]**
+## 5. Generators **[O]** (coverage check **[D]**, 2026-10-11)
 
 The Hypothesis strategies for policies, requests, and SOTWs are shared by every component in §4. They are a first-class artefact and get reviewed like spec text, because a blind spot in them (R9) silently weakens every property at once.
 
@@ -182,7 +186,7 @@ Requirements:
 
 ---
 
-## 6. When sources disagree **[O]**
+## 6. When sources disagree **[D]** (2026-10-11)
 
 A disagreement between the corpus and `I`, between `I` and the pipeline, or between an origin's answer and due2's is a finding about the spec until shown otherwise.
 
@@ -213,7 +217,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 1. Settle the open items of §9.
 2. Case-format extension for negative cases: needed by W1 (§4.2) and cheap to do now.
 3. The status matrix and Kleene truth tables, as data. They are spec as much as tests, and `I` uses them first.
-4. `I` (issue #9). Run the corpus and triage per §6.
+4. Slow `I` (issue #9). Run the corpus and triage per §6. Fast `I` follows once W3's computation is specified in code form.
 5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
 6. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
 7. W1 stage 2, gated by L9 against `I`.
@@ -227,12 +231,12 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | # | Decision | Section | Recommendation |
 |---|---|---|---|
 | 1 | Strategy before code, as a standing rule | §1 | **Resolved 2026-10-11:** adopted (CLAUDE.md) |
-| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | Adopt |
+| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other |
 | 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own |
 | 4 | Negative cases in the case format | §4.2 | Do now; it blocks W1 |
 | 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | Decide before W3 code |
-| 6 | Generator coverage histogram as a failing check | §5 | Adopt |
-| 7 | The disagreement protocol | §6 | Adopt |
+| 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
+| 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
 | 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code |
 | 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |
