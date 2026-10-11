@@ -26,7 +26,7 @@ Each translated scenario keeps the origin's own result (`force_expected`, `oval_
 
 | Group | Count | Why | Disposition |
 |---|---|---|---|
-| FORCE policies 1–7 (test cases 001–025) | 25 | Rules without `odrl:target` (and 1–2 without `odrl:action`). IM 2.6.1/2.6.2: a Permission and a Prohibition MUST have one target — these are not ODRL 2.2, and due2 rejects them at normalisation. They test FORCE's reading of an absent target as "any". | Not translatable. Report upstream. |
+| FORCE policies 1–7 (test cases 001–025) | 25 | Rules without `odrl:target` (and 1–2 without `odrl:action`). IM 2.6.1/2.6.2: a Permission and a Prohibition MUST have one target — these are not ODRL 2.2, and due2 rejects them at normalisation. They test FORCE's reading of an absent target as "any". | Not translatable. Reported upstream before — acknowledged, not fixed (2026-10-11); do not re-report. |
 | OVAL `permission1–3`, `prohibition1–3` | 6 | Plain match / no-match; OVAL's default-semantics switch is irrelevant when a rule matches. Already covered by the corpus. | Skipped as redundant. |
 | OVAL `default_sem1–6` | 6 | Requests with no Asset. due2's request has a mandatory `target` (workflows §3.2), so these cannot be posed. | **Blocked on a spec question** — see Findings #1. |
 | OVAL `listRightOperand1–4` | 4 | `isPartOf` with a list right operand, read by OVAL as subset/membership. due2 admits lists only for set-based operators (`odrl22-conformance.md` §2, a due2 reading of IM 2.5.1). | Reading divergence, recorded. |
@@ -52,9 +52,10 @@ Each translated scenario keeps the origin's own result (`force_expected`, `oval_
 9. **Comparison across XSD types.** CG A1/A2 compare an `xsd:dateTime` action time with `"2018-01-01"^^xsd:date`, and use timezone-less instants, which XSD orders only partially. ODRL 2.2 does not say how; due2 rejects the mismatch at normalisation.
 10. **Refinement vs constraint failure.** CG B12 keeps a rule `Active` when its refinement fails (controlState Deny), while A12 makes it `Inactive` when its constraint fails. due2 treats both as the atom not applying.
 
-**Upstream defects found while translating** (to report):
+**Upstream defects found while translating** (status per bullet):
 
-- FORCE: policies 1–7 omit required targets; test case 036 is wired to `temporal-future.ttl` (duplicate of 038) though titled for the current time; `all-2023.ttl`/`all-2024.ttl` carry a DutyReport for policy-19's duty instead of policy-21's.
+- FORCE: policies 1–7 omit required targets; test case 036 is wired to `temporal-future.ttl` (duplicate of 038) though titled for the current time; `all-2023.ttl`/`all-2024.ttl` carry a DutyReport for policy-19's duty instead of policy-21's. Reported upstream once before (acknowledged, not fixed — 2026-10-11); re-reporting is pointless until they act.
+- OVAL: a summary of the findings below was sent to the authors on 2026-10-11, with the offer to file issues.
 - OVAL: 74 of its 105 policy files are Offers without an assigner (IM 2.1.2); 85 of 105 fail ODRL 2.2 validation in all; untargeted rules; `odrl:unit` as a string literal (IM: IRI); untyped dateTime right operands.
 - W3C CG: C1/C2 requests name `party/billie1` against assignee `party/billie` while the expected reports permit; B11/B12 request values written `{"@id": "1000"}` with `describesFeature` the unit IRI rather than the operand; C12 `paymentDate` untyped.
 
