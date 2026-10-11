@@ -82,7 +82,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 |---|---|
 | `classification` | `odrl-core` — ODRL 2.2 plus operand bindings. `odrl-profile` — needs a profile term from `due2-profiles.md` §2. `partial` — some scenarios or aspects cannot be expressed. `not-expressible` — needs semantics outside due2's extension points; the closest ODRL is still written. |
 | `needs` | For anything but `odrl-core`: the profile terms used, or the constructs missing. |
-| `request.params` | Values of `dprod:requestSource` properties, keyed by property IRI. Absent means `missing`. |
+| `request.params` | Values of `dprod:requestSource` properties, keyed by property IRI. Absent means `missing`. An operand with `due2:cardinality due2:set` takes a JSON list of values (`oval-list-right-operand`). |
 | `sotw.facts` | Values of `dprod:stateSource` properties: `status` is `resolved`, `missing`, `invalid`, `conflict`, or `unresolved`; `values` has one entry when resolved (any number, including none, for an operand declared `due2:cardinality due2:set`), two or more when in conflict, none otherwise. |
 | `sotw.evidence` | `id`, `occurred_at`, `actor`, `action`, optional `object`, `issuer`, `discharges`, `params` (`due2-workflows.md` §3.3). `params` are read by `due2:witnessSource` operands in a duty's constraints (`due2-profiles.md` §3). `discharges` names a grant-scoped instance by the inputs of its key, `{"duty": IRI, "reference": <request reference>}`; the evaluator computes the digest (§5.3). |
 | `sotw.activation` | Duty instance key or rule IRI → activation instant, an `xsd:dateTime`, for relative deadlines and recurrence anchors (`due2-workflows.md` §5.3, `due2-profiles.md` §7). |
@@ -126,6 +126,7 @@ Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed s
 - ~~Requests without a target~~ — `oval-no-target-permission`, `oval-no-target-prohibition` (workflows §3.2, §5.2, decided 2026-10-11).
 - ~~Canonical literals deciding a verdict~~ — `due2-xone-unknown` (an `xone` operand read both ways; workflows v0.6, §6.4).
 - ~~Unknown duty guards; many conditional duties on one permission~~ — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
+- ~~`isPartOf` with a list right operand~~ — `oval-list-right-operand` (`decisions/0005`).
 
 Still open:
 
@@ -134,4 +135,5 @@ Still open:
 - **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
 - **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).
 - **`frontier_complete`** — no case asserts it, neither an incomplete frontier under a definite `Pending` nor the beyond-`max_frontier_vars` fallback (workflows §6.4, `decisions/0004`); needs `expected.frontier_complete` in the case format (#30).
+- **`hasPart` and `isA` with a list**, and a non-trivial `partOf` closure under a list — `due2-profiles.md` §4, `decisions/0005` (#32).
 - **Remedies and consequences** — carried by stage 1, not evaluated for access; no case until the monitoring question (§9 #4) is specified. OVAL's monitoring cases are the external material.

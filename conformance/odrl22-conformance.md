@@ -27,7 +27,7 @@ The community shape was run over the full corpus first (70 files: 66 case polici
 
 | Shape behaviour | The Rec's actual text |
 |---|---|
-| `odrl:rightOperand maxCount 1`; list values fail the `sh:or` | IM §2.5.1: the rightOperand is "a literal, or IRI, or RightOperand; **or for set-based operators; list** of literals, or list of IRIs, or list of RightOperands". The list form is the IM's own encoding, used by the corpus only with `isAnyOf`/`isNoneOf`. |
+| `odrl:rightOperand maxCount 1`; list values fail the `sh:or` | IM §2.5.1: the rightOperand is "a literal, or IRI, or RightOperand; **or for set-based operators; list** of literals, or list of IRIs, or list of RightOperands". The list form is the IM's own encoding, used by the corpus with `isAnyOf`, `isNoneOf`, and `isPartOf`. |
 | Logical-constraint operands must be Constraint-typed nodes; RDF lists fail | IM §2.5.2: the operand value "is a **list** of the existing Constraint instances". The POE WG's own sketch walks `rdf:rest`/`rdf:first`; the community shape validates only the repeated-object form its own example uses. |
 | A Policy needs one of `permission`/`prohibition`/`duty` | IM §2.1: "at least one `permission`, `prohibition`, or **`obligation`**". `odrl:duty` is a Permission→Duty edge, not a Policy property. Obligation-only policies are valid ODRL; four corpus cases are. |
 | `odrl:uid minCount 1` as an explicit triple | The IM maps uid to the JSON-LD `@id`: in RDF the node IRI **is** the uid. The check fails every RDF policy, including the W3C's own examples. |
@@ -36,7 +36,9 @@ With exactly the transformations the Rec itself defines — IM §2.7.1 compact-f
 
 Rather than carry a fork of someone else's shape, due2 ships its own: **`conformance/odrl22-shape.ttl`**, every constraint cited to its IM section. It validates the *authored* form natively — compact policies (§2.7.1), compound repetition (§2.7 note), list-valued set operands (§2.5.1), list-form logical constraints (§2.5.2), obligation-only policies (§2.1) — and recognises profile extensions at the points the IM declares: the `dprod:not` connective (§2.5.2: "Additional operand sub-properties MAY be defined by ODRL Profiles") and profile policy subclasses (§2.1).
 
-One due2 *reading* is encoded as such, flagged in the shape: the IM ties list-valued right operands to "set-based operators" without enumerating them; the shape uses `due2-profiles.md` §4's reading (`isAnyOf`, `isNoneOf`, `isAllOf`).
+The IM ties list-valued right operands to "set-based operators"; the Vocabulary enumerates them (§3.16.7–3.16.12: `isA`, `hasPart`, `isPartOf`, `isAllOf`, `isAnyOf`, `isNoneOf`) and repeats the rule (§3.14.7). The shape admits lists for exactly those six.
+
+**Erratum (2026-10-11).** Until then this section called the set-based operators unenumerated and the shape admitted lists only for `isAnyOf`, `isNoneOf`, and `isAllOf`, `due2-profiles.md` §4's reading at the time. That was wrong: the Vocabulary enumerates them, and the shape rejected valid ODRL 2.2. Shape and §4 are fixed. What a list *means* for `isPartOf`, `hasPart`, and `isA` is a separate question that ODRL does not answer and the published semantics answer differently; due2 adopts Salas and Pareti et al.'s reading and warns (`ContestedOperatorReading`) wherever it applies (`decisions/0005`). `isPartOf` with a list is tested by `oval-list-right-operand`.
 
 ## 3. Results (2026-10-10)
 
@@ -71,12 +73,12 @@ Whether due2 should admit collection refinements — party collections especiall
 The external suites vendored under `conformance/external/` exposed a defect in the harness. It validated with no inference, and the shape tests rule and constraint values by `sh:class`. An untyped rule node — `odrl:permission [ … ]`, the style of the IM's own Turtle examples — therefore failed `sh:class odrl:Permission`, and it was never targeted by `PermissionShape`, so its required target went unchecked. The corpus passed only because every corpus node is typed explicitly. `check_odrl22.py` now adds the types the ODRL 2.2 vocabulary entails: rdfs:range of `permission`, `prohibition`, `obligation`, `duty`, `remedy`, `consequence`, `action`, `target`, `assignee`, and `assigner`; rdfs:domain of `leftOperand`; and Logical Constraint for a node with a connective. rdfs:range of `leftOperand` is deliberately not applied, because it would make IM 2.5.1's "MUST be a LeftOperand" vacuous.
 
 ```
-python3 tools/check_odrl22.py --all                 98 checked, 0 failing   (94 cases: 66 + 24 translated + 4 due2-native; 4 DPROD files)
+python3 tools/check_odrl22.py --all                 99 checked, 0 failing   (95 cases: 66 + 25 translated + 4 due2-native; 4 DPROD files)
 FORCE policies                                      21 checked, 7 failing   (policies 1-7: no target, 1-2 no action)
 OVAL policies                                      105 checked, 85 failing  (Offer without assigner, missing targets, unit as string, ...)
 ```
 
-The external failures are upstream IM violations, itemised in `conformance/external/README.md`, with one exception. Six OVAL policies use a list right operand with `isPartOf`, which the shape flags under due2's *reading* of IM 2.5.1 (§2: lists only for `isAnyOf`, `isNoneOf`, `isAllOf`). That is a reading the IM leaves open, not a violation, and it is recorded as such.
+The external failures are upstream IM violations, itemised in `conformance/external/README.md`. Six OVAL policies use a list right operand with `isPartOf`; the shape flagged them until the erratum of §2, which this record earlier described as a reading the IM leaves open. It was a due2 shape defect. The fix does not change the count: all six also lack an assigner (IM 2.1.2) and a target (IM 2.6.1), so they still fail.
 
 ## 6. Reproducing
 

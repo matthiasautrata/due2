@@ -245,10 +245,13 @@ odrl22:ConstraintShape a sh:NodeShape ;
   sh:property [ sh:path odrl:unit ;      sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;  # IM §2.5.1
   sh:property [ sh:path odrl:status ;    sh:maxCount 1 ] ;  # IM §2.5.1
   sh:sparql [
-    # IM §2.5.1 ties list-valued right operands to set-based operators. The IM
-    # does not enumerate the set; the reading here is due2-profiles.md §4:
-    # isAnyOf, isNoneOf, isAllOf. (isPartOf/hasPart take single IRIs there.)
-    sh:message "IM 2.5.1: a list-valued odrl:rightOperand is allowed only for set-based operators (isAnyOf, isNoneOf, isAllOf)" ;
+    # IM §2.5.1 ties list-valued right operands to set-based operators, and the
+    # Vocabulary enumerates them: §3.16.7-3.16.12 define isA, hasPart, isPartOf,
+    # isAllOf, isAnyOf, isNoneOf as "a set-based operator"; §3.14.7: "When used
+    # with set-based operators, a list of values may be used." (Until 2026-10-11
+    # this check admitted only isAnyOf, isNoneOf, isAllOf: an erratum,
+    # odrl22-conformance.md §2. What due2 evaluates is due2-profiles.md §4.)
+    sh:message "IM 2.5.1, Vocab 3.14.7: a list-valued odrl:rightOperand is allowed only for set-based operators (isA, hasPart, isPartOf, isAllOf, isAnyOf, isNoneOf)" ;
     sh:select """
       SELECT ?this ?list WHERE {
         ?this <http://www.w3.org/ns/odrl/2/rightOperand> ?list .
@@ -256,7 +259,10 @@ odrl22:ConstraintShape a sh:NodeShape ;
         ?this <http://www.w3.org/ns/odrl/2/operator> ?op .
         FILTER (?op != <http://www.w3.org/ns/odrl/2/isAnyOf>
              && ?op != <http://www.w3.org/ns/odrl/2/isNoneOf>
-             && ?op != <http://www.w3.org/ns/odrl/2/isAllOf>)
+             && ?op != <http://www.w3.org/ns/odrl/2/isAllOf>
+             && ?op != <http://www.w3.org/ns/odrl/2/isPartOf>
+             && ?op != <http://www.w3.org/ns/odrl/2/hasPart>
+             && ?op != <http://www.w3.org/ns/odrl/2/isA>)
       }
     """
   ] .

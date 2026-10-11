@@ -1,0 +1,43 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ex:    <http://example.com/> .
+
+# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/listRightOperand1.ttl
+# (MIT, University of Southampton) — listRightOperand2-4 use the same policy. Changes:
+# rule named; conflict declared; assigner and target added (IM 2.1.2: an Offer
+# identifies its assigner; IM 2.6.1: a Permission has a target — the original has
+# neither); ex:page bound to the request as a set-valued operand; OVAL's example
+# profile IRI dropped (it names no terms).
+
+<http://example.com/policy:6161> a odrl:Offer ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:publisher ;
+    odrl:permission <http://example.com/policy:6161#print> .
+
+# isPartOf with a list right operand (ODRL Vocabulary 3.16.9, 3.14.7): every
+# requested page is part of some listed page (due2-profiles.md 4).
+<http://example.com/policy:6161#print> a odrl:Permission ;
+    odrl:target ex:book ;
+    odrl:action [
+        rdf:value odrl:print ;
+        odrl:refinement [
+            a odrl:Constraint ;
+            odrl:leftOperand ex:page ;
+            odrl:operator odrl:isPartOf ;
+            odrl:rightOperand (
+                <http://example.com/page/1/>
+                <http://example.com/page/2/>
+                <http://example.com/page/3/>
+            )
+        ]
+    ] .
+
+# OVAL's request names the pages to print, one or several.
+ex:page a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:page ;
+    due2:cardinality due2:set ;
+    due2:allowedOperator odrl:isPartOf .

@@ -20,6 +20,7 @@ Searched and not vendored: ODRL-PAP (tests are ODRL→Rego translations, not ver
 | `oval-conflict-{perm,prohibit,invalid}`, `oval-duty-payment`, `oval-party-collection`, `oval-action-hierarchy` | OVAL access_control conflict1–3, duty1–3, partOf1–3, includedIn1–3 | 15 | By hand; each change in `notes` |
 | `w3c-fs-a1`, `-b1`, `-c1`, `-c2` | W3C CG A1, B1, C1, C2 | 12 | By hand; each change in `notes` |
 | `oval-no-target-permission`, `oval-no-target-prohibition` | OVAL default_sem1–6, permission1–3, prohibition1–3 | 4 | By hand, after workflows §9 #8 was decided (issue #26) |
+| `oval-list-right-operand` | OVAL listRightOperand1–4 | 4 | By hand, adding the target and assigner the originals lack (IM 2.6.1, 2.1.2); `due2-profiles.md` §4's list reading of `isPartOf` |
 
 Each translated scenario keeps the origin's own result (`force_expected`, `oval_expected`, `w3c_expected`) next to due2's hand-derived `expected`, where the origin states one; scenarios added here are named `(added)` and have no origin result.
 
@@ -28,7 +29,7 @@ Each translated scenario keeps the origin's own result (`force_expected`, `oval_
 | Group | Count | Why | Disposition |
 |---|---|---|---|
 | FORCE policies 1–7 (test cases 001–025) | 25 | Rules without `odrl:target` (and 1–2 without `odrl:action`). IM 2.6.1/2.6.2: a Permission and a Prohibition MUST have one target — these are not ODRL 2.2, and due2 rejects them at normalisation. They test FORCE's reading of an absent target as "any". | Not translatable. Reported upstream before — acknowledged, not fixed (2026-10-11); do not re-report. |
-| OVAL `listRightOperand1–4` | 4 | `isPartOf` with a list right operand, read by OVAL as subset/membership. due2 admits lists only for set-based operators (`odrl22-conformance.md` §2, a due2 reading of IM 2.5.1). | Reading divergence, recorded. |
+| OVAL `listRightOperand1–4` | 4 | `isPartOf` with a list right operand. Recorded until 2026-10-11 as a reading divergence; it was a due2 shape defect, now fixed (`odrl22-conformance.md` §2 erratum). The originals are still not ODRL 2.2: no assigner (IM 2.1.2), no target (IM 2.6.1). | Translated, with those added, as `oval-list-right-operand`. |
 | OVAL `date1` | 1 | No target, untyped right operand `"2020-03-11T11:33:10"`, request without time. | Not ODRL 2.2 as written. |
 | OVAL `monitoring/*` | 76 | Compliance of an event log, not an access request. due2's monitoring question is open (workflows §9 #4). `logic_or`, `logic_xone`, `logic_nested*` are useful once it is specified. | Deferred to #4. |
 | W3C CG A2 | — | Policy without evaluation requests. | Nothing to translate. |

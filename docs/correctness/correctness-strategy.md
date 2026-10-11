@@ -71,7 +71,7 @@ The ranking is by how silent the defect is, not how likely it is.
 | R2 | **`U` collapse.** Unknown treated as false (or true) somewhere between a fact and the verdict. | Every external evaluator does this (`conformance/external/README.md`); it is the most natural bug to write | W2 parts, Kleene connectives, W3 completion |
 | R3 | **Completion error.** Wrong variable sharing (the canonical-literal key), wrong uniform/mixed classification, unsound `max_mixed` fallback. | Turns a correct `Indeterminate` into a definite verdict, or the reverse | W3 §6.4 |
 | R4 | **Spec error.** The prose is wrong or underspecified, and the implementation copies it faithfully. | Every oracle derived from the same prose shares it | All |
-| R5 | **Corpus error.** A hand-derived expected verdict is wrong. | 98 cases, none of whose verdicts has been machine-checked yet | `conformance/cases/` |
+| R5 | **Corpus error.** A hand-derived expected verdict is wrong. | 99 cases, none of whose verdicts has been machine-checked yet | `conformance/cases/` |
 | R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (workflows §7) and the ledger | W1 identity, trace serialisation |
 | R7 | **Boundary leak.** W2 reads another atom's finding; W3 reads the request or SOTW. | Invalidates the parallelism and the completion argument | W2, W3 |
 | R8 | **Unexplained divergence from an origin evaluator.** | Undermines the compatibility claims | Translated cases |
@@ -86,7 +86,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 
 | Oracle | Decides | Independent of | Shares (common-mode risk) | Status |
 |---|---|---|---|---|
-| Hand-derived corpus (98 cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
+| Hand-derived corpus (99 cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
 | L9 direct interpreter `I` over the lifted form | The pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the parser, if shared (§4.1) | **[D]** (`decisions/0002`), issue #9 |
 | `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
@@ -101,7 +101,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 - The `Den` oracle has no memoization or fan-out bookkeeping, as §8.1 already requires.
 - A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.
 
-**When oracles disagree** (§6), the corpus is not automatically right. `I` running the corpus is the first second derivation the 98 hand-derived verdicts have ever had, which makes it as much a check on R5 as on any code.
+**When oracles disagree** (§6), the corpus is not automatically right. `I` running the corpus is the first second derivation the 99 hand-derived verdicts have ever had, which makes it as much a check on R5 as on any code.
 
 ---
 
@@ -112,12 +112,12 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 ### 4.1 The L9 oracle `I` (issue #9)
 
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation.
-- **Oracles for the oracle.** The corpus (98 cases), with disagreements triaged per §6. Its own laws: `I` must satisfy L4 (information monotonicity) and L5 (prohibition monotonicity) on generated inputs; failing them means `I` or the spec is wrong.
+- **Oracles for the oracle.** The corpus (99 cases), with disagreements triaged per §6. Its own laws: `I` must satisfy L4 (information monotonicity) and L5 (prohibition monotonicity) on generated inputs; failing them means `I` or the spec is wrong.
 - **Properties.** L4 and L5 on `I`. Exhaustive Kleene truth tables for `and`, `or`, `xone`, and `dprod:not` over `{T, F, U}`, which are small enough to enumerate.
 - **Golden vectors.** The corpus. Slow `I` must decide every case below the cap; a case above it is reported, not skipped silently.
 - **Generators.** None needed for the first gate. The §5 generators come in for L9 against the pipeline (§4.3).
 - **Parser.** **[D]** (2026-10-11) `I` and W1 share the RDF-to-lifted-tree parser. Because L9 cannot see a parser bug, the parser is tested on its own: round trip (parse, render, parse gives the same tree), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts and rejects, over the corpus, the vendored policies, and the external suites.
-- **Done.** 98 of 98 cases agree, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or `I`.
+- **Done.** 99 of 99 cases agree, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or `I`.
 
 ### 4.2 W1 stage 1: the normaliser
 

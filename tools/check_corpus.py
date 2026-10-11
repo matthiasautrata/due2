@@ -54,6 +54,7 @@ SOURCES = {DPROD.requestSource, DPROD.stateSource, DPROD.contextSource, DUE2.wit
 CONTEXT_PROPS = {DPROD.agent, DPROD.clock, DUE2.actionTime}
 OPERATORS = {ODRL[o] for o in ("eq", "neq", "lt", "lteq", "gt", "gteq", "isAnyOf",
                                "isNoneOf", "isAllOf", "isPartOf", "hasPart", "isA")}
+CONTESTED = {ODRL.isPartOf, ODRL.hasPart, ODRL.isA}  # list readings adopted, not given (decisions/0005)
 CONNECTIVES = {ODRL["and"], ODRL["or"], ODRL.xone, DPROD["not"]}
 REJECTED = {ODRL.inheritFrom: "inheritFrom", ODRL.andSequence: "andSequence",
             ODRL.rightOperandReference: "rightOperandReference", ODRL.implies: "implies",
@@ -201,6 +202,9 @@ def check_constraint(g: Graph, c, b: Bindings, r: Report, used: dict, in_duty: b
         r.err(f"{q(g, c)}: operator {q(g, operator)} is not in the core registry")
     if not rights:
         r.err(f"{q(g, c)}: no rightOperand")
+    if operator in CONTESTED and sum(len(members(g, ro)) for ro in rights) > 1:
+        r.warn(f"{q(g, c)}: {q(g, operator)} with a list right operand is read after Salas-Pareti "
+               f"(ContestedOperatorReading; due2-profiles.md 4, decisions/0005)")
     src, prop, _ = b.lookup(op)
     if len(src) != 1 or len(prop) != 1:
         r.err(f"{q(g, c)}: left operand {q(g, op)} has no single binding (UnboundLeftOperand)")
@@ -215,6 +219,11 @@ def check_constraint(g: Graph, c, b: Bindings, r: Report, used: dict, in_duty: b
         r.err(f"{q(g, c)}: context property {q(g, prop[0])} is not a built-in")
     card = b.attr(op, DUE2.cardinality)
     used[op] = (src[0], prop[0], card[0] if card else DUE2.one)
+    if card and card[0] == DUE2.set and operator in (ODRL.isPartOf, ODRL.hasPart):
+        r.warn(f"{q(g, c)}: {q(g, operator)} over a set-valued operand is read after Salas-Pareti "
+               f"(ContestedOperatorReading; due2-profiles.md 4, decisions/0005)")
+    elif operator == ODRL.isA and card and card[0] == DUE2.set:
+        r.err(f"{q(g, c)}: isA takes one left value (OperatorTypeMismatch; due2-profiles.md 4)")
     allowed = b.attr(op, DUE2.allowedOperator)
     if allowed and operator not in allowed:
         r.err(f"{q(g, c)}: operator {q(g, operator)} not allowed for {q(g, op)} (OperatorTypeMismatch)")

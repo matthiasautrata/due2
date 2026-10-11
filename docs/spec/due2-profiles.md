@@ -1,7 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.4
+**Status:** Draft v0.5
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
+
+**Changes in v0.5:** set-based operators follow the Vocabulary (§3.16.7–3.16.12, §3.14.7): `isPartOf`, `hasPart`, and `isA` take a list right operand, read after Salas and Pareti et al. (2025), and a policy that uses one gets the warning `ContestedOperatorReading` (§4; `decisions/0005`).
 
 **Changes in v0.4:** duty timing landed — `deadline` and `recurrence` are corpus fields and W2 computes the effective deadline, the per-instance status, and the occurrences (`due2-workflows.md` §3.1, §5.3); §7 now fixes the vocabulary's readings and points there for the computation, replacing its own status table; violation is derived, not remembered, against DPROD's terminal `Violated` (§7); the DPROD example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the corpus (§8.1). v0.3: a witness source replaces the request source's double reading inside duties (§3); duration kinds (§4); `rdf:type` for `isA` and parties of a duty with both roles (§6); activation defaults to first owed, recurring instances bounded below, anchor rule restated (§7); DPROD exception 6 and the duty-condition correction (§8.2); not-yet-open windows registered (§9).
 
@@ -109,8 +111,13 @@ A closed, typed core registry. An operand that does not fit an operator's signat
 | `lt`, `lteq`, `gt`, `gteq` | number, `dateTime`, `date`, single-component duration | same type | order within the datatype |
 | `isAnyOf`, `isNoneOf` | one value | set | membership or its absence |
 | `isAllOf` | set | set | left ⊇ right |
-| `isPartOf`, `hasPart` | IRI | IRI | left ⊑ right, or right ⊑ left, under the profile's declared `partOf` closure |
-| `isA` | IRI | class | left is an instance of the class under a declared `rdfs:subClassOf` module |
+| `isPartOf` | IRI, or set of IRIs | IRI, or list of IRIs | every left value ⊑ some right value, under the profile's declared `partOf` closure |
+| `hasPart` | IRI, or set of IRIs | IRI, or list of IRIs | every right value ⊑ some left value, under the same closure |
+| `isA` | IRI | class, or list of classes | left is an instance of every listed class, under a declared `rdfs:subClassOf` module |
+
+**Set-based operators.** The Vocabulary calls six operators set-based — `isA`, `hasPart`, `isPartOf`, `isAllOf`, `isAnyOf`, `isNoneOf` (§3.16.7–3.16.12) — and allows a list right operand for exactly those (§3.14.7; IM §2.5.1). Neither the IM nor the Vocabulary says what `isPartOf`, `hasPart`, or `isA` *mean* with a list, and the published formal semantics disagree: Bonatti, Fornara and Harth (2025) give `isPartOf` and `isA` membership (∈) and `hasPart` ∋; Salas, Pareti et al. (2025) give `isPartOf` ⊂, `hasPart` ⊃, and `isA` as the subject's classes ⊇ the listed classes; the W3C workshop's open issues list it (Rodríguez-Doncel 2026, R-V2). **due2 adopts the Salas–Pareti reading** (`decisions/0005`), with three adjustments: inclusion is non-strict; set inclusion is generalised to the `partOf` closure, so `isPartOf` holds when every left value is part of some right value and `hasPart` when every right value is part of some left value, each the Kleene conjunction of a Kleene disjunction; and logic stays Kleene, so a missing or `invalid` value gives `U`, not false. A single IRI on either side is a singleton, and an empty left set makes `isPartOf` hold vacuously. Under an identity closure the readings are exactly Salas–Pareti's ⊆ and ⊇, and `isPartOf` reproduces OVAL's results (`oval-list-right-operand`).
+
+Because the reading is adopted, not given by ODRL, normalisation accepts a list right operand or a set-valued left operand on these three operators with the warning `ContestedOperatorReading`, naming the operator and the reading applied. A warning is a diagnostic that does not reject; the normalised policy carries it into the trace. Before 2026-10-11 this section admitted lists only for `isAnyOf`, `isNoneOf`, and `isAllOf`, and the shape rejected the others: that was a due2 defect, since lists are valid ODRL for all six.
 
 Mixed-component durations (months with days) and floating-point values are rejected at normalisation, as RL2 does: they have no total order or no exact equality. Durations are ordered only within one kind — day-time durations (days, hours, minutes, seconds) with each other, year-month durations (years, months) with each other. `P1Y` against `P365D` is `invalid`, so `U`.
 
