@@ -102,7 +102,7 @@ Replacements that carry meaning: `NewType` (zero runtime cost, nominal — use f
 
 ---
 
-## 4. Static type checking **[O]**
+## 4. Static type checking **[D]** (provisional, §13)
 
 Strict mode is non-negotiable; the tool is not yet decided.
 
@@ -113,7 +113,9 @@ Strict mode is non-negotiable; the tool is not yet decided.
 | mypy | ~58% | slow | Mature plugin ecosystem; 2.0 added parallel checking |
 | ty (Astral) | ~53% | fastest | Alpha. Unimplemented and clean look identical in CI — unsafe as a gate |
 
-**Recommendation:** a fast checker in the editor, a high-conformance checker as the CI gate. They need not be the same tool. **[O]** — confirm what is approved in our environment before committing.
+**Recommendation:** a fast checker in the editor, a high-conformance checker as the CI gate. They need not be the same tool.
+
+**[D]** (2026-10-11, provisional) **basedpyright in strict mode**, in the editor and as the gate. One tool means the editor and CI never disagree. Pyrefly can join the editor later if speed matters. Revisit if the code moves to an environment that approves a different checker (§13).
 
 Adoption on existing code: enable one strict flag per sprint rather than a big-bang migration. New modules start strict.
 
@@ -123,7 +125,7 @@ Adoption on existing code: enable one strict flag per sprint rather than a big-b
 
 All external input — HTTP, files, queues, database rows, config — is parsed into a typed domain object at the boundary. Past that point, types are trusted and **not re-validated**. Defensive re-checking inside the core is redundancy, and redundancy hides which layer owns the invariant.
 
-**[O]** Library choice:
+**[D]** (2026-10-11, provisional) **msgspec**, for the JSON boundary: requests, state of the world, case files. It decodes straight into the frozen dataclasses of §2, so the domain model does not depend on it. RDF has its own adapter (§2.4). The alternatives considered:
 
 - **msgspec** — fastest, strict by default. Best fit for wire formats and high-volume paths.
 - **pydantic v2** — richest constraint vocabulary. `Annotated[int, Field(ge=0)]` gives crude refinement types at the edge. Heavier; couples domain models to the library.
@@ -131,7 +133,7 @@ All external input — HTTP, files, queues, database rows, config — is parsed 
 
 Selection criterion: if the domain model should stay library-agnostic, attrs+cattrs. If throughput dominates, msgspec. If constraint expressiveness dominates, pydantic.
 
-**Runtime enforcement:** `beartype` via import hook enforces existing annotations at near-constant cost. **[O]** — decide whether it runs in test environments only (recommended starting point) or also in production.
+**Runtime enforcement:** `beartype` via import hook enforces existing annotations at near-constant cost. **[D]** (2026-10-11, provisional) Test environments only: on in unit, integration, and system tests, optional in UAT, never in production.
 
 ### 5.1 Absent, unknown, and false **[D]**
 
@@ -153,7 +155,7 @@ Every runtime we might generate into collapses unknown into false by default: SQ
 
 Design-by-contract is a first-class part of this discipline, not an optional extra. Contracts are the specification; tests are samples of it.
 
-**Tool:** `icontract` — `@require`, `@ensure` (with old-value capture), `@invariant`. **[O]** — `deal` is the alternative; it bundles a linter and a Z3-backed solver for simple functions, but `icontract` has the stronger ecosystem (`icontract-hypothesis`, CrossHair integration, `pyicontract-lint`).
+**Tool:** **[D]** (2026-10-11, provisional) `icontract` — `@require`, `@ensure` (with old-value capture), `@invariant`. The first module to use it is the Kleene truth tables, as the trial. `deal` was the alternative; it bundles a linter and a Z3-backed solver for simple functions, but `icontract` has the stronger ecosystem (`icontract-hypothesis`, CrossHair integration, `pyicontract-lint`).
 
 **What to contract:**
 
@@ -163,7 +165,7 @@ Design-by-contract is a first-class part of this discipline, not an optional ext
 
 **Why contracts earn their place here:** they are the connective tissue between layers. `icontract-hypothesis` derives property-test strategies directly from preconditions, so a contract generates tests for free. CrossHair reads the same contracts and attempts to refute them symbolically. And if we ever get Dafny (§9), the contracts are already the specification, written down and reviewed. One artefact, four consumers.
 
-**Runtime cost:** contracts are enabled in dev and test unconditionally. **[O]** — production posture: enable preconditions only, or disable entirely via `-O`. Preconditions-on is the safer default for a system making policy decisions.
+**Runtime cost:** contracts are enabled in dev and test unconditionally. **[D]** (2026-10-11, provisional) In production, preconditions stay on and postconditions and invariants are off. A wrong policy decision costs more than the check.
 
 ---
 
@@ -317,17 +319,19 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 
 ## 13. Open decisions register
 
+**Provisional picks.** #1, #2, #5, #6, and #7 were settled on 2026-10-11 for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
+
 **Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`); #1–#8 below are one implementation-start checklist issue, and #10/#11/#13 belong to the execution-target cluster. This register remains the specification record: a resolution lands here, and the issue closes.
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
-| 1 | Static type checker (editor + gate) | §4 | Environment approval |
-| 2 | Boundary parsing library | §5 | Throughput vs library-agnosticism call |
+| 1 | Static type checker (editor + gate) | §4 | Resolved 2026-10-11 (provisional): basedpyright strict, editor and gate |
+| 2 | Boundary parsing library | §5 | Resolved 2026-10-11 (provisional): msgspec |
 | 3 | Error handling: total core vs `Result` | §2.2 | Team preference |
 | 4 | Persistent-structure library | §2.1 | First real use case |
-| 5 | beartype in production or test-only | §5 | Perf measurement |
-| 6 | Contracts in production: preconditions-only or off | §6 | Risk posture |
-| 7 | `icontract` vs `deal` | §6 | Trial on one module |
+| 5 | beartype in production or test-only | §5 | Resolved 2026-10-11 (provisional): test environments only, through system test; optional in UAT |
+| 6 | Contracts in production: preconditions-only or off | §6 | Resolved 2026-10-11 (provisional): preconditions only |
+| 7 | `icontract` vs `deal` | §6 | Resolved 2026-10-11 (provisional): `icontract`; trial on the Kleene tables |
 | 8 | Slow tier: nightly vs merge-queue | §8 | Observed merge frequency |
 | 9 | Dafny availability | §9 | Resolved 2026-10-10 (`decisions/0002`): installable — Homebrew Apple-Silicon bottle 4.11.0, .NET 8 + Z3 |
 | 10 | Rust toolchain in the build image | §10.3 | Platform team conversation |
