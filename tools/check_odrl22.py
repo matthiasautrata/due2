@@ -4,8 +4,10 @@
 Runs conformance/odrl22-shape.ttl (due2's SHACL encoding of the ODRL
 Information Model 2.2, every constraint cited) over policy files, with the
 official ODRL 2.2 vocabulary and due2's profile modules merged for class
-hierarchy and term typing. Policies are validated *as written* — no
-preprocessing: compact form (IM 2.7.1), list-valued right operands for
+hierarchy and term typing. Node types the vocabulary entails (rdfs:range of
+odrl:permission etc., rdfs:domain of odrl:leftOperand, the connective of a
+Logical Constraint) are added, since the IM leaves them implicit. Otherwise
+policies are validated *as written* — no preprocessing: compact form (IM 2.7.1), list-valued right operands for
 set-based operators (IM 2.5.1), and list-form logical constraints (IM 2.5.2)
 are all checked natively.
 
@@ -90,6 +92,49 @@ def violations_text(results_graph: Graph) -> list[str]:
     return out
 
 
+# Types the ODRL 2.2 vocabulary itself entails for untyped nodes. The IM leaves
+# rule and constraint typing implicit (its own Turtle examples write
+# `odrl:permission [ ... ]`); RDFS range/domain axioms in ODRL22.ttl make the
+# type explicit. Only these axioms are applied — no general RDFS closure — so
+# the shape sees each node with the class the vocabulary assigns it, and an
+# untyped Permission no longer escapes PermissionShape.
+RANGE_TYPES = {
+    ODRL.permission: ODRL.Permission,      # rdfs:range odrl:Permission
+    ODRL.prohibition: ODRL.Prohibition,    # rdfs:range odrl:Prohibition
+    ODRL.obligation: ODRL.Duty,            # rdfs:range odrl:Duty
+    ODRL.duty: ODRL.Duty,
+    ODRL.remedy: ODRL.Duty,
+    ODRL.consequence: ODRL.Duty,
+    ODRL.action: ODRL.Action,              # a refined action is an untyped node (IM 2.5.4)
+    ODRL.target: ODRL.Asset,
+    ODRL.assignee: ODRL.Party,
+    ODRL.assigner: ODRL.Party,
+}
+# Deliberately absent: rdfs:range odrl:LeftOperand of odrl:leftOperand. Applying
+# it would make IM 2.5.1's "MUST be a LeftOperand" vacuous; whether an operand
+# is declared is a vocabulary fact a profile must supply (IM 2.1), not a type
+# the shape may assume.
+DOMAIN_TYPES = {ODRL.leftOperand: ODRL.Constraint}   # rdfs:domain odrl:Constraint
+# IM 2.5.2: a Logical Constraint is identified by its operand property; the
+# vocabulary declares no domain for them, so the connective is the evidence.
+CONNECTIVES = [ODRL["and"], ODRL["or"], ODRL.xone, ODRL.andSequence,
+               URIRef("https://ekgf.org/dprod/spec/develop/not")]
+
+
+def entailed_types(alone: Graph) -> Graph:
+    t = Graph()
+    for p, c in RANGE_TYPES.items():
+        for o in alone.objects(None, p):
+            t.add((o, RDF.type, c))
+    for p, c in DOMAIN_TYPES.items():
+        for s in alone.subjects(p, None):
+            t.add((s, RDF.type, c))
+    for p in CONNECTIVES:
+        for s in alone.subjects(p, None):
+            t.add((s, RDF.type, ODRL.LogicalConstraint))
+    return t
+
+
 def check_file(path: Path, shapes: Graph, base: Graph) -> tuple[str, list[str]]:
     alone = Graph()
     alone.parse(path)
@@ -97,6 +142,7 @@ def check_file(path: Path, shapes: Graph, base: Graph) -> tuple[str, list[str]]:
     data = Graph()
     data += base
     data += alone
+    data += entailed_types(alone)
     try:
         conforms, rg, _ = validate(data_graph=data, shacl_graph=shapes,
                                    inference="none", advanced=True)

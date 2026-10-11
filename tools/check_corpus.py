@@ -317,6 +317,19 @@ def ns_terms(g: Graph, ns: str) -> int:
     return n
 
 
+ASSET_PARTY_EDGES = (ODRL.target, ODRL.output, ODRL.assignee, ODRL.assigner,
+                     ODRL.informedParty, ODRL.compensatedParty, ODRL.attributedParty,
+                     ODRL.consentingParty, ODRL.contractingParty, ODRL.trackingParty)
+
+
+def asset_party_nodes(g: Graph) -> set:
+    """Every node in an asset or party position, plus every declared collection."""
+    nodes = {o for e in ASSET_PARTY_EDGES for o in g.objects(None, e)}
+    nodes |= set(g.subjects(RDF.type, ODRL.AssetCollection))
+    nodes |= set(g.subjects(RDF.type, ODRL.PartyCollection))
+    return nodes
+
+
 def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report,
                  named: bool) -> dict:
     used: dict = {}
@@ -333,6 +346,14 @@ def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report
     for term in (DPROD.deadline, DPROD.recurrence):
         if (policy, term, None) in g:
             r.err(f"{q(g, policy)}: {q(g, term)} on a Policy is not an extension point (duties only)")
+    # Asset and party nodes are where odrl:source and collection refinements
+    # occur (IM 2.5.5-2.5.6); due2-profiles.md 8.1 rejects both. Rule and
+    # constraint nodes are checked in check_rule and check_constraint.
+    for node in sorted(asset_party_nodes(g), key=str):
+        if (node, ODRL.source, None) in g:
+            r.err(f"{q(g, node)}: collection source (odrl:source) is not admitted")
+        if (node, ODRL.refinement, None) in g:
+            r.err(f"{q(g, node)}: collection refinement is not admitted")
     conflicts = list(g.objects(policy, ODRL.conflict))
     if len(conflicts) > 1:
         r.err(f"{q(g, policy)}: more than one odrl:conflict")
