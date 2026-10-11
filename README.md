@@ -27,7 +27,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `tools/check_corpus.py` | Checks the corpus and any ODRL policy file against the admitted profile, without an evaluator |
 | `tools/check_odrl22.py` | Validates policies against ODRL 2.2 itself: `odrl22-shape.ttl` plus the vendored official vocabulary (`profiles/vendor/w3c/ODRL22.ttl`), via pyshacl |
 | `tools/import_force.py` | One-shot translation of the FORCE suite into `force-*` corpus cases, with an independent due2 derivation |
-| `tools/check_completion.py` | Randomised check of the workflows §6.4 completion algorithm against brute force: canonical literals (v0.6), the `max_mixed` fallback, and guarded duties (`decisions/0003`) |
+| `tools/check_completion.py` | Randomised check of the workflows §6.4 completion algorithm against brute force: canonical literals (v0.6), the `max_mixed` fallback, guarded duties (`decisions/0003`), deadlines with `violations = deny`, and `frontier_complete` |
 
 Documents cite each other by file name (`due2-workflows.md` §5) and decision records as `decisions/NNNN`; names are unique under `docs/`.
 

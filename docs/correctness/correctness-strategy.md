@@ -90,7 +90,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
 | L9 direct interpreter `I` over the lifted form | The pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the parser, if shared (§4.1) | **[D]** (`decisions/0002`), issue #9 |
 | `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
-| `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, no `violations = deny`, no frontier | **[D]**, exists |
+| `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]**, exists |
 | Laws L1–L9, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
 **Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
@@ -146,7 +146,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Risks.** R3, R7.
 - **Oracles.** A brute-force W3 over every completion of the actual findings (§3), capped by variable count. `I` end to end.
 - **Properties.** L4–L7. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`).
-- **Gap to close first.** **[O]** `check_completion.py` does not model `violations = deny`, `frontier_complete`, or nested constraints. Either extend it or accept that the brute-force W3 differential covers them; it should do one or the other before W3 code starts.
+- **Abstract model extended.** **[D]** `check_completion.py` now models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch, and the rule "`frontier_complete` iff no candidate is uncertain" was never wrong but is not exact: it says false in 133 of 942 definite `Pending` cases where the §6.4 definition says true (issue #29). Nested constraints are left to the brute-force W3 differential and slow `I`.
 - **Done.** The differential against brute-force W3 is clean on both profiles; the corpus passes, including `frontier` and `verdict_basis`.
 
 ### 4.6 Trace and replay
@@ -234,7 +234,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other |
 | 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own |
 | 4 | Negative cases in the case format | §4.2 | Do now; it blocks W1 |
-| 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | Decide before W3 code |
+| 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | **Resolved 2026-10-11:** extend it now for both (done); brute-force W3 differential later; nested constraints via that and slow `I` |
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
