@@ -146,7 +146,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Risks.** R3, R7.
 - **Oracles.** A brute-force W3 over every completion of the actual findings (§3), capped by variable count. `I` end to end.
 - **Properties.** L4–L7. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`).
-- **Abstract model extended.** **[D]** `check_completion.py` now models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch, and the rule "`frontier_complete` iff no candidate is uncertain" was never wrong but is not exact: it says false in 133 of 942 definite `Pending` cases where the §6.4 definition says true (issue #29). Nested constraints are left to the brute-force W3 differential and slow `I`.
+- **Abstract model extended.** **[D]** `check_completion.py` now models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` waits for the brute-force W3 differential. Nested constraints are left to the brute-force W3 differential and slow `I`.
 - **Done.** The differential against brute-force W3 is clean on both profiles; the corpus passes, including `frontier` and `verdict_basis`.
 
 ### 4.6 Trace and replay

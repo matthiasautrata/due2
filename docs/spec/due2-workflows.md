@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.8
+**Status:** Draft v0.9
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.9** (2026-10-11, `decisions/0004`): `frontier_complete` gets a computation, bounded enumeration over the relevant unknowns with a new W3 limit, `max_frontier_vars`; beyond it the flag is false and `verdict.exact` false (§6.4, §3.5).
 
 **Changes in v0.8** (2026-10-11): a request may omit its target; the relation part is then `U`, as an absent match-key party already is (§3.2, §5.2; was §9 #8). A void policy contributes nothing — decided (§6.2).
 
@@ -192,7 +194,7 @@ verdict_basis  (atom_id | role)
 | `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
-| `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the completion was exact or fell back to independent completion beyond the bound (§6.4). |
+| `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). |
 | `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
 
 ### 3.6 Lineage
@@ -407,7 +409,9 @@ This matters wherever one fact is read in both directions. `xone` expands into d
 
 *What stays approximate.* Parts that read one fact but are neither identical nor complementary remain independent: `x ≤ 5` and `x > 7` both `F` is still a completion, though no value of `x` produces it, and two permissions on `x = "a"` and `x = "b"` over an enumerated `x` are still `Indeterminate` when `x` is unknown. Exactness there needs each operand's value domain and is not bounded in general. RL2 makes the same approximation for all shared facts (Semantics §Conflict Resolution). **[O]** — domain-aware completion for enumerated facts (§9 #6).
 
-`frontier_complete` is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but the listed alternatives may not be all of them.
+`frontier_complete` is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but the listed alternatives may not be all of them. "Change" includes removal: an uncertain candidate whose outstanding set is smaller can dominate a listed alternative.
+
+*Computing it* **[D]** (`decisions/0004`). For a definite `Pending`, the *relevant unknowns* are the variables of the `U` parts of uncertain candidates (permission, `owed`, `fulfilled`) and of prohibitions whose finding is `U`. Ready and pending candidates have none, and no other unknown can move the frontier while the verdict stands. With `r` relevant unknowns, at most `max_frontier_vars` (a W3 limit; default 8), W3 enumerates all `2^r` assignments. `frontier_complete` is true iff each yields the listed frontier. The two-extremes shortcut does not apply, because a frontier is a set, not a point on the verdict chain. Beyond the bound, `frontier_complete` is false and `verdict.exact` is false. A randomised check (`tools/check_completion.py`, fifth phase) found the bounded enumeration equal to the definition in all 942 definite `Pending` instances of 50,000. The cheaper rule "complete iff no candidate is uncertain" is sound, but it said false in 133 of them where the definition says true.
 
 `verdict_basis` names the determining atoms: the surviving prohibition for `Deny`; the ready alternative's permissions for `Permit`; the frontier's permissions and outstanding duties for `Pending`; the `U` atoms whose completion changes the outcome for `Indeterminate`; and, for a `NotApplicable` where candidates were removed by violated preconditions, those candidates with role `closed` (§3.5).
 

@@ -32,15 +32,16 @@ Fifth phase (seed 20261015, `rand_frontier`): partial knowledge, each variable
 known T, known F, or U. For every definite Pending, the frontier W3 lists from
 ready and pending candidates (§6.1-§6.3) is compared with every completion's;
 frontier_complete holds, by its §6.4 definition, iff all completions give the
-listed frontier. The spec gives no computation for it; the checked rule is
-"frontier_complete iff no candidate is uncertain", gated on soundness (never
-true where some completion differs). Recorded: definite Pending in 942; listed
-frontier empty in 191; a listed alternative off some completion's frontier in 4
-(an uncertain candidate's smaller outstanding set dominates it); frontier_complete
-false in 199; the rule wrong in 0, and false where the definition says true in
-133 (sound, not exact; the exact computation is open, issue #29).
+listed frontier. Gated (decisions/0004): enumerating only the relevant unknowns,
+bounded by max_frontier_vars, equals that definition; and with the bound forced
+to 1 the fallback (false, inexact) is never unsound. Recorded: definite Pending in
+942; listed frontier empty in 191; a listed alternative off some completion's
+frontier in 4 (an uncertain candidate's smaller outstanding set dominates it);
+frontier_complete false in 199; the rejected rule "complete iff no candidate is
+uncertain" would say false in 133 more; bounded enumeration 0 mismatches; with
+bound 1, fallback in 148, 0 unsound.
 
-Scope: atoms are flat conjunctions; obligations carry no guards and no duties
+Scope: one policy; atoms are flat conjunctions; obligations carry no guards and no duties
 of their own; no recurrence or instances. A sanity check of §6.4's claims, not
 a proof, and not a check of the rest of W3 (that is the brute-force W3
 differential, correctness-strategy.md §4.5).
@@ -235,17 +236,25 @@ def listed_frontier(atoms, conflict, known, guards, past):
     """The frontier W3 lists from three-valued findings (§6.1-§6.3): alternatives from
     surviving ready and pending candidates only; uncertain candidates (permission U,
     an unknown open duty, or a violated precondition whose owed is U) are left out.
-    known: variable -> True/False, absent = U. Returns (frontier, any_uncertain)."""
+    known: variable -> True/False, absent = U. Returns (frontier, any_uncertain, relevant):
+    relevant holds the unknown variables of uncertain candidates' parts (permission,
+    owed, fulfilled) and of prohibitions whose finding is U — the only unknowns a
+    completion can use to change the frontier while Pending stands (decisions/0004)."""
     def lit(v, pol):
         return None if v not in known else known[v] == pol
 
     def val(lits):
         return kleene_and(lit(v, p) for v, p in lits)
-    sure, uncertain, forbs_t = [], False, False
+    sure, uncertain, forbs_t, relevant = [], False, False, set()
+
+    def unknowns(lits):
+        return {v for v, _ in lits if v not in known}
     for a in atoms:
         f = val(a["lits"])
         if a["eff"] == "Forbid":
             forbs_t = forbs_t or f is True
+            if f is None:
+                relevant |= unknowns(a["lits"])
             continue
         if f is False:
             continue
@@ -266,12 +275,36 @@ def listed_frontier(atoms, conflict, known, guards, past):
             continue
         if unsure:
             uncertain = True
+            relevant |= unknowns(a["lits"])
+            for d in a["duties"]:
+                relevant |= unknowns(guards.get(d, [])) | ({d} - known.keys())
         else:
             sure.append(frozenset(opens))
     if forbs_t and conflict == "prohibit":
         sure = []
     sets = set(sure)
-    return frozenset(x for x in sets if not any(y < x for y in sets)), uncertain
+    return frozenset(x for x in sets if not any(y < x for y in sets)), uncertain, relevant
+
+
+def frontier_complete(atoms, conflict, known, guards, kw, bound=8):
+    """decisions/0004: for a definite Pending, enumerate every assignment to the
+    relevant unknowns (no two-extremes shortcut: a frontier is a set, not a point on
+    the verdict chain); complete iff each gives the listed frontier. Beyond `bound`,
+    false and inexact. Returns (frontier_complete, exact)."""
+    listed, _, relevant = listed_frontier(atoms, conflict, known, guards, kw["past"])
+    if len(relevant) > bound:
+        return False, False
+    rel = sorted(relevant)
+    rest = {v: False for v in all_vars(atoms, guards) if v not in known and v not in relevant}
+    for bits in itertools.product([False, True], repeat=len(rel)):
+        if evaluate(atoms, conflict, {**known, **rest, **dict(zip(rel, bits))}, guards, **kw)[1] != listed:
+            return False, True
+    return True, True
+
+
+def all_vars(atoms, guards):
+    vs = {v for a in atoms for v, _ in a["lits"]} | {d for a in atoms for d in a["duties"]}
+    return vs | {v for lits in guards.values() for v, _ in lits}
 
 
 def rand_frontier(rng):
@@ -365,12 +398,12 @@ def main() -> int:
                 print("MISMATCH (deny)", conflict, atoms, guards, kw, b, a)
         denied += b == "Deny" and kw["violations"] == "deny"
     print(f"{n4} deadline/violations cases, {mism4} mismatches; Deny under violations = deny in {denied}")
-    # The listed frontier against every completion's, for definite Pending verdicts (§6.3,
-    # frontier_complete in §6.4). Observations, not gates: the spec defines frontier_complete
-    # by quantifying over completions and gives no computation, so these measure where the
-    # listed frontier and the completions part ways.
+    # frontier_complete (§6.4, decisions/0004): the bounded enumeration over the relevant
+    # unknowns against the definition (brute force over every unknown), for definite
+    # Pending verdicts. Gates: equal whenever exact; never true where the definition says
+    # false, also with a bound of 1 so the fallback runs.
     rng5 = random.Random(20261015)
-    n5, pending, empty, wrong, incomplete, rule_unsound, rule_loose = 50000, 0, 0, 0, 0, 0, 0
+    n5, pending, empty, wrong, incomplete, rule_loose, mism5, unsound5, fell = 50000, 0, 0, 0, 0, 0, 0, 0, 0
     for _ in range(n5):
         atoms, conflict, vars_, guards, kw, known = rand_frontier(rng5)
         unknown = [v for v in vars_ if v not in known]
@@ -382,18 +415,25 @@ def main() -> int:
         if verdicts != {"Pending"}:
             continue
         pending += 1
-        listed, uncertain = listed_frontier(atoms, conflict, known, guards, kw["past"])
+        listed, uncertain, _ = listed_frontier(atoms, conflict, known, guards, kw["past"])
         complete = fronts == {listed}             # the definition, by brute force
         empty += not listed
         wrong += any(not listed <= f for f in fronts) and bool(listed)
         incomplete += not complete
-        rule_unsound += (not uncertain) and not complete   # proposed: complete iff no uncertain candidate
-        rule_loose += uncertain and complete
+        rule_loose += uncertain and complete          # what 'complete iff no uncertain candidate' loses
+        fc, exact = frontier_complete(atoms, conflict, known, guards, kw)
+        if not exact or fc != complete:
+            mism5 += 1
+            if mism5 <= 3:
+                print("MISMATCH (frontier)", conflict, atoms, guards, kw, known, fronts, listed)
+        fc1, exact1 = frontier_complete(atoms, conflict, known, guards, kw, bound=1)
+        fell += not exact1
+        unsound5 += fc1 and not complete or (exact1 and fc1 != complete)
     print(f"{n5} partial-knowledge cases, definite Pending in {pending}: listed frontier empty in {empty}; "
           f"a listed alternative off some completion's frontier in {wrong}; frontier_complete false in "
-          f"{incomplete}; 'no uncertain candidate' claims complete wrongly in {rule_unsound}, "
-          f"says incomplete where complete in {rule_loose}")
-    return 1 if mism or unsound or mism3 or mism4 or rule_unsound else 0
+          f"{incomplete}, true where an uncertain candidate exists in {rule_loose}; bounded enumeration "
+          f"{mism5} mismatches; with bound 1, fallback in {fell}, {unsound5} unsound")
+    return 1 if mism or unsound or mism3 or mism4 or mism5 or unsound5 else 0
 
 
 if __name__ == "__main__":
