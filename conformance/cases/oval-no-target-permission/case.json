@@ -1,0 +1,67 @@
+{
+  "case": "oval-no-target-permission",
+  "source": "OVAL access_control/default_sem1-3 and permission1-3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated from OVAL's default-semantics cases, which pose a request with no Asset, and the matching permission1-3 cases, which pose the same request with it. OVAL decides the target-less request by an evaluator switch (semantics_by_default: prohibit, permit, or unspecified by default). due2 has no default semantics: a request without a target makes every relation part U (workflows §3.2, §5.2, decided 2026-10-11, issue #26), so the verdict is Indeterminate whenever the target could decide it, and the default is the enforcement point's. OVAL's three answers to scenario 1 are the three completions a caller might choose; due2 reports that the request is underspecified. OVAL requests carry no time; request.at and effective_at are an arbitrary fixed instant.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "no target (default_sem1-3)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "why": "The request names no target, so ex:policy:1010#permission's relation part is U (workflows §5.2, absent is not false); action matches and no party is matched. The only candidate is uncertain: completing it T gives Permit, F gives NotApplicable. Indeterminate."
+      },
+      "oval_expected": "reject (False) under semantics_by_default=-1; accept (True) under 1; not processed (None) under 0"
+    },
+    {
+      "name": "target named (permission1-3)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {},
+        "params": {},
+        "target": "ex:asset:9898.movie"
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "Action and target match; ex:policy:1010#permission applies and is ready."
+      },
+      "oval_expected": "accept (True) under every default semantics"
+    }
+  ]
+}

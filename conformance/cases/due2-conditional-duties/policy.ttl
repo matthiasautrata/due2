@@ -133,11 +133,6 @@
         odrl:leftOperand ex:moduleEnabled9 ; odrl:operator odrl:eq ;
         odrl:rightOperand true ] .
 
-# Witness source: the amount is a parameter of the payment (due2-profiles.md §3).
-odrl:payAmount a odrl:LeftOperand ;
-    dprod:operandSource due2:witnessSource ;
-    dprod:operandProperty odrl:payAmount ;
-    rdfs:range xsd:decimal .
 
 # Guards: they read the request, so they decide when each duty is owed
 # (workflows §5.2, `owed`). They stay on the duty (decisions/0003).

@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.7
+**Status:** Draft v0.8
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.8** (2026-10-11): a request may omit its target; the relation part is then `U`, as an absent match-key party already is (§3.2, §5.2; was §9 #8). A void policy contributes nothing — decided (§6.2).
 
 **Changes in v0.7** (2026-10-11, `decisions/0003`): conditional-duty hoisting withdrawn. A precondition's guards stay on the duty and W2 evaluates them as a fourth predicate, `owed` (§5.1, §5.2); W3's outstanding and unknown sets read `owed ∧ ¬fulfilled` (§6.1); `owed` is completed like a prohibition (§6.4 proof). The dual-role special case collapses into one mechanism (§5.2). Canonical literals stay: `xone`, authored complements, and guard literals shared with rule constraints still create correlated parts. The motivating case is now `due2-xone-unknown` (§6.4). L9 loses the hoisting rewrite (§8).
 
@@ -119,12 +121,12 @@ Invariants, established by W1 and trusted downstream: `edge` is acyclic; every c
 ### 3.2 Request
 
 ```
-request        (| reference?, action, target, at)
+request        (| reference?, action, target?, at)
 request_party  (function | party)
 request_param  (name | value)
 ```
 
-`reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action — validity time, what ODRL's `dateTime` constrains. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
+`reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action — validity time, what ODRL's `dateTime` constrains. `target` may be absent — a request for an action on no named asset; every relation part is then `U` (§5.2), never `F`. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
 
 ### 3.3 SOTW
 
@@ -250,7 +252,7 @@ Duty status reuses the same three values: `T` fulfilled, `F` outstanding, `U` un
 An atom applies when all of its parts hold, combined by Kleene conjunction (`F ∧ U = F`):
 
 - **action:** `request.action ⊑ atom.action` under the `odrl:includedIn` closure. A request for a narrower action matches an atom on a broader one, never the reverse.
-- **relation:** `request.target ⊑ atom.relation_value` under the profile's target closure — collection membership, `isPartOf`.
+- **relation:** `request.target ⊑ atom.relation_value` under the profile's target closure — collection membership, `isPartOf`. If the request names no target, the part is `U`: absent is not false, as for parties (decided 2026-10-11, was §9 #8). An index may therefore not skip atoms on target for such a request (§5.5).
 - **party:** for each `atom_party(a, f, p)` where the profile declares `f` a match key, `request_party(f) ⊑ p` under the party closure. If the request does not name `f`, the part is `U` — absent is not false. Function predicates that are not match keys are carried, not matched. In v1 only `assignee` is a match key.
 - **constraint:** each of the atom's constraints, at its scope (§5.4).
 
@@ -353,7 +355,7 @@ Root obligations in force are reported in `verdict_basis` with role `obligation`
 
 ### 6.2 Conflict
 
-1. **Within a source policy**, by its `conflict`. Under `prohibit`, a `T` `Forbid` eliminates that policy's candidates. Under `perm`, a `T` candidate eliminates that policy's `Forbid` atoms. Under `invalid`, a `T` candidate and a `T` `Forbid` together void the policy: all of its atoms are eliminated, with rule `invalid`. **[O]** — whether a void policy contributes nothing, as here, or `Indeterminate` with a cause (architecture §6.2).
+1. **Within a source policy**, by its `conflict`. Under `prohibit`, a `T` `Forbid` eliminates that policy's candidates. Under `perm`, a `T` candidate eliminates that policy's `Forbid` atoms. Under `invalid`, a `T` candidate and a `T` `Forbid` together void the policy: all of its atoms are eliminated, with rule `invalid`. **[D]** (2026-10-11) — a void policy contributes nothing; `Indeterminate` with a cause stays parked (architecture §6.2).
 2. **Across source policies**, by `config.combination` **[O]**. Default: prohibit-overrides — any surviving `T` `Forbid` eliminates every candidate. Alternatives: permit-overrides; priority-ordered first-applicable on `atom.priority`.
 
 `U` atoms eliminate nothing; they make the verdict uncertain (§6.4). Every elimination is recorded with its rule. Duties play no part.
@@ -395,7 +397,7 @@ Under `deny`, a violated obligation in force acts as a surviving prohibition. DP
 - **A prohibition `f` of policy `P`.** Under `prohibit`, `f` survives. Under `perm`, `f` is eliminated if `P` has a `T` candidate and survives otherwise. Under `invalid`, if `P` has a `T` candidate, `P` is voided: its candidates go, and so do its prohibitions — which were all `F`, or `P` would already have been void. Candidates are only removed and prohibitions only added. The verdict stays or falls.
 - **Under `violations = deny`, an obligation's `in_force` finding, or a duty's `fulfilled` finding.** A violated instance of an obligation in force acts as a surviving prohibition. The status is computed by W2 from the `fulfilled` finding and the deadline, which the case fixes (§5.3); it is not itself a finding, so it does not vary between completions — within a completion, the violated instances are exactly the `F` duties whose deadline has passed (for a precondition, those also owed). Making `in_force` more true can only add a violated obligation, and making `fulfilled` more true can only remove one — a violated precondition also restores its candidate. So `in_force` is completed like a prohibition, and `fulfilled` like any duty. ∎
 
-The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and `fulfilled` findings `F`; prohibitions, `owed`, and under `deny` `in_force` `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative needs its own argument.
+The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and `fulfilled` findings `F`; prohibitions, `owed`, and under `deny` `in_force` `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative — parked, architecture §6.2 — would need its own argument.
 
 **Completions range over literals [D].** A finding is `U` because some of its parts are (§5.2). Each `U` part is a *variable*, with one exception that makes the definition exact for parts the policy correlates: two constraint parts with the same scope, operand binding (source and property, `due2-profiles.md` §3 — not the left-operand IRI, which two policies may bind differently), datatype, unit, and right operand(s) are one variable — the same polarity when their operators are equal, opposite polarities when they are complements (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`). The key is derived from the corpus's `constraint` and `constraint_value` tuples, so nothing is stored. A duty's `fulfilled` finding, a disjunction over witnesses, is one variable of its own. A completion assigns `T` or `F` to every variable, and each `U` finding is re-derived from its parts by Kleene conjunction (§5.2) under that assignment.
 
@@ -450,7 +452,7 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 | 5 | Request match keys beyond `assignee` | §5.2 | Survey of real policies |
 | 6 | Domain-aware completion over parts that read one fact but are neither identical nor complementary (enumerated values, overlapping ranges). Complementary parts are exact since v0.6 | §6.4 | A real policy where the remaining over-approximation matters |
 | 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
-| 8 | A request without a target. Options: (a) malformed, rejected before W2; (b) the relation part is `U`, as an absent match-key party already is (§5.2). (b) is the consistent reading; OVAL's `default_sem*` cases (`conformance/external/README.md`) are the evidence | §3.2, §5.2 | Decision |
+| 8 | A request without a target | §3.2, §5.2 | **Resolved 2026-10-11:** the relation part is `U`, as for an absent party; rejecting the request was the alternative. Cases `oval-no-target-permission`, `oval-no-target-prohibition` |
 
 Deadline windows and the `violated` status, open as #5 until v0.4, are decided in §5.3: timing is in the corpus, W2 computes the effective deadline and the per-instance status, and a violated precondition removes its candidate. What stays open is the *not-yet-owed* state of an instance whose occurrence or window is in the future (`due2-profiles.md` §9).
 

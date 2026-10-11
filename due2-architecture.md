@@ -5,7 +5,7 @@
 
 **Changes in v0.6:** duty timing landed in the corpus and is computed by W2, which restores W3 purity and the completion shortcut of `due2-workflows.md` §6.4 (§3.1, §5.3 there); DPROD's example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the conformance corpus (§10). Readability: new §0 orientation (reading order, glossary, worked example); **SOTW** and **atom** glossed at first use (§1, §3); the representation story stated once — lifted tree in W1 stage 1, relations everywhere after (`due2-workflows.md` §4); external §-references named (RL2 legend in §8.2, DPROD legend in `due2-profiles.md` §8.2).
 
-**Changes, 2026-10-11** (`decisions/0003`): conditional-duty hoisting withdrawn — guards stay on the duty and W2 evaluates them (§4 item 5); the blowup budget loses its conditional-duty term; register #3 resolved, #2 narrowed.
+**Changes, 2026-10-11** (`decisions/0003`): conditional-duty hoisting withdrawn — guards stay on the duty and W2 evaluates them (§4 item 5); the blowup budget loses its conditional-duty term; register #3 resolved, #2 narrowed. Register #4 resolved: a void policy contributes nothing (§6.2).
 
 **Coherence updates, 2026-10-10** (after `decisions/0002`): §6.2's absent conflict term takes a selected profile's declared default first (normalisation spec §3); §4 item 1 states fill-only-unstated interiorisation (normalisation spec §6.2); §10's preservation property restated as the refinement of workflows §8 L9, its direct-interpreter slot resolved by the `decisions/0002` amendment — a Python direct interpreter over the lifted form; reading order gains `implementation-alternatives.md`.
 
@@ -184,7 +184,7 @@ Prohibit-wins is a **default, not a law**. ODRL's `conflict` term takes `perm`, 
 
 **[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term takes a selected profile's declared default first, then `invalid` (normalisation spec §3); the normaliser writes the result explicitly.
 
-**[O]** — what a void policy contributes. *Nothing* is the default: it is ODRL's reading (the policy does not govern), and it keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). *`Indeterminate` with a cause* is the fail-safe alternative; it adds a value outside that order and needs its own computation.
+**[D]** (2026-10-11) — a void policy contributes *nothing*. It is ODRL's reading (the policy does not govern), and it keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). Validity and evaluation are separate concerns: a malformed policy is rejected at W1 or by the checkers, while a well-formed policy that voids itself for one request is an evaluation outcome, visible in the trace (`eliminated`, rule `invalid`). OVAL reports such a policy as not evaluable (`oval-conflict-invalid`), which conflates the two. *`Indeterminate` with a cause* — the fail-safe alternative, a value outside the chain needing its own computation — stays parked; revisit if a real policy needs a void policy to block rather than abstain.
 
 ### 6.3 Two kinds of question **[D]**
 
@@ -314,7 +314,7 @@ Workflow-level decisions — canonical encoding, cross-policy combination, prefe
 | 1 | Eager DNF expansion vs set-valued match keys | §4 item 3 | Resolved by default (`decisions/0002`): eager, limit-enforced; set-valued keys reopen on the first pathological policy |
 | 2 | Atom-count threshold values and diagnostic | §4 | First pathological policy. Since `decisions/0003` only DNF is exponential, and its exact-count limit is decided (item 3) |
 | 3 | Whether any duty constraint is genuinely non-hoistable | §4 item 5 | Resolved by `decisions/0003`: nothing is hoisted, so the question dissolves |
-| 4 | What a void (`invalid`) policy contributes: nothing (default) or `Indeterminate` with a cause | §6.2 | Real policy requiring it |
+| 4 | What a void (`invalid`) policy contributes: nothing (default) or `Indeterminate` with a cause | §6.2 | Resolved 2026-10-11: nothing; `Indeterminate` with a cause parked until a real policy needs a void policy to block |
 | 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | Measurement once pending volume is known |
 | 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle (stage 1) plus a Python reference evaluator (stage 2, W2, W3) until a verified backend passes the corpus |
 | 7 | Policy-diff via query containment | §8.1 | Spike |

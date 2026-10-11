@@ -15,8 +15,9 @@ Translation (recorded per case in `notes`):
   * A DutyReport with performanceState Performed -> one evidence record by the
     duty's bearer. FORCE's asserted deontic states are not inputs in due2,
     which derives duty status from evidence (due2-profiles.md 8.2, exc. 2).
-  * odrl:source on collections is dropped (rejected by due2; membership is
-    the SOTW's partOf edges either way). An explicit odrl:conflict is added.
+  * odrl:source on collections is kept: due2 admits a refinement-free source
+    as an inert annotation (due2-profiles.md 8.1); membership is the SOTW's
+    partOf edges. An explicit odrl:conflict is added.
   * FORCE's own result is kept as `force_expected` (rule kind:activation).
 
 The due2 verdict is derived independently by the small matcher below, which
@@ -169,9 +170,7 @@ def main() -> None:
         policy = next(pol.subjects(RDF.type, ODRL.Set))
         rule = pol.value(policy, ODRL.permission)
         desc = str(pol.value(policy, DCTERMS.description))
-        dropped_source = list(pol.triples((None, ODRL.source, None)))
-        for t in dropped_source:
-            pol.remove(t)
+        has_source = (None, ODRL.source, None) in pol
         pol.add((policy, ODRL.conflict, ODRL.prohibit))
 
         scenarios, review = [], []
@@ -230,11 +229,10 @@ def main() -> None:
                  "temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in "
                  "FORCE's state of the world become sotw.closure; an explicit odrl:conflict "
                  "odrl:prohibit is added (single rule, so it cannot fire)."]
-        if dropped_source:
-            notes.append("odrl:source on the collection is dropped: due2 rejects it "
-                         "(due2-profiles.md §8.1), and FORCE's membership comes from the partOf "
-                         "edges either way. Whether due2 should admit a refinement-free "
-                         "odrl:source is registered in odrl22-conformance.md §5.")
+        if has_source:
+            notes.append("odrl:source on the collection is kept as written: due2 admits a "
+                         "refinement-free source as an inert annotation (due2-profiles.md §8.1), "
+                         "and membership comes from FORCE's partOf edges, carried in sotw.closure.")
         if list(pol.subject_objects(ODRL.duty)):
             notes.append("FORCE's duty states are asserted inputs (DutyReports); due2 derives them "
                          "from evidence. A report with performanceState Performed becomes one "
@@ -254,7 +252,7 @@ def main() -> None:
         ttl = pol.serialize(format="turtle")
         (d / "policy.ttl").write_text(
             f"# Source: {UPSTREAM} data/policies/{pfile} (MIT, imec), via tools/import_force.py.\n"
-            f"# Changes: odrl:conflict added{'; odrl:source dropped' if dropped_source else ''}.\n\n" + ttl)
+            f"# Changes: odrl:conflict added.\n\n" + ttl)
         (d / "case.json").write_text(json.dumps({
             "case": case,
             "source": f"FORCE test suite ({UPSTREAM}) data/policies/{pfile}",

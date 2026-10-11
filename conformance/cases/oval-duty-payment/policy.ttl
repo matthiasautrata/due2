@@ -8,8 +8,7 @@
 # Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/duty1.ttl
 # (MIT, University of Southampton). Changes, all recorded in case.json notes:
 # rules named; the separate untargeted `compensate` permission dropped;
-# odrl:unit an IRI instead of a string; odrl:payAmount bound to the witness
-# source; conflict and profiles declared.
+# odrl:unit an IRI instead of a string; conflict and profiles declared.
 
 <http://example.com/policy:88> a odrl:Offer ;
     odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
@@ -35,9 +34,3 @@
         ]
     ] .
 
-# The amount is a parameter of the payment that witnesses the duty, so the
-# binding says so explicitly (due2-profiles.md §3).
-odrl:payAmount a odrl:LeftOperand ;
-    dprod:operandSource due2:witnessSource ;
-    dprod:operandProperty odrl:payAmount ;
-    rdfs:range xsd:decimal .

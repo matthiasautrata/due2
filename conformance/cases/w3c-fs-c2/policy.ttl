@@ -8,7 +8,7 @@
 
 # Source: w3c/odrl@1db8e6b formal-semantics/examples/C Evaluation of Conditions (Duties)/C2 (W3C Software and Document License),
 # translated from JSON-LD. Changes: typed; conflict and
-# profiles declared; odrl:payAmount bound to the witness source; ex:dayOfWeek
+# profiles declared; ex:dayOfWeek
 # bound to the request (the assembler derives it from the action time).
 
 <http://example.com/policy/C2> a odrl:Agreement ;
@@ -34,11 +34,6 @@ ex:condition\/1 a odrl:Duty ;
         odrl:leftOperand <https://ex.org/dayOfWeek> ; odrl:operator odrl:eq ;
         odrl:rightOperand "Sunday"^^xsd:string ] .
 
-# Witness source: the amount is a parameter of the payment (due2-profiles.md §3).
-odrl:payAmount a odrl:LeftOperand ;
-    dprod:operandSource due2:witnessSource ;
-    dprod:operandProperty odrl:payAmount ;
-    rdfs:range xsd:decimal .
 
 # A guard (it reads the request, not the witness): it decides when the duty is
 # owed (workflows §5.2). One hop: the assembler derives the weekday of request.at.

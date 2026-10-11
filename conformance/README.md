@@ -123,6 +123,7 @@ Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed s
 - ~~`max_mixed` fallback (§6.4 beyond the bound)~~ — `due2-max-mixed` (nine facts each read both ways by an authored permission pair, `expected.exact = false`; scenario 2 sits at the bound, where only exact enumeration decides).
 - ~~`perm` and `invalid` conflict strategies~~ — `oval-conflict-perm`, `oval-conflict-invalid`.
 - ~~Incomparable frontier~~ — `due2-incomparable-frontier` (collapse, dominance, second approver); `config.preference` itself waits on its format (workflows §9 #3).
+- ~~Requests without a target~~ — `oval-no-target-permission`, `oval-no-target-prohibition` (workflows §3.2, §5.2, decided 2026-10-11).
 - ~~Canonical literals deciding a verdict~~ — `due2-xone-unknown` (an `xone` operand read both ways; workflows v0.6, §6.4).
 - ~~Unknown duty guards; many conditional duties on one permission~~ — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
 
@@ -132,5 +133,4 @@ Still open:
 - **`admit_source` / `admit_age`** — a case-format gap: `sotw.facts` carries no attribution (`source`, `observed_at`), so the filter cannot be shown at work; three cases note this in `notes`. Fixing it needs a fact-attribution extension to the case format.
 - **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
 - **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).
-- **Requests without a target** — workflows §9 #8; OVAL `default_sem*` are ready to translate once decided.
 - **Remedies and consequences** — carried by stage 1, not evaluated for access; no case until the monitoring question (§9 #4) is specified. OVAL's monitoring cases are the external material.

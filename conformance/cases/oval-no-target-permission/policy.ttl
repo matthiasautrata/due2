@@ -1,0 +1,13 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/
+# default_sem1-3.ttl and permission1-3.ttl (MIT, University of Southampton) — one policy.
+# Changes: rule named; conflict declared.
+
+<http://example.com/policy:1010> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:1010#permission> .
+
+<http://example.com/policy:1010#permission> a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie> .

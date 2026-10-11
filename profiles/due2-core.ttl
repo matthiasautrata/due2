@@ -66,3 +66,13 @@ odrl:purpose
 odrl:recipient
     dprod:operandSource dprod:requestSource ;
     dprod:operandProperty odrl:recipient .
+# Witness-condition idiom shared by the W3C ODRL CG examples (C1, C2) and OVAL:
+# "pay at least x" as an odrl:payAmount refinement of the duty's odrl:compensate.
+# Bound to the witness source so it reads the payment, not the request
+# (due2-profiles.md §3, §9 #6 resolved 2026-10-11). Outside a duty it is
+# rejected (WitnessOutsideDuty); a policy that means the requested amount binds
+# its own operand, which takes precedence over this baseline (§2 layers).
+odrl:payAmount
+    dprod:operandSource due2:witnessSource ;
+    dprod:operandProperty odrl:payAmount ;
+    rdfs:range xsd:decimal .

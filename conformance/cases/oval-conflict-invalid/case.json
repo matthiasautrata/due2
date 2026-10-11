@@ -3,7 +3,7 @@
   "source": "OVAL access_control/conflict3 (DIPS-Tools/ODRL-Engine@f0839f6)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from DIPS-Tools/ODRL-Engine@f0839f6 (OVAL) access_control/conflict3.ttl/.json/.txt. OVAL's request names Action, Asset and Party; Party becomes the assignee. OVAL requests carry no time, so request.at and effective_at are an arbitrary fixed instant (no constraint reads time). The original prohibition has no target, which IM 2.6.2 forbids; it gains the permission's target, the reading under which OVAL's own expectation holds. Scenario 2 is added: a requester the prohibition does not name, so the strategy has nothing to resolve and every variant permits. Divergence worth recording: OVAL reports the policy as not evaluable (None), which is the alternative architecture \u00a76.2 keeps open \u2014 a void policy as Indeterminate with a cause \u2014 rather than due2's current reading, contributing nothing (NotApplicable). This case is the first external evidence on that open item.",
+  "notes": "Translated from DIPS-Tools/ODRL-Engine@f0839f6 (OVAL) access_control/conflict3.ttl/.json/.txt. OVAL's request names Action, Asset and Party; Party becomes the assignee. OVAL requests carry no time, so request.at and effective_at are an arbitrary fixed instant (no constraint reads time). The original prohibition has no target, which IM 2.6.2 forbids; it gains the permission's target, the reading under which OVAL's own expectation holds. Scenario 2 is added: a requester the prohibition does not name, so the strategy has nothing to resolve and every variant permits. Divergence: OVAL reports the policy as not evaluable (None), the 'Indeterminate with a cause' reading. due2 decided (2026-10-11, architecture §6.2) to keep 'contributes nothing': a self-voiding policy is an evaluation outcome, recorded in the trace as eliminations with rule invalid, not a policy error.",
   "prefixes": {
     "ex": "http://example.com/"
   },
@@ -34,7 +34,7 @@
         "verdict": "NotApplicable",
         "frontier": [],
         "obligations": [],
-        "why": "Both rules apply; under invalid a T candidate and a T prohibition together void the policy, all its atoms are eliminated with rule invalid, and nothing remains (workflows \u00a76.2)."
+        "why": "Both rules apply; under invalid a T candidate and a T prohibition together void the policy, all its atoms are eliminated with rule invalid, and nothing remains (workflows §6.2)."
       },
       "oval_expected": "not evaluated (None)"
     },

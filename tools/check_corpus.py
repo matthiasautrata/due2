@@ -57,7 +57,7 @@ OPERATORS = {ODRL[o] for o in ("eq", "neq", "lt", "lteq", "gt", "gteq", "isAnyOf
 CONNECTIVES = {ODRL["and"], ODRL["or"], ODRL.xone, DPROD["not"]}
 REJECTED = {ODRL.inheritFrom: "inheritFrom", ODRL.andSequence: "andSequence",
             ODRL.rightOperandReference: "rightOperandReference", ODRL.implies: "implies",
-            ODRL.source: "collection source"}
+            ODRL.source: "odrl:source outside a collection"}
 CONFLICT_VALUES = {ODRL.prohibit, ODRL.perm, ODRL.invalid}
 NUMERIC = {XSD.integer, XSD.decimal, XSD.int, XSD.long, XSD.nonNegativeInteger,
            XSD.positiveInteger, XSD.short}
@@ -347,11 +347,11 @@ def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report
         if (policy, term, None) in g:
             r.err(f"{q(g, policy)}: {q(g, term)} on a Policy is not an extension point (duties only)")
     # Asset and party nodes are where odrl:source and collection refinements
-    # occur (IM 2.5.5-2.5.6); due2-profiles.md 8.1 rejects both. Rule and
-    # constraint nodes are checked in check_rule and check_constraint.
+    # occur (IM 2.5.5-2.5.6). Rule and constraint nodes are checked in
+    # check_rule and check_constraint, where odrl:source stays rejected.
+    # A refinement-free odrl:source on a collection is admitted as an inert
+    # annotation (profiles 8.1, 2026-10-11); refined collections are not.
     for node in sorted(asset_party_nodes(g), key=str):
-        if (node, ODRL.source, None) in g:
-            r.err(f"{q(g, node)}: collection source (odrl:source) is not admitted")
         if (node, ODRL.refinement, None) in g:
             r.err(f"{q(g, node)}: collection refinement is not admitted")
     conflicts = list(g.objects(policy, ODRL.conflict))
@@ -469,7 +469,7 @@ def check_case(case_dir: Path) -> list[Report]:
     for i, sc in enumerate(scenarios):
         tag = f"scenario {i + 1} ({sc.get('name', '?')})"
         req = sc.get("request", {})
-        for k in ("action", "target", "at"):
+        for k in ("action", "at"):          # target may be absent (workflows 3.2)
             if k not in req:
                 r.err(f"{tag}: request.{k} missing")
         for k in req.get("params", {}):

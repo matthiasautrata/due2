@@ -3,7 +3,7 @@
   "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-18.ttl",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-18.ttl and its 4 test cases; FORCE: \"A party collection may READ any resource from the Asset Collection.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire). odrl:source on the collection is dropped: due2 rejects it (due2-profiles.md §8.1), and FORCE's membership comes from the partOf edges either way. Whether due2 should admit a refinement-free odrl:source is registered in odrl22-conformance.md §5.",
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-18.ttl and its 4 test cases; FORCE: \"A party collection may READ any resource from the Asset Collection.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire). odrl:source on the collection is kept as written: due2 admits a refinement-free source as an inert annotation (due2-profiles.md §8.1), and membership comes from FORCE's partOf edges, carried in sotw.closure.",
   "prefixes": {
     "ex": "http://example.org/"
   },

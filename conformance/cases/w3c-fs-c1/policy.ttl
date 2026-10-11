@@ -8,7 +8,7 @@
 
 # Source: w3c/odrl@1db8e6b formal-semantics/examples/C Evaluation of Conditions (Duties)/C1 (W3C Software and Document License),
 # translated from JSON-LD. Changes: typed; conflict and
-# profiles declared; odrl:payAmount bound to the witness source.
+# profiles declared.
 
 <http://example.com/policy/C1> a odrl:Agreement ;
     odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
@@ -30,8 +30,3 @@ ex:condition\/1 a odrl:Duty ;
             odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
     ] .
 
-# Witness source: the amount is a parameter of the payment (due2-profiles.md §3).
-odrl:payAmount a odrl:LeftOperand ;
-    dprod:operandSource due2:witnessSource ;
-    dprod:operandProperty odrl:payAmount ;
-    rdfs:range xsd:decimal .
