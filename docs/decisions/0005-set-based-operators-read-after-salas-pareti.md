@@ -37,6 +37,8 @@ Salas–Pareti depart from the earlier reading deliberately (§5: "differentiati
 2. **Warn, do not reject.** A list right operand, or a set-valued left operand, on `isPartOf`, `hasPart`, or `isA` is accepted with the warning `ContestedOperatorReading`. A warning is a diagnostic that does not reject, and the trace carries it. This qualifies architecture §1 ("never accepted and approximated") without breaking it: the reading is a stated choice with a published source, not an approximation, and the warning makes the choice visible wherever it applies.
 3. **Revisit** if the ODRL WG or CG resolves R-V2 differently. The warning marks every affected policy.
 
-## Not decided here
+## Addendum: `isAllOf` (issue #33, decided 2026-10-11)
 
-The `isAllOf` reading. due2 has left ⊇ right, Bonatti has =, Salas–Pareti has ≡, and Mustafa has "below every right value". This is registered separately as an open decision (#33). Corpus cases for `hasPart` and `isA` with a list: #32.
+due2 has left ⊇ right; Bonatti has =, Salas–Pareti have ≡, and Mustafa has "below every right value". **due2 keeps ⊇: the left covers the listed values and may hold more.** This departs from the Salas–Pareti reading adopted above, deliberately: the Vocabulary's wording requires every listed value, not the absence of others, and equality would make an extra purpose or certification defeat a constraint that only asks for the listed ones. No warning is raised (`due2-profiles.md` §4).
+
+Corpus cases for `hasPart` and `isA` with a list: #32.
