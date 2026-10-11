@@ -1,6 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** Draft v0.1, 2026-10-11. Every item that is new here is marked **[O]** until adopted.
+**Status:** Draft v0.2, 2026-10-11. Every item that is new here is marked **[O]** until adopted.
+
+**Changes in v0.2:** critical features and the three testing modes decided (§1.1): atomization, evaluation, and case history get bounded-exhaustive, generated, and differential testing. Case history added as a component (§4.7, risk R10). Parser sharing decided (§4.1). Invalid-input twins for every generator (§5).
 **Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L9) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
@@ -28,6 +30,33 @@ No component gets implementation code until its entry in §4 states:
 
 An entry can be short. It still has to exist and be reviewed before code. Writing the oracle and the properties first is also the cheapest spec review there is: each ambiguity they surface is a spec edit, not a bug fix later.
 
+### 1.1 Critical features **[D]** (2026-10-11)
+
+Three features carry the weight of the system, and each gets the strongest treatment below: **bounded-exhaustive**, **generated**, and **differential** testing together, not one of them.
+
+| Feature | Components | Why critical |
+|---|---|---|
+| **Atomization** | W1 stage 1 (normaliser) and stage 2 (builder) | Every semantically interesting rewrite happens here, and a mistake is silent (R1) |
+| **Evaluation** | W2 and W3 | Where `U` is preserved or lost (R2) and where completion decides (R3) |
+| **Case history** | The ledger: recording, replay, re-evaluation (architecture §7, workflows §7) | The audit answer — what was decided, when, on which inputs, and why — must be reproducible years later (R6, R10) |
+
+The three testing modes are:
+
+- **Bounded-exhaustive.** Over a deliberately tiny vocabulary — for example two actions, two targets, two parties, two facts each drawn from all five statuses, policies of up to three rules with up to two constraints — enumerate *every* input, not a sample. Most defects show up on small inputs ("small-scope hypothesis"), and enumeration guarantees none of them is skipped. The bounds are set per feature by what finishes in the slow tier, and the PR tier runs a smaller bound.
+- **Generated.** Hypothesis over larger inputs, with the generators of §5.
+- **Differential.** Every critical component has an independent counterpart, and both run on every exhaustive and generated input:
+
+| Implementation | Counterpart |
+|---|---|
+| W1 stage 1 | `Den` (Python, then Dafny) through the lineage bijection |
+| W1 + W2 + W3 | `I`, the direct interpreter (L9) |
+| W3 | Brute-force W3 over every completion of the findings |
+| Replay of a ledger entry | The original trace, byte for byte |
+| Re-evaluation of a case history | A from-scratch evaluation over the current inputs |
+| Any second backend | The first |
+
+Negative inputs are part of all three modes: the enumerator and the generators also produce invalid policies, and the expected result is the rejection with its diagnostic.
+
 ---
 
 ## 2. What can go wrong
@@ -44,6 +73,7 @@ The ranking is by how silent the defect is, not how likely it is.
 | R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (workflows §7) and the ledger | W1 identity, trace serialisation |
 | R7 | **Boundary leak.** W2 reads another atom's finding; W3 reads the request or SOTW. | Invalidates the parallelism and the completion argument | W2, W3 |
 | R8 | **Unexplained divergence from an origin evaluator.** | Undermines the compatibility claims | Translated cases |
+| R10 | **Case-history corruption.** An earlier decision is edited instead of superseded; an entry does not pin enough to replay; a normaliser upgrade silently changes old answers; an as-of query answers from today's policy. | The audit question gets a plausible wrong answer | The ledger, re-evaluation |
 | R9 | **Generator blind spots.** Properties pass because the generators never produce the hard inputs. | False confidence, the most expensive kind | All property tests |
 
 ---
@@ -82,7 +112,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Properties.** L4 and L5 on `I`. Exhaustive Kleene truth tables for `and`, `or`, `xone`, and `dprod:not` over `{T, F, U}`, which are small enough to enumerate.
 - **Golden vectors.** The corpus.
 - **Generators.** None needed for the first gate. The §5 generators come in for L9 against the pipeline (§4.3).
-- **Open.** **[O]** Whether `I` and W1 share the RDF-to-lifted-tree parser. Sharing is cheap but makes parser bugs invisible to L9. If it is shared, the parser needs its own checks: round-trip properties and agreement with `tools/check_corpus.py` on what it accepts. Recommended: share it, and test it separately.
+- **Parser.** **[D]** (2026-10-11) `I` and W1 share the RDF-to-lifted-tree parser. Because L9 cannot see a parser bug, the parser is tested on its own: round trip (parse, render, parse gives the same tree), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts and rejects, over the corpus, the vendored policies, and the external suites.
 - **Done.** 98 of 98 cases agree, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or `I`.
 
 ### 4.2 W1 stage 1: the normaliser
@@ -120,6 +150,21 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Risks.** R6.
 - **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded case gives the same digests (workflows §7).
 
+### 4.7 Case history: the ledger
+
+- **Risks.** R10, R6.
+- **Before code.** **[O]** The ledger has no data model at the level of workflows §3: architecture §7 says what an entry pins and how re-evaluation behaves, but not the relations, the transition record, or the as-of query. That has to be specified first, in `due2-workflows.md`, because the properties below are stated over it.
+- **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (architecture §7, issue #14), must agree with it.
+- **Properties.**
+  - *Replay.* Every entry, re-run under its pinned normaliser versions, gives byte-identical traces.
+  - *Pinning suffices.* Re-running with the SOTW cut down to the entry's recorded reads gives the same trace (a consequence of L3); an entry that needs more than it pinned is a defect.
+  - *Append-only.* No operation changes an earlier entry; re-evaluation adds a new case and a transition.
+  - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
+  - *Two clocks.* An as-of query for an earlier decision answers from that entry, unaffected by later policy amendments, SOTW revisions, or normaliser upgrades.
+  - *Normaliser upgrade.* Replaying old entries under a new normaliser version reports every changed verdict; it never overwrites one.
+- **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, amend a policy, upgrade the normaliser, re-evaluate, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
+- **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of SOTW revisions, an expected verdict per revision.
+
 ---
 
 ## 5. Generators **[O]**
@@ -131,6 +176,8 @@ Requirements:
 - **Biased towards unknowns.** Draw fact status uniformly over all five statuses rather than mostly `resolved`. A generator that rarely produces `U` cannot find R2 or R3.
 - **Correlated by construction.** Reuse operands deliberately: identical parts, complement pairs, and one fact read both ways across rules. Mixed variables appear only when a generator aims for them.
 - **Structurally complete.** Nested `and`, `or`, `xone`, and `dprod:not`; shared duties; guarded duties; deadlines and recurrences; all three conflict strategies; `violations = deny`.
+- **Valid and invalid.** Each generator has a twin that produces near-miss invalid inputs — one rule left unnamed, an operand unbound, a cycle, a limit exceeded by one — with the expected rejection.
+- **Shared with the enumerator.** The bounded-exhaustive enumerator of §1.1 and the Hypothesis generators draw from one description of the input space, so the two cannot drift apart.
 - **Measured.** Each run reports a histogram of which features it exercised, using the feature list behind the coverage-gap list in `conformance/README.md`. A feature with zero hits fails the run. This makes R9 visible rather than assumed.
 
 ---
@@ -156,8 +203,8 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | Tier | Runs |
 |---|---|
 | Every commit (today) | The four commands in `README.md` § Verify |
-| PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; Hypothesis `fast` for L1–L9 and the stage-1 invariants; the L1 determinism matrix |
-| Slow | Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the Dafny `Den` check. Results feed the ratchet, not the gate |
+| PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L9 and the stage-1 invariants; the L1 determinism matrix |
+| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the Dafny `Den` check. Results feed the ratchet, not the gate |
 
 ---
 
@@ -167,10 +214,11 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 2. Case-format extension for negative cases: needed by W1 (§4.2) and cheap to do now.
 3. The status matrix and Kleene truth tables, as data. They are spec as much as tests, and `I` uses them first.
 4. `I` (issue #9). Run the corpus and triage per §6.
-5. Generators (§5), with the coverage histogram.
+5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
 6. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
 7. W1 stage 2, gated by L9 against `I`.
 8. W2, then W3, each gated as in §4.4 and §4.5.
+9. The ledger data model (§4.7), then the ledger, gated by the stateful machine.
 
 ---
 
@@ -180,8 +228,11 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 |---|---|---|---|
 | 1 | Strategy before code, as a standing rule | §1 | **Resolved 2026-10-11:** adopted (CLAUDE.md) |
 | 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | Adopt |
-| 3 | `I` and W1 share the parser | §4.1 | Share, and test the parser separately |
+| 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own |
 | 4 | Negative cases in the case format | §4.2 | Do now; it blocks W1 |
 | 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | Decide before W3 code |
 | 6 | Generator coverage histogram as a failing check | §5 | Adopt |
 | 7 | The disagreement protocol | §6 | Adopt |
+| 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
+| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code |
+| 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |
