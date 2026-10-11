@@ -64,6 +64,20 @@ IM §2.5.5–2.5.6 make `odrl:source` load-bearing: a refined collection is *ref
 
 Whether due2 should admit collection refinements — party collections especially, where "the requester's department" wants a refinement-shaped encoding — is **registered for discussion**; it touches W2's matching (the refinement would have to be evaluated per member) and the SOTW's closure story. Until decided, the shape keeps the IM's rule on the books and the corpus stays away from the construct.
 
+**Evidence, 2026-10-11.** FORCE's collection policies (16–18, 21) use `odrl:source` *without* a refinement, naming the collection while membership comes from `odrl:partOf` edges in the state of the world. That narrower form is inert under due2's closure reading: dropping it changes no verdict (`force-16` … `force-21`). Admitting a refinement-free `source` as an annotation is therefore a cheap option separate from admitting refinements. Until this check ran, `check_corpus.py` never looked at asset or party nodes, so the rejection was specified but not enforced; it is now (`conformance/external/README.md`).
+
+## 5a. Results against other evaluators' suites (2026-10-11)
+
+The external suites vendored under `conformance/external/` exposed a defect in the harness. It validated with no inference, and the shape tests rule and constraint values by `sh:class`. An untyped rule node — `odrl:permission [ … ]`, the style of the IM's own Turtle examples — therefore failed `sh:class odrl:Permission`, and it was never targeted by `PermissionShape`, so its required target went unchecked. The corpus passed only because every corpus node is typed explicitly. `check_odrl22.py` now adds the types the ODRL 2.2 vocabulary entails: rdfs:range of `permission`, `prohibition`, `obligation`, `duty`, `remedy`, `consequence`, `action`, `target`, `assignee`, and `assigner`; rdfs:domain of `leftOperand`; and Logical Constraint for a node with a connective. rdfs:range of `leftOperand` is deliberately not applied, because it would make IM 2.5.1's "MUST be a LeftOperand" vacuous.
+
+```
+python3 tools/check_odrl22.py --all                 98 checked, 0 failing   (94 cases: 66 + 24 translated + 4 due2-native; 4 DPROD files)
+FORCE policies                                      21 checked, 7 failing   (policies 1-7: no target, 1-2 no action)
+OVAL policies                                      105 checked, 85 failing  (Offer without assigner, missing targets, unit as string, ...)
+```
+
+The external failures are upstream IM violations, itemised in `conformance/external/README.md`, with one exception. Six OVAL policies use a list right operand with `isPartOf`, which the shape flags under due2's *reading* of IM 2.5.1 (§2: lists only for `isAnyOf`, `isNoneOf`, `isAllOf`). That is a reading the IM leaves open, not a violation, and it is recorded as such.
+
 ## 6. Reproducing
 
 ```bash

@@ -16,7 +16,7 @@ conformance/cases/<case>/
     case.json      provenance, classification, and scenarios
 ```
 
-Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/matthiasautrata/RL2`, `conformance/usecases/`), `dprod-` for DPROD Contracts examples (`github.com/EKGF/dprod`, `develop`, `dprod-contracts/examples/`).
+Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/matthiasautrata/RL2`, `conformance/usecases/`), `dprod-` for DPROD Contracts examples (`github.com/EKGF/dprod`, `develop`, `dprod-contracts/examples/`), `force-`, `oval-`, and `w3c-fs-` for other evaluators' suites (vendored under `external/`, see `external/README.md`), and `due2-` for cases authored here to cover what no origin exercises.
 
 ## Vendored DPROD examples
 
@@ -84,15 +84,16 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 | `needs` | For anything but `odrl-core`: the profile terms used, or the constructs missing. |
 | `request.params` | Values of `dprod:requestSource` properties, keyed by property IRI. Absent means `missing`. |
 | `sotw.facts` | Values of `dprod:stateSource` properties: `status` is `resolved`, `missing`, `invalid`, `conflict`, or `unresolved`; `values` has one entry when resolved (any number, including none, for an operand declared `due2:cardinality due2:set`), two or more when in conflict, none otherwise. |
-| `sotw.evidence` | `id`, `occurred_at`, `actor`, `action`, optional `object`, `issuer`, `discharges`, `params` (`due2-workflows.md` §3.3). `params` are read by `due2:witnessSource` operands in a duty's constraints (`due2-profiles.md` §3). |
+| `sotw.evidence` | `id`, `occurred_at`, `actor`, `action`, optional `object`, `issuer`, `discharges`, `params` (`due2-workflows.md` §3.3). `params` are read by `due2:witnessSource` operands in a duty's constraints (`due2-profiles.md` §3). `discharges` names a grant-scoped instance by the inputs of its key, `{"duty": IRI, "reference": <request reference>}`; the evaluator computes the digest (§5.3). |
 | `sotw.activation` | Duty instance key or rule IRI → activation instant, an `xsd:dateTime`, for relative deadlines and recurrence anchors (`due2-workflows.md` §5.3, `due2-profiles.md` §7). |
 | `sotw.closure` | `[relation, narrower, broader]` triples, for hierarchy edges not in the policy file. |
-| `config` | `combination`; optional `preference`, `signers`, `violations` (`ignore` by default, `deny` for DPROD-aligned evaluation — exception 6 of `due2-profiles.md` §8.2 still diverges), `admit_source`, `admit_age`. |
+| `config` | `combination`; optional `preference`, `signers` (a list of `{"duty": IRI, "issuer": IRI}`, workflows §3.4), `violations` (`ignore` by default, `deny` for DPROD-aligned evaluation — exception 6 of `due2-profiles.md` §8.2 still diverges), `admit_source`, `admit_age`. |
 | `expected.verdict` | `Permit`, `Deny`, `Pending`, `NotApplicable`, or `Indeterminate`, derived by hand from `due2-workflows.md` §5–§6 and `due2-profiles.md`. |
 | `expected.frontier` | For `Pending`: a list of alternatives, each a list of outstanding duty IRIs. |
+| `expected.exact` | Optional, and only meaningful when unknowns could affect the verdict: `false` asserts that it comes from the beyond-`max_mixed` fallback (`due2-workflows.md` §6.4), `true` that the completion was exact (`due2-max-mixed`). |
 | `expected.obligations` | Obligations in force for the request (`due2-workflows.md` §5.2, §6.1): `{"duty": IRI, "status": "fulfilled" \| "outstanding" \| "violated" \| "unknown"}`, plus `"instance": <occurrence instant>` for an instance of a recurring duty. Statuses follow §5.3's table — W2 computes them from the witness finding and the deadline; include `unknown` ones too, and remember that a recurring obligation with no instance owed yet is not reported. |
 | `expected.why` | The derivation in one or two sentences — which atoms applied, which were unknown, why the verdict follows. |
-| `rl2_expected`, `dprod_expected` | The origin's own expected result, where it states one. A difference from `expected.verdict` is explained in `notes`. |
+| `rl2_expected`, `dprod_expected`, `force_expected`, `oval_expected`, `w3c_expected` | The origin's own expected result, where it states one, in the origin's vocabulary (FORCE: rule kind and activation state; OVAL: accept decision under its semantics switches; W3C CG: activation and control state). A difference from `expected.verdict` is explained in `notes`. |
 
 **Values.** A literal is `{"@value": ..., "@type": ...}`, an IRI `{"@id": ...}` — the JSON-LD forms. Prefixed names expand through `prefixes`.
 
@@ -114,11 +115,21 @@ Expected results are hand-derived until an evaluator exists. The derivation in `
 
 Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus. **Tracked as GitHub issues** (label `corpus`); this section remains the specification record.
 
-- **`due2:witnessSource` and `evidence_param`** — no corpus policy uses a witness source; every duty condition in the corpus is a guard. `WitnessOutsideDuty` is therefore unexercised.
-- **Grant scope and `discharges`** — two cases (`rl2-attestation-gating`, `rl2-audit-trail`) note *why* they fall back to member scope; no scenario submits evidence against a grant.
-- **`signers`** — no case configures an admissibility record for evidence.
+Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed since 2026-10-10:
+
+- ~~`due2:witnessSource` and `evidence_param`~~ — `oval-duty-payment`, `w3c-fs-c1`, `w3c-fs-c2` (as duty-action refinements, `due2-profiles.md` §9 #6).
+- ~~Grant scope and `discharges`~~, ~~`signers`~~ — `due2-grant-signers`.
+- ~~`odrl:or`~~ — `force-20` (260 disjuncts, all known) and `due2-or-unknown` (Kleene, with unknowns).
+- ~~`max_mixed` fallback (§6.4 beyond the bound)~~ — `due2-max-mixed` (9 mixed guards, `expected.exact = false`; scenario 2 sits at the bound and stays exact).
+- ~~`perm` and `invalid` conflict strategies~~ — `oval-conflict-perm`, `oval-conflict-invalid`.
+- ~~Incomparable frontier~~ — `due2-incomparable-frontier` (collapse, dominance, second approver); `config.preference` itself waits on its format (workflows §9 #3).
+- ~~Hoisted guard with an unknown fact~~ — `w3c-fs-c2` scenarios 4–5 (workflows v0.6, §6.4).
+
+Still open:
+
+- **`WitnessOutsideDuty`** and the other normalisation rejections — the case format has no negative cases (expected rejection instead of a verdict). The external suites supply candidates (`external/README.md`, FORCE policies 1–7).
 - **`admit_source` / `admit_age`** — a case-format gap: `sotw.facts` carries no attribution (`source`, `observed_at`), so the filter cannot be shown at work; three cases note this in `notes`. Fixing it needs a fact-attribution extension to the case format.
-- **`config.preference`** — no case has an incomparable frontier, so ordering is never exercised.
-- **`odrl:or`** — no corpus policy uses a disjunction.
-- **Several policies per case** — workflows §9 #7; blocked on a case-format extension.
-- **Conflict-strategy variety** — every explicit `odrl:conflict` in the corpus is `prohibit` (58), 11 DPROD cases rely on the profile's `prohibit` default, and `combination` is always `prohibit-overrides`. `perm`, `invalid`, and the other cross-policy combinations have no case.
+- **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
+- **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).
+- **Requests without a target** — workflows §9 #8; OVAL `default_sem*` are ready to translate once decided.
+- **Remedies and consequences** — carried by stage 1, not evaluated for access; no case until the monitoring question (§9 #4) is specified. OVAL's monitoring cases are the external material.

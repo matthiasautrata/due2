@@ -19,4 +19,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `conformance/odrl22-conformance.md` | The ODRL 2.2 conformance protocol, results, and the community-shape findings |
 | `tools/check_corpus.py` | Checks the corpus and any ODRL policy file against the admitted profile, without an evaluator |
 | `tools/check_odrl22.py` | Validates policies against ODRL 2.2 itself: `odrl22-shape.ttl` plus the vendored official vocabulary (`profiles/vendor/w3c/ODRL22.ttl`), via pyshacl |
+| `conformance/external/` | Other evaluators' test suites, vendored unmodified (FORCE, OVAL, W3C ODRL CG examples), with provenance, triage, findings, and upstream defects in its `README.md` |
+| `tools/import_force.py` | One-shot translation of the FORCE suite into `force-*` corpus cases, with an independent due2 derivation |
+| `tools/check_completion.py` | Randomised check of the workflows §6.4 completion algorithm (v0.6) against brute force |
 | `Turning MDS Vendor Contracts into Internal Policies Approach and Decisions.md` | Turning MDS vendor contracts into internal policies: approach and decisions |

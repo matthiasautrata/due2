@@ -1,0 +1,550 @@
+{
+  "case": "due2-max-mixed",
+  "source": "Authored for due2; no origin result.",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2 to exercise the max_mixed bound of workflows §6.4. Each of the nine duties is guarded by its own request-source parameter, so W1's conditional-duty hoisting splits each guard g_i into a positive occurrence (the with-duty atom) and a negative one (the without-duty atom): with the parameter missing, every g_i is a mixed variable. Nine unknown guards is k = 9 > max_mixed (8), so the completion falls back to completing the mixed variables independently and records verdict.exact = false. The witness conditions are duty-action refinements with an explicit due2:witnessSource binding (oval-duty-payment, w3c-fs-c1/-c2 use the same form). Scenario 2 sits exactly at the bound (k = 8) and stays exact; scenarios 3–4 have no unknowns. This is the only corpus case whose expected verdict is the fallback's.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "all nine modules unknown, all fees paid",
+      "request": {
+        "reference": "req-mx",
+        "action": "odrl:use",
+        "target": "ex:dataset/reports",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party/subscriber"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay-1",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "5.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-2",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "6.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-3",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "7.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-4",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "8.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-5",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "9.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-6",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "10.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-7",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "11.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-8",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "12.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-9",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "13.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "exact": false,
+        "why": "Every guard is unknown and mixed, so k = 9 > max_mixed (8): the guards are completed independently (§6.4). The restrictive extreme completes every guard occurrence against its atom — with-duty and without-duty both fail — leaving no candidate, NotApplicable; the permissive extreme turns the with-duty atoms on, and their duties are discharged by ev-pay-1..9, so the candidate is ready, Permit. Indeterminate, with verdict.exact = false: the exact reading over the shared variables gives Permit, since for every value of the guards the owed duties are exactly the paid ones."
+      }
+    },
+    {
+      "name": "one module enabled, eight unknown, all fees paid (k = 8, at the bound)",
+      "request": {
+        "reference": "req-mx",
+        "action": "odrl:use",
+        "target": "ex:dataset/reports",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party/subscriber"
+        },
+        "params": {
+          "ex:moduleEnabled1": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay-1",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "5.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-2",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "6.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-3",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "7.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-4",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "8.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-5",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "9.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-6",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "10.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-7",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "11.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-8",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "12.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-9",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "13.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "moduleEnabled1 is known true, so eight mixed variables remain — exactly max_mixed — and the completion is exact. In every one of the 2^8 assignments the candidate's outstanding set is empty: a duty whose guard holds is discharged by its payment (ev-pay-1..9), and one whose guard fails is not owed. Permit."
+      }
+    },
+    {
+      "name": "all nine modules enabled, all fees paid",
+      "request": {
+        "reference": "req-mx",
+        "action": "odrl:use",
+        "target": "ex:dataset/reports",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party/subscriber"
+        },
+        "params": {
+          "ex:moduleEnabled1": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled2": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled3": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled4": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled5": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled6": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled7": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled8": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled9": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay-1",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "5.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-2",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "6.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-3",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "7.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-4",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "8.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-5",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "9.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-6",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "10.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-7",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "11.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-8",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "12.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          },
+          {
+            "id": "ev-pay-9",
+            "occurred_at": "2026-10-01T08:55:00Z",
+            "actor": "ex:party/subscriber",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "13.00",
+                "@type": "xsd:decimal"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "No unknowns: all nine guards hold, all nine duties are discharged by ev-pay-1..9, the candidate is ready. Permit."
+      }
+    },
+    {
+      "name": "all nine modules enabled, nothing paid",
+      "request": {
+        "reference": "req-mx",
+        "action": "odrl:use",
+        "target": "ex:dataset/reports",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party/subscriber"
+        },
+        "params": {
+          "ex:moduleEnabled1": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled2": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled3": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled4": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled5": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled6": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled7": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled8": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          },
+          "ex:moduleEnabled9": {
+            "@value": "true",
+            "@type": "xsd:boolean"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:policy:MX#cond-1",
+            "ex:policy:MX#cond-2",
+            "ex:policy:MX#cond-3",
+            "ex:policy:MX#cond-4",
+            "ex:policy:MX#cond-5",
+            "ex:policy:MX#cond-6",
+            "ex:policy:MX#cond-7",
+            "ex:policy:MX#cond-8",
+            "ex:policy:MX#cond-9"
+          ]
+        ],
+        "obligations": [],
+        "exact": true,
+        "why": "No unknowns: all nine guards hold and no witness exists — absence of evidence is F, not U (§5.3) — so all nine duties are outstanding and the single frontier alternative lists them."
+      }
+    }
+  ]
+}

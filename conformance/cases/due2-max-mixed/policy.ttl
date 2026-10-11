@@ -1,0 +1,187 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <http://example.com/> .
+
+# Authored for due2. One permission, nine conditional duties: duty i is owed
+# only when optional module i is enabled in the request (a request parameter),
+# and is discharged by paying exactly (4+i).00 EUR. The guards are the point:
+# with all nine unknown, each is a mixed variable (its positive occurrence in
+# the with-duty atom W1 hoists, its negative occurrence in the without-duty
+# atom), so k = 9 > max_mixed = 8 (workflows §6.4) and the fallback runs.
+
+<http://example.com/policy:MX> a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:MX#use> .
+
+<http://example.com/policy:MX#use> a odrl:Permission ;
+    odrl:assigner ex:party\/provider ;
+    odrl:assignee ex:party\/subscriber ;
+    odrl:target ex:dataset\/reports ;
+    odrl:action odrl:use ;
+    odrl:duty <http://example.com/policy:MX#cond-1> ;
+    odrl:duty <http://example.com/policy:MX#cond-2> ;
+    odrl:duty <http://example.com/policy:MX#cond-3> ;
+    odrl:duty <http://example.com/policy:MX#cond-4> ;
+    odrl:duty <http://example.com/policy:MX#cond-5> ;
+    odrl:duty <http://example.com/policy:MX#cond-6> ;
+    odrl:duty <http://example.com/policy:MX#cond-7> ;
+    odrl:duty <http://example.com/policy:MX#cond-8> ;
+    odrl:duty <http://example.com/policy:MX#cond-9> .
+
+<http://example.com/policy:MX#cond-1> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled1 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-2> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "6.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled2 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-3> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "7.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled3 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-4> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "8.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled4 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-5> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "9.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled5 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-6> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "10.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled6 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-7> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "11.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled7 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-8> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "12.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled8 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+<http://example.com/policy:MX#cond-9> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "13.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:moduleEnabled9 ; odrl:operator odrl:eq ;
+        odrl:rightOperand true ] .
+
+# Witness source: the amount is a parameter of the payment (due2-profiles.md §3).
+odrl:payAmount a odrl:LeftOperand ;
+    dprod:operandSource due2:witnessSource ;
+    dprod:operandProperty odrl:payAmount ;
+    rdfs:range xsd:decimal .
+
+# Guards: they read the request, so they decide when each duty is owed
+# (workflows §5.2), and W1 hoists each into its parent permission.
+
+ex:moduleEnabled1 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled1 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled2 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled2 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled3 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled3 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled4 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled4 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled5 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled5 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled6 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled6 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled7 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled7 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled8 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled8 ;
+    rdfs:range xsd:boolean .
+
+ex:moduleEnabled9 a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:moduleEnabled9 ;
+    rdfs:range xsd:boolean .

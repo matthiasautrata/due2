@@ -42,6 +42,10 @@ Two clarifications, both correcting imprecision in the original record rather th
 
 The Dafny scope is unchanged — the `Den` oracle and stage-1 expansion functions first, extending to stage 2's rewriting (hoisting, DNF, instantiation) once the oracle exists.
 
+## Amendment 2 (2026-10-11, literal canonicalisation)
+
+Clarification 2 above is superseded in part. `due2-workflows.md` v0.6 completes unknowns over canonical literals: identical constraint parts share a variable and complementary ones share it with opposite polarity, so a hoisted guard and its negation can no longer both be completed `F`. L9 is an equality again whenever `verdict.exact` holds; refinement remains only beyond the `max_mixed` bound. The L9 oracle must therefore complete the authored policy's unknown literals by the same rule. Motivating case `conformance/cases/w3c-fs-c2`; randomised check `tools/check_completion.py`. Workflows §9 #6 narrows to parts over one fact that are neither identical nor complementary.
+
 ## Revisit when
 
 - Dafny's automation stalls on the stage-1 obligations (timeouts, solver-version sensitivity) → adopt OCaml + Why3, same oracle scope.

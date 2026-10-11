@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.5
+**Status:** Draft v0.6
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.6** (2026-10-11): completions range over canonical literals, not findings (§6.4). Complementary constraint parts share one variable, so the correlations W1 introduces — conditional-duty hoisting, `xone` — no longer widen the verdict to `Indeterminate`, and L9 is an equality again under unknowns, up to a bound (§8). The verdict records whether it was computed exactly (`exact`, §3.5); W3 reads the basis (§6). #6 narrowed to non-complementary parts over one fact (§9). Motivating case: `conformance/cases/w3c-fs-c2`.
 
 **Changes in v0.5:** duty timing landed — `deadline` and `recurrence` are corpus fields (§3.1), W2 computes the effective deadline and a per-instance status (§5.3, following DPROD `formal-semantics.md` §5.2–5.5), the trace's `instance` carries occurrence and status (§3.5), W3 reads the status and never re-derives it, a violated precondition removes its candidate (§6.1), and the §6.4 proof covers timing. RDF confined to the boundary (appendix; ways-of-working §2.4).
 
@@ -172,7 +174,7 @@ eliminated     (atom_id | by_atom, rule)
 alternative    (alt_id, permission_id)
 alt_duty       (alt_id, duty_id)
 dominated      (alt_id | by_alt)
-verdict        (| value, frontier_complete)
+verdict        (| value, frontier_complete, exact)
 verdict_basis  (atom_id | role)
 ```
 
@@ -186,7 +188,7 @@ verdict_basis  (atom_id | role)
 | `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
-| `verdict` | W3 | The verdict, and whether the reported alternatives are known to be all of them. |
+| `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the completion was exact or fell back to independent completion beyond the bound (§6.4). |
 | `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
 
 ### 3.6 Lineage
@@ -325,7 +327,7 @@ An index may skip root atoms that are certainly `F` — wrong action, wrong targ
 ## 6. W3 — Resolve **[D]**
 
 ```
-W3 : Corpus × finding × Config → eliminated × alternative × alt_duty × dominated × verdict × verdict_basis
+W3 : Corpus × finding × basis × Config → eliminated × alternative × alt_duty × dominated × verdict × verdict_basis
 ```
 
 Four steps in fixed order. The order is normative: conflict resolution runs before any duty is looked at, so duties can choose among surviving permissions but never decide which survive.
@@ -387,7 +389,13 @@ Under `deny`, a violated obligation in force acts as a surviving prohibition. DP
 
 The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and duties `F`, prohibitions `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative needs its own argument.
 
-**Completions range over findings, not facts.** Two findings that read the same fact are completed independently, including combinations no value of the fact could produce: `x ≤ 5` and `x > 5` both `F`, say. The definition therefore errs only towards `Indeterminate` — and normalisation can widen the error: conditional-duty hoisting splits one unknown fact into two findings completed independently, so the normalised verdict can be `Indeterminate` where the authored policy decides (L9 records this as refinement; #6's exact completion over the shared fact restores equality). A definite verdict is still invariant over every real value of every unknown fact, but some `Indeterminate` verdicts would be definite under an exact reading — two permissions on `x = true` and `x = false` with `x` unknown permit for every value of `x`. Completing over fact values instead would be exact, but it needs each operand's value domain and is not bounded in general. RL2 makes the same approximation (Semantics §Conflict Resolution). **[O]** — an exact refinement for the common case of a shared Boolean or enumerated fact (§9).
+**Completions range over literals [D].** A finding is `U` because some of its parts are (§5.2). Each `U` part is a *variable*, with one exception that makes the definition exact where W1 introduced the correlation: two constraint parts with the same scope, operand binding (source and property, `due2-profiles.md` §3 — not the left-operand IRI, which two policies may bind differently), datatype, unit, and right operand(s) are one variable — the same polarity when their operators are equal, opposite polarities when they are complements (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`). The key is derived from the corpus's `constraint` and `constraint_value` tuples, so nothing is stored. A duty's `fulfilled` finding, a disjunction over witnesses, is one variable of its own. A completion assigns `T` or `F` to every variable, and each `U` finding is re-derived from its parts by Kleene conjunction (§5.2) under that assignment.
+
+This matters because W1 creates complementary parts. Conditional-duty hoisting turns a permission with a duty guarded by `g` into one atom guarded by `g` with the duty and atoms guarded by the negation of `g` without it (architecture §4 item 5); `xone` expands into disjuncts that carry the others' negations. With `g` unknown, completing those atoms independently admits "both guards `F`", which no value of the fact produces, and the verdict widens to `Indeterminate` where the authored policy decides: `w3c-fs-c2` with the weekday unknown and the fee paid permits on every weekday. Sharing one variable excludes that combination, and the verdict is `Permit`.
+
+*Computing it.* A variable is **uniform** when each of its occurrences moves the verdict the same way — upward for a positive occurrence in a permission or duty finding or a negative one in a prohibition or an obligation's `in_force` under `deny`, downward for the reverse — and **mixed** otherwise. By the monotonicity argument above, applied per occurrence, uniform variables are bounded by the two extreme completions. Mixed variables are enumerated: for each of the `2^k` assignments to the `k` mixed variables, complete the uniform ones at both extremes. The verdict is definite when all `2^(k+1)` completion verdicts agree. `k` counts only unknown literals that occur with both directions in the case at hand — one per unknown guard literal that hoisting split, typically zero or one. Beyond `max_mixed` (a W3 limit, like W1's limits; default 8) the mixed variables are completed independently, as the pre-v0.6 reading did: sound, erring only towards `Indeterminate`, and recorded as `verdict.exact = false`. Either way, a definite verdict is invariant over every real value of every unknown fact. A randomised check (`tools/check_completion.py`: 50,000 instances across the three strategies, brute force over every assignment) found no mismatch, and 2.5% of the instances are definite under v0.6 where the pre-v0.6 reading said `Indeterminate`; a second phase drives nine to ten mixed variables so the fallback runs, and in 1,000 instances it was never wrong — `Indeterminate` in 84 of the 111 where it ran, each a case the exact reading decides.
+
+*What stays approximate.* Parts that read one fact but are neither identical nor complementary remain independent: `x ≤ 5` and `x > 7` both `F` is still a completion, though no value of `x` produces it, and two permissions on `x = "a"` and `x = "b"` over an enumerated `x` are still `Indeterminate` when `x` is unknown. Exactness there needs each operand's value domain and is not bounded in general. RL2 makes the same approximation for all shared facts (Semantics §Conflict Resolution). **[O]** — domain-aware completion for enumerated facts (§9 #6).
 
 `frontier_complete` is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but the listed alternatives may not be all of them.
 
@@ -415,7 +423,7 @@ Acceptance criteria for any implementation, checked by property tests over gener
 | **L6** | **Duty neutrality.** Conflict resolution (§6.2) never looks at duties: its eliminations are unchanged by adding, removing, or fulfilling them. (The `violated_precondition` eliminations of §6.1 are duty-driven by design and outside this law.) |
 | **L7** | **Readiness.** If some candidate is ready after §6.2 and no surviving `Forbid` is `T` or `U`, the verdict is `Permit`. |
 | **L8** | **Skip soundness.** Evaluating more root atoms that are certainly `F` leaves the trace unchanged. |
-| **L9** | **Preservation (refinement).** For a direct interpreter `I` over authored policies (architecture §10): when every finding is definite, `W3(W2(W1(p), r, s), c) = I(p, r, s, c)`. With unknowns, a definite pipeline verdict still equals `I`'s — the real fact values induce one completion, and if all completions agree, so does that one — but the pipeline may return `Indeterminate` where `I` decides: conditional-duty hoisting splits one unknown fact into correlated findings that §6.4 completes independently. Equality under unknowns is restored only by the exact completion over the shared fact (§9 #6). |
+| **L9** | **Preservation.** For a direct interpreter `I` over authored policies (architecture §10), which completes the authored policy's unknown literals by the same rule (§6.4): `W3(W2(W1(p), r, s), c) = I(p, r, s, c)` whenever `verdict.exact` holds. The parts W1 rewrites — hoisted guards and their negations, `xone` disjuncts — are identical or complementary to authored ones, so they denote the same variables, and the two sides enumerate the same completions. With `exact = false` the law weakens to refinement: a definite pipeline verdict equals `I`'s, and the pipeline may return `Indeterminate` where `I` decides. (Restated as a refinement on 2026-10-10; equality restored by v0.6.) |
 
 ---
 
@@ -432,8 +440,9 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 | 3 | Declared preference among frontier alternatives | §6.3 | First incomparable frontier in practice |
 | 4 | Monitoring question — duties currently owed by a party, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements |
 | 5 | Request match keys beyond `assignee` | §5.2 | Survey of real policies |
-| 6 | Exact completion over a shared Boolean or enumerated fact | §6.4 | A real policy where the over-approximation matters |
+| 6 | Domain-aware completion over parts that read one fact but are neither identical nor complementary (enumerated values, overlapping ranges). Complementary parts are exact since v0.6 | §6.4 | A real policy where the remaining over-approximation matters |
 | 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
+| 8 | A request without a target. Options: (a) malformed, rejected before W2; (b) the relation part is `U`, as an absent match-key party already is (§5.2). (b) is the consistent reading; OVAL's `default_sem*` cases (`conformance/external/README.md`) are the evidence | §3.2, §5.2 | Decision |
 
 Deadline windows and the `violated` status, open as #5 until v0.4, are decided in §5.3: timing is in the corpus, W2 computes the effective deadline and the per-instance status, and a violated precondition removes its candidate. What stays open is the *not-yet-owed* state of an instance whose occurrence or window is in the future (`due2-profiles.md` §9).
 
