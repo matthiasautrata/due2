@@ -55,18 +55,22 @@ The single highest-leverage convention. Effects live at the edges; the middle is
 - Default arguments are never mutable containers.
 - For genuinely shared structures where copying is too expensive, use a persistent-structure library rather than reintroducing mutation. **[O]** — candidates: `immutables` (HAMT, small, CPython-adjacent) vs `pyrsistent` (broader API, heavier). Decide when we hit the first real case; do not adopt speculatively.
 
-### 2.2 Error handling **[O]**
+### 2.2 Error handling **[D]** (2026-10-11, provisional, §13)
 
-Two coherent options. Pick one per codebase, not per module.
+Failures come in three kinds, and each is handled one way only.
 
-| | Option A: exceptions at the shell, total core | Option B: `Result` types throughout |
+| Kind | Example | Handling |
 |---|---|---|
-| Mechanism | Core functions are total — they return a `Decision`/`Outcome` union covering failure. The shell translates to exceptions/HTTP. | An explicit `Result[T, E]` (e.g. the `returns` library, or hand-rolled) threaded through call chains. |
-| Pro | Idiomatic Python, no ceremony, works with every tool | Failures are in the type signature; the checker forces handling |
-| Con | Failure modes not visible in signatures unless modelled explicitly | Python lacks do-notation; chaining gets noisy fast. Ecosystem friction. |
-| Verdict | **Recommended default.** Model expected failure as data in the return union; reserve exceptions for genuine bugs and shell-level faults. | Justified only where failure propagation is the dominant complexity. |
+| **An expected outcome** | Unknown data at request time | Not a failure. `Indeterminate` is a verdict, a value like any other (§5.1). |
+| **An expected failure** | A policy W1 rejects; a malformed request at the boundary | `Result[T, E] = Success[T] \| Failure[E]`, hand-rolled frozen dataclasses, matched exhaustively (§2.3). The cause is data, e.g. W1's diagnostics (`due2-diagnostics.md`). |
+| **Can't happen** | A contract violation, a broken invariant, `assert_never` reached, an I/O fault | Let it crash. The exception propagates, and the core has no handler for it. |
 
-Under either option: **exceptions are never control flow in the core**, and bare `except:` / `except Exception:` without re-raise is prohibited.
+- **`Result` only where failure is expected.** A function that cannot fail in an expected way returns its plain value. Kleene `and` returns a truth value, not `Success` of one. Its signature then says that any failure is a crash, and the checker keeps the two kinds apart.
+- **No library.** The two dataclasses and a type alias are the whole of it. A stage that must collect every error, such as W1's (diagnostics §1), runs its checks and folds the failures into one `Failure`. It does not chain calls that stop at the first error.
+- **One handler, at the shell.** In the Erlang sense of "let it crash", the shell is the supervisor. It catches what escapes the core, logs it in full with the traceback, and answers with an error outcome, never a verdict (`due2-workflows.md` §7). Then it takes the next request. The core is pure, so there is no state to restart. Restarting means handling the next request. This is the one `except Exception:` allowed without a re-raise.
+- **Loud, never hidden.** A crash is never turned into `Indeterminate`, a default verdict, or an empty result. Doing that would make a bug look like missing data in the trace.
+
+Exceptions are never control flow in the core, and no other bare `except:` or `except Exception:` without a re-raise is allowed.
 
 ### 2.3 Closed unions and exhaustiveness **[D]**
 
@@ -319,7 +323,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 
 ## 13. Open decisions register
 
-**Provisional picks.** #1, #2, #5, #6, and #7 were settled on 2026-10-11 for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
+**Provisional picks.** #1, #2, #3, #5, #6, and #7 were settled on 2026-10-11 for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
 
 **Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`); #1–#8 below are one implementation-start checklist issue, and #10/#11/#13 belong to the execution-target cluster. This register remains the specification record: a resolution lands here, and the issue closes.
 
@@ -327,7 +331,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 |---|---|---|---|
 | 1 | Static type checker (editor + gate) | §4 | Resolved 2026-10-11 (provisional): basedpyright strict, editor and gate |
 | 2 | Boundary parsing library | §5 | Resolved 2026-10-11 (provisional): msgspec |
-| 3 | Error handling: total core vs `Result` | §2.2 | Team preference |
+| 3 | Error handling: total core vs `Result` | §2.2 | Resolved 2026-10-11 (provisional): `Result` for expected failure, let it crash otherwise; one handler at the shell |
 | 4 | Persistent-structure library | §2.1 | First real use case |
 | 5 | beartype in production or test-only | §5 | Resolved 2026-10-11 (provisional): test environments only, through system test; optional in UAT |
 | 6 | Contracts in production: preconditions-only or off | §6 | Resolved 2026-10-11 (provisional): preconditions only |

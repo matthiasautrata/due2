@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.10
+**Status:** Draft v0.11
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.11** (2026-10-11): an evaluation that crashes answers with an error outcome, never a verdict. The ledger records it, and replay reproduces it (§7, `ways-of-working.md` §2.2).
 
 **Changes in v0.10** (2026-10-11): W1's diagnostics get a registry (`due2-diagnostics.md`) and a place in the data model. A rejection returns every error of the first failing stage and no output (§4); a warning travels in the corpus (`diagnostic`, §3.1) and into the trace of every case that evaluates the policy (§3.5).
 
@@ -429,6 +431,8 @@ This matters wherever one fact is read in both directions. `xone` expands into d
 ## 7. Replay **[D]**
 
 A case is its four input collection ids. W2 and W3 are pure, so the trace is a function of the case: replay re-runs them and compares digests, and calls no resolver. The ledger (architecture §7) stores the case, the reads with their values, and the verdict. Re-evaluation is a new case with a new SOTW — never an edit to an old trace.
+
+**Crashes [D]** (2026-10-11). A failure that should never happen, such as a violated contract, a broken invariant, or an I/O fault in the shell, is not a verdict. The shell answers `Error(cause)`. The verdict set stays the five values of §1, and `Indeterminate` keeps its one meaning: the data could not decide. What the caller does with an error is the caller's default, as it is for `Indeterminate`. A crashed evaluation produces no trace. The ledger stores its case and the cause. W2 and W3 are pure, so replaying that case reproduces the crash: the case is the bug report. W1 is the same: a crash in normalisation is an error, not diagnostics, and builds no corpus (`ways-of-working.md` §2.2).
 
 ---
 
