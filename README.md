@@ -2,10 +2,11 @@
 
 Specifications for due2, an ODRL policy evaluation runtime.
 
-**Source of truth.** All due2 artefacts live in this git repository (`github.com/matthiasautrata/due2`); clone it anywhere. Copies elsewhere — the claude.ai project, chat attachments — are mirrors and may be stale. Change files here, commit, then refresh any mirror that needs it.
+**Source of truth.** All due2 artefacts live in this git repository (`github.com/matthiasautrata/due2`); clone it anywhere. No other copy is maintained — the claude.ai project holds only a pointer here. Change files here and commit.
 
 | Document | Covers |
 |---|---|
+| `CLAUDE.md` | Working notes for Claude Code: the rules that are easy to break, where the semantics live, what's next |
 | `due2-architecture.md` | What due2 is and why |
 | `due2-workflows.md` | The three workflows and the reference data model, language-independent |
 | `due2-profiles.md` | Profiles and the operand registry: how ODRL extensions are declared and evaluated, and DPROD Contracts compatibility |
