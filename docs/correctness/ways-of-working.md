@@ -169,6 +169,8 @@ Design-by-contract is a first-class part of this discipline, not an optional ext
 
 ## 7. Testing
 
+This section lists the instruments. Which instrument guards which risk in due2, what each oracle is independent of, and what must exist before each component is coded: `correctness-strategy.md`.
+
 ### 7.1 Layers **[D]**
 
 - **Unit tests** — pytest. Example-based, fast, deterministic. Cover the specific and the regression-worthy.

@@ -1,7 +1,7 @@
 # 0002 — W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline
 
 **Status:** Decided, 2026-10-10
-**Context documents:** `implementation-alternatives.md` (the full review this records) · `ways-of-working.md` §9–§10 · `due2-architecture.md` §9–§10, §11 · `odrl-compound-to-atomic-normalization.md` §8.1 · `Turning MDS Vendor Contracts into Internal Policies Approach and Decisions.md`
+**Context documents:** `implementation-alternatives.md` (the full review this records) · `ways-of-working.md` §9–§10 · `due2-architecture.md` §9–§10, §11 · `odrl-compound-to-atomic-normalization.md` §8.1 · `mds-vendor-contracts.md`
 
 ## Question
 

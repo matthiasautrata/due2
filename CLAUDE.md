@@ -2,13 +2,14 @@
 
 due2 is an ODRL 2.2 policy evaluation runtime: three-valued (Kleene) evaluation, five verdicts (`Permit`, `Deny`, `Pending` with a frontier of duty routes, `NotApplicable`, `Indeterminate`), and replayable decisions. This repository holds the specification, the conformance corpus, and the checkers. **There is no evaluator yet.** Every expected verdict is hand-derived.
 
-Start with `README.md` (layout, verify commands, status), then `due2-architecture.md` §0 (reading order).
+Start with `README.md` (layout, verify commands, status), then `docs/design/due2-architecture.md` §0 (reading order). Documents live under `docs/{spec,design,correctness,decisions}/` and cite each other by bare file name.
 
 ## Rules that are easy to break
 
 - **The repo is the only source of truth.** No other copy is maintained: not the claude.ai project, not chat attachments.
 - **Unknown is never false.** Missing, invalid, conflicting, or unresolved data makes a part `U`, and `U` survives to the verdict (`ways-of-working.md` §5.1). Every external evaluator gets this wrong (`conformance/external/README.md`); do not copy their behaviour.
-- **Spec before code.** Spec text carries markers: **[D]** decided, **[O]** open (alternatives listed), **[F]** blocked externally. A design change lands as a spec edit, plus a record in `decisions/` when it reverses or settles something load-bearing. The matching GitHub issue closes afterwards, with the commit cited. Open items live in issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), and each issue names its source-of-truth section.
+- **Correctness strategy before code.** No component gets implementation code until its entry in `docs/correctness/correctness-strategy.md` §4 names its risks, oracles (and what each shares with the implementation), properties, golden vectors, generators, and done-gate.
+- **Spec before code.** Spec text carries markers: **[D]** decided, **[O]** open (alternatives listed), **[F]** blocked externally. A design change lands as a spec edit, plus a record in `docs/decisions/` when it reverses or settles something load-bearing. The matching GitHub issue closes afterwards, with the commit cited. Open items live in issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), and each issue names its source-of-truth section.
 - **Corpus cases** (`conformance/cases/<origin>-<name>/`, format in `conformance/README.md`):
   - every rule is named;
   - every left operand is bound;
@@ -30,7 +31,8 @@ Start with `README.md` (layout, verify commands, status), then `due2-architectur
 | Normalisation stage 1 (normative) | `odrl-compound-to-atomic-normalization.md` |
 | Operand bindings, profiles, DPROD compatibility | `due2-profiles.md` |
 | Engineering discipline (types, contracts, testing tiers) | `ways-of-working.md` |
+| Which check guards which risk; oracles; per-component gates | `correctness-strategy.md` |
 
 ## Next
 
-Issue #9: the L9 oracle, a Python direct interpreter over the authored (lifted) form. It completes unknown literals by the workflows §6.4 rule and runs the corpus; first target, all 98 cases. Then #8, the Dafny `Den` oracle (`decisions/0002`). Tooling picks still open at implementation start: issue #23.
+Adopt `correctness-strategy.md` (§9 register). Then issue #9: the L9 oracle, a Python direct interpreter over the authored (lifted) form. It completes unknown literals by the workflows §6.4 definition (enumeration is the recommendation in correctness-strategy §3, still open) and runs the corpus; first target, all 98 cases. Then #8, the Dafny `Den` oracle (`decisions/0002`). Tooling picks still open at implementation start: issue #23.

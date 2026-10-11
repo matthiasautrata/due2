@@ -147,4 +147,4 @@ The underlying principle: *executability confers no authority; proved or tested 
 - Why3 1.8 documentation (`why3.org`) — WhyML, multi-prover dispatch, `extract -D ocaml64`; Frama-C WP and SPARK/GNATprove usage.
 - Potassco User Guide (`potassco.org`) — stable-model semantics, `--cautious`/`--brave`, choice rules, weak constraints.
 - Dafny installation (`dafny.org`, Homebrew `dafny` 4.11.0) — Apple-Silicon bottles, .NET 8, Z3.
-- `Turning MDS Vendor Contracts into Internal Policies Approach and Decisions.md` — the readings/cautious-translation semantics the MDS stage-0 clingo candidate implements.
+- `mds-vendor-contracts.md` — the readings/cautious-translation semantics the MDS stage-0 clingo candidate implements.
