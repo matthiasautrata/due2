@@ -62,22 +62,62 @@ REJECTED = {ODRL.inheritFrom: "inheritFrom", ODRL.andSequence: "andSequence",
 CONFLICT_VALUES = {ODRL.prohibit, ODRL.perm, ODRL.invalid}
 NUMERIC = {XSD.integer, XSD.decimal, XSD.int, XSD.long, XSD.nonNegativeInteger,
            XSD.positiveInteger, XSD.short}
+REJECTED_CODE = {ODRL.andSequence: "UnsupportedConnective"}  # others: UnsupportedConstruct
 FLOATING = {XSD.float, XSD.double}
 VERDICTS = {"Permit", "Deny", "Pending", "NotApplicable", "Indeterminate"}
 CLASSIFICATIONS = {"odrl-core", "odrl-profile", "partial", "not-expressible"}
 
 
+DIAGNOSTICS_DOC = ROOT / "docs" / "spec" / "due2-diagnostics.md"
+
+
+def load_registry() -> dict[str, tuple[str, int]]:
+    """code -> (severity, stage), from the registry table (due2-diagnostics.md 3)."""
+    reg = {}
+    for line in DIAGNOSTICS_DOC.read_text().splitlines():
+        m = re.match(r"^\| `(\w+)` \| (error|warning) \| (\d) \|", line)
+        if m:
+            reg[m.group(1)] = (m.group(2), int(m.group(3)))
+    return reg
+
+
+REGISTRY = load_registry()
+
+
 @dataclass
 class Report:
+    """errors: case-format and harness failures. diagnostics: W1 errors the
+    policy would be rejected with, as (code, message); a negative case expects
+    them. Warnings, W1's and the checker's own, never fail."""
     name: str
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    diagnostics: list[tuple[str, str]] = field(default_factory=list)
+    expected: list[str] = field(default_factory=list)  # a negative case's rejection, as expected
 
     def err(self, msg: str) -> None:
         self.errors.append(msg)
 
     def warn(self, msg: str) -> None:
         self.warnings.append(msg)
+
+    def diag(self, code: str, msg: str) -> None:
+        if code not in REGISTRY:
+            raise KeyError(f"diagnostic {code} is not in {DIAGNOSTICS_DOC.name}")
+        if REGISTRY[code][0] == "warning":
+            self.warnings.append(f"{msg} [{code}]")
+        else:
+            self.diagnostics.append((code, msg))
+
+    def rejection(self) -> list[str]:
+        """The codes W1 reports: every error of the first stage that has one (workflows 4)."""
+        if not self.diagnostics:
+            return []
+        first = min(REGISTRY[c][1] for c, _ in self.diagnostics)
+        return sorted({c for c, _ in self.diagnostics if REGISTRY[c][1] == first})
+
+    def failures(self) -> list[str]:
+        return self.errors + [f"{m} [{c}]" for c, m in self.diagnostics]
 
 
 def parse(paths: list[Path]) -> Graph:
@@ -138,23 +178,23 @@ def check_duty_timing(g: Graph, rule, kind, r: Report) -> None:
     dl = list(g.objects(rule, DPROD.deadline))
     rc = list(g.objects(rule, DPROD.recurrence))
     if kind != ODRL.Duty and (dl or rc):
-        r.err(f"{q(g, rule)}: dprod:deadline and dprod:recurrence are duty terms, "
+        r.diag("TimingOutsideDuty", f"{q(g, rule)}: dprod:deadline and dprod:recurrence are duty terms, "
               f"not terms of {q(g, kind)}")
         return
     if len(dl) > 1:
-        r.err(f"{q(g, rule)}: more than one dprod:deadline")
+        r.diag("InvalidTiming", f"{q(g, rule)}: more than one dprod:deadline")
     if len(rc) > 1:
-        r.err(f"{q(g, rule)}: more than one dprod:recurrence")
+        r.diag("InvalidTiming", f"{q(g, rule)}: more than one dprod:recurrence")
     for v in dl:
         if not isinstance(v, Literal) or v.datatype not in (XSD.dateTime, XSD.duration):
-            r.err(f"{q(g, rule)}: dprod:deadline must be an xsd:dateTime (absolute) or "
+            r.diag("InvalidTiming", f"{q(g, rule)}: dprod:deadline must be an xsd:dateTime (absolute) or "
                   f"xsd:duration (relative to activation), got {v!r}")
         elif v.datatype == XSD.duration and not single_kind_duration(str(v)):
-            r.err(f"{q(g, rule)}: duration deadline {v!r} mixes year-month and "
+            r.diag("MixedDuration", f"{q(g, rule)}: duration deadline {v!r} mixes year-month and "
                   f"day-time components (due2-profiles.md §4)")
     for v in rc:
         if not isinstance(v, Literal) or "FREQ=" not in str(v):
-            r.err(f"{q(g, rule)}: dprod:recurrence must be an RFC 5545 RRULE string "
+            r.diag("InvalidTiming", f"{q(g, rule)}: dprod:recurrence must be an RFC 5545 RRULE string "
                   f"containing FREQ=, got {v!r}")
 
 
@@ -183,7 +223,7 @@ class Bindings:
 def check_constraint(g: Graph, c, b: Bindings, r: Report, used: dict, in_duty: bool = False) -> None:
     for pred, label in REJECTED.items():
         if (c, pred, None) in g:
-            r.err(f"{q(g, c)}: {label} is not admitted")
+            r.diag(REJECTED_CODE.get(pred, "UnsupportedConstruct"), f"{q(g, c)}: {label} is not admitted")
     conns = [p for p in CONNECTIVES if (c, p, None) in g]
     if conns:
         for p in conns:
@@ -195,48 +235,48 @@ def check_constraint(g: Graph, c, b: Bindings, r: Report, used: dict, in_duty: b
     ops = list(g.objects(c, ODRL.operator))
     rights = list(g.objects(c, ODRL.rightOperand))
     if len(left) != 1 or len(ops) != 1:
-        r.err(f"{q(g, c)}: constraint needs exactly one leftOperand and one operator")
+        r.diag("MalformedConstraint", f"{q(g, c)}: constraint needs exactly one leftOperand and one operator")
         return
     op, operator = left[0], ops[0]
     if operator not in OPERATORS:
-        r.err(f"{q(g, c)}: operator {q(g, operator)} is not in the core registry")
+        r.diag("UnsupportedOperator", f"{q(g, c)}: operator {q(g, operator)} is not in the core registry")
     if not rights:
-        r.err(f"{q(g, c)}: no rightOperand")
+        r.diag("MalformedConstraint", f"{q(g, c)}: no rightOperand")
     if operator in CONTESTED and sum(len(members(g, ro)) for ro in rights) > 1:
-        r.warn(f"{q(g, c)}: {q(g, operator)} with a list right operand is read after Salas-Pareti "
-               f"(ContestedOperatorReading; due2-profiles.md 4, decisions/0005)")
+        r.diag("ContestedOperatorReading", f"{q(g, c)}: {q(g, operator)} with a list right operand "
+               f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)")
     src, prop, _ = b.lookup(op)
     if len(src) != 1 or len(prop) != 1:
-        r.err(f"{q(g, c)}: left operand {q(g, op)} has no single binding (UnboundLeftOperand)")
+        r.diag("UnboundLeftOperand", f"{q(g, c)}: left operand {q(g, op)} has no single binding")
         return
     if src[0] not in SOURCES:
-        r.err(f"{q(g, c)}: operand source {q(g, src[0])} is not one of the closed sources")
+        r.diag("InvalidBinding", f"{q(g, c)}: operand source {q(g, src[0])} is not one of the closed sources")
     if src[0] == DUE2.witnessSource and not in_duty:
-        r.err(f"{q(g, c)}: witness-source operand {q(g, op)} outside a duty (WitnessOutsideDuty)")
+        r.diag("WitnessOutsideDuty", f"{q(g, c)}: witness-source operand {q(g, op)} outside a duty")
     if not isinstance(prop[0], URIRef):
-        r.err(f"{q(g, c)}: operandProperty of {q(g, op)} is not an IRI")
+        r.diag("InvalidBinding", f"{q(g, c)}: operandProperty of {q(g, op)} is not an IRI")
     if src[0] == DPROD.contextSource and prop[0] not in CONTEXT_PROPS:
-        r.err(f"{q(g, c)}: context property {q(g, prop[0])} is not a built-in")
+        r.diag("InvalidBinding", f"{q(g, c)}: context property {q(g, prop[0])} is not a built-in")
     card = b.attr(op, DUE2.cardinality)
     used[op] = (src[0], prop[0], card[0] if card else DUE2.one)
     if card and card[0] == DUE2.set and operator in (ODRL.isPartOf, ODRL.hasPart):
-        r.warn(f"{q(g, c)}: {q(g, operator)} over a set-valued operand is read after Salas-Pareti "
-               f"(ContestedOperatorReading; due2-profiles.md 4, decisions/0005)")
+        r.diag("ContestedOperatorReading", f"{q(g, c)}: {q(g, operator)} over a set-valued operand "
+               f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)")
     elif operator == ODRL.isA and card and card[0] == DUE2.set:
-        r.err(f"{q(g, c)}: isA takes one left value (OperatorTypeMismatch; due2-profiles.md 4)")
+        r.diag("OperatorTypeMismatch", f"{q(g, c)}: isA takes one left value (due2-profiles.md 4)")
     allowed = b.attr(op, DUE2.allowedOperator)
     if allowed and operator not in allowed:
-        r.err(f"{q(g, c)}: operator {q(g, operator)} not allowed for {q(g, op)} (OperatorTypeMismatch)")
+        r.diag("OperatorTypeMismatch", f"{q(g, c)}: operator {q(g, operator)} not allowed for {q(g, op)}")
     rng = b.attr(op, RDFS.range)
     for ro in rights:
         for v in members(g, ro):
             if isinstance(v, Literal):
                 if v.datatype in FLOATING:
-                    r.err(f"{q(g, c)}: floating-point right operand is not admitted")
+                    r.diag("FloatingPointOperand", f"{q(g, c)}: floating-point right operand is not admitted")
                 if rng and isinstance(rng[0], URIRef) and str(rng[0]).startswith(str(XSD)):
                     want, have = rng[0], v.datatype or XSD.string
                     if want != have and not (want in NUMERIC and have in NUMERIC):
-                        r.err(f"{q(g, c)}: right operand {v!r} does not conform to range {q(g, want)}")
+                        r.diag("OperatorTypeMismatch", f"{q(g, c)}: right operand {v!r} does not conform to range {q(g, want)}")
 
 
 def witness_kinds(g: Graph, c, b: Bindings) -> set:
@@ -267,7 +307,7 @@ def check_mixed(g: Graph, c, b: Bindings, r: Report) -> None:
             for m in ms:
                 kinds |= witness_kinds(g, m, b)
             if len(kinds) == 2:
-                r.err(f"{q(g, c)}: {q(g, p)} mixes a guard and a witness condition (MixedDutyConstraint)")
+                r.diag("MixedDutyConstraint", f"{q(g, c)}: {q(g, p)} mixes a guard and a witness condition")
             for m in ms:
                 check_mixed(g, m, b, r)
     for o in g.objects(c, ODRL["and"]):
@@ -278,7 +318,7 @@ def check_mixed(g: Graph, c, b: Bindings, r: Report) -> None:
 def check_rule(g: Graph, rule, kind, policy, b: Bindings, r: Report, used: dict,
                seen: set, path: list, named: bool) -> None:
     if rule in path:
-        r.err(f"rule reference cycle: {' -> '.join(q(g, x) for x in path + [rule])}")
+        r.diag("RuleReferenceCycle", f"rule reference cycle: {' -> '.join(q(g, x) for x in path + [rule])}")
         return
     if rule in seen:
         return
@@ -287,20 +327,20 @@ def check_rule(g: Graph, rule, kind, policy, b: Bindings, r: Report, used: dict,
         r.warn(f"anonymous {q(g, kind)} under {q(g, policy)}: corpus cases name every rule")
     for pred, label in REJECTED.items():
         if (rule, pred, None) in g:
-            r.err(f"{q(g, rule)}: {label} is not admitted")
+            r.diag(REJECTED_CODE.get(pred, "UnsupportedConstruct"), f"{q(g, rule)}: {label} is not admitted")
     check_duty_timing(g, rule, kind, r)
     actions = list(g.objects(rule, ODRL.action)) or list(g.objects(policy, ODRL.action))
     if not actions and not path:
-        r.err(f"{q(g, rule)}: no action, at rule or policy level")
+        r.diag("MissingAction", f"{q(g, rule)}: no action, at rule or policy level")
     if not list(g.objects(rule, ODRL.action)) and path:
-        r.err(f"{q(g, rule)}: nested duty has no action")
+        r.diag("MissingAction", f"{q(g, rule)}: nested duty has no action")
     targets = list(g.objects(rule, ODRL.target))
     if not targets and not path:
         targets = list(g.objects(policy, ODRL.target))
     if kind in (ODRL.Permission, ODRL.Prohibition) and not targets:
-        r.err(f"{q(g, rule)}: {q(g, kind)} has no target, at rule or policy level")
+        r.diag("MissingTarget", f"{q(g, rule)}: {q(g, kind)} has no target, at rule or policy level")
     if targets and (rule, ODRL.output, None) in g:
-        r.err(f"{q(g, rule)}: both target and output")
+        r.diag("TargetAndOutput", f"{q(g, rule)}: both target and output")
     for c in list(g.objects(rule, ODRL.constraint)) + list(g.objects(rule, ODRL.refinement)):
         check_constraint(g, c, b, r, used, kind == ODRL.Duty)
         if kind == ODRL.Duty:
@@ -345,16 +385,19 @@ def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report
     declared = {str(p) for p in g.objects(policy, ODRL.profile)}
     for ns, label in NAMESPACED_PROFILES.items():
         if ns_terms(g, ns) and ns not in declared:
-            r.err(f"{q(g, policy)}: uses {label} terms but declares no "
+            r.diag("UndeclaredProfile", f"{q(g, policy)}: uses {label} terms but declares no "
                   f"odrl:profile <{ns}>; normalisation will not select its module")
-    if isinstance(policy, BNode) and len(list(g.objects(policy, ODRL.uid))) != 1:
-        r.err(f"{q(g, policy)}: policy has no identity (IRI or exactly one odrl:uid)")
+    if isinstance(policy, BNode) and not list(g.objects(policy, ODRL.uid)):
+        r.diag("MissingPolicyIdentity", f"{q(g, policy)}: policy has no identity (IRI or odrl:uid)")
+    for node in sorted(set(g.subjects(ODRL.uid, None)), key=str):
+        if len(list(g.objects(node, ODRL.uid))) > 1:
+            r.diag("MultipleUid", f"{q(g, node)}: more than one odrl:uid")
     for pred, label in REJECTED.items():
         if (policy, pred, None) in g:
-            r.err(f"{q(g, policy)}: {label} is not admitted")
+            r.diag(REJECTED_CODE.get(pred, "UnsupportedConstruct"), f"{q(g, policy)}: {label} is not admitted")
     for term in (DPROD.deadline, DPROD.recurrence):
         if (policy, term, None) in g:
-            r.err(f"{q(g, policy)}: {q(g, term)} on a Policy is not an extension point (duties only)")
+            r.diag("TimingOutsideDuty", f"{q(g, policy)}: {q(g, term)} on a Policy is not an extension point (duties only)")
     # Asset and party nodes are where odrl:source and collection refinements
     # occur (IM 2.5.5-2.5.6). Rule and constraint nodes are checked in
     # check_rule and check_constraint, where odrl:source stays rejected.
@@ -362,17 +405,17 @@ def check_policy(g: Graph, policy, b: Bindings, profiles_graph: Graph, r: Report
     # annotation (profiles 8.1, 2026-10-11); refined collections are not.
     for node in sorted(asset_party_nodes(g), key=str):
         if (node, ODRL.refinement, None) in g:
-            r.err(f"{q(g, node)}: collection refinement is not admitted")
+            r.diag("UnsupportedConstruct", f"{q(g, node)}: collection refinement is not admitted")
     conflicts = list(g.objects(policy, ODRL.conflict))
     if len(conflicts) > 1:
-        r.err(f"{q(g, policy)}: more than one odrl:conflict")
+        r.diag("InvalidConflict", f"{q(g, policy)}: more than one odrl:conflict")
     elif conflicts and conflicts[0] not in CONFLICT_VALUES:
-        r.err(f"{q(g, policy)}: odrl:conflict {q(g, conflicts[0])} is not prohibit, perm, or invalid")
+        r.diag("InvalidConflict", f"{q(g, policy)}: odrl:conflict {q(g, conflicts[0])} is not prohibit, perm, or invalid")
     if (policy, RDF.type, ODRL.Request) in g:
-        r.err(f"{q(g, policy)}: odrl:Request is an evaluation input, not a policy")
+        r.diag("RequestAsPolicy", f"{q(g, policy)}: odrl:Request is an evaluation input, not a policy")
     rules = [(rule, kind) for edge, kind in RULE_EDGES.items() for rule in g.objects(policy, edge)]
     if not rules:
-        r.err(f"{q(g, policy)}: no permission, prohibition, or obligation")
+        r.diag("NoRule", f"{q(g, policy)}: no permission, prohibition, or obligation")
     seen: set = set()
     for rule, kind in rules:
         check_rule(g, rule, kind, policy, b, r, used, seen, [], named)
@@ -403,7 +446,7 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
     out = []
     if not policies:
         r = Report(str(path))
-        r.err("no policy node (odrl:Policy, Set, Offer, Agreement, or a declared subclass)")
+        r.diag("NoPolicy", "no policy node (odrl:Policy, Set, Offer, Agreement, or a declared subclass)")
         return [(r, {}, g)]
     for policy in policies:
         r = Report(f"{path.name} :: {q(g, policy)}")
@@ -432,6 +475,29 @@ def expand(curie: str, prefixes: dict) -> str:
     return curie
 
 
+def check_rejection(case: dict, reports: list[Report], r: Report) -> None:
+    """A negative case (conformance/README.md): W1 must reject the policy with
+    exactly the expected codes, those of the first failing stage."""
+    exp = case["expected_rejection"]
+    codes = exp.get("codes", [])
+    if case.get("scenarios"):
+        r.err("case.json: a negative case has no scenarios")
+    if not codes:
+        r.err("case.json: expected_rejection.codes is empty")
+    for c in codes:
+        if REGISTRY.get(c, ("", 0))[0] != "error":
+            r.err(f"case.json: expected code {c} is not an error in due2-diagnostics.md")
+    if not exp.get("why"):
+        r.err("case.json: expected_rejection.why missing")
+    got = sorted({c for x in reports for c in x.rejection()})
+    if sorted(set(codes)) != got:
+        r.err(f"expected rejection {sorted(set(codes))}, the policy gives {got or 'none'}")
+        return
+    for x in reports:
+        x.expected = [f"{m} [{c}]" for c, m in x.diagnostics]
+        x.diagnostics = []
+
+
 def check_case(case_dir: Path) -> list[Report]:
     policy_path = case_dir / "policy.ttl"
     case_path = case_dir / "case.json"
@@ -443,7 +509,7 @@ def check_case(case_dir: Path) -> list[Report]:
     results = check_file(policy_path, [], named=True)
     if len(results) != 1:
         r = Report(case_dir.name)
-        r.err(f"policy.ttl must contain exactly one policy, found {len(results)}")
+        r.diag("MultiplePolicies", f"policy.ttl must contain exactly one policy, found {len(results)}")
         reports.append(r)
     for r, _, _ in results:
         r.name = f"{case_dir.name}"
@@ -457,9 +523,17 @@ def check_case(case_dir: Path) -> list[Report]:
     except json.JSONDecodeError as e:
         r.err(f"case.json: {e}")
         return reports
-    for key in ("case", "source", "classification", "scenarios"):
+    negative = "expected_rejection" in case
+    for key in ("case", "source", "classification") + (() if negative else ("scenarios",)):
         if key not in case:
             r.err(f"case.json: missing '{key}'")
+    if not isinstance(case.get("odrl22_valid", True), bool):
+        r.err("case.json: odrl22_valid must be true or false")
+    if negative:
+        check_rejection(case, reports, r)
+        return reports
+    if case.get("odrl22_valid", True) is False:
+        r.err("case.json: a policy that is not valid ODRL 2.2 can only be a negative case")
     if case.get("classification") not in CLASSIFICATIONS:
         r.err(f"case.json: classification must be one of {sorted(CLASSIFICATIONS)}")
     if case.get("classification") in ("odrl-profile", "partial", "not-expressible") \
@@ -548,16 +622,21 @@ def main() -> int:
             reports += [r for r, _, _ in check_file(p, args.profile, named=False)]
     errors = 0
     for r in reports:
-        errors += len(r.errors)
-        if args.quiet and not r.errors:
+        fails = r.failures()
+        errors += len(fails)
+        if args.quiet and not fails:
             continue
-        status = "FAIL" if r.errors else ("warn" if r.warnings else "ok")
+        status = "FAIL" if fails else ("rej" if r.expected else ("warn" if r.warnings else "ok"))
         print(f"{status:4}  {r.name}")
-        for m in r.errors:
+        for m in fails:
             print(f"      error: {m}")
+        for m in r.expected:
+            print(f"      rejected, as expected: {m}")
         for m in r.warnings:
             print(f"      warn:  {m}")
-    print(f"\n{len(reports)} checked, {sum(1 for r in reports if r.errors)} failing, {errors} errors")
+    rejected = sum(1 for r in reports if r.expected and not r.failures())
+    print(f"\n{len(reports)} checked, {sum(1 for r in reports if r.failures())} failing, "
+          f"{errors} errors" + (f", {rejected} rejected as expected" if rejected else ""))
     return 1 if errors else 0
 
 

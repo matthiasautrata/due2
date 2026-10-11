@@ -1,0 +1,23 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <http://example.com/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. odrl:payAmount is bound to
+# the witness source in profiles/due2-core.ttl, so it reads a payment, and a
+# payment exists only as evidence for a duty. On a permission it has nothing to
+# read; due2 rejects it rather than read the requested amount by guess.
+
+ex:policy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:stream .
+
+ex:stream a odrl:Permission ;
+    odrl:action odrl:play ;
+    odrl:target ex:album ;
+    odrl:assignee ex:alice ;
+    odrl:constraint ex:paid .
+
+ex:paid a odrl:Constraint ;
+    odrl:leftOperand odrl:payAmount ;
+    odrl:operator odrl:gteq ;
+    odrl:rightOperand "5.0"^^xsd:decimal .

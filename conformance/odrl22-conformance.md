@@ -73,12 +73,12 @@ Whether due2 should admit collection refinements — party collections especiall
 The external suites vendored under `conformance/external/` exposed a defect in the harness. It validated with no inference, and the shape tests rule and constraint values by `sh:class`. An untyped rule node — `odrl:permission [ … ]`, the style of the IM's own Turtle examples — therefore failed `sh:class odrl:Permission`, and it was never targeted by `PermissionShape`, so its required target went unchecked. The corpus passed only because every corpus node is typed explicitly. `check_odrl22.py` now adds the types the ODRL 2.2 vocabulary entails: rdfs:range of `permission`, `prohibition`, `obligation`, `duty`, `remedy`, `consequence`, `action`, `target`, `assignee`, and `assigner`; rdfs:domain of `leftOperand`; and Logical Constraint for a node with a connective. rdfs:range of `leftOperand` is deliberately not applied, because it would make IM 2.5.1's "MUST be a LeftOperand" vacuous.
 
 ```
-python3 tools/check_odrl22.py --all                 99 checked, 0 failing   (95 cases: 66 + 25 translated + 4 due2-native; 4 DPROD files)
+python3 tools/check_odrl22.py --all                 111 checked, 0 failing, 7 invalid as expected   (107 cases: 66 + 34 translated, 7 of them FORCE 1–7 as negative cases + 7 due2-native; 4 DPROD files)
 FORCE policies                                      21 checked, 7 failing   (policies 1-7: no target, 1-2 no action)
 OVAL policies                                      105 checked, 85 failing  (Offer without assigner, missing targets, unit as string, ...)
 ```
 
-The external failures are upstream IM violations, itemised in `conformance/external/README.md`. Six OVAL policies use a list right operand with `isPartOf`; the shape flagged them until the erratum of §2, which this record earlier described as a reading the IM leaves open. It was a due2 shape defect. The fix does not change the count: all six also lack an assigner (IM 2.1.2) and a target (IM 2.6.1), so they still fail.
+The seven "invalid as expected" are FORCE policies 1–7, carried verbatim as negative cases (`odrl22_valid: false`, `conformance/README.md`). The harness fails if one of them conforms. The external failures are upstream IM violations, itemised in `conformance/external/README.md`. Six OVAL policies use a list right operand with `isPartOf`; the shape flagged them until the erratum of §2, which this record earlier described as a reading the IM leaves open. It was a due2 shape defect. The fix does not change the count: all six also lack an assigner (IM 2.1.2) and a target (IM 2.6.1), so they still fail.
 
 ## 6. Reproducing
 

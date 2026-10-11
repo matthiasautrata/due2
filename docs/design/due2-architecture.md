@@ -19,7 +19,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 
 **The one-sentence story.** An author writes a policy in ODRL; due2 turns it once into a flat corpus of atoms, and then answers each request by evaluating every relevant atom against the request and a frozen snapshot of the world, and folding the results into one verdict with reasons.
 
-**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `ways-of-working.md` (engineering discipline) → `correctness-strategy.md` (which check guards which risk, and what must exist before each component is coded) → `implementation-alternatives.md` (the W1 implementation-alternatives review behind `decisions/0002`). The documents live under `docs/`: `spec/` (workflows, profiles, normalisation), `design/` (this document, the alternatives review, the MDS approach), `correctness/` (ways of working, correctness strategy), `decisions/` (the standing decision records). At the root, `conformance/` holds the case corpus that an implementation must satisfy, `profiles/` the shipped profile modules, and `tools/` the checkers.
+**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `due2-diagnostics.md` (every code W1 can reject or warn with) → `ways-of-working.md` (engineering discipline) → `correctness-strategy.md` (which check guards which risk, and what must exist before each component is coded) → `implementation-alternatives.md` (the W1 implementation-alternatives review behind `decisions/0002`). The documents live under `docs/`: `spec/` (workflows, profiles, normalisation, diagnostics), `design/` (this document, the alternatives review, the MDS approach), `correctness/` (ways of working, correctness strategy), `decisions/` (the standing decision records). At the root, `conformance/` holds the case corpus that an implementation must satisfy, `profiles/` the shipped profile modules, and `tools/` the checkers.
 
 **Glossary.** Each term is defined in the section named; this is the map, not the definition.
 
@@ -258,7 +258,7 @@ Left behind: the vocabulary, Maintain duties, Promises, Offer → Agreement mate
 
 Sources for open items:
 
-- stage 2 — RL2_Compilation: canonical projection, closed-world rule, diagnostic registry, determinism;
+- stage 2 — RL2_Compilation: canonical projection, closed-world rule, determinism; its diagnostic registry is now `due2-diagnostics.md`;
 - conflict resolution and exception patterns — Semantics §Conflict Resolution;
 - profile operators — Compilation §9.1 (`due2-profiles.md` §4);
 - replayable policy selection and the re-evaluation loop — ExternalData §6–§7.

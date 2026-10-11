@@ -13,7 +13,7 @@ python3 tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # the vendo
 ```
 conformance/cases/<case>/
     policy.ttl     one ODRL policy, plus the operand bindings it uses
-    case.json      provenance, classification, and scenarios
+    case.json      provenance, classification, and scenarios — or, for a negative case, the expected rejection
 ```
 
 Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/matthiasautrata/RL2`, `conformance/usecases/`), `dprod-` for DPROD Contracts examples (`github.com/EKGF/dprod`, `develop`, `dprod-contracts/examples/`), `force-`, `oval-`, and `w3c-fs-` for other evaluators' suites (vendored under `external/`, see `external/README.md`), and `due2-` for cases authored here to cover what no origin exercises.
@@ -95,6 +95,20 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 | `expected.why` | The derivation in one or two sentences — which atoms applied, which were unknown, why the verdict follows. |
 | `rl2_expected`, `dprod_expected`, `force_expected`, `oval_expected`, `w3c_expected` | The origin's own expected result, where it states one, in the origin's vocabulary (FORCE: rule kind and activation state; OVAL: accept decision under its semantics switches; W3C CG: activation and control state). A difference from `expected.verdict` is explained in `notes`. |
 
+**Negative cases.** A case whose policy W1 must reject carries `expected_rejection` instead of `scenarios`:
+
+```json
+"expected_rejection": {
+  "codes": ["MissingTarget"],
+  "why": "The permission has no odrl:target, at rule or policy level; normalisation §6.3 rejects it in stage 1."
+}
+```
+
+- `codes` is the exact set of error codes W1 returns, from `docs/spec/due2-diagnostics.md` §3. W1 reports every error of the first failing stage and runs no later stage (diagnostics §1), so the set is deterministic. `tools/check_corpus.py` compares it with what it emits.
+- `why` names the defining section, as a scenario's `why` does.
+- `odrl22_valid: false` marks a policy that is not valid ODRL 2.2, for example FORCE policies 1–7, which have no target. `tools/check_odrl22.py` then expects the shape to fail it (`xfail`) and fails if it conforms. Omitted, it means `true`: the rejection is due2's own (`due2-witness-outside-duty`). Only a negative case may set it to `false`.
+- The origin's results are kept as they are on a translated scenario. `force-01` … `force-07` keep FORCE's test cases as a `force_expected` list of `{test_case, title, request, sotw, result}`.
+
 **Values.** A literal is `{"@value": ..., "@type": ...}`, an IRI `{"@id": ...}` — the JSON-LD forms. Prefixed names expand through `prefixes`.
 
 **Classification.** Context built-ins (`dprod:clock`, `dprod:agent`, `due2:actionTime`), `due2:witnessSource`, and the binding properties themselves are operand-binding vocabulary, not profile terms: a case that uses only them still classifies as `odrl-core`. Profile terms are the extension points of `due2-profiles.md` §2 — `dprod:not`, `dprod:deadline`, `dprod:recurrence`, `dprod:subjectOfDuty`, policy subclasses.
@@ -127,10 +141,11 @@ Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed s
 - ~~Canonical literals deciding a verdict~~ — `due2-xone-unknown` (an `xone` operand read both ways; workflows v0.6, §6.4).
 - ~~Unknown duty guards; many conditional duties on one permission~~ — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
 - ~~`isPartOf` with a list right operand~~ — `oval-list-right-operand` (`decisions/0005`).
+- ~~Negative cases~~ — `expected_rejection` in the case format; `force-01` … `force-07` (`MissingAction`, `MissingTarget`) and `due2-witness-outside-duty` (`WitnessOutsideDuty`).
 
 Still open:
 
-- **`WitnessOutsideDuty`** and the other normalisation rejections — the case format has no negative cases (expected rejection instead of a verdict). The external suites supply candidates (`external/README.md`, FORCE policies 1–7).
+- **Rejection codes without a negative case.** Covered: `MissingAction`, `MissingTarget`, `WitnessOutsideDuty`. Every other error of `due2-diagnostics.md` §3 still needs one. Normalisation §10's minimum suite names the stage-1 vectors. The *unchecked* rows need W1 itself, because the checker cannot see them.
 - **`admit_source` / `admit_age`** — a case-format gap: `sotw.facts` carries no attribution (`source`, `observed_at`), so the filter cannot be shown at work; three cases note this in `notes`. Fixing it needs a fact-attribution extension to the case format.
 - **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
 - **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).

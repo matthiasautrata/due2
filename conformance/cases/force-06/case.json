@@ -1,0 +1,52 @@
+{
+  "case": "force-06",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-6.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated by tools/import_force.py --negative from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-6.ttl and its 3 test cases; FORCE: \"Bob explicitely use nothing.\" FORCE reads an absent target as \"any\". ODRL 2.2 does not: a Permission and a Prohibition MUST have one action and one target (IM 2.6.1, 2.6.2), so the policy is not ODRL 2.2 and fails odrl22-shape.ttl. due2 rejects it rather than guess the reading (architecture §1); \"everyone, everything\" is the enforcement point's default, or an explicit asset collection. The test cases are kept, with FORCE's results, in force_expected; due2 evaluates none of them. Upstream defect, reported before (conformance/external/README.md).",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MissingTarget"
+    ],
+    "why": "The Prohibition urn:uuid:9477c997-adc1-4d64-a12c-fa9e0f6b80f0 has no target, at rule or policy level. Normalisation §6.3 requires a target after interiorisation, so W1 rejects the policy in stage 1."
+  },
+  "force_expected": [
+    {
+      "test_case": "testcase-018-alice",
+      "title": "Any request from Bob to use returns into no (Alice Request).",
+      "request": {
+        "assignee": "ex:alice",
+        "action": "odrl:read",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Prohibition:Inactive"
+    },
+    {
+      "test_case": "testcase-019-bob",
+      "title": "Any request from Bob to use returns into no (Bob Request).",
+      "request": {
+        "assignee": "ex:bob",
+        "action": "odrl:read",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Prohibition:Active"
+    },
+    {
+      "test_case": "testcase-020-bob-sell",
+      "title": "Any request from Bob to use returns into no (Bob Request Sell).",
+      "request": {
+        "assignee": "ex:bob",
+        "action": "odrl:sell",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Prohibition:Inactive"
+    }
+  ]
+}

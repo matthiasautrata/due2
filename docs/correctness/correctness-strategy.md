@@ -71,7 +71,7 @@ The ranking is by how silent the defect is, not how likely it is.
 | R2 | **`U` collapse.** Unknown treated as false (or true) somewhere between a fact and the verdict. | Every external evaluator does this (`conformance/external/README.md`); it is the most natural bug to write | W2 parts, Kleene connectives, W3 completion |
 | R3 | **Completion error.** Wrong variable sharing (the canonical-literal key), wrong uniform/mixed classification, unsound `max_mixed` fallback. | Turns a correct `Indeterminate` into a definite verdict, or the reverse | W3 §6.4 |
 | R4 | **Spec error.** The prose is wrong or underspecified, and the implementation copies it faithfully. | Every oracle derived from the same prose shares it | All |
-| R5 | **Corpus error.** A hand-derived expected verdict is wrong. | 99 cases, none of whose verdicts has been machine-checked yet | `conformance/cases/` |
+| R5 | **Corpus error.** A hand-derived expected verdict is wrong. | 99 positive and 8 negative cases, none of whose verdicts has been machine-checked yet | `conformance/cases/` |
 | R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (workflows §7) and the ledger | W1 identity, trace serialisation |
 | R7 | **Boundary leak.** W2 reads another atom's finding; W3 reads the request or SOTW. | Invalidates the parallelism and the completion argument | W2, W3 |
 | R8 | **Unexplained divergence from an origin evaluator.** | Undermines the compatibility claims | Translated cases |
@@ -86,7 +86,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 
 | Oracle | Decides | Independent of | Shares (common-mode risk) | Status |
 |---|---|---|---|---|
-| Hand-derived corpus (99 cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
+| Hand-derived corpus (99 positive cases plus 8 negative, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
 | L9 direct interpreter `I` over the lifted form | The pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the parser, if shared (§4.1) | **[D]** (`decisions/0002`), issue #9 |
 | `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
@@ -112,17 +112,17 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 ### 4.1 The L9 oracle `I` (issue #9)
 
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation.
-- **Oracles for the oracle.** The corpus (99 cases), with disagreements triaged per §6. Its own laws: `I` must satisfy L4 (information monotonicity) and L5 (prohibition monotonicity) on generated inputs; failing them means `I` or the spec is wrong.
+- **Oracles for the oracle.** The corpus (99 positive cases), with disagreements triaged per §6. Its own laws: `I` must satisfy L4 (information monotonicity) and L5 (prohibition monotonicity) on generated inputs; failing them means `I` or the spec is wrong.
 - **Properties.** L4 and L5 on `I`. Exhaustive Kleene truth tables for `and`, `or`, `xone`, and `dprod:not` over `{T, F, U}`, which are small enough to enumerate.
 - **Golden vectors.** The corpus. Slow `I` must decide every case below the cap; a case above it is reported, not skipped silently.
 - **Generators.** None needed for the first gate. The §5 generators come in for L9 against the pipeline (§4.3).
 - **Parser.** **[D]** (2026-10-11) `I` and W1 share the RDF-to-lifted-tree parser. Because L9 cannot see a parser bug, the parser is tested on its own: round trip (parse, render, parse gives the same tree), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts and rejects, over the corpus, the vendored policies, and the external suites.
-- **Done.** 99 of 99 cases agree, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or `I`.
+- **Done.** 99 of 99 positive cases agree, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or `I`.
 
 ### 4.2 W1 stage 1: the normaliser
 
 - **Risks.** R1, R6.
-- **Before code.** The case format needs **negative cases** (expected rejection with a diagnostic instead of a verdict). Normalisation §10's minimum suite includes about ten negative vectors, and today the format cannot express them (`conformance/README.md`, coverage gaps; candidates are FORCE policies 1–7).
+- **Before code.** ~~The case format needs negative cases.~~ Done 2026-10-11: `expected_rejection` (`conformance/README.md`), with codes from `due2-diagnostics.md`. `force-01` … `force-07` and `due2-witness-outside-duty` are the first; the rest of normalisation §10's negative vectors are a coverage gap.
 - **Oracles.** `Den` through the lineage bijection (invariant 3). Golden vectors from normalisation §10.
 - **Properties.** Invariants 6 (determinism over permuted triples, JSON-LD order, and blank-node labels), 7 (idempotence), and 10 (locality: an unrelated edit changes no output IRI). Invariant 8 as exact-limit success and limit-plus-one failure.
 - **Done.** The §10 minimum suite passes, `Den` agrees on every positive vector and on generated policies, and the Dafny `Den` (issue #8) follows as the second, machine-checked oracle.
@@ -215,7 +215,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 ## 8. Sequence
 
 1. Settle the open items of §9.
-2. Case-format extension for negative cases: needed by W1 (§4.2) and cheap to do now.
+2. ~~Case-format extension for negative cases~~ (done 2026-10-11).
 3. The status matrix and Kleene truth tables, as data. They are spec as much as tests, and `I` uses them first.
 4. Slow `I` (issue #9). Run the corpus and triage per §6. Fast `I` follows once W3's computation is specified in code form.
 5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
@@ -233,7 +233,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 1 | Strategy before code, as a standing rule | §1 | **Resolved 2026-10-11:** adopted (CLAUDE.md) |
 | 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other |
 | 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own |
-| 4 | Negative cases in the case format | §4.2 | Do now; it blocks W1 |
+| 4 | Negative cases in the case format | §4.2 | **Resolved 2026-10-11:** `expected_rejection` plus the diagnostic registry (`due2-diagnostics.md`); 8 cases |
 | 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | **Resolved 2026-10-11:** extend it now for both (done); brute-force W3 differential later; nested constraints via that and slow `I` |
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |

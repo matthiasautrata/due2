@@ -1,0 +1,15 @@
+{
+  "case": "due2-witness-outside-duty",
+  "source": "due2-native: a constraint that reads the witness, written on a permission",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. The baseline binding of odrl:payAmount reads a parameter of the witness (due2-profiles.md §3, §9 #6), as OVAL duty1-3 and the W3C CG C1-C2 use it. A policy that means the requested amount binds its own operand to the request source, which takes precedence over the baseline. Contrast oval-duty-payment, where the same constraint sits on a duty and is admitted.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": ["WitnessOutsideDuty"],
+    "why": "ex:paid reads odrl:payAmount, bound to due2:witnessSource, but sits on the permission ex:stream, not on a duty. Only a duty has a witness (workflows §5.2, §5.3), so W1 rejects the policy in stage 2."
+  }
+}

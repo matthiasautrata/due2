@@ -29,10 +29,11 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 | Candidates, conflict, frontier, verdict, completion over literals | workflows §6 (§6.4 has the monotonicity proof) |
 | Laws L1–L9 (property-test targets) | workflows §8 |
 | Normalisation stage 1 (normative) | `odrl-compound-to-atomic-normalization.md` |
+| Every rejection and warning code; which stage emits it | `due2-diagnostics.md` |
 | Operand bindings, profiles, DPROD compatibility | `due2-profiles.md` |
 | Engineering discipline (types, contracts, testing tiers) | `ways-of-working.md` |
 | Which check guards which risk; oracles; per-component gates | `correctness-strategy.md` |
 
 ## Next
 
-Settle the remaining `correctness-strategy.md` §9 items. Then issue #9: the L9 oracle, a Python direct interpreter over the authored (lifted) form. Slow mode first: it completes unknown literals by the workflows §6.4 definition, enumerating every assignment below a cap (correctness-strategy §3), and runs the corpus; first target, all 99 cases. Then #8, the Dafny `Den` oracle (`decisions/0002`). Tooling picks still open at implementation start: issue #23.
+Settle the remaining `correctness-strategy.md` §9 items. Then issue #9: the L9 oracle, a Python direct interpreter over the authored (lifted) form. Slow mode first: it completes unknown literals by the workflows §6.4 definition, enumerating every assignment below a cap (correctness-strategy §3), and runs the corpus; first target, all 99 positive cases (the 8 negative ones wait for W1). Then #8, the Dafny `Den` oracle (`decisions/0002`). Tooling picks still open at implementation start: issue #23.

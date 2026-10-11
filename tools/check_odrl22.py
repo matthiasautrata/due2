@@ -25,11 +25,16 @@ Usage:
   check_odrl22.py file.ttl [...]               # single policy files
   check_odrl22.py --all                        # corpus + vendored examples
 
+A case whose case.json says "odrl22_valid": false (a negative case for a
+policy that is not ODRL 2.2, conformance/README.md) is expected to fail; it
+counts as failing only if it conforms.
+
 Exit status is non-zero when any violation is found.
 """
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -156,6 +161,17 @@ def check_file(path: Path, shapes: Graph, base: Graph) -> tuple[str, list[str]]:
     return name, problems
 
 
+def expects_invalid(path: Path) -> bool:
+    """A corpus case marked as not ODRL 2.2 (conformance/README.md, negative cases)."""
+    case = path.parent / "case.json"
+    if path.name != "policy.ttl" or not case.exists():
+        return False
+    try:
+        return json.loads(case.read_text()).get("odrl22_valid", True) is False
+    except json.JSONDecodeError:
+        return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -188,12 +204,21 @@ def main() -> int:
     for f in BASE:
         base.parse(f)
 
-    bad = 0
+    bad = xfail = 0
     for t in targets:
         try:
             name, problems = check_file(t, shapes, base)
         except Exception as e:  # noqa: BLE001
             name, problems = str(t), [f"HARNESS ERROR: {e}"]
+        if expects_invalid(t):
+            if problems:
+                xfail += 1
+                if not args.quiet:
+                    print(f"xfail {name}  (odrl22_valid: false; {len(problems)} violations)")
+            else:
+                bad += 1
+                print(f"FAIL  {name}\n      case.json says odrl22_valid: false, but the policy conforms")
+            continue
         if problems:
             bad += 1
             print(f"FAIL  {name}")
@@ -202,7 +227,7 @@ def main() -> int:
         elif not args.quiet:
             print(f"ok    {name}")
     total = len(targets)
-    print(f"\n{total} checked, {bad} failing")
+    print(f"\n{total} checked, {bad} failing" + (f", {xfail} invalid as expected" if xfail else ""))
     return 1 if bad else 0
 
 

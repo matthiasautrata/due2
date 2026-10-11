@@ -1,0 +1,63 @@
+{
+  "case": "force-03",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-3.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated by tools/import_force.py --negative from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-3.ttl and its 4 test cases; FORCE: \"Everybody can do use.\" FORCE reads an absent target as \"any\". ODRL 2.2 does not: a Permission and a Prohibition MUST have one action and one target (IM 2.6.1, 2.6.2), so the policy is not ODRL 2.2 and fails odrl22-shape.ttl. due2 rejects it rather than guess the reading (architecture §1); \"everyone, everything\" is the enforcement point's default, or an explicit asset collection. The test cases are kept, with FORCE's results, in force_expected; due2 evaluates none of them. Upstream defect, reported before (conformance/external/README.md).",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MissingTarget"
+    ],
+    "why": "The Permission urn:uuid:a40b1d34-02ae-4af6-b31f-2296443a726b has no target, at rule or policy level. Normalisation §6.3 requires a target after interiorisation, so W1 rejects the policy in stage 1."
+  },
+  "force_expected": [
+    {
+      "test_case": "testcase-007-alice",
+      "title": "Any request to use results into yes (Alice Request).",
+      "request": {
+        "assignee": "ex:alice",
+        "action": "odrl:read",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Active"
+    },
+    {
+      "test_case": "testcase-008-bob",
+      "title": "Any request to use results into yes (Bob Request).",
+      "request": {
+        "assignee": "ex:bob",
+        "action": "odrl:read",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Active"
+    },
+    {
+      "test_case": "testcase-009-bob-write-y",
+      "title": "Any request to use results into yes (Bob Request Write).",
+      "request": {
+        "assignee": "ex:bob",
+        "action": "odrl:write",
+        "target": "ex:y"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Active"
+    },
+    {
+      "test_case": "testcase-010-alice-sell",
+      "title": "Any request to use results into yes (Alice Request Sell).",
+      "request": {
+        "assignee": "ex:alice",
+        "action": "odrl:sell",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Inactive"
+    }
+  ]
+}

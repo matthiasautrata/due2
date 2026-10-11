@@ -354,7 +354,7 @@ Implementation technology is replaceable:
 | RDF/SPARQL or rule engine | Evaluation order, graph scope, limits, identity generation, and serialization are deterministic. |
 | LLM or chat skill | May propose examples or tests, but is not an authoritative transformer unless every output is deterministically checked and canonicalized. |
 
-A first implementation is complete when it passes this suite, emits structured diagnostics, and exposes the deterministic transformation as a library or command-line operation. Evaluation, comparison, storage, networking, and user interfaces are separate projects.
+A first implementation is complete when it passes this suite, emits structured diagnostics with the codes of `due2-diagnostics.md`, and exposes the deterministic transformation as a library or command-line operation. Evaluation, comparison, storage, networking, and user interfaces are separate projects.
 
 ## 11. References
 

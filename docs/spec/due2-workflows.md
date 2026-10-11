@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.9
-**Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `ways-of-working.md` (how it is built).
+**Status:** Draft v0.10
+**Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.10** (2026-10-11): W1's diagnostics get a registry (`due2-diagnostics.md`) and a place in the data model. A rejection returns every error of the first failing stage and no output (§4); a warning travels in the corpus (`diagnostic`, §3.1) and into the trace of every case that evaluates the policy (§3.5).
 
 **Changes in v0.9** (2026-10-11, `decisions/0004`): `frontier_complete` gets a computation, bounded enumeration over the relevant unknowns with a new W3 limit, `max_frontier_vars`; beyond it the flag is false and `verdict.exact` false (§6.4, §3.5).
 
@@ -92,6 +94,7 @@ edge              (parent_id, child_id)
 root              (atom_id)
 duty              (atom_id | source_duty, scope, binding_key, deadline?, recurrence?)
 closure           (relation, narrower, broader)
+diagnostic        (policy_id, code, ref)
 ```
 
 | Field | Meaning |
@@ -112,6 +115,7 @@ closure           (relation, narrower, broader)
 | `duty` | For every `Oblige` atom: the authored duty it instantiates, its instance scope `Enum {member, grant}`, and `binding_key` — the digest of `source_duty` and its ground binding (parameter values, inherited party roles, target). W2 derives the duty instance from these (§5.3). Scope defaults to `member`. |
 | `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
 | `duty.recurrence` | An RFC 5545 RRULE string; the duty is owed once per occurrence. W2 derives the instances (§5.3). |
+| `diagnostic` | A warning W1 accepted the policy with: its code (`due2-diagnostics.md` §3) and the node it is about. Only warnings appear, because an error leaves no corpus (§4). W2 and W3 never read it; it is in the corpus so that the corpus digest, and with it the case id, records the reading the policy was normalised under. |
 
 Derived, not stored:
 
@@ -182,6 +186,7 @@ alt_duty       (alt_id, duty_id)
 dominated      (alt_id | by_alt)
 verdict        (| value, frontier_complete, exact)
 verdict_basis  (atom_id | role)
+diagnostic     (policy_id, code, ref)
 ```
 
 | Relation | Written by | Meaning |
@@ -196,6 +201,7 @@ verdict_basis  (atom_id | role)
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
 | `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). |
 | `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
+| `diagnostic` | shell | The corpus `diagnostic` tuples of every policy with an atom in `finding`, copied unchanged, so that a verdict that rests on a contested reading says so (`due2-diagnostics.md` §1). |
 
 ### 3.6 Lineage
 
@@ -206,8 +212,10 @@ Which authored rule, which expansion selection, and which parameter binding prod
 ## 4. W1 — Normalise **[D]**
 
 ```
-W1 : authored policies → Corpus × Lineage
+W1 : authored policies → (Corpus × Lineage) | Diagnostics
 ```
+
+A policy W1 cannot normalise is rejected with diagnostics, never accepted and approximated (architecture §1). Every code is in `due2-diagnostics.md`.
 
 Two stages, both pure, each with its own preservation obligation:
 
@@ -227,6 +235,7 @@ Obligations on the output:
 - **Sufficiency.** Stage 2 depends on its input only through `Den` — never on node IRIs, triple order, or annotations — and W2 and W3 depend on a policy only through its corpus. So every evaluation depends on an authored policy only through its denotation, which is what lets stage 1's structural guarantee carry through to verdicts.
 - **Determinism and bounds.** Isomorphic inputs give identical canonical outputs. A limit breach fails the whole run before any output.
 - **Well-formedness.** The §3.1 invariants hold.
+- **Rejection.** An `error` diagnostic rejects the policy with no corpus and no lineage. W1 reports every error of the first stage that has one, and runs no later stage, so a rejected policy's set of codes is deterministic and a negative corpus case can state it (`due2-diagnostics.md` §1). Warnings never reject; they are carried in `diagnostic` (§3.1).
 
 ---
 

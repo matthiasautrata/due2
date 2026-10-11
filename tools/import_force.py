@@ -26,14 +26,21 @@ odrl:dateTime constraints under and/or, includedIn/partOf closure. Where the
 two disagree beyond the documented divergences, the scenario is marked for
 review in `notes` rather than silently aligned.
 
-Excluded: policies 1-7. Their rules omit odrl:target (and 1-2 odrl:action);
-IM 2.6.1/2.6.2 require one target, so they are not ODRL 2.2 and due2 rejects
-them at normalisation (recorded in conformance/external/README.md).
+Policies 1-7 (--negative): their rules omit odrl:target (and 1-2
+odrl:action); IM 2.6.1/2.6.2 require one target, so they are not ODRL 2.2 and
+due2 rejects them at normalisation. They become negative cases
+(conformance/README.md): the policy copied unchanged, the expected rejection
+codes (due2-diagnostics.md), and FORCE's own results kept per test case.
+
+Usage:
+  import_force.py              # policies 8-21 -> positive cases
+  import_force.py --negative   # policies 1-7  -> negative cases
 """
 from __future__ import annotations
 
 import json
 import os
+import sys
 import re
 from datetime import datetime
 from pathlib import Path
@@ -265,5 +272,79 @@ def main() -> None:
         print(f"{case}: {len(scenarios)} scenarios" + (f", REVIEW {len(review)}" if review else ""))
 
 
+NEGATIVE = range(1, 8)
+
+
+def negative() -> None:
+    idx = Graph().parse(SRC / "index.ttl")
+    by_policy: dict[str, list] = {}
+    for tc in idx.subjects(EX.policySource, None):
+        by_policy.setdefault(name_of(idx.value(tc, EX.policySource)), []).append(tc)
+    for n in NEGATIVE:
+        pfile = f"policy-{n}.ttl"
+        pol = load(f"policies/{pfile}")
+        policy = next(pol.subjects(RDF.type, ODRL.Set))
+        desc = str(pol.value(policy, DCTERMS.description))
+        rules = [r for e in (ODRL.permission, ODRL.prohibition) for r in pol.objects(policy, e)]
+        codes = {"MissingTarget"}
+        if not any(pol.value(r, ODRL.action) for r in rules) and not pol.value(policy, ODRL.action):
+            codes.add("MissingAction")
+        lacks = "neither an action nor a target" if "MissingAction" in codes else "no target"
+        kind = "Permission" if (policy, ODRL.permission, None) in pol else "Prohibition"
+
+        origin = []
+        tcs = sorted(by_policy[pfile], key=lambda t: name_of(idx.value(t, EX.expectedReportSource)))
+        for tc in tcs:
+            tcfile = name_of(idx.value(tc, EX.expectedReportSource))
+            exp = load(f"test_cases/{tcfile}")
+            rq = load(f"requests/{name_of(idx.value(tc, EX.requestSource))}")
+            rperm = next(rq.objects(None, ODRL.permission))
+            rr = next(exp.subjects(REP.activationState, None))
+            origin.append({
+                "test_case": tcfile.removesuffix(".ttl"),
+                "title": str(next(exp.objects(None, DCTERMS.title), "")),
+                "request": {k: curie(rq.value(rperm, ODRL[k])) for k in ("assignee", "action", "target")
+                            if rq.value(rperm, ODRL[k]) is not None},
+                "sotw": name_of(idx.value(tc, EX.sotwSource)),
+                "result": (exp.value(rr, RDF.type).split("#")[1].replace("Report", "") + ":" +
+                                   exp.value(rr, REP.activationState).split("#")[1]),
+            })
+
+        case = f"force-{n:02d}"
+        d = OUT / case
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "policy.ttl").write_text(
+            f"# Source: {UPSTREAM} data/policies/{pfile} (MIT, imec), via tools/import_force.py --negative.\n"
+            f"# Changes: none. Not ODRL 2.2 (IM 2.6.1/2.6.2); a negative case.\n\n"
+            + (SRC / "policies" / pfile).read_text())
+        (d / "case.json").write_text(json.dumps({
+            "case": case,
+            "source": f"FORCE test suite ({UPSTREAM}) data/policies/{pfile}",
+            "classification": "odrl-core",
+            "needs": [],
+            "odrl22_valid": False,
+            "notes": (f"Translated by tools/import_force.py --negative from {UPSTREAM} data/policies/{pfile} "
+                      f"and its {len(tcs)} test cases; FORCE: \"{desc}\" FORCE reads an absent "
+                      f"{'action and target' if 'MissingAction' in codes else 'target'} as \"any\". ODRL 2.2 "
+                      "does not: a Permission and a Prohibition MUST have one action and one target "
+                      "(IM 2.6.1, 2.6.2), so the policy is not ODRL 2.2 and fails "
+                      "odrl22-shape.ttl. due2 rejects it rather than guess the reading "
+                      "(architecture §1); \"everyone, everything\" is the enforcement point's default, "
+                      "or an explicit asset collection. The test cases are kept, with FORCE's results, "
+                      "in force_expected; due2 evaluates none of them. Upstream defect, reported before "
+                      "(conformance/external/README.md)."),
+            "prefixes": {"ex": str(EX)},
+            "expected_rejection": {
+                "codes": sorted(codes),
+                "why": (f"The {kind} {curie(rules[0])} has {lacks}, at rule or policy level. "
+                        "Normalisation §6.3 requires "
+                        + ("an action and a target" if "MissingAction" in codes else "a target")
+                        + " after interiorisation, so W1 rejects the policy in stage 1."),
+            },
+            "force_expected": origin,
+        }, indent=2, ensure_ascii=False) + "\n")
+        print(f"{case}: rejected with {sorted(codes)}; {len(origin)} FORCE test cases kept")
+
+
 if __name__ == "__main__":
-    main()
+    negative() if "--negative" in sys.argv[1:] else main()

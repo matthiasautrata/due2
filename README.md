@@ -11,6 +11,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `docs/spec/due2-workflows.md` | The three workflows and the reference data model, language-independent; laws L1–L9 |
 | `docs/spec/due2-profiles.md` | Profiles and the operand registry: how ODRL extensions are declared and evaluated, and DPROD Contracts compatibility |
 | `docs/spec/odrl-compound-to-atomic-normalization.md` | Normalisation stage 1 |
+| `docs/spec/due2-diagnostics.md` | The diagnostic registry: every code W1 rejects or warns with, its stage, and its defining section |
 | **`docs/design/`** | **What due2 is, why, and the alternatives weighed** |
 | `docs/design/due2-architecture.md` | What due2 is and why; reading order and glossary (§0) |
 | `docs/design/implementation-alternatives.md` | The 2026-10-10 W1 alternatives review: Python+Dafny, Lean, Clingo, OCaml+Why3 — what each buys, why the documented path stands, what triggers revisiting |
@@ -18,7 +19,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | **`docs/correctness/`** | **How we know it is right** |
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
-| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration |
+| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus — RL2 use cases, DPROD examples, translations of other evaluators' suites (`force-`, `oval-`, `w3c-fs-`), and due2-native cases (`due2-`) — with scenarios and hand-derived expected verdicts; coverage gaps in its `README.md` |
 | `conformance/odrl22-shape.ttl` | due2's SHACL encoding of the ODRL Information Model 2.2 — validates authored policies (compact and compound forms included), every constraint cited to its IM section |

@@ -1,0 +1,53 @@
+{
+  "case": "force-01",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-1.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated by tools/import_force.py --negative from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-1.ttl and its 3 test cases; FORCE: \"Everybody can do everything.\" FORCE reads an absent action and target as \"any\". ODRL 2.2 does not: a Permission and a Prohibition MUST have one action and one target (IM 2.6.1, 2.6.2), so the policy is not ODRL 2.2 and fails odrl22-shape.ttl. due2 rejects it rather than guess the reading (architecture §1); \"everyone, everything\" is the enforcement point's default, or an explicit asset collection. The test cases are kept, with FORCE's results, in force_expected; due2 evaluates none of them. Upstream defect, reported before (conformance/external/README.md).",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MissingAction",
+      "MissingTarget"
+    ],
+    "why": "The Permission urn:uuid:72e248bf-5f4f-472f-af76-8beca297415c has neither an action nor a target, at rule or policy level. Normalisation §6.3 requires an action and a target after interiorisation, so W1 rejects the policy in stage 1."
+  },
+  "force_expected": [
+    {
+      "test_case": "testcase-001-alice",
+      "title": "Any request results into yes (Alice Request).",
+      "request": {
+        "assignee": "ex:alice",
+        "action": "odrl:read",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Active"
+    },
+    {
+      "test_case": "testcase-002-bob",
+      "title": "Any request results into yes (Bob Request).",
+      "request": {
+        "assignee": "ex:bob",
+        "action": "odrl:read",
+        "target": "ex:x"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Active"
+    },
+    {
+      "test_case": "testcase-003-bob-write-y",
+      "title": "Any request results into yes (Bob Request Write).",
+      "request": {
+        "assignee": "ex:bob",
+        "action": "odrl:write",
+        "target": "ex:y"
+      },
+      "sotw": "temporal.ttl",
+      "result": "Permission:Active"
+    }
+  ]
+}
