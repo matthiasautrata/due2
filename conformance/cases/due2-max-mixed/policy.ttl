@@ -1,187 +1,196 @@
 @prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
 @prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
-@prefix due2:  <https://w3id.org/due2/profile#> .
-@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 @prefix ex:    <http://example.com/> .
 
-# Authored for due2. One permission, nine conditional duties: duty i is owed
-# only when optional module i is enabled in the request (a request parameter),
-# and is discharged by paying exactly (4+i).00 EUR. The guards are the point:
-# with all nine unknown, each is a mixed variable (its positive occurrence in
-# the with-duty atom W1 hoists, its negative occurrence in the without-duty
-# atom), so k = 9 > max_mixed = 8 (workflows §6.4) and the fallback runs.
+# Authored for due2 to exercise the max_mixed bound of workflows §6.4
+# (decisions/0003 rebuilt it; the former nine-guard case is due2-conditional-duties).
+# Nine regional entitlements, each written by its author as a complementary pair:
+# members of desk i may read; non-members of desk i may read too. Each flag is a
+# fact read in both directions, so with the flag unknown it is a mixed variable.
+# Pair 1's member route carries an approval duty, so a known flag 1 leaves a
+# pending route and the remaining eight decide the verdict only by enumeration.
 
-<http://example.com/policy:MX> a odrl:Agreement ;
-    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+<http://example.com/policy:MM> a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
     odrl:conflict odrl:prohibit ;
-    odrl:permission <http://example.com/policy:MX#use> .
+    odrl:permission <http://example.com/policy:MM#member-1>,
+        <http://example.com/policy:MM#other-1>,
+        <http://example.com/policy:MM#member-2>,
+        <http://example.com/policy:MM#other-2>,
+        <http://example.com/policy:MM#member-3>,
+        <http://example.com/policy:MM#other-3>,
+        <http://example.com/policy:MM#member-4>,
+        <http://example.com/policy:MM#other-4>,
+        <http://example.com/policy:MM#member-5>,
+        <http://example.com/policy:MM#other-5>,
+        <http://example.com/policy:MM#member-6>,
+        <http://example.com/policy:MM#other-6>,
+        <http://example.com/policy:MM#member-7>,
+        <http://example.com/policy:MM#other-7>,
+        <http://example.com/policy:MM#member-8>,
+        <http://example.com/policy:MM#other-8>,
+        <http://example.com/policy:MM#member-9>,
+        <http://example.com/policy:MM#other-9> .
 
-<http://example.com/policy:MX#use> a odrl:Permission ;
-    odrl:assigner ex:party\/provider ;
-    odrl:assignee ex:party\/subscriber ;
-    odrl:target ex:dataset\/reports ;
-    odrl:action odrl:use ;
-    odrl:duty <http://example.com/policy:MX#cond-1> ;
-    odrl:duty <http://example.com/policy:MX#cond-2> ;
-    odrl:duty <http://example.com/policy:MX#cond-3> ;
-    odrl:duty <http://example.com/policy:MX#cond-4> ;
-    odrl:duty <http://example.com/policy:MX#cond-5> ;
-    odrl:duty <http://example.com/policy:MX#cond-6> ;
-    odrl:duty <http://example.com/policy:MX#cond-7> ;
-    odrl:duty <http://example.com/policy:MX#cond-8> ;
-    odrl:duty <http://example.com/policy:MX#cond-9> .
-
-<http://example.com/policy:MX#cond-1> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#member-1> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled1 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember1 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty <http://example.com/policy:MM#approval> .
 
-<http://example.com/policy:MX#cond-2> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "6.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#other-1> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled2 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember1 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-3> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "7.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#member-2> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled3 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember2 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-4> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "8.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#other-2> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled4 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember2 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-5> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "9.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#member-3> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled5 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember3 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-6> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "10.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#other-3> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled6 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember3 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-7> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "11.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#member-4> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled7 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember4 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-8> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "12.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#other-4> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled8 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember4 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
 
-<http://example.com/policy:MX#cond-9> a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "13.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
+<http://example.com/policy:MM#member-5> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
     odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand ex:moduleEnabled9 ; odrl:operator odrl:eq ;
-        odrl:rightOperand true ] .
+        odrl:leftOperand ex:deskMember5 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
 
-# Witness source: the amount is a parameter of the payment (due2-profiles.md §3).
-odrl:payAmount a odrl:LeftOperand ;
-    dprod:operandSource due2:witnessSource ;
-    dprod:operandProperty odrl:payAmount ;
-    rdfs:range xsd:decimal .
+<http://example.com/policy:MM#other-5> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember5 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
 
-# Guards: they read the request, so they decide when each duty is owed
-# (workflows §5.2), and W1 hoists each into its parent permission.
+<http://example.com/policy:MM#member-6> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember6 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
 
-ex:moduleEnabled1 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled1 ;
+<http://example.com/policy:MM#other-6> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember6 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#member-7> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember7 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#other-7> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember7 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#member-8> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember8 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#other-8> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember8 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#member-9> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember9 ; odrl:operator odrl:eq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#other-9> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:research ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember9 ; odrl:operator odrl:neq ; odrl:rightOperand true ] .
+
+<http://example.com/policy:MM#approval> a odrl:Duty ;
+    odrl:assignee ex:party\/manager ;
+    odrl:action ex:approve ;
+    odrl:target ex:access-request .
+
+ex:approve a odrl:Action .
+
+ex:deskMember1 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember1 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled2 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled2 ;
+ex:deskMember2 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember2 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled3 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled3 ;
+ex:deskMember3 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember3 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled4 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled4 ;
+ex:deskMember4 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember4 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled5 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled5 ;
+ex:deskMember5 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember5 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled6 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled6 ;
+ex:deskMember6 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember6 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled7 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled7 ;
+ex:deskMember7 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember7 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled8 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled8 ;
+ex:deskMember8 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember8 ;
     rdfs:range xsd:boolean .
 
-ex:moduleEnabled9 a odrl:LeftOperand ;
-    dprod:operandSource dprod:requestSource ;
-    dprod:operandProperty ex:moduleEnabled9 ;
+ex:deskMember9 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember9 ;
     rdfs:range xsd:boolean .

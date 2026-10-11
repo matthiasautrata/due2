@@ -120,10 +120,11 @@ Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed s
 - ~~`due2:witnessSource` and `evidence_param`~~ — `oval-duty-payment`, `w3c-fs-c1`, `w3c-fs-c2` (as duty-action refinements, `due2-profiles.md` §9 #6).
 - ~~Grant scope and `discharges`~~, ~~`signers`~~ — `due2-grant-signers`.
 - ~~`odrl:or`~~ — `force-20` (260 disjuncts, all known) and `due2-or-unknown` (Kleene, with unknowns).
-- ~~`max_mixed` fallback (§6.4 beyond the bound)~~ — `due2-max-mixed` (9 mixed guards, `expected.exact = false`; scenario 2 sits at the bound and stays exact).
+- ~~`max_mixed` fallback (§6.4 beyond the bound)~~ — `due2-max-mixed` (nine facts each read both ways by an authored permission pair, `expected.exact = false`; scenario 2 sits at the bound, where only exact enumeration decides).
 - ~~`perm` and `invalid` conflict strategies~~ — `oval-conflict-perm`, `oval-conflict-invalid`.
 - ~~Incomparable frontier~~ — `due2-incomparable-frontier` (collapse, dominance, second approver); `config.preference` itself waits on its format (workflows §9 #3).
-- ~~Hoisted guard with an unknown fact~~ — `w3c-fs-c2` scenarios 4–5 (workflows v0.6, §6.4).
+- ~~Canonical literals deciding a verdict~~ — `due2-xone-unknown` (an `xone` operand read both ways; workflows v0.6, §6.4).
+- ~~Unknown duty guards; many conditional duties on one permission~~ — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
 
 Still open:
 

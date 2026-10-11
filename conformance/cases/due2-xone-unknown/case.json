@@ -1,0 +1,306 @@
+{
+  "case": "due2-xone-unknown",
+  "source": "Authored for due2; no origin result.",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2 as the motivating case for canonical literals (workflows §6.4), replacing w3c-fs-c2 in that role after decisions/0003 withdrew hoisting. W1 expands the xone into two atoms, eu ∧ ¬us and ¬eu ∧ us (each disjunct carries the other's negation, complement operators eq/neq); the dual-domicile rule reads eu ∧ us. So usDomiciled occurs negatively in one permission atom and positively in two: with it unknown it is a mixed variable, enumerated (k = 1). Scenario 1 is the point: completed independently, the two occurrences of usDomiciled could both fail, which no domicile produces, and the verdict would widen to Indeterminate (the pre-v0.6 reading); shared, every value permits. Every scenario is exact. Verdicts checked against brute force with tools/check_completion.py's model.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "EU-domiciled, US domicile unknown, attestation on file",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {
+          "ex:euDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "true",
+                "@type": "xsd:boolean"
+              }
+            ]
+          },
+          "ex:usDomiciled": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [
+          {
+            "id": "ev-edd",
+            "occurred_at": "2026-09-30T16:00:00Z",
+            "actor": "ex:Analyst",
+            "action": "ex:attest",
+            "object": "ex:EDDAttestation"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "euDomiciled is T, so the ¬eu ∧ us atom is F; usDomiciled is unknown and mixed. If it is T, the dual rule applies and its attestation is witnessed by ev-edd: ready. If it is F, the eu ∧ ¬us atom applies: ready. Every value permits: Permit, exact (k = 1). Independent completion of its two occurrences would also admit both failing, giving Indeterminate."
+      }
+    },
+    {
+      "name": "EU-domiciled, US domicile unknown, no attestation",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {
+          "ex:euDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "true",
+                "@type": "xsd:boolean"
+              }
+            ]
+          },
+          "ex:usDomiciled": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "If usDomiciled is T only the dual rule applies, pending on the attestation: Pending. If F, the single rule applies: Permit. The real values disagree, so Indeterminate — the authored policy's own answer."
+      }
+    },
+    {
+      "name": "EU only",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {
+          "ex:euDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "true",
+                "@type": "xsd:boolean"
+              }
+            ]
+          },
+          "ex:usDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "false",
+                "@type": "xsd:boolean"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "eu ∧ ¬us holds: the single-domicile atom applies with no duty and is ready."
+      }
+    },
+    {
+      "name": "dual-domiciled, no attestation",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {
+          "ex:euDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "true",
+                "@type": "xsd:boolean"
+              }
+            ]
+          },
+          "ex:usDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "true",
+                "@type": "xsd:boolean"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:eddAttestation"
+          ]
+        ],
+        "obligations": [],
+        "exact": true,
+        "why": "Both xone atoms are F (xone fails when both hold); the dual rule applies and its duty has no witness: one route, ex:eddAttestation."
+      }
+    },
+    {
+      "name": "neither domicile",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {
+          "ex:euDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "false",
+                "@type": "xsd:boolean"
+              }
+            ]
+          },
+          "ex:usDomiciled": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "false",
+                "@type": "xsd:boolean"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "No atom applies: the xone needs exactly one, the dual rule both."
+      }
+    },
+    {
+      "name": "both domiciles unknown, attestation on file",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-10-01T09:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-01T09:00:00Z",
+        "facts": {
+          "ex:euDomiciled": {
+            "status": "unresolved",
+            "values": []
+          },
+          "ex:usDomiciled": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [
+          {
+            "id": "ev-edd",
+            "occurred_at": "2026-09-30T16:00:00Z",
+            "actor": "ex:Analyst",
+            "action": "ex:attest",
+            "object": "ex:EDDAttestation"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "exact": true,
+        "why": "Enumerating both mixed variables: EU-only, US-only, and dual all permit, but neither domicile matches no rule, NotApplicable. Indeterminate, exact (k = 2)."
+      }
+    }
+  ]
+}

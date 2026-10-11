@@ -3,7 +3,7 @@
   "source": "W3C ODRL CG formal-semantics examples C2 (C21, C22, C23)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from the W3C ODRL CG formal-semantics examples (w3c/odrl@1db8e6b, folder C Evaluation of Conditions (Duties)/C2). The CG's evaluatedAction/Target/Party become the request; requestParameters describing sotw:CurrentXSDDateTime become request.at and effective_at (odrl:dateTime is the action time in due2-core). The CG reports a controlState: Inactive is Deny under its default 'close' behaviour, where due2 says NotApplicable and leaves the default to the enforcement point. Timezone-less instants are read as UTC (due2 instants are UTC, workflows §2). Upstream defect: every CG request in C1/C2 names ex:party/billie1, but the policy's assignee is ex:party/billie, and the CG's expected reports treat the request as matching (C12, C23 Permit). The translation uses ex:party/billie; read literally, every C scenario would be NotApplicable. The duty's own constraint (Sunday) is a guard: it reads the request, so it decides whether the duty is owed (workflows §5.2; the CG agrees — C21 reports the duty Inactive and the permission Active). W1 hoists it: the permission becomes one atom guarded by ¬Sunday with no duty and one guarded by Sunday with the duty. 2025-07-29 is a Tuesday, 2025-08-03 a Sunday; the weekday is a request parameter the assembler derives from request.at (due2-profiles.md §3, one hop). Scenarios 4-5 are added and are the motivating case for literal canonicalisation (workflows §6.4 amendment, 2026-10-11): with the weekday unknown and the fee paid, the authored policy permits for every weekday, but the two hoisted atoms read complementary literals of one fact. Completed independently they could both be F, which no weekday produces, and the verdict would be Indeterminate; with complementary literals sharing one variable the completions are exact and the verdict is Permit (L9 equality).",
+  "notes": "Translated from the W3C ODRL CG formal-semantics examples (w3c/odrl@1db8e6b, folder C Evaluation of Conditions (Duties)/C2). The CG's evaluatedAction/Target/Party become the request; requestParameters describing sotw:CurrentXSDDateTime become request.at and effective_at (odrl:dateTime is the action time in due2-core). The CG reports a controlState: Inactive is Deny under its default 'close' behaviour, where due2 says NotApplicable and leaves the default to the enforcement point. Timezone-less instants are read as UTC (due2 instants are UTC, workflows §2). Upstream defect: every CG request in C1/C2 names ex:party/billie1, but the policy's assignee is ex:party/billie, and the CG's expected reports treat the request as matching (C12, C23 Permit). The translation uses ex:party/billie; read literally, every C scenario would be NotApplicable. The duty's own constraint (Sunday) is a guard: it reads the request, so it decides whether the duty is owed (workflows §5.2, `owed`). The CG agrees: C21 reports the duty Inactive and the permission Active. Guards stay on the duty (decisions/0003), so the policy is one permission atom and one duty atom. 2025-07-29 is a Tuesday, 2025-08-03 a Sunday; the weekday is a request parameter the assembler derives from request.at (due2-profiles.md §3, one hop). Scenarios 4-5 are added and cover an unknown guard. It is uniform — a positive occurrence only lowers the verdict — so the two extreme completions decide (k = 0). Until decisions/0003 this case was the motivating case for canonical literals, because hoisting split the guard into complementary atoms; that role has passed to due2-xone-unknown.",
   "prefixes": {
     "ex": "http://example.com/",
     "exo": "https://ex.org/"
@@ -40,7 +40,7 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
-        "why": "The guard is F, so the hoisted atom without the duty (guarded by ¬Sunday) applies and is ready; the atom with the duty does not apply."
+        "why": "The guard is F, so the duty is not owed and is not open; ex:rule/C2 applies and is ready."
       },
       "w3c_expected": "Active, Permit"
     },
@@ -79,7 +79,7 @@
           ]
         ],
         "obligations": [],
-        "why": "The guard is T: only the atom with the duty applies, and the duty has no witness — outstanding. One route: pay."
+        "why": "The guard is T, so the duty is owed, and it has no witness: open, outstanding. One route: pay."
       },
       "w3c_expected": "Inactive, Deny"
     },
@@ -127,7 +127,7 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
-        "why": "The guarded atom applies and ev-pay (2025-07-23, before effective_at, 5.00 EUR, by the bearer) fulfils its duty: ready."
+        "why": "The duty is owed and ev-pay (2025-07-23, before effective_at, 5.00 EUR, by the bearer) fulfils it: not open, ready."
       },
       "w3c_expected": "Active, Permit"
     },
@@ -170,7 +170,7 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
-        "why": "The weekday is missing, so the two hoisted atoms are U on complementary literals of one fact. Canonicalised, they share one variable: its T completion makes the duty atom apply (duty fulfilled, ready), its F completion makes the duty-free atom apply (ready). Both completions permit, so Permit — as the authored policy does for any weekday."
+        "why": "The weekday is missing, so the duty's owed is U; but ev-pay fulfils it, so its open value (owed ∧ ¬fulfilled) is F either way, and the candidate is ready. Permit, exact — as the authored policy does for any weekday."
       }
     },
     {
@@ -199,7 +199,7 @@
         "verdict": "Indeterminate",
         "frontier": [],
         "obligations": [],
-        "why": "Sunday would give Pending, any other day Permit: the completions over the shared variable disagree, so Indeterminate — here the authored policy is undecided too."
+        "why": "owed is U and the duty is unfulfilled, so open is U: completing owed F gives a ready candidate (Permit), owed T a pending one (Pending). The completions disagree: Indeterminate, exact. The authored policy is undecided too — Sunday would be Pending, any other day Permit."
       }
     }
   ]

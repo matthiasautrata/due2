@@ -1,0 +1,61 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Authored for due2: the motivating case for canonical literals (workflows §6.4)
+# after decisions/0003. Client data may be exported for single-domicile clients
+# (EU xor US, an odrl:xone); dual-domicile clients need an enhanced-due-diligence
+# attestation first. W1's xone expansion yields (eu ∧ ¬us) and (¬eu ∧ us); the
+# dual rule reads (eu ∧ us). With one domicile known and the other unknown, the
+# unknown fact is read in both directions — a mixed variable — and only sharing
+# it decides the verdict.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:singleDomicile, ex:dualDomicile .
+
+ex:singleDomicile a odrl:Permission ;
+    odrl:assignee ex:Analyst ;
+    odrl:action ex:export ;
+    odrl:target ex:ClientData ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:xone (
+            [ a odrl:Constraint ; odrl:leftOperand ex:euDomiciled ;
+              odrl:operator odrl:eq ; odrl:rightOperand true ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:usDomiciled ;
+              odrl:operator odrl:eq ; odrl:rightOperand true ]
+        )
+    ] .
+
+ex:dualDomicile a odrl:Permission ;
+    odrl:assignee ex:Analyst ;
+    odrl:action ex:export ;
+    odrl:target ex:ClientData ;
+    odrl:constraint
+        [ a odrl:Constraint ; odrl:leftOperand ex:euDomiciled ;
+          odrl:operator odrl:eq ; odrl:rightOperand true ] ,
+        [ a odrl:Constraint ; odrl:leftOperand ex:usDomiciled ;
+          odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:eddAttestation .
+
+# Borne by the requester (inherited from the permission's assignee).
+ex:eddAttestation a odrl:Duty ;
+    odrl:action ex:attest ;
+    odrl:target ex:EDDAttestation .
+
+ex:export a odrl:Action .
+ex:attest a odrl:Action .
+
+ex:euDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:euDomiciled ;
+    rdfs:range xsd:boolean .
+
+ex:usDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:usDomiciled ;
+    rdfs:range xsd:boolean .
