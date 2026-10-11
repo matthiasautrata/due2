@@ -1,0 +1,227 @@
+{
+  "case": "due2-or-unknown",
+  "source": "due2-native (closes corpus coverage gap: odrl:or)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. W1 splits the disjunction into two root atoms, one per disjunct, each carrying one constraint (workflows §4: position decides conjunction; constraint DNF). The verdict is then the §6.4 completion over the two atoms' findings. Scenario 2 is the one every evaluator that reads unknown as false gets wrong: it would answer NotApplicable, a definite no on missing data.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "clearance suffices, membership unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:LabResults",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clearance": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "secret",
+                "@type": "xsd:string"
+              }
+            ]
+          },
+          "ex:projectMember": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "The clearance atom applies (T); a ready candidate with no prohibition gives Permit whatever the membership atom is (L7). The unknown fact is read but does not determine the verdict."
+      }
+    },
+    {
+      "name": "clearance fails, membership unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:LabResults",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clearance": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "public",
+                "@type": "xsd:string"
+              }
+            ]
+          },
+          "ex:projectMember": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "why": "The clearance atom is F; the membership atom is U. Completing it T gives Permit, F gives NotApplicable: the completions disagree, so Indeterminate, with the membership atom in verdict_basis as unknown."
+      }
+    },
+    {
+      "name": "both fail",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:LabResults",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clearance": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "public",
+                "@type": "xsd:string"
+              }
+            ]
+          },
+          "ex:projectMember": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "false",
+                "@type": "xsd:boolean"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "Both atoms are F: no candidate, no prohibition."
+      }
+    },
+    {
+      "name": "both missing",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:LabResults",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clearance": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:projectMember": {
+            "status": "missing",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "why": "missing makes each constraint U, never F (due2-profiles.md §3): both atoms are U, completions range from Permit to NotApplicable, so Indeterminate."
+      }
+    },
+    {
+      "name": "membership suffices, clearance invalid",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:LabResults",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clearance": {
+            "status": "invalid",
+            "values": []
+          },
+          "ex:projectMember": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "true",
+                "@type": "xsd:boolean"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "The membership atom is T and ready; the clearance atom's U (invalid value) cannot lower the verdict, since there is no prohibition."
+      }
+    }
+  ]
+}

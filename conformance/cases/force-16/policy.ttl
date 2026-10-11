@@ -1,0 +1,21 @@
+# Source: SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-16.ttl (MIT, imec), via tools/import_force.py.
+# Changes: odrl:conflict added; odrl:source dropped.
+
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.org/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+ex:partyCollection a odrl:PartyCollection .
+
+<urn:uuid:7c0f8805-384b-4306-9736-382dfe89c0cd> a odrl:Set ;
+    dct:description "A party collection may READ resource X." ;
+    dct:source <https://github.com/SolidLabResearch/ODRL-Test-Suite/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <urn:uuid:b2b7acd4-496c-4f47-ae2d-50e2a5e3be08> ;
+    odrl:uid <urn:uuid:7c0f8805-384b-4306-9736-382dfe89c0cd> .
+
+<urn:uuid:b2b7acd4-496c-4f47-ae2d-50e2a5e3be08> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:assignee ex:partyCollection ;
+    odrl:target ex:x .
+

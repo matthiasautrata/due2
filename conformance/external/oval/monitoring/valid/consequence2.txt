@@ -1,0 +1,2 @@
+should be allowed because the duty to pay has been fulfilled before the first time John prints, so the consequence is not needed
+consequence

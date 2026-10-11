@@ -1,0 +1,132 @@
+{
+  "case": "force-08",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-8.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-8.ttl and its 4 test cases; FORCE: \"Alice can only read x.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire).",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "testcase-026-alice-read-x (temporal)",
+      "request": {
+        "reference": "force-026",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:69d57d36-74e5-443c-bae5-30159b0cbd3e applies: action, target and assignee match; it has no duties."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-027-alice-write-x (temporal)",
+      "request": {
+        "reference": "force-027",
+        "action": "odrl:write",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:69d57d36-74e5-443c-bae5-30159b0cbd3e does not apply: action odrl:write ⋢ odrl:read. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-028-alice-read-y (temporal)",
+      "request": {
+        "reference": "force-028",
+        "action": "odrl:read",
+        "target": "ex:y",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:69d57d36-74e5-443c-bae5-30159b0cbd3e does not apply: target ex:y ⋢ ex:x. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-029-bob-write-y (temporal)",
+      "request": {
+        "reference": "force-029",
+        "action": "odrl:write",
+        "target": "ex:y",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:bob"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:69d57d36-74e5-443c-bae5-30159b0cbd3e does not apply: action odrl:write ⋢ odrl:read; target ex:y ⋢ ex:x; assignee ex:bob ⋢ ex:alice. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    }
+  ]
+}

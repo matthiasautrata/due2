@@ -1,0 +1,5 @@
+expected_accept_decision=False
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action should not be accepted as the page set (2 and 4) is NOT in the set of possible values
+test_tag=list_rigth_operand

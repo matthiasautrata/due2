@@ -1,0 +1,2 @@
+should allowed as the two events each matches both of the conditions of the AND logic constraint
+logic_and

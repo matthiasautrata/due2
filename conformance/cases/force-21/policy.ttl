@@ -1,0 +1,41 @@
+# Source: SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-21.ttl (MIT, imec), via tools/import_force.py.
+# Changes: odrl:conflict added; odrl:source dropped.
+
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.org/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:partyCollection a odrl:PartyCollection .
+
+<urn:uuid:38578227-70b7-4649-980d-661a57e91b72> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:assignee ex:partyCollection ;
+    odrl:constraint <urn:uuid:553d2546-a1bb-4e05-af99-95cef8c3b750> ;
+    odrl:duty <urn:uuid:4129123f-d8a8-481e-87fc-aba6dda5b6a5> ;
+    odrl:target ex:x .
+
+<urn:uuid:4129123f-d8a8-481e-87fc-aba6dda5b6a5> a odrl:Duty ;
+    odrl:action odrl:compensate .
+
+<urn:uuid:553d2546-a1bb-4e05-af99-95cef8c3b750> a odrl:LogicalConstraint ;
+    odrl:and <urn:uuid:6e8d7da2-0c51-4fab-a863-5e885a4b0f64>,
+        <urn:uuid:c946aac6-dac5-4450-8bd5-fae5f235b6e9> .
+
+<urn:uuid:6e8d7da2-0c51-4fab-a863-5e885a4b0f64> a odrl:Constraint ;
+    odrl:leftOperand odrl:dateTime ;
+    odrl:operator odrl:lt ;
+    odrl:rightOperand "2024-12-31T23:59:59+00:00"^^xsd:dateTime .
+
+<urn:uuid:c946aac6-dac5-4450-8bd5-fae5f235b6e9> a odrl:Constraint ;
+    odrl:leftOperand odrl:dateTime ;
+    odrl:operator odrl:gt ;
+    odrl:rightOperand "2024-01-01T00:00:00+00:00"^^xsd:dateTime .
+
+<urn:uuid:cc4995de-9c5e-4e12-9039-698506f6ab1c> a odrl:Set ;
+    dct:description "A party collection can only read X, during 2024, given that eventually the duty is fulfilled." ;
+    dct:source <https://github.com/SolidLabResearch/ODRL-Test-Suite/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <urn:uuid:38578227-70b7-4649-980d-661a57e91b72> ;
+    odrl:uid <urn:uuid:cc4995de-9c5e-4e12-9039-698506f6ab1c> .
+

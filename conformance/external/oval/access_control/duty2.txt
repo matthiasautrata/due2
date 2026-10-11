@@ -1,0 +1,5 @@
+expected_accept_decision=True
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action should be accepted as it matches the permission exactly, while the duty is not performed as evidenced in the state of the world (the payment amount is too small), with the selected duty semantics the request can still be granted on the promise that it will be performed
+test_tag=duty

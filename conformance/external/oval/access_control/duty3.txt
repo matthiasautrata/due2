@@ -1,0 +1,5 @@
+expected_accept_decision=False
+semantics_for_duties=-1,
+semantics_by_default=-1
+test_description=The action should be rejected as it matches the permission exactly, but the duty has not been fulfilled in the state of the world (the payment amount is too small), and the semantics require duties to have been already fulfilled
+test_tag=duty

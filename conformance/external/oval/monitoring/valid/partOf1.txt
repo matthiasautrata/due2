@@ -1,0 +1,2 @@
+should be compliant as the permissions are all matched (play is included in use)
+includedIn

@@ -1,0 +1,102 @@
+{
+  "case": "oval-party-collection",
+  "source": "OVAL access_control/partOf1-3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated from OVAL access_control/partOf1-3; OVAL's Party becomes the assignee. Membership is declared in the policy file (corpus closure, workflows §3.1), as in the original. Agreement parties: the rule names its own assignee, so due2-profiles.md §8.2 exception 4 does not arise. OVAL requests carry no time; request.at and effective_at are an arbitrary fixed instant.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "the collection itself requests (partOf1)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "target": "ex:looking-glass.ebook",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:team/A"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "team/A ⊑ team/A by reflexivity; action and target match, so ex:policy:777#use applies and is ready."
+      },
+      "oval_expected": "accept (True)"
+    },
+    {
+      "name": "a member requests (partOf2)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "target": "ex:looking-glass.ebook",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:person/murphy"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "murphy partOf team/A is a declared edge, so the party part is T and ex:policy:777#use applies."
+      },
+      "oval_expected": "accept (True)"
+    },
+    {
+      "name": "a non-member requests (partOf3)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "target": "ex:looking-glass.ebook",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:person/bill"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "No edge leads from bill to team/A, and closure is closed-world over declared edges (workflows §3.3): the party part is F, not U, so ex:policy:777#use does not apply."
+      },
+      "oval_expected": "reject (False)"
+    }
+  ]
+}

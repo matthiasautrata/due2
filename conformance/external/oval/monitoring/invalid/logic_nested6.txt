@@ -1,0 +1,2 @@
+should not be allowed as the last row does not satisfy either condition of the top XOR
+logic_nested

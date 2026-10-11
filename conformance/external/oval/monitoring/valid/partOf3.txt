@@ -1,0 +1,2 @@
+should be compliant as the parties are members of the party collection, the targets are members of the asset collection, and the action is included in what's permitted
+includedIn

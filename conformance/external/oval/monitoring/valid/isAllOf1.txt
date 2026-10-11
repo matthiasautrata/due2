@@ -1,0 +1,2 @@
+should be allowed as both prints are of the exact set 1 2 3 
+isAllOf

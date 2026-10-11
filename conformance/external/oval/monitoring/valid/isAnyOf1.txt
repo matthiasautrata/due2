@@ -1,0 +1,2 @@
+should be allowed as both prints are of allowed pages in the set 1 2 3 
+isAnyOf

@@ -1,0 +1,2 @@
+should be allowed as the events are permitted
+permission

@@ -1,0 +1,72 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 1200 ;
+        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+      ]
+    ] ;
+    odrl:assignee <http://example.com/org:John> ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2026-02-09T12:20:59Z"^^xsd:dateTime
+      ] ;
+    odrl:duty [
+        odrl:action [
+            rdf:value odrl:compensate ;
+            odrl:refinement [
+                odrl:leftOperand odrl:payAmount ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand 50 ;
+            ]
+        ] ;
+		odrl:consequence [
+			odrl:action [
+				rdf:value odrl:watermark ;
+				odrl:target <http://example.com/document:1234> ;
+			] ;
+		]
+    ]
+  ] ;
+  odrl:permission [
+    odrl:action odrl:create ;
+    odrl:assignee [
+      odrl:source <http://example.com/org:AccountManager> ;
+          odrl:refinement [
+            odrl:leftOperand odrl:adminLevel ;
+            odrl:operator odrl:gt ;
+            odrl:rightOperand 10 ;
+          ] ;
+      ] ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.example.com/age> ;
+      odrl:operator odrl:lt ;
+      odrl:rightOperand 70 ;
+      ] ;
+	odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand odrl:dateTime ;
+      odrl:operator odrl:lt ;
+      odrl:rightOperand "2027-01-11T11:13:10.665638" ;
+      ]
+  ] ;
+  odrl:permission [
+    odrl:action odrl:compensate ;
+  ] ;
+    odrl:permission [
+    odrl:action odrl:watermark ;
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .

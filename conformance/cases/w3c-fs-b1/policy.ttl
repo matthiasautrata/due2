@@ -1,0 +1,35 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <http://example.com/> .
+
+# Source: w3c/odrl@1db8e6b formal-semantics/examples/B Evaluation of Refinements/B1 (W3C Software and Document License),
+# translated from JSON-LD. Changes: typed; conflict declared;
+# odrl:resolution bound to the request (the request names it; CG examples do not).
+
+<http://example.com/policy/B1> a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:rule\/B1 .
+
+ex:rule\/B1 a odrl:Permission ;
+    odrl:target ex:document\/1234 ;
+    odrl:assigner ex:party\/616 ;
+    odrl:action [
+        rdf:value odrl:print ;
+        odrl:refinement ex:refinement\/B1
+    ] .
+
+ex:refinement\/B1 a odrl:Constraint ;
+    odrl:leftOperand odrl:resolution ;
+    odrl:operator odrl:lteq ;
+    odrl:rightOperand "1200"^^xsd:integer ;
+    odrl:unit <http://dbpedia.org/resource/Dots_per_inch> .
+
+odrl:resolution a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty odrl:resolution ;
+    rdfs:range xsd:integer .

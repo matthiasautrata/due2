@@ -1,0 +1,2 @@
+should not be allowed as one of the two events matches both of the conditions of the XONE logic constraint, while at most one can match
+logic_xone

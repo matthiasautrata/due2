@@ -1,0 +1,25 @@
+# Source: SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-13.ttl (MIT, imec), via tools/import_force.py.
+# Changes: odrl:conflict added.
+
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.org/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:uuid:641a79e0-0633-46c5-afe8-616e36701404> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:assignee ex:alice ;
+    odrl:constraint <urn:uuid:constraint:86526f9b-57c2-4c94-b079-9762fec562f1> ;
+    odrl:target ex:x .
+
+<urn:uuid:9fcff55b-33bd-4c8f-bcd7-9e206e4dbbbe> a odrl:Set ;
+    dct:description "ALICE may READ resource X when it is later than 2024-02-12T11:20:10.999Z." ;
+    dct:source <https://github.com/SolidLabResearch/ODRL-Test-Suite/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <urn:uuid:641a79e0-0633-46c5-afe8-616e36701404> ;
+    odrl:uid <urn:uuid:9fcff55b-33bd-4c8f-bcd7-9e206e4dbbbe> .
+
+<urn:uuid:constraint:86526f9b-57c2-4c94-b079-9762fec562f1> odrl:leftOperand odrl:dateTime ;
+    odrl:operator odrl:gt ;
+    odrl:rightOperand "2024-02-12T11:20:10.999000+00:00"^^xsd:dateTime .
+

@@ -1,0 +1,117 @@
+{
+  "case": "force-19",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-19.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-19.ttl and its 3 test cases; FORCE: \"Alice can only read X, given that eventually the duty is fulfilled.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire). FORCE's duty states are asserted inputs (DutyReports); due2 derives them from evidence. A report with performanceState Performed becomes one evidence record by the duty's bearer; NonSet and Violated reports carry no evidence. FORCE activates the permission while the duty is unperformed (\"given that eventually the duty is fulfilled\"); due2 returns Pending with the duty as the route — the standing divergence on preconditions. FORCE's Violated state has no deadline behind it, so due2 cannot reproduce it and returns Pending.",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "testcase-059-nonset (dutyNonset)",
+      "request": {
+        "reference": "force-059",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "urn:uuid:a0b12cb7-d3a1-4953-86da-f59a597615d2"
+          ]
+        ],
+        "obligations": [],
+        "why": "urn:uuid:f21be2f2-5efd-46ca-ac4c-0b37d9b9a526 applies, but its precondition duty urn:uuid:a0b12cb7-d3a1-4953-86da-f59a597615d2 has no witness in the evidence, so it is outstanding (workflows §5.3): the frontier is that one route."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-060-fulfilled (dutyFulfilled)",
+      "request": {
+        "reference": "force-060",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-1",
+            "occurred_at": "2024-02-12T11:20:10.999000+00:00",
+            "actor": "ex:alice",
+            "action": "odrl:compensate"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f21be2f2-5efd-46ca-ac4c-0b37d9b9a526 applies: action, target and assignee match; its duty is witnessed by ev-1."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-061-violated (dutyViolated)",
+      "request": {
+        "reference": "force-061",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "urn:uuid:a0b12cb7-d3a1-4953-86da-f59a597615d2"
+          ]
+        ],
+        "obligations": [],
+        "why": "urn:uuid:f21be2f2-5efd-46ca-ac4c-0b37d9b9a526 applies, but its precondition duty urn:uuid:a0b12cb7-d3a1-4953-86da-f59a597615d2 has no witness in the evidence, so it is outstanding (workflows §5.3): the frontier is that one route."
+      },
+      "force_expected": "Permission:Inactive"
+    }
+  ]
+}

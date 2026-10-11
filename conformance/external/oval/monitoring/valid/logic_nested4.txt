@@ -1,0 +1,2 @@
+should be allowed as the permission is met by every row
+logic_nested

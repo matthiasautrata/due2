@@ -1,0 +1,2 @@
+should be allowed as the obligation is met, one print exists
+obligation

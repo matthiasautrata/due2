@@ -1,0 +1,2 @@
+should be allowed as both page values can be interpreted as sets that belong to the set in the right operand list
+RDF_list_right_operand

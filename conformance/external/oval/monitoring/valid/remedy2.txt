@@ -1,0 +1,2 @@
+should be allowed as a non-allowed action is performed (uninstall) but the remedial action (pay) has been performed
+remedy

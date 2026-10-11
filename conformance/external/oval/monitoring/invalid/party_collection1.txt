@@ -1,0 +1,2 @@
+one event is not permitted because the member of the party collection is not of the appropriate age (12)
+party_collection

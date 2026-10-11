@@ -1,0 +1,96 @@
+{
+  "case": "oval-action-hierarchy",
+  "source": "OVAL access_control/includedIn1-3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated from OVAL access_control/includedIn1-3. The originals have no target and requests with no Asset; due2 requires both (IM 2.6.1; workflows §3.2 makes request.target mandatory — see conformance/external/README.md on OVAL's target-less requests). Each scenario targets the asset of the rule it exercises, so the other rule is F on target and the case still isolates the action part.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "play under a permission on use (includedIn1)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:play",
+        "target": "ex:asset:general",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "play includedIn use (profiles/odrl-actions.ttl), so play ⊑ use and ex:policy:1010#use applies; the request names no assignee, but the rule names none either, so no party part arises."
+      },
+      "oval_expected": "accept (True)"
+    },
+    {
+      "name": "use under a permission on play (includedIn2)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "target": "ex:asset:music",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "The request is for the broader action: use ⋢ play, so ex:policy:1010#play does not apply (workflows §5.2: never the reverse)."
+      },
+      "oval_expected": "reject (False)"
+    },
+    {
+      "name": "sell under a permission on use (includedIn3)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:sell",
+        "target": "ex:asset:general",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "sell includedIn transfer, not use, so sell ⋢ use and ex:policy:1010#use does not apply."
+      },
+      "oval_expected": "reject (False)"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://example.com/policy:1010>
+  a odrl:Set ;
+  odrl:conflict odrl:invalid ;
+  odrl:prohibition [
+    odrl:action odrl:use ;
+    odrl:assignee <http://example.com/party:Bob>
+  ] ;
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie>
+  ] .

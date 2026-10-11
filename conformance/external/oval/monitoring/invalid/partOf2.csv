@@ -1,0 +1,4 @@
+http://www.w3.org/ns/odrl/2/Action,http://www.w3.org/ns/odrl/2/Asset,http://www.w3.org/ns/odrl/2/Party,http://www.w3.org/ns/odrl/2/dateTime
+http://www.w3.org/ns/odrl/2/use,http://example.com/looking-glass.ebook,http://example.com/person/murphy,2026-08-27 14:07:32.423926+00:00
+http://www.w3.org/ns/odrl/2/play,http://example.com/looking-glass.page18,http://example.com/person/claire,2026-08-27 13:57:32.423926+00:00
+http://www.w3.org/ns/odrl/2/play,http://example.com/looking-glass.page10,http://example.com/team/A,2026-08-27 13:57:32.423926+00:00

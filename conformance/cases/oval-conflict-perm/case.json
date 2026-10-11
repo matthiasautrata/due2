@@ -1,0 +1,71 @@
+{
+  "case": "oval-conflict-perm",
+  "source": "OVAL access_control/conflict1 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated from DIPS-Tools/ODRL-Engine@f0839f6 (OVAL) access_control/conflict1.ttl/.json/.txt. OVAL's request names Action, Asset and Party; Party becomes the assignee. OVAL requests carry no time, so request.at and effective_at are an arbitrary fixed instant (no constraint reads time). The original prohibition has no target, which IM 2.6.2 forbids; it gains the permission's target, the reading under which OVAL's own expectation holds. Scenario 2 is added: a requester the prohibition does not name, so the strategy has nothing to resolve and every variant permits. ",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "Bob uses the movie (OVAL request)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "target": "ex:asset:9898.movie",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party:Bob"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "Both rules apply to Bob's request; under perm the T permission eliminates the policy's prohibition (workflows \u00a76.2), leaving a ready candidate."
+      },
+      "oval_expected": "accept (True)"
+    },
+    {
+      "name": "Alice uses the movie (added)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:use",
+        "target": "ex:asset:9898.movie",
+        "at": "2026-08-27T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "The prohibition names Bob, so for Alice its party part is F and it does not apply; the permission applies and is ready."
+      }
+    }
+  ]
+}

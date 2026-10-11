@@ -1,0 +1,11 @@
+http://www.w3.org/ns/odrl/2/dateTime,http://www.w3.org/ns/odrl/2/Party,http://www.w3.org/ns/odrl/2/Action,http://www.w3.org/ns/odrl/2/Asset,http://www.example.com/age,http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/resolution,http://www.w3.org/ns/odrl/2/Party http://www.w3.org/ns/odrl/2/adminLevel
+2026-01-11T11:43:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,24,53,12
+2026-01-11T11:33:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/print,http://example.com/document:1234,0,1190,
+2026-01-11T11:23:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-24,,86
+2026-01-11T11:13:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/print,http://example.com/document:1234,,1142,
+2026-01-11T11:03:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,15,49,68
+2026-01-11T10:53:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-24,,72
+2026-01-11T10:43:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,66,,61
+2026-01-11T10:33:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,4,57,24
+2026-01-11T10:23:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-22,63,26
+2026-01-11T10:13:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,29,58,93

@@ -1,0 +1,27 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/partOf1.ttl
+# (MIT, University of Southampton) — partOf2/3 use the same policy. Rule named;
+# conflict declared; OVAL's example profile IRI dropped (it names no terms).
+
+<http://example.com/policy:777> a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:777#use> .
+
+<http://example.com/policy:777#use> a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:assignee <http://example.com/team/A> ;
+    odrl:assigner <http://example.com/org/sony-books> ;
+    odrl:target <http://example.com/looking-glass.ebook> .
+
+<http://example.com/team/A> a odrl:PartyCollection, vcard:Group ;
+    vcard:fn "Team A"^^xsd:string .
+
+<http://example.com/org/sony-books> a odrl:Party, vcard:Organization ;
+    vcard:fn "Sony Books LCC"^^xsd:string .
+
+# Membership declared in the policy file, as OVAL does: corpus closure edges.
+<http://example.com/person/murphy> odrl:partOf <http://example.com/team/A> .
+<http://example.com/person/claire> odrl:partOf <http://example.com/team/A> .

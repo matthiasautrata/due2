@@ -1,0 +1,29 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:777>
+  a odrl:Agreement ;
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:assignee <http://example.com/team/A> ;
+    odrl:assigner <http://example.com/org/sony-books> ;
+    odrl:target <http://example.com/looking-glass.ebook>
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:05> .
+
+<http://example.com/team/A>
+  a odrl:PartyCollection, vcard:Group ;
+  vcard:fn "Team A"^^xsd:string ;
+  vcard:hasEmail "teamA@example.com"^^xsd:string .
+
+<http://example.com/org/sony-books>
+  a odrl:Party, vcard:Organization ;
+  vcard:fn "Sony Books LCC"^^xsd:string ;
+  vcard:hasEmail "sony-contact@example.com"^^xsd:string .
+
+<http://example.com/person/murphy> odrl:partOf <http://example.com/team/A> . 
+<http://example.com/person/claire> odrl:partOf <http://example.com/team/A> . 
+
+<http://example.com/looking-glass.page10> odrl:partOf <http://example.com/looking-glass.ebook> . 
+<http://example.com/looking-glass.page15> odrl:partOf <http://example.com/looking-glass.ebook> . 

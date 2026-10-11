@@ -1,0 +1,2 @@
+should be allowed as the two events each matches exactly one of the conditions of the XONE logic constraint (one print is with paper, and the other with a low enough resolution)
+logic_xone

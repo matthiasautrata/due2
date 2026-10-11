@@ -1,0 +1,2 @@
+should be allowed as the actions are performed by Beth, the rule specific permission assignee Beth overrides the generic inherited policy level properties
+policy_properties

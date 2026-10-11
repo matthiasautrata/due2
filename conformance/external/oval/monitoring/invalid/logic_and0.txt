@@ -1,0 +1,2 @@
+should not be allowed as the one of the two events does not matche one of the conditions of the AND logic constraint (resolution 2048 is above the 1024 limit)
+logic_and

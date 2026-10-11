@@ -1,0 +1,27 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <http://example.com/> .
+
+# Source: w3c/odrl@1db8e6b formal-semantics/examples/A Evaluation of Constraints/A1 (W3C Software and Document License),
+# translated from JSON-LD. Changes: rule and constraint
+# typed; conflict declared; right operand "2018-01-01"^^xsd:date becomes the instant
+# 2018-01-01T00:00:00Z (see case notes).
+
+<http://example.com/policy/A1> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:rule\/A1 .
+
+ex:rule\/A1 a odrl:Permission ;
+    odrl:target ex:document\/1234 ;
+    odrl:assigner ex:party\/16 ;
+    odrl:action odrl:distribute ;
+    odrl:constraint ex:constraint\/A1 .
+
+ex:constraint\/A1 a odrl:Constraint ;
+    odrl:leftOperand odrl:dateTime ;
+    odrl:operator odrl:lt ;
+    odrl:rightOperand "2018-01-01T00:00:00Z"^^xsd:dateTime .

@@ -1,0 +1,2 @@
+should not be allowed as the download action is not permitted, given the inherited policy level properties
+policy_properties

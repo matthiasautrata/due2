@@ -1,0 +1,20 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/includedIn1-3.ttl
+# (MIT, University of Southampton). The originals are two policies — a permission
+# on use (includedIn1, 3) and one on play (includedIn2) — with no target, which
+# IM 2.6.1 requires. Both rules here get one target and live in one policy; each
+# scenario's request reaches at most one of them (the hierarchy is
+# profiles/odrl-actions.ttl: play ⊑ use, sell ⊑ transfer).
+
+<http://example.com/policy:1010> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:1010#use>, <http://example.com/policy:1010#play> .
+
+<http://example.com/policy:1010#use> a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:general> .
+
+<http://example.com/policy:1010#play> a odrl:Permission ;
+    odrl:action odrl:play ;
+    odrl:target <http://example.com/asset:music> .

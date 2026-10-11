@@ -1,0 +1,135 @@
+{
+  "case": "oval-duty-payment",
+  "source": "OVAL access_control/duty1, duty2, duty3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated from OVAL access_control/duty1-3. OVAL's state of the world is an event log; the compensate row becomes one evidence record with its payAmount as an evidence parameter, and the play row is the request. OVAL's request names no party; the log's actor, ex:William_Hall, is made the assignee, so the duty's bearer is defined (the duty and its Offer-level permission name no assignee, so the bearer is the request subject, workflows §5.3). Dropped: OVAL's separate untargeted permission for compensate, which exists only to make the payment event itself compliant in monitoring mode and is not ODRL 2.2 (IM 2.6.1 requires a target). odrl:unit was a string literal; IM 2.5.1 makes it an IRI. This is the first corpus case with a witness-source operand, and it uses the duty-action refinement form that due2-profiles.md §9 #6 asks about: with an explicit binding of odrl:payAmount to due2:witnessSource the refinement is an ordinary witness condition and needs no new machinery; #6 reduces to whether due2-core should ship that binding as a baseline. OVAL parameterises duties: under its default (semantics_for_duties=1) a permission with an unfulfilled duty is granted on the promise of performance (duty2: True); under -1 it is refused (duty3: False). due2 has one reading — Pending, naming the duty — which agrees with neither as a yes/no but is what both are approximating. duty2 and duty3 have identical inputs, so they are one scenario here.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "paid 6.1 EUR before the request (duty1)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:play",
+        "target": "ex:music/1999.mp3",
+        "at": "2026-08-27T10:40:00Z",
+        "parties": {
+          "odrl:assignee": "ex:William_Hall"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:40:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-08-27T10:39:36Z",
+            "actor": "ex:William_Hall",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "6.1",
+                "@type": "xsd:decimal"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "ex:policy:88#play applies. Its duty ex:policy:88#pay has one witness: ev-pay is a compensate by the bearer, before effective_at, and its payAmount 6.1 ≥ 5.0, so the witness condition is T and the duty is fulfilled. The candidate is ready."
+      },
+      "oval_expected": "accept (True)"
+    },
+    {
+      "name": "paid 2 EUR (duty2, duty3)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:play",
+        "target": "ex:music/1999.mp3",
+        "at": "2026-08-27T10:40:00Z",
+        "parties": {
+          "odrl:assignee": "ex:William_Hall"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:40:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-08-27T10:39:36Z",
+            "actor": "ex:William_Hall",
+            "action": "odrl:compensate",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "2",
+                "@type": "xsd:decimal"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:policy:88#pay"
+          ]
+        ],
+        "obligations": [],
+        "why": "ex:policy:88#play applies. ev-pay is the only candidate witness and its payAmount 2 < 5.0 fails the witness condition, so the duty's finding is F — outstanding (§5.3). The frontier is one route: perform ex:policy:88#pay."
+      },
+      "oval_expected": "accept (True) under semantics_for_duties=1; reject (False) under -1"
+    },
+    {
+      "name": "no payment (added)",
+      "request": {
+        "reference": "oval-req",
+        "action": "odrl:play",
+        "target": "ex:music/1999.mp3",
+        "at": "2026-08-27T10:40:00Z",
+        "parties": {
+          "odrl:assignee": "ex:William_Hall"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-08-27T10:40:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:policy:88#pay"
+          ]
+        ],
+        "obligations": [],
+        "why": "No evidence at all: the duty has no witness, which is F, not U (§5.3). Pending with the same single route."
+      }
+    }
+  ]
+}

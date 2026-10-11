@@ -1,0 +1,2 @@
+should nto be allowed as the page 4 IRI is not in the right operand list
+RDF_list_right_operand

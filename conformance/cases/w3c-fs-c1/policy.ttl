@@ -1,0 +1,37 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <http://example.com/> .
+
+# Source: w3c/odrl@1db8e6b formal-semantics/examples/C Evaluation of Conditions (Duties)/C1 (W3C Software and Document License),
+# translated from JSON-LD. Changes: typed; conflict and
+# profiles declared; odrl:payAmount bound to the witness source.
+
+<http://example.com/policy/C1> a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:rule\/C1 .
+
+ex:rule\/C1 a odrl:Permission ;
+    odrl:assigner ex:party\/sony ;
+    odrl:assignee ex:party\/billie ;
+    odrl:target ex:music\/1999.mp3 ;
+    odrl:action odrl:play ;
+    odrl:duty ex:condition\/1 .
+
+ex:condition\/1 a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [ a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+            odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+    ] .
+
+# Witness source: the amount is a parameter of the payment (due2-profiles.md §3).
+odrl:payAmount a odrl:LeftOperand ;
+    dprod:operandSource due2:witnessSource ;
+    dprod:operandProperty odrl:payAmount ;
+    rdfs:range xsd:decimal .

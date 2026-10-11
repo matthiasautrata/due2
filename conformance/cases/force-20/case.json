@@ -1,0 +1,102 @@
+{
+  "case": "force-20",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-20.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-20.ttl and its 3 test cases; FORCE: \"During 9-17 on weekdays of 2024 ALICE has READ access to resource X.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire).",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "testcase-062-big-policy (temporal)",
+      "request": {
+        "reference": "force-062",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d5f6d7-ef4b-43bc-9838-b79aef793883 applies: action, target and assignee match and every constraint holds at request.at; it has no duties."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-063-big-policy-OoO (out-of-office)",
+      "request": {
+        "reference": "force-063",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T05:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T05:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d5f6d7-ef4b-43bc-9838-b79aef793883 does not apply: the odrl:dateTime constraint is F at 2024-02-12T05:20:10.999000+00:00. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-064-big-policy-past (temporal-past)",
+      "request": {
+        "reference": "force-064",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2017-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2017-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d5f6d7-ef4b-43bc-9838-b79aef793883 does not apply: the odrl:dateTime constraint is F at 2017-02-12T11:20:10.999000+00:00. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    }
+  ]
+}

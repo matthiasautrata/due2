@@ -1,0 +1,19 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/conflict2.ttl
+# (MIT, University of Southampton). Rules named; the prohibition gains the
+# permission's target, which IM 2.6.2 requires and the original omits.
+
+<http://example.com/policy:1010> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:prohibition <http://example.com/policy:1010#prohibition> ;
+    odrl:permission <http://example.com/policy:1010#permission> .
+
+<http://example.com/policy:1010#prohibition> a odrl:Prohibition ;
+    odrl:action odrl:use ;
+    odrl:assignee <http://example.com/party:Bob> ;
+    odrl:target <http://example.com/asset:9898.movie> .
+
+<http://example.com/policy:1010#permission> a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie> .

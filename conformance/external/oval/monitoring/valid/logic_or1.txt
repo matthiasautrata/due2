@@ -1,0 +1,2 @@
+should be allowed as the two events each matches one of the conditions of the OR logic constraint
+logic_or

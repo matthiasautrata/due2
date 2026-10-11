@@ -1,0 +1,43 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 1200 ;
+        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+      ]
+    ] ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2028-02-09T12:20:59Z"^^xsd:dateTime
+      ]
+  ] ;
+  odrl:obligation [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand 600 ;
+        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+      ]
+    ] ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2028-02-09T12:20:59Z"^^xsd:dateTime
+      ]
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .

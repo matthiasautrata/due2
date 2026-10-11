@@ -1,0 +1,43 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/duty1.ttl
+# (MIT, University of Southampton). Changes, all recorded in case.json notes:
+# rules named; the separate untargeted `compensate` permission dropped;
+# odrl:unit an IRI instead of a string; odrl:payAmount bound to the witness
+# source; conflict and profiles declared.
+
+<http://example.com/policy:88> a odrl:Offer ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:88#play> .
+
+<http://example.com/policy:88#play> a odrl:Permission ;
+    odrl:action odrl:play ;
+    odrl:assigner <http://example.com/assigner:sony> ;
+    odrl:target <http://example.com/music/1999.mp3> ;
+    odrl:duty <http://example.com/policy:88#pay> .
+
+# "Pay at least 5 EUR", as OVAL writes it: a refinement of the duty's action.
+<http://example.com/policy:88#pay> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ;
+            odrl:operator odrl:gteq ;
+            odrl:rightOperand "5.0"^^xsd:decimal ;
+            odrl:unit <http://dbpedia.org/resource/Euro>
+        ]
+    ] .
+
+# The amount is a parameter of the payment that witnesses the duty, so the
+# binding says so explicitly (due2-profiles.md §3).
+odrl:payAmount a odrl:LeftOperand ;
+    dprod:operandSource due2:witnessSource ;
+    dprod:operandProperty odrl:payAmount ;
+    rdfs:range xsd:decimal .

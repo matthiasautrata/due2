@@ -1,0 +1,260 @@
+{
+  "case": "due2-grant-signers",
+  "source": "due2-native (closes corpus coverage gaps: grant scope, discharges, signers)",
+  "classification": "odrl-profile",
+  "needs": [
+    "due2:instanceScope"
+  ],
+  "notes": "Authored for due2; no origin result. The case format spells a grant instance key as {\"duty\": <source duty>, \"reference\": <request reference>} in evidence.discharges — the inputs of the digest workflows §5.3 defines — so cases stay hand-writable; the evaluator computes the digest. config.signers lists the admissibility record as {duty, issuer} pairs (workflows §3.4).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "payment discharges this download",
+      "request": {
+        "reference": "req-7",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:ReportFee",
+            "issuer": "ex:Bank",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides",
+        "signers": [
+          {
+            "duty": "ex:payPerUse",
+            "issuer": "ex:Bank"
+          }
+        ]
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "ex:payPerUse is grant-scoped, so its instance key is (payPerUse, req-7). ev-pay is a pay on ex:ReportFee by the bearer (Alice, inherited from the permission), before effective_at, issued by ex:Bank which signers admits, and it discharges exactly that key: a witness. The candidate is ready."
+      }
+    },
+    {
+      "name": "the same payment, a second download",
+      "request": {
+        "reference": "req-8",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:ReportFee",
+            "issuer": "ex:Bank",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides",
+        "signers": [
+          {
+            "duty": "ex:payPerUse",
+            "issuer": "ex:Bank"
+          }
+        ]
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:payPerUse"
+          ]
+        ],
+        "obligations": [],
+        "why": "The instance key is now (payPerUse, req-8). ev-pay discharges req-7's instance, so under grant scope it is no witness here (§5.3): the duty is F, outstanding, and the one route is to pay again."
+      }
+    },
+    {
+      "name": "self-attested payment",
+      "request": {
+        "reference": "req-7",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:ReportFee",
+            "issuer": "ex:Alice",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides",
+        "signers": [
+          {
+            "duty": "ex:payPerUse",
+            "issuer": "ex:Bank"
+          }
+        ]
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:payPerUse"
+          ]
+        ],
+        "obligations": [],
+        "why": "Everything matches except the issuer: signers lists only ex:Bank for ex:payPerUse, so ev-pay does not count (§3.4). No witness: outstanding."
+      }
+    },
+    {
+      "name": "payment with no issuer",
+      "request": {
+        "reference": "req-7",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:ReportFee",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides",
+        "signers": [
+          {
+            "duty": "ex:payPerUse",
+            "issuer": "ex:Bank"
+          }
+        ]
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:payPerUse"
+          ]
+        ],
+        "obligations": [],
+        "why": "The duty has signer entries, so evidence without an issuer counts for nothing (§3.4). Outstanding."
+      }
+    },
+    {
+      "name": "request without a reference falls back to member scope",
+      "request": {
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:ReportFee",
+            "issuer": "ex:Bank"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides",
+        "signers": [
+          {
+            "duty": "ex:payPerUse",
+            "issuer": "ex:Bank"
+          }
+        ]
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "With no request.reference a grant-scoped duty falls back to member scope (§5.3): discharges is not consulted, and ev-pay — the bearer's bank-attested pay on the fee — witnesses the member instance."
+      }
+    }
+  ]
+}

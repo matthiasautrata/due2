@@ -1,0 +1,5 @@
+expected_accept_decision=True
+semantics_for_duties=1,
+semantics_by_default=1
+test_description=The action should be accepted as it matches the permission exactly, regardles of the semantics by default
+test_tag=permission_exact_match_with_no_prohibitions

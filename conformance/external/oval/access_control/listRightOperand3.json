@@ -1,0 +1,4 @@
+{
+  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/print",
+  "http://example.com/page": "http://example.com/page/2/ http://example.com/page/4/"
+}

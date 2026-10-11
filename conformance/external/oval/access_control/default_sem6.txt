@@ -1,0 +1,5 @@
+expected_accept_decision=None
+semantics_for_duties=1,
+semantics_by_default=0
+test_description=The action should not be processed as it is generic (it does not specify the right asset), and the semantics is unspecified-by-default
+test_tag=Default_Semantics

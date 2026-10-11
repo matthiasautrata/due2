@@ -1,0 +1,5 @@
+expected_accept_decision=None
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action matches both permission and prohibition, but it should not be evaluated as the conflict strategy says such policies are invalid
+test_tag=conflict_strategy

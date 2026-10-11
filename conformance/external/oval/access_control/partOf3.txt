@@ -1,0 +1,5 @@
+expected_accept_decision=False
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action should be rejected as it does not matche the permission for Team A, Bill is not part of Team A
+test_tag=partOf

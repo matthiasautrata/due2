@@ -1,0 +1,184 @@
+{
+  "case": "force-21",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-21.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-21.ttl and its 4 test cases; FORCE: \"A party collection can only read X, during 2024, given that eventually the duty is fulfilled.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire). odrl:source on the collection is dropped: due2 rejects it (due2-profiles.md §8.1), and FORCE's membership comes from the partOf edges either way. Whether due2 should admit a refinement-free odrl:source is registered in odrl22-conformance.md §5. FORCE's duty states are asserted inputs (DutyReports); due2 derives them from evidence. A report with performanceState Performed becomes one evidence record by the duty's bearer; NonSet and Violated reports carry no evidence. FORCE activates the permission while the duty is unperformed (\"given that eventually the duty is fulfilled\"); due2 returns Pending with the duty as the route — the standing divergence on preconditions. FORCE's Violated state has no deadline behind it, so due2 cannot reproduce it and returns Pending. Upstream defect: the DutyReport in all-2023.ttl and all-2024.ttl names policy-19's duty, not this policy's. Read as a world fact — ex:alice compensated — it is one evidence record, and due2's evidence is existential (conformance/README.md), so it witnesses this duty too: 065 permits in both evaluators, for different reasons.",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "testcase-065-alice (all-2024)",
+      "request": {
+        "reference": "force-065",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-1",
+            "occurred_at": "2024-02-12T11:20:10.999000+00:00",
+            "actor": "ex:alice",
+            "action": "odrl:compensate"
+          }
+        ],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:38578227-70b7-4649-980d-661a57e91b72 applies: action, target and assignee match and every constraint holds at request.at; its duty is witnessed by ev-1."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-066-bob-sell (all-2024)",
+      "request": {
+        "reference": "force-066",
+        "action": "odrl:sell",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:bob"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-1",
+            "occurred_at": "2024-02-12T11:20:10.999000+00:00",
+            "actor": "ex:alice",
+            "action": "odrl:compensate"
+          }
+        ],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:38578227-70b7-4649-980d-661a57e91b72 does not apply: action odrl:sell ⋢ odrl:read; assignee ex:bob ⋢ ex:partyCollection. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-067-alice-past (all-2023)",
+      "request": {
+        "reference": "force-067",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2023-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2023-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-1",
+            "occurred_at": "2023-02-12T11:20:10.999000+00:00",
+            "actor": "ex:alice",
+            "action": "odrl:compensate"
+          }
+        ],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:38578227-70b7-4649-980d-661a57e91b72 does not apply: the odrl:dateTime constraint is F at 2023-02-12T11:20:10.999000+00:00. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-068-bob-write-y-past (all-2023)",
+      "request": {
+        "reference": "force-068",
+        "action": "odrl:write",
+        "target": "ex:y",
+        "at": "2023-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:bob"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2023-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-1",
+            "occurred_at": "2023-02-12T11:20:10.999000+00:00",
+            "actor": "ex:alice",
+            "action": "odrl:compensate"
+          }
+        ],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:38578227-70b7-4649-980d-661a57e91b72 does not apply: action odrl:write ⋢ odrl:read; target ex:y ⋢ ex:x; assignee ex:bob ⋢ ex:partyCollection; the odrl:dateTime constraint is F at 2023-02-12T11:20:10.999000+00:00. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    }
+  ]
+}

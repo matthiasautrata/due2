@@ -1,0 +1,2 @@
+should be allowed as both prints include the mandatory 1 2 and 3 pages
+hasPart

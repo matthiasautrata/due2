@@ -1,0 +1,75 @@
+{
+  "case": "w3c-fs-a1",
+  "source": "W3C ODRL CG formal-semantics examples A1 (A11, A12)",
+  "classification": "partial",
+  "needs": [
+    "xsd:date right operand against an xsd:dateTime operand"
+  ],
+  "notes": "Translated from the W3C ODRL CG formal-semantics examples (w3c/odrl@1db8e6b, folder A Evaluation of Constraints/A1). The CG's evaluatedAction/Target/Party become the request; requestParameters describing sotw:CurrentXSDDateTime become request.at and effective_at (odrl:dateTime is the action time in due2-core). The CG reports a controlState: Inactive is Deny under its default 'close' behaviour, where due2 says NotApplicable and leaves the default to the enforcement point. Timezone-less instants are read as UTC (due2 instants are UTC, workflows §2). The CG compares the action time (xsd:dateTime) with \"2018-01-01\"^^xsd:date. due2 rejects that at normalisation (OperatorTypeMismatch: the right operand does not conform to the operand's range, due2-profiles.md §3); the translation substitutes the instant 2018-01-01T00:00:00Z, which gives the CG's verdicts. Comparison across XSD date/time types — and timezone-less values, which XSD orders only partially — is unspecified in ODRL 2.2 and worth settling in the formal semantics. A2 has no evaluation requests and is not translated.",
+  "prefixes": {
+    "ex": "http://example.com/",
+    "exo": "https://ex.org/"
+  },
+  "scenarios": [
+    {
+      "name": "A11: before the deadline",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:distribute",
+        "target": "ex:document/1234",
+        "at": "2017-12-19T15:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party/1"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2017-12-19T15:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "2017-12-19T15:00Z < 2018-01-01T00:00Z, so the constraint is T; the rule names no assignee, so party/1 is not matched against anything; ex:rule/A1 applies and is ready."
+      },
+      "w3c_expected": "Active, Permit"
+    },
+    {
+      "name": "A12: after the deadline",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:distribute",
+        "target": "ex:document/1234",
+        "at": "2019-12-19T15:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:party/1"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2019-12-19T15:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "The constraint is F, so the only rule does not apply."
+      },
+      "w3c_expected": "Inactive, Deny"
+    }
+  ]
+}

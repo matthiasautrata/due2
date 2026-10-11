@@ -1,0 +1,5 @@
+{
+  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/use",
+  "http://www.w3.org/ns/odrl/2/Asset": "http://example.com/looking-glass.ebook",
+  "http://www.w3.org/ns/odrl/2/Party": "http://example.com/team/A"
+}

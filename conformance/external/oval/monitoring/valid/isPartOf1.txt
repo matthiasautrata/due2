@@ -1,0 +1,2 @@
+should be allowed as both sets of page values are part of the space separated set in the right operand
+isPartOf

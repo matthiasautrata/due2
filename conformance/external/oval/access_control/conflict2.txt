@@ -1,0 +1,5 @@
+expected_accept_decision=False
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action matches both permission and prohibition, but it should be rejected as the conflict strategy makes prohibitions override permissions
+test_tag=conflict_strategy

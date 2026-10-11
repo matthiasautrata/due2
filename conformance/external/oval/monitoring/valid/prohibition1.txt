@@ -1,0 +1,2 @@
+should be allowed as the uninstall event is not forbidden, as John is uninstalling a different document from the one he is forbidden to uninstall
+prohibition

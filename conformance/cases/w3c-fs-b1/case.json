@@ -1,0 +1,106 @@
+{
+  "case": "w3c-fs-b1",
+  "source": "W3C ODRL CG formal-semantics examples B1 (B11, B12)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated from the W3C ODRL CG formal-semantics examples (w3c/odrl@1db8e6b, folder B Evaluation of Refinements/B1). The CG's evaluatedAction/Target/Party become the request; requestParameters describing sotw:CurrentXSDDateTime become request.at and effective_at (odrl:dateTime is the action time in due2-core). The CG reports a controlState: Inactive is Deny under its default 'close' behaviour, where due2 says NotApplicable and leaves the default to the enforcement point. Timezone-less instants are read as UTC (due2 instants are UTC, workflows §2). The CG request carries the resolution as a request parameter whose describesFeature is the unit IRI (Dots_per_inch) and whose value is written {\"@id\": \"1000\"} — an IRI, not an integer literal. Both are upstream defects; the translation reads them as the integer value of odrl:resolution. Upstream inconsistency: B12 reports the rule Active with an unsatisfied refinement and controlState Deny, where A12 reports an unsatisfied constraint as Inactive. In due2 a refinement is a constraint of scope action (workflows §3.1), so an F refinement means the atom does not apply, exactly like an F constraint.",
+  "prefixes": {
+    "ex": "http://example.com/",
+    "exo": "https://ex.org/"
+  },
+  "scenarios": [
+    {
+      "name": "B11: 1000 dpi",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:document/1234",
+        "at": "2025-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:resolution": {
+            "@value": "1000",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2025-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "1000 ≤ 1200, so the action refinement holds and ex:rule/B1 applies."
+      },
+      "w3c_expected": "Active, Permit"
+    },
+    {
+      "name": "B12: 1300 dpi",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:document/1234",
+        "at": "2025-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:resolution": {
+            "@value": "1300",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2025-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "1300 > 1200: the refinement is F, so the atom does not apply (due2 does not distinguish a failed refinement from a failed constraint)."
+      },
+      "w3c_expected": "Active (refinement Not-Satisfied), Deny"
+    },
+    {
+      "name": "resolution not stated (added)",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:document/1234",
+        "at": "2025-01-01T00:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2025-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "why": "With no request param the operand is missing, so the refinement is U and the only candidate is uncertain: Permit or NotApplicable by completion, hence Indeterminate. The CG's closed behaviour would deny."
+      }
+    }
+  ]
+}

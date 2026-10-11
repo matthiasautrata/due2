@@ -1,0 +1,2 @@
+should not be allowed as the inherited policy level property permission for John is overriden by the rule specific assignee Beth, so the permission is for Beth, while the actions have been performed by John
+policy_properties

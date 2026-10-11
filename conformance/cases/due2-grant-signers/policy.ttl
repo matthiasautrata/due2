@@ -1,0 +1,27 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix due2: <https://w3id.org/due2/profile#> .
+@prefix ex:   <https://example.org/> .
+
+# due2-native: pay per download, payment attested by the bank.
+# Exercises grant-scoped duty instances and `discharges` (workflows §5.3) and
+# the evidence admissibility record `signer` (workflows §3.4).
+
+ex:reportPolicy a odrl:Set ;
+    odrl:profile <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:download .
+
+ex:download a odrl:Permission ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:downloadReport ;
+    odrl:target ex:MarketReport ;
+    odrl:duty ex:payPerUse .
+
+# One instance per request: a payment discharges one download, not all of them.
+ex:payPerUse a odrl:Duty ;
+    odrl:action ex:pay ;
+    odrl:target ex:ReportFee ;
+    due2:instanceScope due2:grant .
+
+ex:downloadReport a odrl:Action .
+ex:pay a odrl:Action .

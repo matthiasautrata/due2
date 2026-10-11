@@ -1,0 +1,5 @@
+expected_accept_decision=False
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action should be rejected as it is too generic (it does not specify the right asset), and the semantics is prohibition-by-default
+test_tag=Default_Semantics

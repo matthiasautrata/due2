@@ -1,0 +1,2 @@
+should be allowed as the action refinement on a date object is satisfied on every row, as they have a publication date with equal or lower timestamp
+date_datatype

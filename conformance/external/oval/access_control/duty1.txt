@@ -1,0 +1,5 @@
+expected_accept_decision=True
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action should be accepted as it matches the permission exactly, and its duty has been performed as evidenced in the state of the world
+test_tag=duty

@@ -1,0 +1,2 @@
+should be allowed as the first print prints pages in the forbidden set 1 2 3, pages "1 2" are not interpreted as sets as isNoneOf does not interpret the value of the left operand as a set
+isNoneOf

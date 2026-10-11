@@ -1,0 +1,18 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex: <http://example.com/> .
+
+<http://example.com/policy:6161>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+    ] ;
+	odrl:constraint [
+        odrl:leftOperand odrl:dateTime ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2020-03-11T11:33:10" ;
+      ]
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .

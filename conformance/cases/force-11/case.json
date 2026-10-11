@@ -1,0 +1,102 @@
+{
+  "case": "force-11",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-11.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-11.ttl and its 3 test cases; FORCE: \"ALICE may READ resource X when it is before 2024-02-12T11:20:10.999Z.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire). Upstream defect: testcase-036 is titled for the current-time state (temporal.ttl) but index.ttl wires it to temporal-future.ttl, making it a duplicate of 038; the scenario follows the wiring, and the lt-at-equal-instant case is untested.",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "testcase-036-alice-read-x (temporal-future)",
+      "request": {
+        "reference": "force-036",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2025-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2025-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:d6ab4a38-68fb-418e-8af5-e77649a2187a does not apply: the odrl:dateTime constraint is F at 2025-02-12T11:20:10.999000+00:00. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-037-alice-read-x-past (temporal-past)",
+      "request": {
+        "reference": "force-037",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2017-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2017-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:d6ab4a38-68fb-418e-8af5-e77649a2187a applies: action, target and assignee match and every constraint holds at request.at; it has no duties."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-038-alice-read-x-future (temporal-future)",
+      "request": {
+        "reference": "force-038",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2025-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2025-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:d6ab4a38-68fb-418e-8af5-e77649a2187a does not apply: the odrl:dateTime constraint is F at 2025-02-12T11:20:10.999000+00:00. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    }
+  ]
+}

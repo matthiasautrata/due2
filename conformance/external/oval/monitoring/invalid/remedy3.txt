@@ -1,0 +1,2 @@
+should not be allowed as a non-allowed action is performed (uninstall) but the remedial action (pay) has paid too little, 49 instead of 50 units
+remedy

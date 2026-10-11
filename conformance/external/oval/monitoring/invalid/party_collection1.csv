@@ -1,0 +1,6 @@
+﻿,http://www.w3.org/ns/odrl/2/Action,http://www.w3.org/ns/odrl/2/Asset,http://www.w3.org/ns/odrl/2/Party,http://www.w3.org/ns/odrl/2/Party http://xmlns.com/foaf/0.1/age,http://www.w3.org/ns/odrl/2/dateTime
+0,ex:view,http://example.com/myPhotos:BdayParty,http://example.com/user44/friends,12,2026-08-25T08:55:53.299Z
+1,ex:view,http://example.com/myPhotos:BdayParty,http://example.com/user44/friends,88,2026-08-25T08:45:53.299Z
+2,ex:view,http://example.com/myPhotos:BdayParty,http://example.com/user44/friends,65,2026-08-25T08:35:53.299Z
+3,ex:view,http://example.com/myPhotos:BdayParty,http://example.com/user44/friends,39,2026-08-25T08:25:53.299Z
+4,ex:view,http://example.com/myPhotos:BdayParty,http://example.com/user44/friends,33,2026-08-25T08:15:53.299Z

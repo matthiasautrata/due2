@@ -1,0 +1,5 @@
+expected_accept_decision=False
+semantics_for_duties=1,
+semantics_by_default=0
+test_description=The action should be rejected as it matches the prohibition exactly, regardles of the semantics by default
+test_tag=prohibition_exact_match_with_no_permissions

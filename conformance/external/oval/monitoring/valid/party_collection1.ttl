@@ -1,0 +1,20 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://example.com/policy:4444>
+  a odrl:Agreement ;
+  odrl:permission [
+    odrl:action <ex:view> ;
+    odrl:assignee [
+      a odrl:PartyCollection ;
+      odrl:refinement [
+        odrl:leftOperand foaf:age ;
+        odrl:operator odrl:gt ;
+        odrl:rightOperand 17
+      ] ;
+      odrl:source <http://example.com/user44/friends>
+    ] ;
+    odrl:assigner <http://example.com/user44> ;
+    odrl:target <http://example.com/myPhotos:BdayParty>
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:12> .

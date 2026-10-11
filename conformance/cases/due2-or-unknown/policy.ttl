@@ -1,0 +1,38 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: a disjunction over two state facts, either of which may be
+# unknown. Exercises odrl:or through W1's DNF (one atom per disjunct) and the
+# Kleene completion of W3 (workflows §6.4). FORCE's force-20 exercises a large
+# odrl:or with every value known; this case is the one with unknowns.
+
+ex:labPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readLab .
+
+ex:readLab a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:LabResults ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:or (
+            [ a odrl:Constraint ; odrl:leftOperand ex:clearance ;
+              odrl:operator odrl:eq ; odrl:rightOperand "secret" ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:projectMember ;
+              odrl:operator odrl:eq ; odrl:rightOperand true ]
+        )
+    ] .
+
+ex:clearance a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:clearance ;
+    rdfs:range xsd:string .
+
+ex:projectMember a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:projectMember ;
+    rdfs:range xsd:boolean .

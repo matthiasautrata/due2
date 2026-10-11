@@ -1,0 +1,21 @@
+# Source: SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-17.ttl (MIT, imec), via tools/import_force.py.
+# Changes: odrl:conflict added; odrl:source dropped.
+
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.org/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+ex:assetCollection a odrl:AssetCollection .
+
+<urn:uuid:e30bcd34-0d5c-43d1-b229-bf68afcae5ae> a odrl:Set ;
+    dct:description "ALICE may READ any resource from the Asset Collection." ;
+    dct:source <https://github.com/SolidLabResearch/ODRL-Test-Suite/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <urn:uuid:f4cb5007-e834-4a9c-a62a-091891350c04> ;
+    odrl:uid <urn:uuid:e30bcd34-0d5c-43d1-b229-bf68afcae5ae> .
+
+<urn:uuid:f4cb5007-e834-4a9c-a62a-091891350c04> a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:assignee ex:alice ;
+    odrl:target ex:assetCollection .
+

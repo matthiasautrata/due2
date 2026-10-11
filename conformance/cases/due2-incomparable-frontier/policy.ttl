@@ -1,0 +1,39 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# due2-native: three routes to exporting client data. Exercises collapse,
+# inclusion order, and an incomparable frontier (workflows §6.3), with a duty
+# borne by someone other than the requester.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:viaManager, ex:viaLegal, ex:viaBoth, ex:viaManagerAgain .
+
+ex:viaManager a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:duty ex:managerApproval .
+
+ex:viaLegal a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:duty ex:legalReview .
+
+# Demands a superset of either route: dominated whenever both duties are open.
+ex:viaBoth a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:duty ex:managerApproval, ex:legalReview .
+
+# Same outstanding set as ex:viaManager: one alternative with two grounds.
+ex:viaManagerAgain a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:duty ex:managerApproval .
+
+# Borne by the manager, not the requester: the route waits on someone else.
+ex:managerApproval a odrl:Duty ;
+    odrl:assignee ex:Manager ; odrl:action ex:approve ; odrl:target ex:ExportRequest .
+
+ex:legalReview a odrl:Duty ;
+    odrl:assignee ex:Counsel ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:export a odrl:Action .
+ex:approve a odrl:Action .
+ex:review a odrl:Action .

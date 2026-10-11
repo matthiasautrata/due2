@@ -1,0 +1,2 @@
+should be allowed as the obligation is met by all the rows (even though just one would have been enough)
+logic_nested

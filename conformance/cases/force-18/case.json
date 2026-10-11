@@ -1,0 +1,176 @@
+{
+  "case": "force-18",
+  "source": "FORCE test suite (SolidLabResearch/ODRL-Test-Suite@7958238) data/policies/policy-18.ttl",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Translated by tools/import_force.py from SolidLabResearch/ODRL-Test-Suite@7958238 data/policies/policy-18.ttl and its 4 test cases; FORCE: \"A party collection may READ any resource from the Asset Collection.\" temp:currentTime becomes request.at and sotw.effective_at; odrl:partOf edges in FORCE's state of the world become sotw.closure; an explicit odrl:conflict odrl:prohibit is added (single rule, so it cannot fire). odrl:source on the collection is dropped: due2 rejects it (due2-profiles.md §8.1), and FORCE's membership comes from the partOf edges either way. Whether due2 should admit a refinement-free odrl:source is registered in odrl22-conformance.md §5.",
+  "prefixes": {
+    "ex": "http://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "testcase-055-alice-read-x (bothMembership)",
+      "request": {
+        "reference": "force-055",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ],
+          [
+            "odrl:partOf",
+            "ex:x",
+            "ex:assetCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d8113b-dd1b-44bd-b95d-76198f346609 applies: action, target and assignee match; it has no duties."
+      },
+      "force_expected": "Permission:Active"
+    },
+    {
+      "name": "testcase-056-alice-read-y (bothMembership)",
+      "request": {
+        "reference": "force-056",
+        "action": "odrl:read",
+        "target": "ex:y",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ],
+          [
+            "odrl:partOf",
+            "ex:x",
+            "ex:assetCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d8113b-dd1b-44bd-b95d-76198f346609 does not apply: target ex:y ⋢ ex:assetCollection. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-057-bob-read-x (bothMembership)",
+      "request": {
+        "reference": "force-057",
+        "action": "odrl:read",
+        "target": "ex:x",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:bob"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ],
+          [
+            "odrl:partOf",
+            "ex:x",
+            "ex:assetCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d8113b-dd1b-44bd-b95d-76198f346609 does not apply: assignee ex:bob ⋢ ex:partyCollection. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    },
+    {
+      "name": "testcase-058-bob-write-y (bothMembership)",
+      "request": {
+        "reference": "force-058",
+        "action": "odrl:write",
+        "target": "ex:y",
+        "at": "2024-02-12T11:20:10.999000+00:00",
+        "parties": {
+          "odrl:assignee": "ex:bob"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2024-02-12T11:20:10.999000+00:00",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:partyCollection"
+          ],
+          [
+            "odrl:partOf",
+            "ex:x",
+            "ex:assetCollection"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "urn:uuid:f5d8113b-dd1b-44bd-b95d-76198f346609 does not apply: action odrl:write ⋢ odrl:read; target ex:y ⋢ ex:assetCollection; assignee ex:bob ⋢ ex:partyCollection. It is the only rule."
+      },
+      "force_expected": "Permission:Inactive"
+    }
+  ]
+}

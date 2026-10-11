@@ -1,0 +1,2 @@
+should be allowed as the events all happen before the deadline datetime and the number of times the permissions are exercised are under the specified limit
+count_constraint

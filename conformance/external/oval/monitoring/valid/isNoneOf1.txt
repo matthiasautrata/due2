@@ -1,0 +1,2 @@
+should be allowed as none of the prints prints any pages in the forbidden set 1 2 3
+isNoneOf

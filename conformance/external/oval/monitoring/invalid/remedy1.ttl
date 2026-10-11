@@ -1,0 +1,52 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 1200 ;
+        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+      ]
+    ] ;
+    odrl:assignee <http://example.com/org:John> ;
+    odrl:target <http://example.com/document:1234> ;
+  ] ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:uninstall ;
+    ] ;
+  ] ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:pay ;
+	  odrl:refinement [
+        odrl:leftOperand odrl:payAmount ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand 0 ;
+      ]
+    ] ;
+  ] ;
+  odrl:prohibition [
+    odrl:action [
+      rdf:value odrl:uninstall ;
+    ] ;
+    odrl:assignee <http://example.com/org:John> ;
+    odrl:target <http://example.com/document:1234> ;
+	odrl:remedy [
+        odrl:action [
+            rdf:value odrl:pay ;
+            odrl:refinement [
+                odrl:leftOperand odrl:payAmount ;
+                odrl:operator odrl:eq ;
+                odrl:rightOperand 50 ;
+            ]
+        ] ;
+    ]
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .
