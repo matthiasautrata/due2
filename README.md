@@ -34,13 +34,16 @@ Documents cite each other by file name (`due2-workflows.md` §5) and decision re
 
 ## Verify
 
-Python 3.9+ with `rdflib` and `pyshacl` (verified with Python 3.9.6, rdflib 7.5.0, pyshacl 0.31.0). All four must pass before a commit.
+Managed with `uv` and Python 3.14+ (`.python-version`, `pyproject.toml`, which also configures the linters). All must pass before a commit.
 
 ```bash
-python3 tools/check_corpus.py conformance/cases                      # admissibility + case format
-python3 tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # vendored DPROD policies
-python3 tools/check_odrl22.py --all                                  # ODRL 2.2 validity (SHACL)
-python3 tools/check_completion.py                                    # §6.4 completion vs brute force
+uv run python tools/check_corpus.py conformance/cases                      # admissibility + case format
+uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # vendored DPROD policies
+uv run python tools/check_odrl22.py --all                                  # ODRL 2.2 validity (SHACL)
+uv run python tools/check_completion.py                                    # §6.4 completion vs brute force
+uv run basedpyright                                                        # strict typing (ways-of-working.md §4)
+uv run ruff check . && uv run ruff format --check .                        # Python lint and format (§11)
+uv run rumdl check .                                                       # Markdown lint (§11)
 ```
 
 ## Status

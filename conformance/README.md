@@ -3,14 +3,14 @@
 Cases are input/expected-output pairs in the reference data model of `due2-workflows.md`. They are written to be run by an evaluator; until one exists, `tools/check_corpus.py` checks everything that can be checked without one.
 
 ```bash
-python3 tools/check_corpus.py conformance/cases          # every case
-python3 tools/check_corpus.py conformance/cases/<case>   # one case
-python3 tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # the vendored DPROD examples, as policies
+uv run python tools/check_corpus.py conformance/cases          # every case
+uv run python tools/check_corpus.py conformance/cases/<case>   # one case
+uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # the vendored DPROD examples, as policies
 ```
 
 ## Layout
 
-```
+```text
 conformance/cases/<case>/
     policy.ttl     one ODRL policy, plus the operand bindings it uses
     case.json      provenance, classification, and scenarios — or, for a negative case, the expected rejection
@@ -116,6 +116,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 **Profile declaration is separate from classification.** IM §2.1 requires a policy that uses non-Core vocabulary to declare the profiles whose terms it uses — and the binding properties (`dprod:operandSource`, `dprod:operandProperty`) are DPROD-vocabulary terms appearing in the policy. So a case can classify `odrl-core` and still carry `odrl:profile <https://ekgf.org/dprod/spec/develop/>` (and `<https://w3id.org/due2/profile#>` when it uses `due2:` terms). `tools/check_corpus.py` rejects an undeclared namespace as a W1 input error — normalisation selects a profile's binding module by `odrl:profile` — and `tools/check_odrl22.py` checks the same rule against the IM directly.
 
 **Standing divergences from RL2,** which a case need not re-explain:
+
 - An unfulfilled precondition gives due2 `Pending` with the route, where RL2 gives `NotApplicable`.
 - due2 closes `odrl:partOf` transitively; RL2 core matches only direct members.
 - due2 evidence is existential: any witness fulfils a duty, so RL2's conflicting-evidence scenarios have no counterpart.

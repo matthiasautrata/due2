@@ -42,7 +42,7 @@ The IM ties list-valued right operands to "set-based operators"; the Vocabulary 
 
 ## 3. Results (2026-10-10)
 
-```
+```text
 python3 tools/check_odrl22.py --all
 70 checked, 0 failing        # 66 corpus policies + 4 vendored DPROD files
 ```
@@ -72,7 +72,7 @@ Whether due2 should admit collection refinements — party collections especiall
 
 The external suites vendored under `conformance/external/` exposed a defect in the harness. It validated with no inference, and the shape tests rule and constraint values by `sh:class`. An untyped rule node — `odrl:permission [ … ]`, the style of the IM's own Turtle examples — therefore failed `sh:class odrl:Permission`, and it was never targeted by `PermissionShape`, so its required target went unchecked. The corpus passed only because every corpus node is typed explicitly. `check_odrl22.py` now adds the types the ODRL 2.2 vocabulary entails: rdfs:range of `permission`, `prohibition`, `obligation`, `duty`, `remedy`, `consequence`, `action`, `target`, `assignee`, and `assigner`; rdfs:domain of `leftOperand`; and Logical Constraint for a node with a connective. rdfs:range of `leftOperand` is deliberately not applied, because it would make IM 2.5.1's "MUST be a LeftOperand" vacuous.
 
-```
+```text
 python3 tools/check_odrl22.py --all                 111 checked, 0 failing, 7 invalid as expected   (107 cases: 66 + 34 translated, 7 of them FORCE 1–7 as negative cases + 7 due2-native; 4 DPROD files)
 FORCE policies                                      21 checked, 7 failing   (policies 1-7: no target, 1-2 no action)
 OVAL policies                                      105 checked, 85 failing  (Offer without assigner, missing targets, unit as string, ...)
@@ -83,9 +83,9 @@ The seven "invalid as expected" are FORCE policies 1–7, carried verbatim as ne
 ## 6. Reproducing
 
 ```bash
-python3 tools/check_odrl22.py --all                 # ODRL 2.2 validity, due2's shape
-python3 tools/check_corpus.py conformance/cases    # due2 admissibility
-python3 tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl
+uv run python tools/check_odrl22.py --all                 # ODRL 2.2 validity, due2's shape
+uv run python tools/check_corpus.py conformance/cases    # due2 admissibility
+uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl
 ```
 
-Dependencies: `rdflib`, `pyshacl` (tested with rdflib 7.5.0, pyshacl 0.31.0; note rdflib's SPARQL parser rejects `FILTER (x IN …)` and pyshacl forbids `VALUES` in constraint queries — the shape avoids both). The official ODRL 2.2 vocabulary is vendored at `profiles/vendor/w3c/ODRL22.ttl`; refresh only by re-downloading from the header's URL.
+Dependencies managed via `uv` (`pyproject.toml`, Python 3.14+): `rdflib`, `pyshacl`. The official ODRL 2.2 vocabulary is vendored at `profiles/vendor/w3c/ODRL22.ttl`; refresh only by re-downloading from the header's URL.

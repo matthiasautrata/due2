@@ -1,0 +1,47 @@
+[project]
+name = "due2"
+version = "0.1.0"
+description = "Specifications and conformance suite for due2, an ODRL policy evaluation runtime"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "pyshacl>=0.31.0",
+    "rdflib>=7.5.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.40.2",
+    "hypothesis>=6.169.0",
+    "ruff>=0.17.0",
+    "rumdl>=0.2.79",
+]
+
+# ways-of-working.md §4: basedpyright strict, editor and gate.
+# import_force.py is a run-once importer (its docstring); it is not typed.
+[tool.basedpyright]
+include = ["tools"]
+exclude = ["tools/import_force.py"]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+
+# ways-of-working.md §11.
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+extend-select = ["ANN", "B", "S", "RUF", "C4", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"tools/check_completion.py" = ["S311"]  # seeded, reproducible sampling; not cryptographic
+"tools/import_force.py" = ["ANN"]
+
+# ways-of-working.md §11. Vendored suites are never edited. Paragraphs are
+# one line each, so line length is not checked.
+[tool.rumdl]
+disable = ["MD013"]
+exclude = ["conformance/external", "profiles/vendor", ".venv"]

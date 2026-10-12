@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Validate due2 policies against ODRL 2.2 itself.
 
 Runs conformance/odrl22-shape.ttl (due2's SHACL encoding of the ODRL
@@ -31,6 +30,7 @@ counts as failing only if it conforms.
 
 Exit status is non-zero when any violation is found.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,9 +38,11 @@ import json
 import sys
 from pathlib import Path
 
+# pyshacl's own annotations leave parts of validate's return type unknown.
+from pyshacl import validate  # pyright: ignore[reportUnknownVariableType]
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF
-from pyshacl import validate
+from rdflib.term import Node
 
 ROOT = Path(__file__).resolve().parent.parent
 SHAPE = ROOT / "conformance" / "odrl22-shape.ttl"
@@ -64,36 +66,40 @@ def ns_terms(g: Graph, ns: str) -> int:
     """Terms (as predicates or objects) in the policy file alone."""
     n = 0
     for _, p, o in g:
-        if str(p).startswith(ns):
-            n += 1
-        elif isinstance(o, URIRef) and str(o).startswith(ns):
+        if str(p).startswith(ns) or (isinstance(o, URIRef) and str(o).startswith(ns)):
             n += 1
     return n
 
 
 def check_profile_declarations(alone: Graph) -> list[str]:
     declared = {str(p) for p in alone.objects(None, ODRL.profile)}
-    problems = []
+    problems: list[str] = []
     for ns, label in NAMESPACED_PROFILES.items():
         if ns_terms(alone, ns) and ns not in declared:
             problems.append(
-                f"IM 2.1: policy uses {label} terms but declares no "
-                f"odrl:profile <{ns}>")
+                f"IM 2.1: policy uses {label} terms but declares no odrl:profile <{ns}>"
+            )
     return problems
 
 
 def violations_text(results_graph: Graph) -> list[str]:
     SH = Namespace("http://www.w3.org/ns/shacl#")
-    out = []
+
+    def vals(r: Node, p: Node) -> list[str]:
+        return [str(o) for o in results_graph.objects(r, p)]
+
+    out: list[str] = []
     for r in sorted(results_graph.subjects(RDF.type, SH.ValidationResult), key=str):
-        def vals(p):
-            return [str(o) for o in results_graph.objects(r, p)]
-        out.append(" | ".join([
-            "Focus=" + (vals(SH.focusNode) or ["?"])[0],
-            "Path=" + (vals(SH.resultPath) or ["-"])[0],
-            (vals(SH.sourceConstraintComponent) or ["?"])[0].rsplit("#", 1)[-1],
-            "Msg=" + (vals(SH.resultMessage) or ["?"])[0],
-        ]))
+        out.append(
+            " | ".join(
+                [
+                    "Focus=" + (vals(r, SH.focusNode) or ["?"])[0],
+                    "Path=" + (vals(r, SH.resultPath) or ["-"])[0],
+                    (vals(r, SH.sourceConstraintComponent) or ["?"])[0].rsplit("#", 1)[-1],
+                    "Msg=" + (vals(r, SH.resultMessage) or ["?"])[0],
+                ]
+            )
+        )
     return out
 
 
@@ -104,13 +110,13 @@ def violations_text(results_graph: Graph) -> list[str]:
 # the shape sees each node with the class the vocabulary assigns it, and an
 # untyped Permission no longer escapes PermissionShape.
 RANGE_TYPES = {
-    ODRL.permission: ODRL.Permission,      # rdfs:range odrl:Permission
-    ODRL.prohibition: ODRL.Prohibition,    # rdfs:range odrl:Prohibition
-    ODRL.obligation: ODRL.Duty,            # rdfs:range odrl:Duty
+    ODRL.permission: ODRL.Permission,  # rdfs:range odrl:Permission
+    ODRL.prohibition: ODRL.Prohibition,  # rdfs:range odrl:Prohibition
+    ODRL.obligation: ODRL.Duty,  # rdfs:range odrl:Duty
     ODRL.duty: ODRL.Duty,
     ODRL.remedy: ODRL.Duty,
     ODRL.consequence: ODRL.Duty,
-    ODRL.action: ODRL.Action,              # a refined action is an untyped node (IM 2.5.4)
+    ODRL.action: ODRL.Action,  # a refined action is an untyped node (IM 2.5.4)
     ODRL.target: ODRL.Asset,
     ODRL.assignee: ODRL.Party,
     ODRL.assigner: ODRL.Party,
@@ -119,11 +125,16 @@ RANGE_TYPES = {
 # it would make IM 2.5.1's "MUST be a LeftOperand" vacuous; whether an operand
 # is declared is a vocabulary fact a profile must supply (IM 2.1), not a type
 # the shape may assume.
-DOMAIN_TYPES = {ODRL.leftOperand: ODRL.Constraint}   # rdfs:domain odrl:Constraint
+DOMAIN_TYPES = {ODRL.leftOperand: ODRL.Constraint}  # rdfs:domain odrl:Constraint
 # IM 2.5.2: a Logical Constraint is identified by its operand property; the
 # vocabulary declares no domain for them, so the connective is the evidence.
-CONNECTIVES = [ODRL["and"], ODRL["or"], ODRL.xone, ODRL.andSequence,
-               URIRef("https://ekgf.org/dprod/spec/develop/not")]
+CONNECTIVES = [
+    ODRL["and"],
+    ODRL["or"],
+    ODRL.xone,
+    ODRL.andSequence,
+    URIRef("https://ekgf.org/dprod/spec/develop/not"),
+]
 
 
 def entailed_types(alone: Graph) -> Graph:
@@ -149,8 +160,9 @@ def check_file(path: Path, shapes: Graph, base: Graph) -> tuple[str, list[str]]:
     data += alone
     data += entailed_types(alone)
     try:
-        conforms, rg, _ = validate(data_graph=data, shacl_graph=shapes,
-                                   inference="none", advanced=True)
+        conforms, rg, _ = validate(  # pyright: ignore[reportUnknownVariableType]
+            data_graph=data, shacl_graph=shapes, inference="none", advanced=True
+        )
     except Exception as e:  # noqa: BLE001
         return str(path), [f"HARNESS ERROR (pyshacl raised): {e}"]
     if not isinstance(rg, Graph):
@@ -173,26 +185,30 @@ def expects_invalid(path: Path) -> bool:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("paths", nargs="*", type=Path)
-    ap.add_argument("--all", action="store_true",
-                    help="corpus cases plus vendored DPROD examples")
+    ap.add_argument("--all", action="store_true", help="corpus cases plus vendored DPROD examples")
     ap.add_argument("--quiet", action="store_true", help="print only failing items")
     args = ap.parse_args()
 
     targets: list[Path] = []
     if args.all:
-        targets += [p / "policy.ttl" for p in sorted((ROOT / "conformance" / "cases").iterdir())
-                    if (p / "policy.ttl").exists()]
+        targets += [
+            p / "policy.ttl"
+            for p in sorted((ROOT / "conformance" / "cases").iterdir())
+            if (p / "policy.ttl").exists()
+        ]
         targets += sorted((ROOT / "profiles" / "vendor" / "dprod" / "examples").glob("*.ttl"))
     for p in args.paths:
         if p.is_dir():
             if (p / "policy.ttl").exists():
                 targets.append(p / "policy.ttl")
             else:
-                targets += [x / "policy.ttl" for x in sorted(p.iterdir())
-                            if (x / "policy.ttl").exists()]
+                targets += [
+                    x / "policy.ttl" for x in sorted(p.iterdir()) if (x / "policy.ttl").exists()
+                ]
         else:
             targets.append(p)
     if not targets:
@@ -217,7 +233,9 @@ def main() -> int:
                     print(f"xfail {name}  (odrl22_valid: false; {len(problems)} violations)")
             else:
                 bad += 1
-                print(f"FAIL  {name}\n      case.json says odrl22_valid: false, but the policy conforms")
+                print(
+                    f"FAIL  {name}\n      case.json says odrl22_valid: false, but the policy conforms"
+                )
             continue
         if problems:
             bad += 1

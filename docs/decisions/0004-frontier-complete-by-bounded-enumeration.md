@@ -8,6 +8,7 @@
 Workflows §6.4 defined `frontier_complete` by quantifying over completions: it is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict. It gave no computation. §6.4's two-extremes shortcut does not carry over. That shortcut works because the verdict is monotone into a chain, but a frontier is a set of alternatives, and sets have no extremes to complete towards.
 
 The fifth phase of `check_completion.py` (seed 20261015) compared the listed frontier with every completion's frontier. It ran 50,000 partial-knowledge instances, 942 of them a definite `Pending`:
+
 - By the definition, `frontier_complete` is false in 199 of the 942. In 191 of those the listed frontier is empty.
 - In 4, a listed alternative is not on some completion's frontier, because an uncertain candidate with a smaller outstanding set dominates it.
 - The cheap rule "complete iff no candidate is uncertain" was never wrong, but it says false in 133 instances where the definition says true.

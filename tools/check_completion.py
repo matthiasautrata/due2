@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Randomised check of due2-workflows.md §6.4 (v0.6, completions over literals).
 
 Claim: enumerating the mixed variables and completing the uniform ones at the
@@ -10,7 +9,8 @@ Model: one policy, conflict in {prohibit, perm, invalid}; Permit/Forbid atoms,
 each a conjunction of literals (variable, polarity) over Boolean variables;
 Permits carry precondition duties, each duty's fulfilment a variable, optionally
 guarded by literals over the same variables (third phase). The verdict for a total
-assignment follows §6.1-§6.4. Run: python3 tools/check_completion.py
+assignment follows §6.1-§6.4. Run: uv run python tools/check_completion.py
+
 Recorded result (seed 20261011): 50000 cases, 0 mismatches, 1244 newly definite.
 Second phase (seed 20261012, `rand_wide`): the beyond-max_mixed fallback is
 sound — 1000 wider cases, 0 unsound, fallback in 111, Indeterminate in 84 of
@@ -46,24 +46,62 @@ of their own; no recurrence or instances. A sanity check of §6.4's claims, not
 a proof, and not a check of the rest of W3 (that is the brute-force W3
 differential, correctness-strategy.md §4.5).
 """
+
 import itertools
 import random
+from collections.abc import Iterable
+from typing import TypedDict, Unpack
+
+type Var = str
+type Lit = tuple[Var, bool]  # (variable, polarity)
+type Guards = dict[Var, list[Lit]]  # duty -> guard literals (owed)
+type Frontier = frozenset[frozenset[Var]]
 
 
-def evaluate(atoms, conflict, val, guards=None, past=None, obligations=None,
-             violations="ignore"):
+class Atom(TypedDict):
+    eff: str  # "Permit" or "Forbid"
+    lits: list[Lit]
+    duties: list[Var]
+
+
+class Obligation(TypedDict):
+    lits: list[Lit]  # in_force
+    duty: Var
+
+
+class Config(TypedDict, total=False):
+    past: dict[Var, bool]
+    obligations: list[Obligation]
+    violations: str
+
+
+def evaluate(
+    atoms: list[Atom],
+    conflict: str,
+    val: dict[Var, bool],
+    guards: Guards | None = None,
+    past: dict[Var, bool] | None = None,
+    obligations: list[Obligation] | None = None,
+    violations: str = "ignore",
+) -> tuple[str, Frontier]:
     """One completion (no U): (verdict, frontier), workflows §6.1-§6.4.
     past: duty -> its deadline has passed (fixed by the case, not a finding).
     obligations: root obligations, each {"lits": in_force literals, "duty": d}."""
     guards, past = guards or {}, past or {}
 
-    def holds(lits):
+    def holds(lits: list[Lit]) -> bool:
         return all(val[v] == pol for v, pol in lits)
 
-    def owed(d):
+    def owed(d: Var) -> bool:
         return holds(guards.get(d, []))
-    perms = [a for a in atoms if a["eff"] == "Permit" and holds(a["lits"])
-             and not any(owed(d) and not val[d] and past.get(d) for d in a["duties"])]
+
+    perms = [
+        a
+        for a in atoms
+        if a["eff"] == "Permit"
+        and holds(a["lits"])
+        and not any(owed(d) and not val[d] and past.get(d) for d in a["duties"])
+    ]
     # §6.1: a violated precondition that is owed removes its candidate, under either
     # value of config.violations, before conflict resolution.
     forbs = [a for a in atoms if a["eff"] == "Forbid" and holds(a["lits"])]
@@ -75,33 +113,54 @@ def evaluate(atoms, conflict, val, guards=None, past=None, obligations=None,
         perms, forbs = [], []
     if forbs:
         return "Deny", frozenset()
-    if violations == "deny" and any(holds(o["lits"]) and not val[o["duty"]] and past.get(o["duty"])
-                                    for o in obligations or []):
-        return "Deny", frozenset()   # §6.4: a violated obligation in force acts as a prohibition
-    sets = {frozenset(d for d in a["duties"] if owed(d) and not val[d])
-            for a in perms}   # decisions/0003: outstanding = owed and not fulfilled; §6.3 collapse
+    if violations == "deny" and any(
+        holds(o["lits"]) and not val[o["duty"]] and past.get(o["duty"]) for o in obligations or []
+    ):
+        return "Deny", frozenset()  # §6.4: a violated obligation in force acts as a prohibition
+    sets = {
+        frozenset(d for d in a["duties"] if owed(d) and not val[d]) for a in perms
+    }  # decisions/0003: outstanding = owed and not fulfilled; §6.3 collapse
     frontier = frozenset(x for x in sets if not any(y < x for y in sets))
     if frozenset() in sets:
         return "Permit", frontier
     return ("Pending" if sets else "NotApplicable"), frontier
 
 
-def verdict(atoms, conflict, val, guards=None, **kw):
+def verdict(
+    atoms: list[Atom],
+    conflict: str,
+    val: dict[Var, bool],
+    guards: Guards | None = None,
+    **kw: Unpack[Config],
+) -> str:
     return evaluate(atoms, conflict, val, guards, **kw)[0]
 
 
-def brute(atoms, conflict, vars_, guards=None, **kw):
-    vs = {verdict(atoms, conflict, dict(zip(vars_, bits)), guards, **kw)
-          for bits in itertools.product([False, True], repeat=len(vars_))}
+def brute(
+    atoms: list[Atom],
+    conflict: str,
+    vars_: list[Var],
+    guards: Guards | None = None,
+    **kw: Unpack[Config],
+) -> str:
+    vs = {
+        verdict(atoms, conflict, dict(zip(vars_, bits, strict=True)), guards, **kw)
+        for bits in itertools.product([False, True], repeat=len(vars_))
+    }
     return vs.pop() if len(vs) == 1 else "Indeterminate"
 
 
-def directions(atoms, guards=None, obligations=None, violations="ignore"):
+def directions(
+    atoms: list[Atom],
+    guards: Guards | None = None,
+    obligations: list[Obligation] | None = None,
+    violations: str = "ignore",
+) -> dict[Var, set[bool]]:
     """Per variable, the set of directions its occurrences move the verdict (True = up).
     A guard literal of a precondition duty moves it down when positive: more owed,
     lower verdict (decisions/0003). Under violations = deny an obligation's in_force
     literal moves it like a prohibition's, and its fulfilment upwards (§6.4 proof)."""
-    d = {}
+    d: dict[Var, set[bool]] = {}
     for lits in (guards or {}).values():
         for v, pol in lits:
             d.setdefault(v, set()).add(not pol)
@@ -119,14 +178,20 @@ def directions(atoms, guards=None, obligations=None, violations="ignore"):
     return d
 
 
-def algorithm(atoms, conflict, vars_, guards=None, **kw):
+def algorithm(
+    atoms: list[Atom],
+    conflict: str,
+    vars_: list[Var],
+    guards: Guards | None = None,
+    **kw: Unpack[Config],
+) -> str:
     d = directions(atoms, guards, kw.get("obligations"), kw.get("violations", "ignore"))
     mixed = [v for v in vars_ if len(d.get(v, {True})) == 2]
     uniform = [v for v in vars_ if v not in mixed]
-    seen = set()
+    seen: set[str] = set()
     for bits in itertools.product([False, True], repeat=len(mixed)):
-        base = dict(zip(mixed, bits))
-        for extreme in (True, False):   # most permissive, most restrictive
+        base = dict(zip(mixed, bits, strict=True))
+        for extreme in (True, False):  # most permissive, most restrictive
             val = dict(base)
             for v in uniform:
                 up = d.get(v, {True}) == {True}
@@ -135,7 +200,9 @@ def algorithm(atoms, conflict, vars_, guards=None, **kw):
     return seen.pop() if len(seen) == 1 else "Indeterminate"
 
 
-def bounded(atoms, conflict, vars_, max_mixed=8):
+def bounded(
+    atoms: list[Atom], conflict: str, vars_: list[Var], max_mixed: int = 8
+) -> tuple[str, bool]:
     """v0.6 with the W3 limit of workflows §6.4: when more than max_mixed
     variables are mixed, their occurrences are completed independently — the
     pre-v0.6 reading, restricted to the mixed variables. Returns (verdict,
@@ -146,9 +213,10 @@ def bounded(atoms, conflict, vars_, max_mixed=8):
     if len(mixed) <= max_mixed:
         return algorithm(atoms, conflict, vars_), True
     mset = set(mixed)
-    fresh, k = [], 0
+    fresh: list[Atom] = []
+    k = 0
     for a in atoms:
-        lits = []
+        lits: list[Lit] = []
         for v, pol in a["lits"]:
             if v in mset:
                 lits.append((f"m{k}", pol))
@@ -160,22 +228,25 @@ def bounded(atoms, conflict, vars_, max_mixed=8):
     return algorithm(fresh, conflict, [f"m{i}" for i in range(k)] + uniform), False
 
 
-def independent(atoms, conflict, vars_):
+def independent(atoms: list[Atom], conflict: str, vars_: list[Var]) -> str:
     """Pre-v0.6: every literal occurrence its own variable."""
-    fresh, k = [], 0
+    fresh: list[Atom] = []
+    k = 0
     for a in atoms:
-        lits = []
+        lits: list[Lit] = []
         for _, pol in a["lits"]:
             lits.append((f"o{k}", pol))
             k += 1
         fresh.append({**a, "lits": lits})
-    return algorithm(fresh, conflict, [f"o{i}" for i in range(k)] + [v for v in vars_ if v.startswith("d")])
+    return algorithm(
+        fresh, conflict, [f"o{i}" for i in range(k)] + [v for v in vars_ if v.startswith("d")]
+    )
 
 
-def rand_case(rng):
+def rand_case(rng: random.Random) -> tuple[list[Atom], str, list[Var]]:
     nv, nd = rng.randint(1, 4), rng.randint(0, 2)
     vs, ds = [f"x{i}" for i in range(nv)], [f"d{i}" for i in range(nd)]
-    atoms = []
+    atoms: list[Atom] = []
     for _ in range(rng.randint(1, 5)):
         eff = rng.choice(["Permit", "Permit", "Forbid"])
         lits = [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))]
@@ -184,16 +255,17 @@ def rand_case(rng):
     return atoms, rng.choice(["prohibit", "perm", "invalid"]), vs + ds
 
 
-def rand_guarded(rng):
+def rand_guarded(rng: random.Random) -> tuple[list[Atom], str, list[Var], Guards]:
     """decisions/0003: precondition duties keep their guards (no hoisting). Each
     duty may carry guard literals over the same variables the rules read, so a
     guard can share a variable with a permission's or prohibition's constraint,
     in either polarity — the only way a guard becomes mixed."""
     nv, nd = rng.randint(1, 4), rng.randint(1, 3)
     vs, ds = [f"x{i}" for i in range(nv)], [f"d{i}" for i in range(nd)]
-    guards = {d: [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))]
-              for d in ds}
-    atoms = []
+    guards = {
+        d: [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))] for d in ds
+    }
+    atoms: list[Atom] = []
     for _ in range(rng.randint(1, 4)):
         eff = rng.choice(["Permit", "Permit", "Forbid"])
         lits = [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))]
@@ -202,7 +274,7 @@ def rand_guarded(rng):
     return atoms, rng.choice(["prohibit", "perm", "invalid"]), vs + ds, guards
 
 
-def rand_deny(rng):
+def rand_deny(rng: random.Random) -> tuple[list[Atom], str, list[Var], Guards, Config]:
     """Fourth phase: deadlines and config.violations. Each duty's deadline has passed
     or not (fixed per case); an owed, unfulfilled, past-deadline precondition removes
     its candidate; root obligations, in force under literals over the same variables,
@@ -211,28 +283,46 @@ def rand_deny(rng):
     nv, nd = rng.randint(1, 4), rng.randint(1, 3)
     vs, ds = [f"x{i}" for i in range(nv)], [f"d{i}" for i in range(nd)]
     unguarded = set(rng.sample(ds, rng.randint(0, nd)))
-    guards = {d: [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))]
-              for d in ds if d not in unguarded}
+    guards = {
+        d: [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))]
+        for d in ds
+        if d not in unguarded
+    }
     past = {d: rng.random() < 0.5 for d in ds}
-    atoms = []
+    atoms: list[Atom] = []
     for _ in range(rng.randint(1, 4)):
         eff = rng.choice(["Permit", "Permit", "Forbid"])
         lits = [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))]
         duties = rng.sample(ds, rng.randint(0, nd)) if eff == "Permit" else []
         atoms.append({"eff": eff, "lits": lits, "duties": duties})
-    obligations = [{"lits": [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))],
-                    "duty": d}   # an obligation may also be a precondition of a permission
-                   for d in sorted(unguarded) if rng.random() < 0.7]
-    kw = {"past": past, "obligations": obligations, "violations": rng.choice(["ignore", "deny"])}
+    obligations: list[Obligation] = [
+        {
+            "lits": [(v, rng.random() < 0.5) for v in rng.sample(vs, rng.randint(0, min(2, nv)))],
+            "duty": d,
+        }  # an obligation may also be a precondition of a permission
+        for d in sorted(unguarded)
+        if rng.random() < 0.7
+    ]
+    kw: Config = {
+        "past": past,
+        "obligations": obligations,
+        "violations": rng.choice(["ignore", "deny"]),
+    }
     return atoms, rng.choice(["prohibit", "perm", "invalid"]), vs + ds, guards, kw
 
 
-def kleene_and(xs):
+def kleene_and(xs: Iterable[bool | None]) -> bool | None:
     xs = list(xs)
     return False if False in xs else (None if None in xs else True)
 
 
-def listed_frontier(atoms, conflict, known, guards, past):
+def listed_frontier(
+    atoms: list[Atom],
+    conflict: str,
+    known: dict[Var, bool],
+    guards: Guards,
+    past: dict[Var, bool],
+) -> tuple[Frontier, bool, set[Var]]:
     """The frontier W3 lists from three-valued findings (§6.1-§6.3): alternatives from
     surviving ready and pending candidates only; uncertain candidates (permission U,
     an unknown open duty, or a violated precondition whose owed is U) are left out.
@@ -240,15 +330,20 @@ def listed_frontier(atoms, conflict, known, guards, past):
     relevant holds the unknown variables of uncertain candidates' parts (permission,
     owed, fulfilled) and of prohibitions whose finding is U — the only unknowns a
     completion can use to change the frontier while Pending stands (decisions/0004)."""
-    def lit(v, pol):
+
+    def lit(v: Var, pol: bool) -> bool | None:
         return None if v not in known else known[v] == pol
 
-    def val(lits):
+    def val(lits: list[Lit]) -> bool | None:
         return kleene_and(lit(v, p) for v, p in lits)
-    sure, uncertain, forbs_t, relevant = [], False, False, set()
 
-    def unknowns(lits):
+    sure: list[frozenset[Var]] = []
+    uncertain, forbs_t = False, False
+    relevant: set[Var] = set()
+
+    def unknowns(lits: list[Lit]) -> set[Var]:
         return {v for v, _ in lits if v not in known}
+
     for a in atoms:
         f = val(a["lits"])
         if a["eff"] == "Forbid":
@@ -258,11 +353,12 @@ def listed_frontier(atoms, conflict, known, guards, past):
             continue
         if f is False:
             continue
-        opens, removed, unsure = set(), False, f is None
+        opens: set[Var] = set()
+        removed, unsure = False, f is None
         for d in a["duties"]:
             ow, fu = val(guards.get(d, [])), known.get(d)
             op = kleene_and([ow, None if fu is None else not fu])
-            if fu is False and past.get(d):          # violated instance
+            if fu is False and past.get(d):  # violated instance
                 if ow is True:
                     removed = True
                 elif ow is None:
@@ -286,28 +382,46 @@ def listed_frontier(atoms, conflict, known, guards, past):
     return frozenset(x for x in sets if not any(y < x for y in sets)), uncertain, relevant
 
 
-def frontier_complete(atoms, conflict, known, guards, kw, bound=8):
+def frontier_complete(
+    atoms: list[Atom],
+    conflict: str,
+    known: dict[Var, bool],
+    guards: Guards,
+    kw: Config,
+    bound: int = 8,
+) -> tuple[bool, bool]:
     """decisions/0004: for a definite Pending, enumerate every assignment to the
     relevant unknowns (no two-extremes shortcut: a frontier is a set, not a point on
     the verdict chain); complete iff each gives the listed frontier. Beyond `bound`,
     false and inexact. Returns (frontier_complete, exact)."""
-    listed, _, relevant = listed_frontier(atoms, conflict, known, guards, kw["past"])
+    listed, _, relevant = listed_frontier(atoms, conflict, known, guards, kw.get("past", {}))
     if len(relevant) > bound:
         return False, False
     rel = sorted(relevant)
     rest = {v: False for v in all_vars(atoms, guards) if v not in known and v not in relevant}
     for bits in itertools.product([False, True], repeat=len(rel)):
-        if evaluate(atoms, conflict, {**known, **rest, **dict(zip(rel, bits))}, guards, **kw)[1] != listed:
+        if (
+            evaluate(
+                atoms,
+                conflict,
+                {**known, **rest, **dict(zip(rel, bits, strict=True))},
+                guards,
+                **kw,
+            )[1]
+            != listed
+        ):
             return False, True
     return True, True
 
 
-def all_vars(atoms, guards):
+def all_vars(atoms: list[Atom], guards: Guards) -> set[Var]:
     vs = {v for a in atoms for v, _ in a["lits"]} | {d for a in atoms for d in a["duties"]}
     return vs | {v for lits in guards.values() for v, _ in lits}
 
 
-def rand_frontier(rng):
+def rand_frontier(
+    rng: random.Random,
+) -> tuple[list[Atom], str, list[Var], Guards, Config, dict[Var, bool]]:
     """Fifth phase: partial knowledge. Each variable is known T, known F, or unknown,
     so definite candidates exist beside uncertain ones and the listed frontier can be
     compared with every completion's."""
@@ -317,12 +431,12 @@ def rand_frontier(rng):
     return atoms, conflict, vars_, guards, kw, known
 
 
-def rand_wide(rng):
+def rand_wide(rng: random.Random) -> tuple[list[Atom], str, list[Var]]:
     """Instances sized to exceed max_mixed: each variable gets an up and a
     down occurrence with high probability, so most are mixed."""
     nv = rng.randint(9, 10)
     vs = [f"x{i}" for i in range(nv)]
-    atoms = []
+    atoms: list[Atom] = []
     for v in vs:
         if rng.random() < 0.85:
             if rng.random() < 0.5:
@@ -335,7 +449,7 @@ def rand_wide(rng):
             else:
                 atoms.append({"eff": "Forbid", "lits": [(v, True)], "duties": []})
     ds = [f"d{i}" for i in range(rng.randint(0, 1))]
-    for a in atoms:                       # occasional duties, so Pending is reachable
+    for a in atoms:  # occasional duties, so Pending is reachable
         if ds and a["eff"] == "Permit" and rng.random() < 0.5:
             a["duties"] = list(ds)
     rng.shuffle(atoms)
@@ -370,8 +484,10 @@ def main() -> int:
             fallbacks += 1
             if v == "Indeterminate" and b != "Indeterminate":
                 lost += 1
-    print(f"{n2} wide cases, {unsound} unsound; fallback in {fallbacks}, "
-          f"Indeterminate there where the exact reading decides: {lost}")
+    print(
+        f"{n2} wide cases, {unsound} unsound; fallback in {fallbacks}, "
+        f"Indeterminate there where the exact reading decides: {lost}"
+    )
     # decisions/0003: guarded preconditions, guards evaluated in W2 (owed), not hoisted.
     rng3 = random.Random(20261013)
     n3, mism3, guard_mixed = 50000, 0, 0
@@ -391,36 +507,45 @@ def main() -> int:
     n4, mism4, denied = 50000, 0, 0
     for _ in range(n4):
         atoms, conflict, vars_, guards, kw = rand_deny(rng4)
-        b, a = brute(atoms, conflict, vars_, guards, **kw), algorithm(atoms, conflict, vars_, guards, **kw)
+        b, a = (
+            brute(atoms, conflict, vars_, guards, **kw),
+            algorithm(atoms, conflict, vars_, guards, **kw),
+        )
         if a != b:
             mism4 += 1
             if mism4 <= 3:
                 print("MISMATCH (deny)", conflict, atoms, guards, kw, b, a)
-        denied += b == "Deny" and kw["violations"] == "deny"
-    print(f"{n4} deadline/violations cases, {mism4} mismatches; Deny under violations = deny in {denied}")
+        denied += b == "Deny" and kw.get("violations") == "deny"
+    print(
+        f"{n4} deadline/violations cases, {mism4} mismatches; Deny under violations = deny in {denied}"
+    )
     # frontier_complete (§6.4, decisions/0004): the bounded enumeration over the relevant
     # unknowns against the definition (brute force over every unknown), for definite
     # Pending verdicts. Gates: equal whenever exact; never true where the definition says
     # false, also with a bound of 1 so the fallback runs.
     rng5 = random.Random(20261015)
-    n5, pending, empty, wrong, incomplete, rule_loose, mism5, unsound5, fell = 50000, 0, 0, 0, 0, 0, 0, 0, 0
+    n5 = 50000
+    pending = empty = wrong = incomplete = rule_loose = mism5 = unsound5 = fell = 0
     for _ in range(n5):
         atoms, conflict, vars_, guards, kw, known = rand_frontier(rng5)
         unknown = [v for v in vars_ if v not in known]
-        fronts, verdicts = set(), set()
+        fronts: set[Frontier] = set()
+        verdicts: set[str] = set()
         for bits in itertools.product([False, True], repeat=len(unknown)):
-            v, f = evaluate(atoms, conflict, {**known, **dict(zip(unknown, bits))}, guards, **kw)
+            v, f = evaluate(
+                atoms, conflict, {**known, **dict(zip(unknown, bits, strict=True))}, guards, **kw
+            )
             verdicts.add(v)
             fronts.add(f)
         if verdicts != {"Pending"}:
             continue
         pending += 1
-        listed, uncertain, _ = listed_frontier(atoms, conflict, known, guards, kw["past"])
-        complete = fronts == {listed}             # the definition, by brute force
+        listed, uncertain, _ = listed_frontier(atoms, conflict, known, guards, kw.get("past", {}))
+        complete = fronts == {listed}  # the definition, by brute force
         empty += not listed
         wrong += any(not listed <= f for f in fronts) and bool(listed)
         incomplete += not complete
-        rule_loose += uncertain and complete          # what 'complete iff no uncertain candidate' loses
+        rule_loose += uncertain and complete  # what 'complete iff no uncertain candidate' loses
         fc, exact = frontier_complete(atoms, conflict, known, guards, kw)
         if not exact or fc != complete:
             mism5 += 1
@@ -428,11 +553,13 @@ def main() -> int:
                 print("MISMATCH (frontier)", conflict, atoms, guards, kw, known, fronts, listed)
         fc1, exact1 = frontier_complete(atoms, conflict, known, guards, kw, bound=1)
         fell += not exact1
-        unsound5 += fc1 and not complete or (exact1 and fc1 != complete)
-    print(f"{n5} partial-knowledge cases, definite Pending in {pending}: listed frontier empty in {empty}; "
-          f"a listed alternative off some completion's frontier in {wrong}; frontier_complete false in "
-          f"{incomplete}, true where an uncertain candidate exists in {rule_loose}; bounded enumeration "
-          f"{mism5} mismatches; with bound 1, fallback in {fell}, {unsound5} unsound")
+        unsound5 += (fc1 and not complete) or (exact1 and fc1 != complete)
+    print(
+        f"{n5} partial-knowledge cases, definite Pending in {pending}: listed frontier empty in {empty}; "
+        f"a listed alternative off some completion's frontier in {wrong}; frontier_complete false in "
+        f"{incomplete}, true where an uncertain candidate exists in {rule_loose}; bounded enumeration "
+        f"{mism5} mismatches; with bound 1, fallback in {fell}, {unsound5} unsound"
+    )
     return 1 if mism or unsound or mism3 or mism4 or mism5 or unsound5 else 0
 
 

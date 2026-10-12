@@ -71,7 +71,7 @@ due2 evaluates ODRL policies against requests and a state of the world — the *
 
 Three functions, two of them pure.
 
-```
+```text
 normalise : Policy                     -> Corpus     (offline, per policy version)   W1
 decide    : Request x Corpus x SOTW    -> Verdict    (hot, per request)              W3 ∘ W2
 re_decide : LedgerEntry x Corpus x SOTW -> Verdict   (on change)
@@ -168,7 +168,7 @@ Since parameters are ground at normalisation, they are substituted there, and th
 
 ### 6.1 Verdicts **[D]**
 
-```
+```text
 Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 ```
 

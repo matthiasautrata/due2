@@ -72,7 +72,7 @@ The design is a five-stage pipeline. Simple plumbing stays in Python, and the tr
 
 We propose Datalog for stage 3 for three reasons. Its rules read like a mapping specification, so policy experts can review them. It always finishes. And a completeness check can be written in the same language: a rule that lists every input element no translation rule covers, which must be empty. Its limits are that it cannot invent new identifiers, so these are derived from source keys, and that arithmetic or text conversions stay outside it as small pure functions. The engine must also be approved for use in our environment.
 
-**Alternatives considered**
+### Alternatives considered
 
 - **Typed code with exhaustive matching (Kotlin, Scala or Go).** The compiler enforces that every input case is handled. It needs no new tool but is harder for non-programmers to review. This is the fallback if a Datalog engine is not approved.
 - **Formal proof (Dafny or Lean).** Proving properties gives the strongest assurance at high cost. We would reserve it for a small critical piece, such as the table that maps conditions, not the whole mapper.
@@ -91,7 +91,7 @@ A "reading" is one choice for each decision. The translator treats something as 
 
 Counting how many policies each decision affects gives a ranked question list. The most valuable questions can then go to the MDS team, and decisions no real policy depends on can be ignored. One risk is that widely diverging readings could push results toward "deny everything". The loss report makes this visible and shows what settling each decision would gain.
 
-**How ambiguity shows up in the result**
+### How ambiguity shows up in the result
 
 1. **Cautious translation (start here).** Ambiguous cases translate to the deny side. Every rule carries the MDS element and contract clause it came from, plus a flag saying whether it is explicit in the contract or the result of ambiguity. Without the flag, a denial caused by ambiguity would look like a denial the contract demands.
 2. **Carry the doubt into the evaluator (later).** The evaluator answers "indeterminate" and names the decision and clause involved. This needs a small extension to the internal format but can be added on top of the first option.
@@ -139,7 +139,7 @@ The first three steps decide the path, and the rest apply if we build on MDS.
 5. Build a thin slice of three to five contracts end to end, through the evaluator.
 6. Generalize, following the same order: specify a construct, test it against the ruled cases, then implement it.
 
-**Open questions**
+### Open questions
 
 - What accuracy threshold will users accept?
 - Is a Datalog engine approved for use in our environment, or do we fall back to typed code?

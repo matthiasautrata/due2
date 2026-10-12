@@ -206,7 +206,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 | Tier | Runs |
 |---|---|
-| Every commit (today) | The four commands in `README.md` § Verify |
+| Every commit (today) | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
 | PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L9 and the stage-1 invariants; the L1 determinism matrix |
 | Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the Dafny `Den` check. Results feed the ratchet, not the gate |
 

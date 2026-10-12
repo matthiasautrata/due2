@@ -17,7 +17,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
   - a translated case keeps its origin's answer (`force_expected`, `oval_expected`, `w3c_expected`, …) and explains any difference in `notes`;
   - external suites under `conformance/external/` are vendored unmodified — never edit them;
   - re-derive the coverage-gap list in `conformance/README.md` (and issue #2) when cases change.
-- **Every commit:** all four commands in `README.md` § Verify pass. Push when done.
+- **Every commit:** every command in `README.md` § Verify passes: the checkers, strict basedpyright, ruff, and rumdl. Push when done.
 
 ## Where the semantics live
 

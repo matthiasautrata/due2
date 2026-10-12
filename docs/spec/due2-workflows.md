@@ -29,7 +29,7 @@ This document fixes *what* each workflow consumes and produces and what it must 
 
 ## 1. Three workflows and a boundary **[D]**
 
-```
+```text
                      authored ODRL policies
                                │
    W1  Normalise               │      offline · per policy version · pure
@@ -86,7 +86,7 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 
 ### 3.1 Corpus — output of W1
 
-```
+```text
 policy            (policy_id | conflict, profile, version)
 atom              (atom_id | effect, action, relation?, relation_value?, policy_id, source_rule, priority?)
 atom_party        (atom_id, function | party)
@@ -128,7 +128,7 @@ Invariants, established by W1 and trusted downstream: `edge` is acyclic; every c
 
 ### 3.2 Request
 
-```
+```text
 request        (| reference?, action, target?, at)
 request_party  (function | party)
 request_param  (name | value)
@@ -138,7 +138,7 @@ request_param  (name | value)
 
 ### 3.3 SOTW
 
-```
+```text
 sotw              (| effective_at, revision)
 fact              (property | status)
 fact_value        (property, value)
@@ -165,7 +165,7 @@ The SOTW is immutable. A later revision may add resolutions. It may not change a
 
 ### 3.4 Config
 
-```
+```text
 config        (| combination, preference?, violations)
 signer        (source_duty, issuer)
 admit_source  (property, source)
@@ -176,7 +176,7 @@ Parameters that are not policy content: the cross-policy `combination` (§6.2), 
 
 ### 3.5 Trace — output of W2 and W3
 
-```
+```text
 case           (| corpus_id, request_id, sotw_id, config_id)
 finding        (atom_id, predicate | truth)
 basis          (atom_id, kind, ref | truth)
@@ -213,7 +213,7 @@ Which authored rule, which expansion selection, and which parameter binding prod
 
 ## 4. W1 — Normalise **[D]**
 
-```
+```text
 W1 : authored policies → (Corpus × Lineage) | Diagnostics
 ```
 
@@ -243,7 +243,7 @@ Obligations on the output:
 
 ## 5. W2 — Evaluate **[D]**
 
-```
+```text
 W2 : Corpus × Request × SOTW × Config → finding × basis × read × instance
 ```
 
@@ -346,7 +346,7 @@ An index may skip root atoms that are certainly `F` — wrong action, wrong targ
 
 ## 6. W3 — Resolve **[D]**
 
-```
+```text
 W3 : Corpus × finding × basis × Config → eliminated × alternative × alt_duty × dominated × verdict × verdict_basis
 ```
 
