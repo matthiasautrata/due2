@@ -69,15 +69,15 @@ due2 evaluates ODRL policies against requests and a state of the world — the *
 
 ## 2. Pipeline **[D]**
 
-Three functions, two of them pure.
+Three pure functions. The shell around them fetches facts, records them in the case, and stores traces.
 
 ```text
-normalise : Policy                     -> Corpus     (offline, per policy version)   W1
-decide    : Request x Corpus x SOTW    -> Verdict    (hot, per request)              W3 ∘ W2
-re_decide : Case x Corpus x SOTW        -> Verdict   (on change)
+normalise : Policy                          -> Corpus   (offline, per policy version)   W1
+plan      : Corpus x Request                -> Reads    (per request, before decide)
+decide    : Corpus x Request x SOTW x Config -> Trace    (hot, per evaluation)           W3 ∘ W2
 ```
 
-`re_decide` is `decide` applied to a case's recorded request. It is named separately because it is a distinct operational trigger, not a distinct semantics.
+`plan` is the sweep the operand bindings exist for (`due2-profiles.md` §3): every value an evaluation can consult is named by a binding, so the reads are known from the corpus and the request before anything is fetched. The shell fetches what the case lacks, records it, and calls `decide` only when every planned read is in the case (`due2-workflows.md` §3.3). `decide` returns the trace, and the verdict is one relation in it. Re-evaluation is `decide` over the case's current SOTW: a distinct operational trigger (§7), not a distinct function.
 
 `decide` is itself two workflows with a hard boundary between them. W2 evaluates: it gives each relevant atom a three-valued finding from the request and a frozen SOTW, and never looks at another atom's finding. W3 resolves: it folds the findings into one verdict and never looks at the request or the SOTW. `due2-workflows.md` specifies all three workflows, their data, and their laws. This document gives the reasons.
 
@@ -201,11 +201,11 @@ In workflow terms, both share W1 and W2's matching, constraint, and fulfilment m
 
 ## 7. Ledger **[D]**
 
-Every decision is recorded. Because `decide` is pure over `(request, corpus, SOTW)`, the ledger records every case and its evolution, each evaluation replayable, and every production decision can become a conformance case — the conformance suite fills itself. A case is created when a request is made; an evaluation is one run over it (`due2-workflows.md` §7).
+Every decision is recorded. Because `decide` is pure over `(corpus, request, SOTW, config)`, the ledger records every case and its evolution, each evaluation replayable, and every production decision can become a conformance case — the conformance suite fills itself. A case is created when a request is made; an evaluation is one run over it (`due2-workflows.md` §7).
 
 **Re-evaluate, never patch.** The temptation is to find `Pending` cases whose petition has been approved and flip them. A `Pending` record is not a promise; it is a decision made under facts that have since changed, and the only sound way to learn the new answer is to ask again.
 
-**An evaluation pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change can move a verdict with no policy edit) — and the SOTW facts consulted with their values (the trace's `read` relation). A timestamp alone suffices only if the SOTW is itself append-only and queryable as-of; otherwise record the values.
+**An evaluation pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change can move a verdict with no policy edit) — and the SOTW, which is the case's own record of the world: the facts consulted, with their values (the trace's `read` relation; `due2-workflows.md` §3.3). Values, not timestamps into a source, so the entry stands even when the source keeps no history.
 
 **The direction is not only upward.** Re-evaluation can turn Permit into Deny — a role changed, a dataset was reclassified, a policy was amended. A mechanism built as "upgrade pending to permit" has no path for that, and revocation matters more to a control function than issuance. The operation is verdict-agnostic and the ledger records transitions both ways.
 

@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.12
+**Status:** Draft v0.13
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.13** (2026-10-13): the SOTW is the case's snapshot of the world. A pure sweep, `plan`, lists from the corpus's operand bindings and the request what an evaluation will read; the shell records the answers in the case before W2 runs, and nothing is fetched during evaluation. The case records answers, never the datasets behind them; world hierarchy edges are limited to those above the request's entities; a read limit bounds the plan (§3.3).
 
 **Changes in v0.12** (2026-10-13): terminology. A *case* is created when a request is made and accumulates its history; an *evaluation* is one run of W2 and W3 over it, identified by the digest of its four inputs. Earlier versions called that input tuple the case. The trace relation `case` is now `evaluation` (§3.5, §7, L1).
 
@@ -158,10 +160,22 @@ closure           (module, relation, narrower, broader)
 | `fact_value` | Exactly one value when `resolved` — for a set-valued operand, its members, of which there may be none — two or more when `conflict`, none otherwise. |
 | `evidence` | A record that an action was performed: when, by whom, which action, on what, and who attests it (`issuer`). Approvals, payments, notifications. `discharges` optionally names the duty instance the evidence was submitted against (§5.3). Fulfilment is derived from evidence and never stored as a flag. Signatures and provenance are verified before the SOTW is frozen; W2 only compares `issuer` against configuration (§3.4). |
 | `evidence_param` | Parameters of the performed action — an amount, a recipient — the counterpart of `request_param` for a proposed action. Read only by witness-source operands (`due2-profiles.md` §3). |
-| `activation` | When a duty instance was first owed, taken from the case history. It anchors relative deadlines and recurrence occurrences (§5.3). |
-| `closure` | Direct hierarchy edges from the world rather than from policies — current team membership, say — in a named, versioned module. W2 uses the transitive closure of these together with the corpus's `closure`: `a ⊑ b` holds when `a = b` or a chain of edges leads from `a` to `b`. Closure is closed-world over the declared edges: an edge that is not there does not hold, so the part is `F`, never `U`. |
+| `activation` | When a duty instance was first owed. Derived, not observed: the evaluation that first finds the instance owed records it in the case (`due2-profiles.md` §7). It anchors relative deadlines and recurrence occurrences (§5.3). |
+| `closure` | Direct hierarchy edges from the world rather than from policies — current team membership, say — in a named, versioned module. W2 uses the transitive closure of these together with the corpus's `closure`: `a ⊑ b` holds when `a = b` or a chain of edges leads from `a` to `b`. Closure is closed-world over the declared edges: an edge that is not there does not hold, so the part is `F`, never `U`. Only edges on paths up from the request's own entities — its parties, its target, the individuals `isA` compares — can decide a part, so only those are recorded (below). |
 
-The SOTW is assembled for one request: flattened properties describe that request's subject and target, and a SOTW is not reused for a request with a different subject or target.
+**The SOTW is the case's snapshot [D]** (2026-10-13). An evaluation reads only what its case has recorded: the part of the world the case cares about, as of `effective_at`. Every fact, piece of evidence, and activation is an event on the case, carrying the time it held in the world and the time it was recorded (§7). Its flattened properties describe one request's subject and target, so a SOTW is not reused for a request with a different subject or target.
+
+**Plan, then evaluate [D].** W2 never asks for anything. Every value it can consult is named by an operand binding (`due2-profiles.md` §3) or by a hierarchy comparison in the corpus, so a pure sweep lists them before anything is fetched:
+
+```text
+plan : Corpus × Request → Reads
+```
+
+`Reads` holds each state property a state-source binding names, each request parameter a request-source binding names, and each world module the corpus's hierarchy comparisons use, with the request entities whose edges it needs. The shell fetches what the case lacks, records the answers, and calls W2 only once every planned item is in the case. A lookup that fails is recorded as `unresolved`, and one that finds no value as `missing`, so "never looked up" cannot reach W2. W2's `read` is always within the plan; a read outside it is a defect. Evidence is not planned: it reaches the case when it is submitted, and evidence the case does not hold is not yet performed (§5.3).
+
+**Answers, not extensions [D].** The case records the answer to the question an evaluation asks — a property's value, the edges above an entity — never the dataset the source computed it from. Membership of a group with a billion members is one fact. A source that can only answer in bulk is queried by the shell, which records the answer and the version of the source it came from, as the ledger pins normaliser versions (architecture §7); the bulk data is a cache, not part of the case. A positive hierarchy answer may carry its path as justification; a negative one has none shorter than the closure, and needs none. Several cases may read the same fact: each records it as it read it, and storage may share it.
+
+**Read limit [O].** The plan's size is fixed by the corpus and the request — the bound properties, plus the edges above the request's entities — and is known before any fetch, as W1's limits are known before expansion (architecture §4). A shell limit, `max_reads`, bounds it. What exceeding it yields is open: refuse the request before a case is created, or create the case and evaluate with the excess `unresolved`, so those parts are `U` (§9 #9, issue #34).
 
 The SOTW is immutable. A later revision may add resolutions. It may not change a terminal one: a re-resolution that disagrees is a `conflict`.
 
@@ -432,7 +446,7 @@ This matters wherever one fact is read in both directions. `xone` expands into d
 
 ## 7. Replay **[D]**
 
-A case is created when a request is made, and accumulates its history: the evidence submitted to it, the facts its evaluations read, and what they derived. An evaluation is one run of W2 and W3 over the case, and is its four input collection ids. W2 and W3 are pure, so the trace is a function of the evaluation: replay re-runs them and compares digests, and calls no resolver. The ledger (architecture §7) records every case and its evolution: each evaluation, the reads with their values, and the verdict. Re-evaluation is a new evaluation of the same case, over a new SOTW — never an edit to an old trace.
+A case is created when a request is made, and accumulates its history: the evidence submitted to it, the facts its evaluations read, and what they derived. Its SOTW at any time is that record (§3.3). An evaluation is one run of W2 and W3 over the case, and is its four input collection ids. W2 and W3 are pure, so the trace is a function of the evaluation: replay re-runs them and compares digests, and calls no resolver. The ledger (architecture §7) records every case and its evolution: each evaluation, the reads with their values, and the verdict. Re-evaluation is a new evaluation of the same case, over a new SOTW — never an edit to an old trace.
 
 **Crashes [D]** (2026-10-11). A failure that should never happen, such as a violated contract, a broken invariant, or an I/O fault in the shell, is not a verdict. The shell answers `Error(cause)`. The verdict set stays the five values of §1, and `Indeterminate` keeps its one meaning: the data could not decide. What the caller does with an error is the caller's default, as it is for `Indeterminate`. A crashed evaluation produces no trace. The ledger stores the evaluation and the cause. W2 and W3 are pure, so replaying that evaluation reproduces the crash: the evaluation is the bug report. W1 is the same: a crash in normalisation is an error, not diagnostics, and builds no corpus (`ways-of-working.md` §2.2).
 
@@ -472,6 +486,7 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 | 6 | Domain-aware completion over parts that read one fact but are neither identical nor complementary (enumerated values, overlapping ranges). Complementary parts are exact since v0.6 | §6.4 | A real policy where the remaining over-approximation matters |
 | 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
 | 8 | A request without a target | §3.2, §5.2 | **Resolved 2026-10-11:** the relation part is `U`, as for an absent party; rejecting the request was the alternative. Cases `oval-no-target-permission`, `oval-no-target-prohibition` |
+| 9 | Outcome of exceeding the read limit `max_reads`: refuse before a case is created, or evaluate with the excess `unresolved` | §3.3 | A real policy and request that approach it (issue #34) |
 
 Deadline windows and the `violated` status, open as #5 until v0.4, are decided in §5.3: timing is in the corpus, W2 computes the effective deadline and the per-instance status, and a violated precondition removes its candidate. What stays open is the *not-yet-owed* state of an instance whose occurrence or window is in the future (`due2-profiles.md` §9).
 

@@ -138,7 +138,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 
 - **Risks.** R2 above all, then R7.
 - **Golden vectors.** The **status matrix**: for every operator and every fact status (`resolved`, `missing`, `invalid`, `conflict`, `unresolved`), the part's truth value, enumerated exhaustively. A non-`resolved` status gives `U`, with no exceptions (`ways-of-working.md` §5.1). This is the primary defence against R2 and is cheap to make complete. The same for request parameters (absent means `missing`) and for absent parties and targets (workflows §3.2).
-- **Properties.** L2 (an atom's finding is unchanged by other atoms), L3 (prefetch neutrality), L8 (skip soundness). Duty instances and statuses against the workflows §5.3 table, over generated deadlines and recurrences.
+- **Properties.** L2 (an atom's finding is unchanged by other atoms), L3 (prefetch neutrality), L8 (skip soundness). Plan coverage: W2's `read` is within `plan(corpus, request)` for every generated and corpus evaluation (workflows §3.3). Duty instances and statuses against the workflows §5.3 table, over generated deadlines and recurrences.
 - **Done.** The status matrix is complete and passing, the properties hold, and the corpus's `obligations` agree.
 
 ### 4.5 W3: resolve
@@ -161,7 +161,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Before code.** **[O]** The ledger has no data model at the level of workflows §3: architecture §7 says what an evaluation pins and how re-evaluation behaves, but not the relations or the as-of query. That has to be specified first, in `due2-workflows.md`, because the properties below are stated over it. Settled so far (2026-10-13):
   - a case is created when a request is made, and its id is the thread identity; evaluations are events on the case, and a transition is two successive evaluations of one case, not a record of its own;
   - time is bitemporal: validity time (`request.at`) and decision time (`sotw.effective_at`), plus the time an event was recorded;
-  - an evaluation stores the values it read, not timestamps into the SOTW;
+  - an evaluation's SOTW is the case's snapshot: the answers it recorded, with their values, not timestamps into a source; a pure `plan` sweep lists them before evaluation, and the case records answers, never the datasets behind them (workflows §3.3);
   - exercise events (access taken under a permit) are out of scope for now.
 
   The model itself is expected to follow the entity-event pattern: a case and the timeline of events on it.
@@ -244,5 +244,5 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
-| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code. Partly settled 2026-10-13 (§4.7): case as thread identity, bitemporal, values not timestamps, exercise out of scope; entity-event model to follow |
+| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code. Partly settled 2026-10-13 (§4.7): case as thread identity, bitemporal, SOTW as the case's snapshot, plan before evaluate, exercise out of scope; entity-event model to follow |
 | 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |
