@@ -53,7 +53,7 @@ The three testing modes are:
 | W1 stage 1 | `Den` (Python, then Dafny) through the lineage bijection |
 | W1 + W2 + W3 | `I`, the direct interpreter (L9) |
 | W3 | Brute-force W3 over every completion of the findings |
-| Replay of a ledger entry | The original trace, byte for byte |
+| Replay of a recorded evaluation | The original trace, byte for byte |
 | Re-evaluation of a case history | A from-scratch evaluation over the current inputs |
 | Any second backend | The first |
 
@@ -75,7 +75,7 @@ The ranking is by how silent the defect is, not how likely it is.
 | R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (workflows §7) and the ledger | W1 identity, trace serialisation |
 | R7 | **Boundary leak.** W2 reads another atom's finding; W3 reads the request or SOTW. | Invalidates the parallelism and the completion argument | W2, W3 |
 | R8 | **Unexplained divergence from an origin evaluator.** | Undermines the compatibility claims | Translated cases |
-| R10 | **Case-history corruption.** An earlier decision is edited instead of superseded; an entry does not pin enough to replay; a normaliser upgrade silently changes old answers; an as-of query answers from today's policy. | The audit question gets a plausible wrong answer | The ledger, re-evaluation |
+| R10 | **Case-history corruption.** An earlier decision is edited instead of superseded; an evaluation does not pin enough to replay; a normaliser upgrade silently changes old answers; an as-of query answers from today's policy. | The audit question gets a plausible wrong answer | The ledger, re-evaluation |
 | R9 | **Generator blind spots.** Properties pass because the generators never produce the hard inputs. | False confidence, the most expensive kind | All property tests |
 
 ---
@@ -152,20 +152,26 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 ### 4.6 Trace and replay
 
 - **Risks.** R6.
-- **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded case gives the same digests (workflows §7).
+- **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded evaluation gives the same digests (workflows §7).
+  - *Normaliser upgrade.* Replaying recorded evaluations under a new normaliser version is a regression check, outside the ledger: the same inputs giving a different verdict is a defect, or an intended change that carries a decision record. Every changed verdict is reported; the ledger is never written.
 
 ### 4.7 Case history: the ledger
 
 - **Risks.** R10, R6.
-- **Before code.** **[O]** The ledger has no data model at the level of workflows §3: architecture §7 says what an entry pins and how re-evaluation behaves, but not the relations, the transition record, or the as-of query. That has to be specified first, in `due2-workflows.md`, because the properties below are stated over it.
+- **Before code.** **[O]** The ledger has no data model at the level of workflows §3: architecture §7 says what an evaluation pins and how re-evaluation behaves, but not the relations or the as-of query. That has to be specified first, in `due2-workflows.md`, because the properties below are stated over it. Settled so far (2026-10-13):
+  - a case is created when a request is made, and its id is the thread identity; evaluations are events on the case, and a transition is two successive evaluations of one case, not a record of its own;
+  - time is bitemporal: validity time (`request.at`) and decision time (`sotw.effective_at`), plus the time an event was recorded;
+  - an evaluation stores the values it read, not timestamps into the SOTW;
+  - exercise events (access taken under a permit) are out of scope for now.
+
+  The model itself is expected to follow the entity-event pattern: a case and the timeline of events on it.
 - **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (architecture §7, issue #14), must agree with it.
 - **Properties.**
-  - *Replay.* Every entry, re-run under its pinned normaliser versions, gives byte-identical traces.
-  - *Pinning suffices.* Re-running with the SOTW cut down to the entry's recorded reads gives the same trace (a consequence of L3); an entry that needs more than it pinned is a defect.
-  - *Append-only.* No operation changes an earlier entry; re-evaluation adds a new case and a transition.
+  - *Replay.* Every recorded evaluation, re-run under its pinned normaliser versions, gives byte-identical traces.
+  - *Pinning suffices.* Re-running with the SOTW cut down to the evaluation's recorded reads gives the same trace (a consequence of L3); an evaluation that needs more than it pinned is a defect.
+  - *Append-only.* No operation changes an earlier event; re-evaluation adds an evaluation to the case.
   - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
-  - *Two clocks.* An as-of query for an earlier decision answers from that entry, unaffected by later policy amendments, SOTW revisions, or normaliser upgrades.
-  - *Normaliser upgrade.* Replaying old entries under a new normaliser version reports every changed verdict; it never overwrites one.
+  - *Two clocks.* An as-of query for an earlier decision answers from that evaluation, unaffected by later policy amendments, SOTW revisions, or normaliser upgrades.
 - **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, amend a policy, upgrade the normaliser, re-evaluate, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
 - **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of SOTW revisions, an expected verdict per revision.
 
@@ -238,5 +244,5 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
-| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code |
+| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code. Partly settled 2026-10-13 (§4.7): case as thread identity, bitemporal, values not timestamps, exercise out of scope; entity-event model to follow |
 | 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |

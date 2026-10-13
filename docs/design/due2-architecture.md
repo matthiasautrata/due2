@@ -74,10 +74,10 @@ Three functions, two of them pure.
 ```text
 normalise : Policy                     -> Corpus     (offline, per policy version)   W1
 decide    : Request x Corpus x SOTW    -> Verdict    (hot, per request)              W3 ∘ W2
-re_decide : LedgerEntry x Corpus x SOTW -> Verdict   (on change)
+re_decide : Case x Corpus x SOTW        -> Verdict   (on change)
 ```
 
-`re_decide` is `decide` applied to a recorded request. It is named separately because it is a distinct operational trigger, not a distinct semantics.
+`re_decide` is `decide` applied to a case's recorded request. It is named separately because it is a distinct operational trigger, not a distinct semantics.
 
 `decide` is itself two workflows with a hard boundary between them. W2 evaluates: it gives each relevant atom a three-valued finding from the request and a frozen SOTW, and never looks at another atom's finding. W3 resolves: it folds the findings into one verdict and never looks at the request or the SOTW. `due2-workflows.md` specifies all three workflows, their data, and their laws. This document gives the reasons.
 
@@ -201,11 +201,11 @@ In workflow terms, both share W1 and W2's matching, constraint, and fulfilment m
 
 ## 7. Ledger **[D]**
 
-Every decision is recorded. Because `decide` is pure over `(request, corpus, SOTW)`, the ledger is a replayable collection of cases and every production decision becomes a regression case — the conformance suite fills itself.
+Every decision is recorded. Because `decide` is pure over `(request, corpus, SOTW)`, the ledger records every case and its evolution, each evaluation replayable, and every production decision can become a conformance case — the conformance suite fills itself. A case is created when a request is made; an evaluation is one run over it (`due2-workflows.md` §7).
 
-**Re-evaluate, never patch.** The temptation is to find `Pending` entries whose petition has been approved and flip them. A `Pending` record is not a promise; it is a decision made under facts that have since changed, and the only sound way to learn the new answer is to ask again.
+**Re-evaluate, never patch.** The temptation is to find `Pending` cases whose petition has been approved and flip them. A `Pending` record is not a promise; it is a decision made under facts that have since changed, and the only sound way to learn the new answer is to ask again.
 
-**An entry pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change can move a verdict with no policy edit) — and the SOTW facts consulted with their values (the trace's `read` relation). A timestamp alone suffices only if the SOTW is itself append-only and queryable as-of; otherwise record the values.
+**An evaluation pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change can move a verdict with no policy edit) — and the SOTW facts consulted with their values (the trace's `read` relation). A timestamp alone suffices only if the SOTW is itself append-only and queryable as-of; otherwise record the values.
 
 **The direction is not only upward.** Re-evaluation can turn Permit into Deny — a role changed, a dataset was reclassified, a policy was amended. A mechanism built as "upgrade pending to permit" has no path for that, and revocation matters more to a control function than issuance. The operation is verdict-agnostic and the ledger records transitions both ways.
 
@@ -216,7 +216,7 @@ Every decision is recorded. Because `decide` is pure over `(request, corpus, SOT
 **Re-evaluation trigger [O]:**
 
 - *Recompute all pending on any change.* Trivially correct, no bookkeeping. Pending sets in governance are small and approvals are rare, so this is almost certainly sufficient. **Start here.**
-- *Dependency index.* Index pending entries by the state properties in their `read` relation, which W2 already produces as a byproduct. Justified only when the first option measurably hurts.
+- *Dependency index.* Index pending cases by the state properties in their `read` relation, which W2 already produces as a byproduct. Justified only when the first option measurably hurts.
 
 ---
 
@@ -298,7 +298,7 @@ Contents:
 - The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, and DPROD Contracts examples — now vendored unmodified under `profiles/vendor/dprod/examples/` and covered as cases — each with scenarios and hand-derived expected verdicts, checked mechanically by `tools/check_corpus.py` until an evaluator runs them.
 - The semantic-preservation property: `decide(normalise(p), r, w)` equals `interpret_directly(p, r, w)` whenever the completion is exact (workflows §6.4, §8 L9, v0.6, 2026-10-11): completions range over literals, so the complementary parts DNF and `xone` create share one variable with what they negate. Since `decisions/0003` there is no hoisting to preserve. Beyond the `max_mixed` bound it weakens to refinement — a definite pipeline verdict equals the direct one, and the pipeline may return `Indeterminate` where the direct one decides (the 2026-10-10 reading). Stage 1 now carries its own oracle: the denotation of normalisation spec §8.1, a page of definition, checked through the lineage bijection. **Resolved 2026-10-10** (`decisions/0002` and its amendment): a Python direct interpreter over the lifted (authored) form is the maintained L9 oracle; the Dafny extraction covers the `Den` oracle and stage-1 expansion first, extending to stage 2's rewriting second. Real cost, and still the only check that the rest of normalisation has not quietly changed meaning.
 - Explicit `Indeterminate` cases with unresolvable operands, asserted per backend. This is the property most likely to be silently lost in a port.
-- Every ledger entry, replayed.
+- Every recorded evaluation, replayed.
 - Differential mode across backends, once there is more than one.
 
 ---
