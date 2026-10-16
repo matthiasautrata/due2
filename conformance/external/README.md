@@ -57,6 +57,7 @@ Each translated scenario keeps the origin's own result (`force_expected`, `oval_
 
 - FORCE: policies 1–7 omit required targets; test case 036 is wired to `temporal-future.ttl` (duplicate of 038) though titled for the current time; `all-2023.ttl`/`all-2024.ttl` carry a DutyReport for policy-19's duty instead of policy-21's. Reported upstream once before (acknowledged, not fixed — 2026-10-11); re-reporting is pointless until they act.
 - OVAL: a summary of the findings below was sent to the authors on 2026-10-11, with the offer to file issues.
+- OVAL: hierarchy reasoning (since 2026-08-27) covers only a rule's action, assignee and target. Constraint values get none: `isPartOf` and `hasPart` are plain subset tests, `isA` is unsupported, and a narrower SKOS purpose does not match `purpose eq` its broader one, so a prohibition fails open. To be reported (issue #54); due2's reading is issue #52.
 - OVAL: 74 of its 105 policy files are Offers without an assigner (IM 2.1.2); 85 of 105 fail ODRL 2.2 validation in all; untargeted rules; `odrl:unit` as a string literal (IM: IRI); untyped dateTime right operands.
 - W3C CG: C1/C2 requests name `party/billie1` against assignee `party/billie` while the expected reports permit; B11/B12 request values written `{"@id": "1000"}` with `describesFeature` the unit IRI rather than the operand; C12 `paymentDate` untyped.
 

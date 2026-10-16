@@ -220,6 +220,10 @@ Every decision is recorded. Because `decide` is pure over `(corpus, request, SOT
 
 Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and Comparison Semantics for ODRL* (arXiv:2509.05139). We should track it; we cannot adopt it wholesale.
 
+**Not yet re-read.** This section compares due2 with the 2025 paper only. Since then the group has published *A Formally Grounded ODRL Evaluator* (arXiv:2607.15987), which formalises monitoring and access control and shows they coincide for permissions, prohibitions and duties, and *ODRL Policy Comparison Through Normalisation* (arXiv:2603.12926). OVAL, their evaluator, has gained an access-control mode with conflict strategies. The rows below may be stale for OVAL. Re-reading them is issue #55.
+
+**Reasoning.** Their semantics keeps hierarchy reasoning out of the core, under unique names, and materialises it instead (2509.05139 §3.3). OVAL's code expands only a rule's action (`includedIn`), assignee and target (`partOf`) into their transitive descendants; constraint values get no hierarchy. due2 has the same shape: comparison by identity, and declared hierarchy edges in a closed-world closure (`due2-profiles.md` §6). due2 extends it to `isPartOf`, `hasPart` and `isA` (`due2-profiles.md` §4) and, once #52 lands, to SKOS concept schemes on constraint operands. The gap is to be reported to OVAL (#54).
+
 **What it confirms.** Duties there are relations over rules — pairs and triples — rather than nested structures, which is independently the shape of §3. It also requires that a duty rule be exercisable by the obligated party, a well-formedness check worth adopting. And duty preconditions are temporal over the event log: the permission is violated if it matched and no matching duty event exists at an earlier timestamp. That settles the question §7 raises — approval is a **fact** in the event set, not a discharge operation — which is what makes re-evaluation purely derivable, and what §3.1 builds on.
 
 **Where it diverges, and why it matters to us.**
