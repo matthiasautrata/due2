@@ -158,22 +158,16 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 ### 4.7 Case history: the ledger
 
 - **Risks.** R10, R6.
-- **Before code.** **[O]** The ledger has no data model at the level of workflows §3: architecture §7 says what an evaluation pins and how re-evaluation behaves, but not the relations or the as-of query. That has to be specified first, in `due2-workflows.md`, because the properties below are stated over it. Settled so far (2026-10-13):
-  - a case is created when a request is made, and its id is the thread identity; evaluations are events on the case, and a transition is two successive evaluations of one case, not a record of its own;
-  - time is bitemporal: validity time (`request.at`) and decision time (`sotw.effective_at`), plus the time an event was recorded;
-  - an evaluation's SOTW is the case's snapshot: the answers it recorded, with their values, not timestamps into a source; a pure `plan` sweep lists them before evaluation, and the case records answers, never the datasets behind them (workflows §3.3);
-  - exercise events (access taken under a permit) are out of scope for now.
-
-  The model follows the entity-event pattern, drafted in workflows §7.1 (2026-10-16, **[O]**, issue #28): an append-only event log per case, the SOTW as a fold over it, and an as-of query over decision time and record time.
+- **Before code.** ~~A ledger data model at the level of workflows §3.~~ Done 2026-10-16: workflows §7.1 (`decisions/0008`). One case per request; facts, evidence, activations, and evaluations are append-only events on it; an evaluation's SOTW is the case's facts as of `effective_at`; earlier decisions are answered from their recorded evaluation. Exercise events (access taken under a permit) stay out of scope.
 - **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (architecture §7, issue #14), must agree with it.
 - **Properties.**
   - *Replay.* Every recorded evaluation, re-run under its pinned normaliser versions, gives byte-identical traces.
   - *Pinning suffices.* Re-running with the SOTW cut down to the evaluation's recorded reads gives the same trace (a consequence of L3); an evaluation that needs more than it pinned is a defect.
   - *Append-only.* No operation changes an earlier event; re-evaluation adds an evaluation to the case.
   - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
-  - *Two clocks.* An as-of query for an earlier decision answers from that evaluation, unaffected by later policy amendments, SOTW revisions, or normaliser upgrades.
+  - *Two clocks.* An as-of query for an earlier decision answers from that evaluation, unaffected by later facts, policy amendments, or normaliser upgrades.
 - **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, amend a policy, upgrade the normaliser, re-evaluate, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
-- **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of SOTW revisions, an expected verdict per revision.
+- **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of events, an expected verdict per evaluation.
 
 ---
 
@@ -245,5 +239,5 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
-| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code. Partly settled 2026-10-13 (§4.7): case as thread identity, bitemporal, SOTW as the case's snapshot, plan before evaluate, exercise out of scope. Drafted 2026-10-16 in workflows §7.1 (event log, SOTW as a fold, as-of query), awaiting review |
+| 9 | A ledger data model in `due2-workflows.md` | §4.7 | **Resolved 2026-10-16:** workflows §7.1 (`decisions/0008`) |
 | 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |

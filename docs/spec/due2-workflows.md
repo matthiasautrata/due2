@@ -3,7 +3,7 @@
 **Status:** Draft v0.15
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.15** (2026-10-16): a draft ledger data model, an append-only event log per case with a derived as-of query (§7.1, **[O]**, issue #28). Nothing else changes.
+**Changes in v0.15** (2026-10-16): the ledger data model is decided (§7.1, `decisions/0008`). A request opens one case; facts, evidence, activations, and evaluations are events on it. The SOTW evolves within the case, so `sotw` loses its `revision` field (§3.3).
 
 **Changes in v0.14** (2026-10-16, `decisions/0007`): the concrete canonical encoding of collections is decided, JCS JSON arrays hashed with SHA-256 (§2; was §9 #1). Canonical N-Quads stay the stage-1 artifact, which is a graph.
 
@@ -63,7 +63,7 @@ This document fixes *what* each workflow consumes and produces and what it must 
 
 The two *never* clauses are the boundaries. They make W2 parallel and indexable, and W3 testable without a world.
 
-**The boundary that is not a workflow.** Assembling and freezing the SOTW is impure — it fetches, retries, waits — and sits outside all three workflows. W2 reports which state properties it read (§5.4); those with no fact in the SOTW are the shell's cue to resolve them, freeze a new revision, and run W2–W3 again. That loop is orchestration, not semantics. By L3 (§8) it can change a verdict only by supplying missing information.
+**The boundary that is not a workflow.** Assembling and freezing the SOTW is impure — it fetches, retries, waits — and sits outside all three workflows. W2 reports which state properties it read (§5.4); those with no fact in the SOTW are the shell's cue to resolve them, record the answers in the case, and run W2–W3 again. That loop is orchestration, not semantics. By L3 (§8) it can change a verdict only by supplying missing information.
 
 **One question here, two in the architecture.** Architecture §6.3 separates the access question (*may this request proceed?*) from the monitoring question (*what does this party owe now?*). Both consume W1's corpus and reuse W2's matching, constraint, and fulfilment machinery. They differ in the predicate W2 applies to root atoms and in the reduction W3 performs. This document specifies the access question. Monitoring is **[O]** (§9).
 
@@ -154,7 +154,7 @@ request_param  (name | value)
 ### 3.3 SOTW
 
 ```text
-sotw              (| effective_at, revision)
+sotw              (| effective_at)
 fact              (property | status)
 fact_value        (property, value)
 attribution       (property, source | observed_at)
@@ -188,7 +188,7 @@ plan : Corpus × Request → Reads
 
 **Read limit [O].** The plan's size is fixed by the corpus and the request — the bound properties, plus the edges above the request's entities — and is known before any fetch, as W1's limits are known before expansion (architecture §4). A shell limit, `max_reads`, bounds it. What exceeding it yields is open: refuse the request before a case is created, or create the case and evaluate with the excess `unresolved`, so those parts are `U` (§9 #9, issue #34).
 
-The SOTW is immutable. A later revision may add resolutions. It may not change a terminal one: a re-resolution that disagrees is a `conflict`.
+An evaluation's SOTW is frozen once W2 runs. The case evolves: a fact that changes in the world is a new event with a later `valid_at`, and the next evaluation reads it (§7.1). Two sources that disagree about the same fact at the same time are a `conflict`.
 
 ### 3.4 Config
 
@@ -461,30 +461,27 @@ A case is created when a request is made, and accumulates its history: the evide
 
 **Crashes [D]** (2026-10-11). A failure that should never happen, such as a violated contract, a broken invariant, or an I/O fault in the shell, is not a verdict. The shell answers `Error(cause)`. The verdict set stays the five values of §1, and `Indeterminate` keeps its one meaning: the data could not decide. What the caller does with an error is the caller's default, as it is for `Indeterminate`. A crashed evaluation produces no trace. The ledger stores the evaluation and the cause. W2 and W3 are pure, so replaying that evaluation reproduces the crash: the evaluation is the bug report. W1 is the same: a crash in normalisation is an error, not diagnostics, and builds no corpus (`ways-of-working.md` §2.2).
 
-### 7.1 The ledger as an event log **[O]** (issue #28)
+### 7.1 The ledger **[D]** (2026-10-16, `decisions/0008`)
 
-A draft, to be reviewed before ledger code. The ledger is not a collection of §2: it holds the case's history, and its timestamps stay out of every collection, so the trace remains a function of content alone.
+The ledger holds cases. Each request opens exactly one case, and everything after it — facts, evidence, activations, evaluations — is an event on that case, in the order recorded. The SOTW is the case's truth about the world as it evolves: there is no separate revision, only the events so far.
 
 ```text
-case        (case_id | opened_by, opened_at)
-event       (case_id, seq | kind, recorded_at, valid_at?, ref)
-evaluation  (event_ref | request, corpus, sotw, config, trace?, verdict?, error?, pins)
+case        (case_id | request)
+event       (case_id, seq | kind, valid_at?, ref)
+evaluation  (case_id, seq | corpus, sotw, config, pins, trace?, verdict?, error?)
 ```
 
 | Relation | Meaning |
 |---|---|
-| `case` | Created with a request. `case_id` is assigned by the shell and is the thread identity (§7). |
-| `event` | One entry in the case's timeline. `seq` counts from 1 with no gaps; `recorded_at` is the shell's clock and is never read by W2 or W3. `valid_at` is when the thing held in the world, if it is a world event. `ref` is the content id of the payload. |
-| `event.kind` | `Enum {request, fact, evidence, activation, evaluation, error}`. `fact`, `evidence`, and `activation` carry the §3.3 tuple they record; `request` is the case's opening request. Policy amendments and normaliser upgrades are not events: the next `evaluation` names the new `corpus` id, and a corpus store keeps old ones. |
-| `evaluation` | The four input ids of §7, the normaliser versions in force (`pins`: stage-1 profile IRI and version, stage-2 builder version), and the outcome: `trace` and `verdict` ids, or `error` with its cause. An error evaluation has no trace. |
+| `case` | One per request. `case_id` is assigned by the shell. |
+| `event` | `seq` counts from 1, in the order the shell recorded events. `kind ∈ {fact, evidence, activation, evaluation}`; `ref` is the content id of the §3.3 tuple recorded. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events: the next evaluation names the new corpus id. |
+| `evaluation` | The evaluation recorded at `seq`: its input ids (§7), the normaliser versions in force (`pins`), and the outcome — `trace` and `verdict`, or `error` with its cause. |
 
-**SOTW as a fold.** For a case, a decision time `t` and a log position `n`, `sotw(case, t, n)` is the fold of the `fact`, `evidence`, and `activation` events with `seq ≤ n` and `valid_at ≤ t`, taking the latest per key. The terminal rule of §3.3 (a re-resolution that disagrees is a `conflict`) is part of the fold. The `sotw` collection of an evaluation is this fold, frozen, and its id is its digest.
+**The SOTW of an evaluation** is the case's events before it, taken as of `sotw.effective_at`: for each fact, the value with the latest `valid_at` no later than `effective_at`. It is frozen as a collection, and its digest is the evaluation's `sotw` id.
 
-**As-of query.** `asof(case, t, r)` returns the last `evaluation` event with `sotw.effective_at ≤ t` and `recorded_at ≤ r`, unaffected by later events. With `r` omitted it answers "what do we think now of the world at `t`"; with `r`, "what did we decide, knowing only what was recorded by `r`".
+**What did we decide, and when.** Earlier decisions are not recomputed: the answer is the earlier `evaluation` event, which pins its inputs, and replay reproduces its trace (§7).
 
-**Append-only.** Events are added and never changed. A correction is a new event; a fact that disagrees with an earlier one becomes a `conflict` in the fold, and the earlier event stays.
-
-Open: whether `valid_at` of a fact is the observation time (`attribution.observed_at`) or the effective time of the change; whether `recorded_at` needs a monotone clock guarantee; whether `corpus` ids need a registry relation here or in the architecture.
+**Append-only.** Events are added, never changed. The shell serialises writes per case.
 
 ---
 
