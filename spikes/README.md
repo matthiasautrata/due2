@@ -32,8 +32,10 @@ sources = ["src/**/*.py"]                      # globs: the code that counts as 
 [[check]]                                      # one per compiler, type checker, or linter
 name = "basedpyright"
 command = ["uv", "run", "basedpyright"]
-count = 'error:|warning:'                      # regex; each matching output line is one diagnostic
+count = ' - (error|warning): '                 # regex; each matching output line is one diagnostic
 ```
+
+Match the checker's own diagnostic form, not a bare `warning:`: the tool's own warnings (uv's `VIRTUAL_ENV` mismatch, for one) would count too.
 
 Without `count`, a nonzero exit counts as one diagnostic.
 

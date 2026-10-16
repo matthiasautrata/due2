@@ -1,0 +1,18 @@
+# spikes/README.md: how the harness runs and checks this spike.
+command = ["uv", "run", "--quiet", "python", "main.py"]
+sources = ["main.py", "clingo_i/*.py", "lp/*.lp"]
+
+[[check]]
+name = "basedpyright"
+command = ["uv", "run", "basedpyright"]
+count = ' - (error|warning): '
+
+[[check]]
+name = "ruff"
+command = ["uv", "run", "ruff", "check", "--output-format=concise", "."]
+count = ':\d+:\d+: '
+
+[[check]]
+name = "ruff format"
+command = ["uv", "run", "ruff", "format", "--check", "."]
+count = '^Would reformat'

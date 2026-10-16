@@ -1,0 +1,11 @@
+{"at": "2026-10-16T23:33:30Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 7.6, "p50_ms": 3.95, "p95_ms": 7.37, "p99_ms": 7.52, "pass": 35, "revision": "000eeb3+dirty", "task": "interpret", "total_ms": 159.1, "unsupported": 362, "vectors": 397}
+{"at": "2026-10-16T23:34:26Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 180, "summary": "walking skeleton (#45): design, tests, six-file program, driver; 35 pass, 362 declined, 0 error"}
+{"at": "2026-10-16T23:34:26Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "duty node's odrl:action declined before odrl:constraint, and a rule with no policy declined instead of rejected: family predicates now consumed anywhere"}
+{"at": "2026-10-16T23:34:26Z", "by": "claude-opus-5-5", "kind": "note", "summary": "workflows §6.4 'each U part is a variable': two parts on the same unknown value are independent variables, so an absent target under invalid conflict gives Indeterminate where correlated parts would give NotApplicable; followed literally until constraints bring the correlation key"}
+{"at": "2026-10-16T23:34:29Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 8.12, "p50_ms": 3.86, "p95_ms": 7.44, "p99_ms": 7.96, "pass": 35, "revision": "000eeb3+dirty", "task": "interpret", "total_ms": 157.6, "unsupported": 362, "vectors": 397}
+{"at": "2026-10-16T23:34:30Z", "diagnostics": 1, "exit": 0, "kind": "check", "ms": 703, "name": "basedpyright"}
+{"at": "2026-10-16T23:34:30Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 42, "name": "ruff"}
+{"at": "2026-10-16T23:34:30Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
+{"at": "2026-10-16T23:34:57Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 574, "name": "basedpyright"}
+{"at": "2026-10-16T23:34:57Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 43, "name": "ruff"}
+{"at": "2026-10-16T23:34:57Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff format"}

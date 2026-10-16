@@ -49,8 +49,11 @@ uv run pytest                                                              # the
 uv run basedpyright                                                        # strict typing (ways-of-working.md §4)
 uv run ruff check . && uv run ruff format --check .                        # Python lint and format (§11)
 uv run rumdl check .                                                       # Markdown lint (§11)
+(cd spikes/clingo-i && uv run pytest && uv run basedpyright \
+  && uv run ruff check . && uv run ruff format --check .)                  # spike clingo-i's own tests and checks
+uv run pytest --backend=clingo-i                                           # the corpus through clingo-i (#9)
 ```
 
 ## Status
 
-Specification and corpus only — no evaluator yet; every expected verdict is hand-derived. Open items are GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), each pointing at the section that holds its source of truth. Next: the semantics program (issue #9, `decisions/0009`) — a generic clingo program over flattened ODRL, the L9 oracle and the test generator, run first over the corpus's authored policies (the correctness strategy is adopted; the enumeration bounds remain open, #42), then the W2/W3 bakeoff on relation-level vectors — Clingo and Elixir first, Python deferred (`decisions/0006`) — then W1 with the Dafny `Den` oracle (#8).
+Specification and corpus only — no evaluator yet; every expected verdict is hand-derived. Open items are GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), each pointing at the section that holds its source of truth. Next: the semantics program (issue #9, `decisions/0009`) — a generic clingo program over flattened ODRL, the L9 oracle and the test generator, run first over the corpus's authored policies (the correctness strategy is adopted; the enumeration bounds remain open, #42). Its spike, `spikes/clingo-i/`, grows by increments (#45–#50): the walking skeleton (#45) answers the 35 vectors without constraints or duties and declines the rest, naming the feature. Then the W2/W3 bakeoff on relation-level vectors — Clingo and Elixir first, Python deferred (`decisions/0006`) — then W1 with the Dafny `Den` oracle (#8).

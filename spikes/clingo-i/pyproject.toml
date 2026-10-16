@@ -1,0 +1,39 @@
+[project]
+name = "clingo-i"
+version = "0.1.0"
+description = "due2 spike clingo-i: the semantics program (decisions/0009), interpret over the corpus"
+requires-python = ">=3.14"
+dependencies = [
+    "clingo>=5.8.2,<5.9",
+    "rdflib>=7.5.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.40.2",
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
+
+[tool.basedpyright]
+include = ["main.py", "clingo_i", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+extend-select = ["ANN", "B", "S", "RUF", "C4", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S603"]  # pytest asserts; the protocol test runs main.py
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-p", "no:cacheprovider"]
