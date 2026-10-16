@@ -1,0 +1,19 @@
+name: Corpus
+description: A missing case, a case-format extension, or a coverage gap (conformance/README.md).
+title: "Corpus: "
+labels: [corpus]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source of truth
+      description: The spec section the case would exercise.
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: What is missing
+      description: The behaviour no case exercises, or the format the corpus cannot express.
+    validations:
+      required: true

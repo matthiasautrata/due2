@@ -31,7 +31,7 @@ class Result:
     task: str
     vector: str
     status: str  # one of STATUSES
-    ms: float | None  # median over repeats; None when unsupported
+    ms: float | None  # median over repeats; None when the task is undeclared
     detail: str  # first mismatch or the error, empty on pass
 
 

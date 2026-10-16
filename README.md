@@ -38,7 +38,7 @@ Documents cite each other by file name (`due2-workflows.md` §5) and decision re
 
 ## Verify
 
-Managed with `uv` and Python 3.14+ (`.python-version`, `pyproject.toml`, which also configures the linters). All must pass before a commit.
+Managed with `uv` and Python 3.14+ (`.python-version`, `pyproject.toml`, which also configures the linters). All must pass before a commit; CI (`.github/workflows/verify.yml`) runs them on every push and pull request (`ways-of-working.md` §14.3).
 
 ```bash
 uv run python tools/check_corpus.py conformance/cases                      # admissibility + case format

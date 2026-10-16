@@ -3,7 +3,8 @@
 `pass`: every repeat matches the expected result. `fail`: some repeat does not (a malformed
 output is a mismatch, and so is an answer that changes between repeats). `error`: the backend
 reported an error, crashed, or broke the protocol. `unsupported`: the task was not declared in
-`ready`, which is never a pass.
+`ready`, or the backend declined the vector and named the feature (`{"unsupported": "recurrence"}`,
+the same on every repeat); never a pass.
 """
 
 from __future__ import annotations
@@ -22,6 +23,13 @@ def run_interpret(session: Session, vector: Vector, repeat: int = 1) -> Result:
         return Result("interpret", vector.id, "unsupported", None, "")
     replies = [session.call("interpret", vector.id, vector.input) for _ in range(repeat)]
     ms = statistics.median(r.ms for r in replies)
+    declined = {r.unsupported for r in replies}
+    if declined != {None}:
+        if len(declined) == 1:
+            return Result(
+                "interpret", vector.id, "unsupported", ms, f"unsupported: {declined.pop()}"
+            )
+        return Result("interpret", vector.id, "fail", ms, "declined on some repeats only")
     for r in replies:
         if r.error is not None:
             return Result("interpret", vector.id, "error", ms, r.error)

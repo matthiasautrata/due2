@@ -1,0 +1,27 @@
+name: Work item or increment
+description: A piece of implementation work; an increment of a larger item is a sub-issue of it (ways-of-working.md §14).
+title: "Work: "
+labels: [work-item]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source of truth
+      description: The spec, decision, and correctness-strategy §4 sections the work renders.
+      placeholder: "`decisions/0009` #3 · `correctness-strategy.md` §4.1"
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design (ways-of-working.md §14.1 step 1)
+      description: Scope; the vectors it turns green (case list or -k expression); what it declines; the tests it adds that the corpus cannot see.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: The gate. Always includes README § Verify and the component's own checks.
+    validations:
+      required: true

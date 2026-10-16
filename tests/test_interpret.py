@@ -17,5 +17,5 @@ def test_interpret(
     result = run_interpret(session, vector, cast(int, request.config.getoption("repeat")))
     record.append(result)
     if result.status == "unsupported":
-        pytest.skip("interpret not declared")
+        pytest.skip(result.detail or "interpret not declared")
     assert result.status == "pass", result.detail

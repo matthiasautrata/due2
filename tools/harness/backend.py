@@ -7,6 +7,7 @@ per request on stdout:
   -> {"init": {...}}                          <- {"ready": {"tasks": ["interpret", ...]}}
   -> {"id": ..., "task": ..., "input": {...}} <- {"id": ..., "output": {...}}
                                                | {"id": ..., "error": "..."}
+                                               | {"id": ..., "unsupported": "<feature>"}
 
 Timing is wall clock, measured here, the same way for every backend: startup is spawn
 to `ready` (it includes loading the profile modules); a call is write to reply.
@@ -78,6 +79,7 @@ class Reply:
     output: Json | None
     error: str | None
     ms: float
+    unsupported: str | None = None  # the feature the backend declines this vector for
 
 
 class BackendCrashed(Exception):
@@ -148,6 +150,11 @@ class Session:
             return Reply(None, f"protocol: reply id {reply.get('id')!r} for {vid!r}", ms)
         if "error" in reply:
             return Reply(None, as_str(reply["error"], "error"), ms)
+        if "unsupported" in reply:
+            feature = as_str(reply["unsupported"], "unsupported")
+            if not feature:
+                return Reply(None, "protocol: unsupported names no feature", ms)
+            return Reply(None, None, ms, feature)
         return Reply(reply.get("output"), None, ms)
 
     def close(self) -> None:

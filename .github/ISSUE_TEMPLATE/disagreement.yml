@@ -1,0 +1,33 @@
+name: Disagreement
+description: An implementation and a hand-derived verdict disagree (correctness-strategy.md §6). Never edit the expected verdict to pass.
+title: "Disagreement: "
+labels: [verification]
+body:
+  - type: input
+    id: vector
+    attributes:
+      label: Vector
+      placeholder: "<case>/<scenario>"
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Expected and observed
+      description: The expected result, the implementation's result, and the backend and revision.
+    validations:
+      required: true
+  - type: textarea
+    id: rederivation
+    attributes:
+      label: Re-derivation by hand
+      description: From workflows §5–§6, citing the sections. Which side is wrong, and why.
+  - type: dropdown
+    id: resolution
+    attributes:
+      label: Resolution
+      options:
+        - Not yet triaged
+        - The spec is wrong (spec edit, decision record if load-bearing)
+        - The case is wrong (rewrite its why, note in notes)
+        - The implementation is wrong (fix, plus a test that pins it)

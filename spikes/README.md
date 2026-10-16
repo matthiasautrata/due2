@@ -46,9 +46,10 @@ The harness starts `command` once per test run and talks JSON lines over stdin a
 <- {"ready": {"tasks": ["interpret"]}}
 -> {"id": "<case>/<scenario>", "task": "interpret", "input": {...}}
 <- {"id": "<case>/<scenario>", "output": {...}}   or   {"id": ..., "error": "..."}
+                                                 or   {"id": ..., "unsupported": "<feature>"}
 ```
 
-`init` carries every shipped profile module once: `core` is always loaded, and `profiles` lists the modules a policy's `odrl:profile` IRI selects (`tools/check_corpus.py` `CORE`, `MODULES`). `ready.tasks` declares what the spike implements. A task it does not declare is reported as unsupported, never as a pass. A crash, a timeout (60 s per call, 120 s to `ready`), or a reply with the wrong `id` counts as an error, and the harness restarts the backend.
+`init` carries every shipped profile module once: `core` is always loaded, and `profiles` lists the modules a policy's `odrl:profile` IRI selects (`tools/check_corpus.py` `CORE`, `MODULES`). `ready.tasks` declares what the spike implements. A task it does not declare is reported as unsupported, never as a pass. A spike that declares a task but cannot yet meet one vector declines it with `unsupported` and names the feature (`"recurrence"`, `"deadline"`): the vector is reported unsupported with that reason, never as a pass, and the same reply must come on every repeat. Declining is how a spike grows by increments (`ways-of-working.md` §14) and still runs green: every vector it does answer must pass. A spike declines only a feature it does not implement, and the scorecard's unsupported count shows the rest. A crash, a timeout (60 s per call, 120 s to `ready`), or a reply with the wrong `id` counts as an error, and the harness restarts the backend.
 
 ### `interpret`
 

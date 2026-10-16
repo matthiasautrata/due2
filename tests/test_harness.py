@@ -179,6 +179,7 @@ def test_empty_backend_fails_every_vector(tmp_path: Path, vectors: list[Vector],
     ("mode", "status", "fragment"),
     [
         ("none", "unsupported", ""),
+        ("decline", "unsupported", "unsupported: recurrence"),
         ("error", "error", "not implemented"),
         ("crash", "error", "crash: backend exited"),
         ("wrong-id", "error", "protocol: reply id"),

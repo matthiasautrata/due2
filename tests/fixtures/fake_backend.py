@@ -6,6 +6,7 @@
   from the case file — every vector must pass, which shows the protocol and the comparator agree.
 - `empty`: answers `{}` — every vector must fail, which shows a wrong answer is caught.
 - `none`: declares no tasks — every vector is unsupported, never a pass.
+- `decline`: declines every call, naming a feature — every vector is unsupported, never a pass.
 - `error`: answers every call with an error.
 - `crash`: exits on the first call.
 - `wrong-id`: answers with another request's id.
@@ -38,6 +39,8 @@ def main(mode: str) -> None:
                 reply = {"id": vid, "output": expected(inp["case"], inp["scenario"])}
             elif mode == "empty":
                 reply = {"id": vid, "output": {}}
+            elif mode == "decline":
+                reply = {"id": vid, "unsupported": "recurrence"}
             elif mode == "error":
                 reply = {"id": vid, "error": "not implemented"}
             else:

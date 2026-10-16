@@ -301,7 +301,7 @@ Contents:
 
 Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
 
-**Tracking.** Open items are recorded as GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`); each issue names its source-of-truth section. This convention is stated here once and covers every open-decision register — this one, `due2-workflows.md` §9, `due2-profiles.md` §9, `ways-of-working.md` §13, `correctness-strategy.md` §9: a register remains the specification record, a resolution lands in it, and the issue closes. The execution-target cluster (#8) covers ways-of-working §13 #10/#11/#13.
+**Tracking.** Open items are recorded as GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`); each issue names its source-of-truth section. This convention is stated here once and covers every open-decision register — this one, `due2-workflows.md` §9, `due2-profiles.md` §9, `ways-of-working.md` §13, `correctness-strategy.md` §9: a register remains the specification record, a resolution lands in it, and the issue closes. Sub-issues, milestones, and the development cycle are `ways-of-working.md` §14. The execution-target cluster (#8) covers ways-of-working §13 #10/#11/#13.
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|

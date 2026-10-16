@@ -3,7 +3,7 @@
 **Status:** Draft v0.3
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes, 2026-10-16:** §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11. New §7.4: one shared suite for every spike (`spikes/README.md`); §11's basedpyright scope extended to `tests/`.
+**Changes, 2026-10-16:** new §14 — the development cycle (design, docs, test, code, verify), the backlog's structure (sub-issues, milestones), branches, and CI; §12 step 9 is done. §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11. New §7.4: one shared suite for every spike (`spikes/README.md`); §11's basedpyright scope extended to `tests/`.
 
 **Changes in v0.3:** new §2.4 — RDF at the boundary: parse and emit at the edges, plain frozen structures everywhere between.
 
@@ -321,7 +321,7 @@ Each step is independently valuable. Stop wherever marginal cost exceeds the def
 6. beartype in test environments
 7. Contracts on kernel public functions (§6)
 8. Backend-parameterised conformance suite, single backend (§10.2)
-9. Tiering formalised in CI (§8)
+9. Tiering formalised in CI (§8) — done 2026-10-16 for the PR tier (§14.3)
 10. CrossHair on pure predicates; mutation gate on the kernel
 11. Dafny investigation — oracle mode only, targeting semantic preservation (§9)
 
@@ -350,3 +350,34 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume |
 | 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus. Amended 2026-10-16 by `decisions/0009`: the direct interpreter is a clingo program, not Python; the §7.1 principle — maintain a direct rendering of the semantics — is unchanged |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option |
+
+---
+
+## 14. Development cycle and backlog **[D]** (2026-10-16)
+
+### 14.1 The cycle
+
+Every change to a component is an increment, and every increment takes five steps in order: design, docs, test, code, verify. Each step leaves something in the repository. A step with nothing to leave is skipped, and the commit says so.
+
+1. **Design.** Name the spec sections the increment renders and the decisions it rests on. Anything the spec leaves open stops here and becomes an `open-decision` issue (spec before code). The increment's issue states its scope, the vectors it turns green, what it declines, and its done-gate. For a component without a `correctness-strategy.md` §4 entry, writing that entry is this step.
+2. **Docs.** The design lands as text before code: a spec edit (with a decision record if it is load-bearing), or the component's own design notes. For a spike these are in `spikes/<name>/DESIGN.md`: its structure, its internal interfaces (for clingo-i, the fact schema), and what it declines and why.
+3. **Test.** The tests exist, and fail or are declined, before the code. The corpus vectors are already written (§7.4). The increment adds what the corpus cannot see — unit tests, Hypothesis properties, tables checked exhaustively — to the component's own suite. The implementer never adds or changes a shared vector (`spikes/README.md`, Rules); a missing vector becomes a `corpus` issue.
+4. **Code.** The smallest change that turns the targeted tests green. A vector the code cannot yet meet is declined by feature (`spikes/README.md`, Protocol), not left to fail.
+5. **Verify.** README § Verify and the component's own checks pass: for a spike, its `backend.toml` checks and `uv run pytest --backend=<name>`. A disagreement with a hand-derived verdict is triaged under `correctness-strategy.md` §6 before the increment closes, and never edited to pass. A spike journals its session, attempts, and bugs, and runs `spike_journal.py check`. The commit cites the issue and is pushed, and the issue closes citing the commit.
+
+**Increments are vertical.** The first increment is a walking skeleton: it runs end to end through every layer for the simplest vectors and declines everything else by feature. Each later increment widens one feature and turns its vectors from unsupported to pass. The scorecard's unsupported count only goes down. A commit that raises it says why.
+
+### 14.2 The backlog
+
+- **Issues** follow the convention of `due2-architecture.md` §11: one issue per open item, labelled, each naming its source-of-truth section. The issue templates in `.github/ISSUE_TEMPLATE/` ask for that section.
+- **Sub-issues.** A work item too large for one increment is a parent issue with one GitHub sub-issue per increment. The parent holds the done-gate. Each sub-issue holds its increment's design summary (step 1) and closes on the commit that meets it.
+- **Milestones** are deliverables with a done-gate, scheduled in the order of `CLAUDE.md` Next. An issue in no milestone is backlog, not scheduled.
+- **`parked`** marks an item deferred until a named condition, which the issue states.
+- **Scope.** A finding outside the increment's scope becomes an issue, not part of the increment.
+
+### 14.3 Branches and CI
+
+- **Trunk-based.** The owner commits to `main`, and every commit on `main` passes. Work that does not pass stays on a branch.
+- **Other contributors use pull requests.** A change written by another model or agent (Hermes, Agy, a delegated worker) arrives as a pull request and is reviewed before it merges; it is never pushed to `main` directly. The first version of `decisions/0009`, pushed directly, is why. The pull-request template carries the checklist of §14.1.
+- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic and well under five minutes (34 s locally, 2026-10-16). A spike's checks and corpus run join it as a job of their own when the spike's toolchain lands. The slow tier's trigger remains §13 #8.
+- **Supply chain.** Actions are pinned by commit SHA. Dependabot proposes updates to the actions and the uv lock monthly, grouped, and each update passes CI like any other change.

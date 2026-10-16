@@ -1,0 +1,20 @@
+name: Open decision
+description: A question the spec leaves open (an [O] item or a register row).
+title: "Open: "
+labels: [open-decision]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source of truth
+      description: The section that records the item; a resolution lands there (due2-architecture.md §11).
+      placeholder: "`due2-workflows.md` §9 #3"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question and alternatives
+      description: What is open, the alternatives the section lists, and what blocks the choice.
+    validations:
+      required: true
