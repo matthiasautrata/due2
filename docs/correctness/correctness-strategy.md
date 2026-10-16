@@ -224,11 +224,12 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 2. ~~Case-format extension for negative cases~~ (done 2026-10-11).
 3. The status matrix and Kleene truth tables, as data. They are spec as much as tests, and `I` uses them first.
 4. Slow `I` (issue #9). Run the corpus and triage per §6. Fast `I` follows once W3's computation is specified in code form.
-5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
-6. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
-7. W1 stage 2, gated by L9 against `I`.
-8. W2, then W3, each gated as in §4.4 and §4.5.
-9. The ledger data model (§4.7), then the ledger, gated by the stateful machine.
+5. The W2/W3 backend bakeoff (`decisions/0006`): the collection encoding (issue #3), relation-level vectors, the brute-force W3, then Python, Elixir, and Clingo, each gated as in §4.4 and §4.5 as far as relation-level vectors reach.
+6. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
+7. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
+8. W1 stage 2, gated by L9 against `I`.
+9. The surviving W2/W3 backends on the full corpus through W1, completing the §4.4 and §4.5 gates.
+10. The ledger data model (§4.7), then the ledger, gated by the stateful machine.
 
 ---
 

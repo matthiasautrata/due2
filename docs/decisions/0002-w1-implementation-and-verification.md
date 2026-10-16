@@ -48,6 +48,8 @@ Clarification 2 above is superseded in part. `due2-workflows.md` v0.6 completes 
 
 **Note (2026-10-11):** the hoisting this amendment cites is withdrawn by `decisions/0003`; duty guards now stay on the duty. Canonical literals remain in force for `xone`, `dprod:not`, and authored complements, and the motivating case is `due2-xone-unknown`. The Dafny scope above loses "hoisting" from stage 2's rewriting.
 
+**Note (2026-10-16):** `decisions/0006` exercises #5's carve-out: Clingo, with Python and Elixir, is a candidate W2/W3 backend in a bakeoff under the conformance suite. #1 holds until an adoption record.
+
 ## Revisit when
 
 - Dafny's automation stalls on the stage-1 obligations (timeouts, solver-version sensitivity) → adopt OCaml + Why3, same oracle scope.

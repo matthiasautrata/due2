@@ -15,11 +15,12 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | **`docs/design/`** | **What due2 is, why, and the alternatives weighed** |
 | `docs/design/due2-architecture.md` | What due2 is and why; reading order and glossary (§0) |
 | `docs/design/implementation-alternatives.md` | The 2026-10-10 W1 alternatives review: Python+Dafny, Lean, Clingo, OCaml+Why3 — what each buys, why the documented path stands, what triggers revisiting |
+| `docs/design/implementation-alternatives-ii.md` | The 2026-10-16 host comparison: the standing Python path vs an Elixir/BEAM host with a rented Rust door — decision rule and flip triggers |
 | `docs/design/mds-vendor-contracts.md` | Turning MDS vendor contracts into internal policies: approach and decisions (parked, issue #24) |
 | **`docs/correctness/`** | **How we know it is right** |
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
-| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti |
+| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti · 0006 W2/W3 backend bakeoff |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus — RL2 use cases, DPROD examples, translations of other evaluators' suites (`force-`, `oval-`, `w3c-fs-`), and due2-native cases (`due2-`) — with scenarios and hand-derived expected verdicts; coverage gaps in its `README.md` |
 | `conformance/odrl22-shape.ttl` | due2's SHACL encoding of the ODRL Information Model 2.2 — validates authored policies (compact and compound forms included), every constraint cited to its IM section |
@@ -48,4 +49,4 @@ uv run rumdl check .                                                       # Mar
 
 ## Status
 
-Specification and corpus only — no evaluator yet; every expected verdict is hand-derived. Open items are GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), each pointing at the section that holds its source of truth. Next: adopt the correctness strategy (`docs/correctness/correctness-strategy.md` §9), then the L9 oracle, a Python direct interpreter over the authored form that runs the corpus (issue #9), then the Dafny `Den` oracle (#8).
+Specification and corpus only — no evaluator yet; every expected verdict is hand-derived. Open items are GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), each pointing at the section that holds its source of truth. Next: adopt the correctness strategy (`docs/correctness/correctness-strategy.md` §9), then the L9 oracle, a Python direct interpreter over the authored form that runs the corpus (issue #9), then the W2/W3 backend bakeoff — Python, Elixir, Clingo — on relation-level vectors (`decisions/0006`), then W1 with the Dafny `Den` oracle (#8).

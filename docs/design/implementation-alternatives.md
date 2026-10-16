@@ -1,7 +1,7 @@
 # due2 — Implementation Alternatives: W1 and the Verification Track
 
 **Status:** Record of the 2026-10-10 alternatives review; normative decisions live in `decisions/0002-w1-implementation-and-verification.md`
-**Companions:** `due2-architecture.md` (§2, §9–§10) · `due2-workflows.md` (§4, §8) · `odrl-compound-to-atomic-normalization.md` (§5, §8.1) · `ways-of-working.md` (§5.1, §9–§10)
+**Companions:** `due2-architecture.md` (§2, §9–§10) · `due2-workflows.md` (§4, §8) · `odrl-compound-to-atomic-normalization.md` (§5, §8.1) · `ways-of-working.md` (§5.1, §9–§10) · `implementation-alternatives-ii.md` (the sequel: the host question, 2026-10-16)
 
 This document records which technologies were considered for implementing and verifying W1 — the pipeline's highest-risk step — what each would have bought, why the documented path stands, and what would trigger revisiting each alternative. It exists so the choice is visible as considered, not defaulted. Four candidates were examined in depth: the documented path (Python + Dafny), Lean, Clingo/ASP, and OCaml + Why3. Three more (Kotlin, Flix, Soufflé) were considered and set aside.
 
@@ -137,6 +137,7 @@ The underlying principle: *executability confers no authority; proved or tested 
 - The conformance suite's backend parameterisation remains the standing obligation (`ways-of-working.md` §10.2): a second backend must port a parser, not a semantics.
 - The DPROD `Indeterminate`-on-`invalid` alternative and the exact shared-fact completion remain open as before (`due2-workflows.md` §9) — unaffected by this review.
 - Whether the MDS project proceeds at all decides its clingo candidate's fate, not this review.
+- The host question — the standing Python path vs an Elixir/BEAM alternative under changed assumptions (human-primary authoring, multi-user deployment, no tooling limits) — is the sequel's: `implementation-alternatives-ii.md`. This review's scope was W1's vehicle.
 
 ---
 
