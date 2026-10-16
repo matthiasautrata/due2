@@ -33,7 +33,7 @@ The comparison is a host comparison, not a semantics comparison. Everything norm
 - the backend-parameterised conformance suite (`ways-of-working.md` §10.2);
 - the `tools/` checkers — corpus admissibility, SHACL validation (`pyshacl`), the completion check — which are dev-time tooling, not runtime: RDF lives in the one boundary adapter `ways-of-working.md` §2.4 already quarantines, so a host flip ports the runtime's lift and never touches the checkers.
 
-That is not luck; it is the payoff of the three commitments §10.2 records (pure hot function, language-neutral normal form, suite parameterised from day one). A host flip is a port of a parser and a shell — the "second backend that ports a parser, not a semantics" the first review §10 promised to keep cheap. The constitution travels; the host is replaceable.
+That is not luck; it is the payoff of the three commitments `ways-of-working.md` §10.2 records (pure hot function, language-neutral normal form, suite parameterised from day one). A host flip is a port of a parser and a shell — the "second backend that ports a parser, not a semantics" the first review §10 promised to keep cheap. The constitution travels; the host is replaceable.
 
 ---
 
@@ -102,7 +102,7 @@ Read under the standing assumptions, Python wins the axes that are the product �
 ## 7. The verdict, as a decision rule
 
 - **Under the standing assumptions (LLM-primary authoring, single-user governance scale, bank register): the Python path is better, and the margin is structural.** The correctness strategy is the product; its factory is Python; three instruments already gate commits. Codability, initially scored for Python on fluency, is now the weaker half of that case: the benchmarked function-completion evidence runs Elixir's way, caveated (§3), and what remains Python's — repo-scale familiarity with the instrument stack, library breadth — is what incumbency already provides. Every hour spent re-deriving the test tier is an hour not spent on #9, #25, #30.
-- **Under the changed assumptions (human-primary author, multi-user a real requirement, no tooling limits): the BEAM host is better.** `ways-of-working.md` §2.2 is OTP's thesis with a runtime to enforce it; the shell stops being the risk center. Postgres arrives with the multi-user requirement under either host; what the BEAM adds is the operability around it — supervision, delivery, the console, latency headroom. The flip costs a parser-and-shell port, not a rewrite, because §10.2 held.
+- **Under the changed assumptions (human-primary author, multi-user a real requirement, no tooling limits): the BEAM host is better.** `ways-of-working.md` §2.2 is OTP's thesis with a runtime to enforce it; the shell stops being the risk center. Postgres arrives with the multi-user requirement under either host; what the BEAM adds is the operability around it — supervision, delivery, the console, latency headroom. The flip costs a parser-and-shell port, not a rewrite, because `ways-of-working.md` §10.2 held.
 - **What never flips with it:** corpus, laws, workflows, the `Den` oracle plan, measurement-first, backend parameterisation. The constitution travels.
 
 ---

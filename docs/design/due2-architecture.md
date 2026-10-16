@@ -1,15 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.6
+**Status:** Draft v0.7
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.6:** duty timing landed in the corpus and is computed by W2, which restores W3 purity and the completion shortcut of `due2-workflows.md` §6.4 (§3.1, §5.3 there); DPROD's example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the conformance corpus (§10). Readability: new §0 orientation (reading order, glossary, worked example); **SOTW** and **atom** glossed at first use (§1, §3); the representation story stated once — lifted tree in W1 stage 1, relations everywhere after (`due2-workflows.md` §4); external §-references named (RL2 legend in §8.2, DPROD legend in `due2-profiles.md` §8.2).
-
-**Changes, 2026-10-11** (`decisions/0003`): conditional-duty hoisting withdrawn — guards stay on the duty and W2 evaluates them (§4 item 5); the blowup budget loses its conditional-duty term; register #3 resolved, #2 narrowed. Register #4 resolved: a void policy contributes nothing (§6.2).
-
-**Coherence updates, 2026-10-10** (after `decisions/0002`): §6.2's absent conflict term takes a selected profile's declared default first (normalisation spec §3); §4 item 1 states fill-only-unstated interiorisation (normalisation spec §6.2); §10's preservation property restated as the refinement of workflows §8 L9, its direct-interpreter slot resolved by the `decisions/0002` amendment — a Python direct interpreter over the lifted form; reading order gains `implementation-alternatives.md`.
-
-**Changes in v0.5:** witness reads made explicit, so a request-source duty condition is a guard (§4 item 5); a duty that is both an obligation and a precondition (§4 items 4–5); §8.2 records what was harvested from RL2, and §8.3 DPROD Contracts; decision record `decisions/0001-rl2-as-donor.md`. v0.4 introduced profiles and operand bindings (`due2-profiles.md`), anonymous rules (§3.1), guard-only hoisting, obligations in force reported with the access answer (§6.3), and the conformance corpus (§10).
+**Changes in v0.7** (2026-10-16): the tracking convention for every open-decision register is stated here, once (§11); the DPROD relation is marked provisional against the vendored commit, pending upstream PRs (§8.3). **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -265,7 +259,7 @@ Sources for open items:
 
 ### 8.3 DPROD Contracts
 
-DPROD Contracts (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`) is an ODRL 2.2 profile for data contracts with deterministic evaluation — much of RL2's intent, expressed the way ODRL intends. due2 handles it as a profile, with no translation: its operand bindings are due2's (`due2-profiles.md` §3), and its other terms land on due2's extension points (§8.1 there). Where DPROD returns a decision, due2 returns the same one, outside six documented exceptions; where DPROD fails, due2 still decides when the unknowns cannot change the outcome (§8.2 there). Testing DPROD's examples also found gaps in DPROD itself, listed there for upstream.
+DPROD Contracts (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`) is an ODRL 2.2 profile for data contracts with deterministic evaluation — much of RL2's intent, expressed the way ODRL intends. due2 handles it as a profile, with no translation: its operand bindings are due2's (`due2-profiles.md` §3), and its other terms land on due2's extension points (§8.1 there). Where DPROD returns a decision, due2 returns the same one, outside six documented exceptions; where DPROD fails, due2 still decides when the unknowns cannot change the outcome (§8.2 there). Testing DPROD's examples also found gaps in DPROD itself, listed there for upstream. Everything adopted from DPROD is provisional against the vendored commit, pending a stack of upstream PRs (`due2-profiles.md` §8, issue #35).
 
 ---
 
@@ -307,7 +301,7 @@ Contents:
 
 Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
 
-**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`); the execution-target cluster (#8) covers ways-of-working §13 #10/#11/#13. This register remains the specification record: a resolution lands here, and the issue closes.
+**Tracking.** Open items are recorded as GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`); each issue names its source-of-truth section. This convention is stated here once and covers every open-decision register — this one, `due2-workflows.md` §9, `due2-profiles.md` §9, `ways-of-working.md` §13, `correctness-strategy.md` §9: a register remains the specification record, a resolution lands in it, and the issue closes. The execution-target cluster (#8) covers ways-of-working §13 #10/#11/#13.
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|

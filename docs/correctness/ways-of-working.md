@@ -3,6 +3,8 @@
 **Status:** Draft v0.3
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
+**Changes, 2026-10-16:** §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11.
+
 **Changes in v0.3:** new §2.4 — RDF at the boundary: parse and emit at the edges, plain frozen structures everywhere between.
 
 **Coherence updates, 2026-10-10:** §9's blocker resolved — Dafny is installable here, and `decisions/0002` records the track (register #9, #12); §7.1's preservation property restated as the refinement of `due2-workflows.md` §8 L9, whose L9 oracle is a direct interpreter over the lifted (authored) form.
@@ -327,7 +329,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 
 **Provisional picks.** #1, #2, #3, #5, #6, and #7 were settled on 2026-10-11 for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
 
-**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`); #1–#8 below are one implementation-start checklist issue, and #10/#11/#13 belong to the execution-target cluster. This register remains the specification record: a resolution lands here, and the issue closes.
+**Tracking.** As `due2-architecture.md` §11, stated once there. Of the implementation-start checklist, #4 and #8 remain open (issue #23); #10/#11/#13 belong to the execution-target cluster (issue #16).
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|

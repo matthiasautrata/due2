@@ -1,6 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** Draft v0.3, 2026-10-11. Every item that is new here is marked **[O]** until adopted.
+**Status:** v0.4, 2026-10-16 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+
+**Changes in v0.4** (2026-10-16): §8 step 1 restated — the strategy is adopted, and the one open item (#10) is set at step 6; the register-tracking convention is stated once in `due2-architecture.md` §11.
 
 **Changes in v0.3:** `I` comes in two modes, slow first (§3); the disagreement protocol (§6) and the generator coverage check (§5) adopted.
 
@@ -214,7 +216,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 ## 8. Sequence
 
-1. Settle the open items of §9.
+1. ~~Settle the open items of §9.~~ Adopted 2026-10-11; the remaining item, #10, is set at step 6 by measurement.
 2. ~~Case-format extension for negative cases~~ (done 2026-10-11).
 3. The status matrix and Kleene truth tables, as data. They are spec as much as tests, and `I` uses them first.
 4. Slow `I` (issue #9). Run the corpus and triage per §6. Fast `I` follows once W3's computation is specified in code form.

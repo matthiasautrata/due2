@@ -1,11 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.5
+**Status:** Draft v0.6
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.5:** set-based operators follow the Vocabulary (§3.16.7–3.16.12, §3.14.7): `isPartOf`, `hasPart`, and `isA` take a list right operand, read after Salas and Pareti et al. (2025), and a policy that uses one gets the warning `ContestedOperatorReading` (§4; `decisions/0005`).
-
-**Changes in v0.4:** duty timing landed — `deadline` and `recurrence` are corpus fields and W2 computes the effective deadline, the per-instance status, and the occurrences (`due2-workflows.md` §3.1, §5.3); §7 now fixes the vocabulary's readings and points there for the computation, replacing its own status table; violation is derived, not remembered, against DPROD's terminal `Violated` (§7); the DPROD example policies are vendored under `profiles/vendor/dprod/examples/` and incorporated into the corpus (§8.1). v0.3: a witness source replaces the request source's double reading inside duties (§3); duration kinds (§4); `rdf:type` for `isA` and parties of a duty with both roles (§6); activation defaults to first owed, recurring instances bounded below, anchor rule restated (§7); DPROD exception 6 and the duty-condition correction (§8.2); not-yet-open windows registered (§9).
+**Changes in v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context term is corrected to `dprod:currentAgent`; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -17,7 +15,7 @@ ODRL is extended through profiles. due2 must evaluate a profile's terms **withou
 
 Two sources are harvested rather than reinvented:
 
-- **DPROD Contracts** (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`, commit `50db943`) — an ODRL 2.2 profile for data contracts with deterministic evaluation. Its operand bindings are adopted verbatim, so a DPROD policy is a due2 policy without translation (§8).
+- **DPROD Contracts** (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`, commit `50db943`) — an ODRL 2.2 profile for data contracts with deterministic evaluation. Its operand bindings are adopted verbatim, so a DPROD policy is a due2 policy without translation (§8). The commit is pinned, and a stack of upstream PRs is pending: everything due2 adopts from DPROD is provisional against it, and deferred for adjustment when they land (§8, §9 #7, issue #35).
 - **RL2** (`github.com/matthiasautrata/RL2`) — typed operands, fact resolution, admissibility and freshness, typed profile operators, duty windows.
 
 ---
@@ -70,7 +68,7 @@ ex:purpose a odrl:LeftOperand ;
 
 | Context property | Value |
 |---|---|
-| `dprod:agent` | the request subject (`request_party` with `odrl:assignee`) |
+| `dprod:currentAgent` | the request subject (`request_party` with `odrl:assignee`) |
 | `dprod:clock` | `sotw.effective_at` — decision time |
 | `due2:actionTime` | the instant of the action being evaluated: `request.at` for a rule matched against the request, the witness's `occurred_at` inside a duty's constraints (`due2-workflows.md` §5.3) |
 
@@ -182,6 +180,8 @@ Both land in the corpus (`due2-workflows.md` §3.1, `duty`), projected by W1 sta
 
 ## 8. DPROD Contracts compatibility **[D]**
 
+**Provisional against upstream [F]** (2026-10-16, issue #35). DPROD is vendored at commit `50db943` of `develop`, and a stack of upstream PRs (EKGF/dprod#275, PRs #264–#282) may still move the ontology — schedules, operand sources, duty-action refinements, offer applicability. Everything due2 adopts from DPROD — the binding vocabulary (§3), `dprod:not` (§5), roles and timing (§6–§7), the term table and the six exceptions below — is decided *as of that commit* and is deferred for adjustment when the stack lands: re-vendor, re-run both checkers, re-derive the `dprod-*` scenarios, and edit the affected rows. due2's own semantics — the Kleene discipline, the fail-safe reading — is not in scope for adjustment; only the adopted terms and the claims about DPROD's behaviour are.
+
 ### 8.1 Term by term
 
 With `profiles/dprod.ttl` selected:
@@ -241,13 +241,14 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 
 ## 9. Open decisions
 
-**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`). This register remains the specification record: a resolution lands here, and the issue closes.
+**Tracking.** As `due2-architecture.md` §11, stated once there.
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
 | 1 | General mechanism for profile operators | §4 | First operator that cannot be reduced |
-| 2 | Whether instances beyond `effective_at` — not yet owed — are ever generated and reported, and under what horizon | §7 | First recurring duty where the future window matters |
+| 2 | Duty windows beyond `effective_at`: whether not-yet-owed instances are generated and reported, under what horizon; and the state of an obligation in force whose window has not opened — today reported `outstanding` | §7 | A real duty with a future window (issue #18) |
 | 3 | Bearer default for policy-level obligations without a bearer | §6 | Survey of real obligations |
 | 4 | Maintain duties and Promises | §7 | A real policy that needs one |
-| 5 | A not-yet-owed state for an obligation in force whose window has not opened (RL2's `Pending` before the window starts); today it is reported `outstanding` | §7 | A real duty with a future window |
+| 5 | ~~A not-yet-owed state for an obligation in force whose window has not opened~~ merged into #2 (issue #18) | §7 | — |
 | 6 | Witness conditions via duty-action refinements | §3 | **Resolved 2026-10-11:** `due2-core` binds `odrl:payAmount` to `due2:witnessSource`. `due2:witnessSource` stays; request and evidence parameters stay separate collections. Evidence: OVAL `duty1-3`, W3C CG C1/C2 (`oval-duty-payment`, `w3c-fs-c1`, `w3c-fs-c2`, `due2-conditional-duties`) |
+| 7 | DPROD upstream stabilization: every DPROD-derived adoption (§3, §5–§7, §8) is provisional against vendored commit `50db943` | §8 | Upstream PRs landing (EKGF/dprod#275, PRs #264–#282) — re-vendor, re-run both checkers, re-derive the `dprod-*` scenarios (issue #35) |

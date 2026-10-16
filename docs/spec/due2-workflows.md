@@ -1,31 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.15
+**Status:** Draft v0.16
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.15** (2026-10-16): the ledger data model is decided (§7.1, `decisions/0008`). A request opens one case; facts, evidence, activations, and evaluations are events on it. The SOTW evolves within the case, so `sotw` loses its `revision` field (§3.3).
-
-**Changes in v0.14** (2026-10-16, `decisions/0007`): the concrete canonical encoding of collections is decided, JCS JSON arrays hashed with SHA-256 (§2; was §9 #1). Canonical N-Quads stay the stage-1 artifact, which is a graph.
-
-**Changes in v0.13** (2026-10-13): the SOTW is the case's snapshot of the world. A pure sweep, `plan`, lists from the corpus's operand bindings and the request what an evaluation will read; the shell records the answers in the case before W2 runs, and nothing is fetched during evaluation. The case records answers, never the datasets behind them; world hierarchy edges are limited to those above the request's entities; a read limit bounds the plan (§3.3).
-
-**Changes in v0.12** (2026-10-13): terminology. A *case* is created when a request is made and accumulates its history; an *evaluation* is one run of W2 and W3 over it, identified by the digest of its four inputs. Earlier versions called that input tuple the case. The trace relation `case` is now `evaluation` (§3.5, §7, L1).
-
-**Changes in v0.11** (2026-10-11): an evaluation that crashes answers with an error outcome, never a verdict. The ledger records it, and replay reproduces it (§7, `ways-of-working.md` §2.2).
-
-**Changes in v0.10** (2026-10-11): W1's diagnostics get a registry (`due2-diagnostics.md`) and a place in the data model. A rejection returns every error of the first failing stage and no output (§4); a warning travels in the corpus (`diagnostic`, §3.1) and into the trace of every case that evaluates the policy (§3.5).
-
-**Changes in v0.9** (2026-10-11, `decisions/0004`): `frontier_complete` gets a computation, bounded enumeration over the relevant unknowns with a new W3 limit, `max_frontier_vars`; beyond it the flag is false and `verdict.exact` false (§6.4, §3.5).
-
-**Changes in v0.8** (2026-10-11): a request may omit its target; the relation part is then `U`, as an absent match-key party already is (§3.2, §5.2; was §9 #8). A void policy contributes nothing — decided (§6.2).
-
-**Changes in v0.7** (2026-10-11, `decisions/0003`): conditional-duty hoisting withdrawn. A precondition's guards stay on the duty and W2 evaluates them as a fourth predicate, `owed` (§5.1, §5.2); W3's outstanding and unknown sets read `owed ∧ ¬fulfilled` (§6.1); `owed` is completed like a prohibition (§6.4 proof). The dual-role special case collapses into one mechanism (§5.2). Canonical literals stay: `xone`, authored complements, and guard literals shared with rule constraints still create correlated parts. The motivating case is now `due2-xone-unknown` (§6.4). L9 loses the hoisting rewrite (§8).
-
-**Changes in v0.6** (2026-10-11): completions range over canonical literals, not findings (§6.4). Complementary constraint parts share one variable, so the correlations W1 introduces — conditional-duty hoisting, `xone` — no longer widen the verdict to `Indeterminate`, and L9 is an equality again under unknowns, up to a bound (§8). The verdict records whether it was computed exactly (`exact`, §3.5); W3 reads the basis (§6). #6 narrowed to non-complementary parts over one fact (§9). Motivating case: `conformance/cases/w3c-fs-c2`.
-
-**Changes in v0.5:** duty timing landed — `deadline` and `recurrence` are corpus fields (§3.1), W2 computes the effective deadline and a per-instance status (§5.3, following DPROD `formal-semantics.md` §5.2–5.5), the trace's `instance` carries occurrence and status (§3.5), W3 reads the status and never re-derives it, a violated precondition removes its candidate (§6.1), and the §6.4 proof covers timing. RDF confined to the boundary (appendix; ways-of-working §2.4).
-
-**Changes in v0.4:** after the full corpus sweep (`conformance/`): witness conditions read a dedicated witness source, so a request-source duty condition is a guard, as in DPROD (§5.2, §5.3); a duty with both roles keeps its guards for its root role and has one `fulfilled` finding (§5.2, §5.3); witnesses are performed by the duty's bearer (§5.3); obligation status tabulated (§6.1); why a violation acts as a prohibition rather than DPROD's later check (§6.4); `rdf:type` edges for `isA` in the closure (§3.1); §5.5 aligned with §5.2.
+**Changes in v0.16** (2026-10-16): §7.1 — an evaluation is recorded once, in `evaluation`, which shares the case's `seq` counter with `event`; `event` carries only the content kinds (fact, evidence, activation), and an evaluation's request is its case's, not repeated (§3.5 names all four input ids). **History:** v0.5–v0.15 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -474,8 +452,8 @@ evaluation  (case_id, seq | corpus, sotw, config, pins, trace?, verdict?, error?
 | Relation | Meaning |
 |---|---|
 | `case` | One per request. `case_id` is assigned by the shell. |
-| `event` | `seq` counts from 1, in the order the shell recorded events. `kind ∈ {fact, evidence, activation, evaluation}`; `ref` is the content id of the §3.3 tuple recorded. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events: the next evaluation names the new corpus id. |
-| `evaluation` | The evaluation recorded at `seq`: its input ids (§7), the normaliser versions in force (`pins`), and the outcome — `trace` and `verdict`, or `error` with its cause. |
+| `event` | `seq` counts from 1, in the order the shell recorded events, and numbers `evaluation` tuples too. `kind ∈ {fact, evidence, activation}`; `ref` is the content id of the §3.3 tuple recorded. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events: the next evaluation names the new corpus id. |
+| `evaluation` | The evaluation recorded at `seq` — once; `event` does not repeat it. Its input ids — corpus, SOTW, config; the request is its case's and is not repeated (§3.5 names all four) — the normaliser versions in force (`pins`), and the outcome — `trace` and `verdict`, or `error` with its cause. |
 
 **The SOTW of an evaluation** is the case's events before it, taken as of `sotw.effective_at`: for each fact, the value with the latest `valid_at` no later than `effective_at`. It is frozen as a collection, and its digest is the evaluation's `sotw` id.
 
@@ -506,8 +484,6 @@ Acceptance criteria for any implementation, checked by property tests over gener
 ## 9. Open decisions
 
 Scope decisions — which ODRL constructs are admitted, including `invalid` — are registered in the architecture (§11).
-
-**Tracking.** Open items are recorded as GitHub issues (labels: `open-decision`, `corpus`, `verification`, `work-item`, `parked`). This register remains the specification record: a resolution lands here, and the issue closes.
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|

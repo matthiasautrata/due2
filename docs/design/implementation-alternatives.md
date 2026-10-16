@@ -44,7 +44,7 @@ Two corrections follow. First, **complexity and risk are different**: B is where
 - rdflib's role is *narrower* than "intake and conversion". The lift is immediate and lossless (`ways-of-working.md` §2.4), and serialisation, digests, and canonical bytes are first-party pure functions — the identity path deliberately does not use library canonicalisation (normalisation spec §5.2 removed RDFC-1.0 from it). rdflib parses; it must not emit.
 - "Results → persistence" is the impure shell, outside W1's pure core, per the functional-core rule.
 
-**The deficit, and its fix.** Python cannot express D. Property tests catch the bugs you think of; they do not prove the absence of the class (`ways-of-working.md` §1). The fix already in the adoption sequence (step 11) is Dafny in **oracle mode** (`ways-of-working.md` §9.1): verify the `Den` oracle and the expansion functions, extract to Python, keep the extraction in the test tree as differential ground truth. The long-standing installation blocker is resolved: Dafny ships Homebrew bottles for Apple Silicon (4.11.0, .NET 8 + Z3), so the mode-1 entry point is unblocked.
+**The deficit, and its fix.** Python cannot express D. Property tests catch the bugs you think of; they do not prove the absence of the class (`ways-of-working.md` §1). The fix already in the adoption sequence (step 11) is Dafny in **oracle mode** (`ways-of-working.md` §9, mode 1): verify the `Den` oracle and the expansion functions, extract to Python, keep the extraction in the test tree as differential ground truth. The long-standing installation blocker is resolved: Dafny ships Homebrew bottles for Apple Silicon (4.11.0, .NET 8 + Z3), so the mode-1 entry point is unblocked.
 
 **Why Dafny and not something stronger, first.** The `Den` oracle is a page of definitions with list and bounds obligations — program-level, where SMT automation is at its best. Starting with a proof assistant there pays human cost before knowing whether automation suffices.
 
@@ -75,7 +75,7 @@ The most tempting reframing, examined twice and settled: **ASP is native where s
 
 - *The MDS ambiguity stage* (pre-W1). The MDS document specifies: "treated as permitted only if every reading permits it, and as forbidden if any reading forbids it." That is literally cautious and brave entailment over a finite choice space; clingo's `--cautious` (intersection of stable models) and `--brave` (union) compute it natively from choice rules over reading dimensions. This is the strongest clingo use case found, it upgrades the MDS doc's own stage 2/3, and it belongs to the MDS project.
 - *W1 integrity constraints.* Closed-world reasoning is legitimate there — the input is a closed graph — and constraints like `:- reaches(X, X)` (cycle = UNSAT = reject) and consequence-depth bans are exact and elegant. The interiorisation default ("fill only what a rule leaves unstated") is correct stratified negation.
-- *The frontier encoding.* Non-domination by strict-subset comparison (`A ⊆ B ∧ B ⊈ A`) is exactly `due2-workflows.md` §6.3 and is expressible in a few rules. (An earlier variant using weak constraints was wrong: sum-minimising is a declared *total* order — "fewest duties" — which §6.3 explicitly refuses to impose without `config.preference`. The frontier's honest output is all incomparable alternatives.)
+- *The frontier encoding.* Non-domination by strict-subset comparison (`A ⊆ B ∧ B ⊈ A`) is exactly `due2-workflows.md` §6.3 and is expressible in a few rules. (An earlier variant using weak constraints was wrong: sum-minimising is a declared *total* order — "fewest duties" — which `due2-workflows.md` §6.3 explicitly refuses to impose without `config.preference`. The frontier's honest output is all incomparable alternatives.)
 
 **Where it fails, as evidenced by the showcase encodings themselves, checked against §5–§6:**
 
@@ -115,7 +115,7 @@ Structurally the same animal as the Dafny route — verify in WhyML, discharge v
 
 The review's architectural conclusion, worth recording independently of any tool:
 
-> **Authority follows the gap.** Where a component's semantics has no truth-value gap — finite choices, every case decided — the executable logic program can *be* the spec: the MDS readings stage qualifies. Where the gap is load-bearing — W2's `U` findings, W3's `Indeterminate` and `frontier_complete` — the prose, the laws, and the corpus are the spec, and every engine, however elegant, is a backend admitted only by passing the suite (`due2-architecture.md` §10.2).
+> **Authority follows the gap.** Where a component's semantics has no truth-value gap — finite choices, every case decided — the executable logic program can *be* the spec: the MDS readings stage qualifies. Where the gap is load-bearing — W2's `U` findings, W3's `Indeterminate` and `frontier_complete` — the prose, the laws, and the corpus are the spec, and every engine, however elegant, is a backend admitted only by passing the suite (`ways-of-working.md` §10.2).
 
 The underlying principle: *executability confers no authority; proved or tested correspondence does.* Cedar's model is authoritative not because it runs but because theorems were proved about it and differential testing connects it to production. "The code is the spec" always smuggles a second-order obligation — the correspondence between what was meant and what the code says — and that obligation needs either a proof or a corpus. due2 has the corpus; that is what makes it the constitution.
 
@@ -124,7 +124,7 @@ The underlying principle: *executability confers no authority; proved or tested 
 ## 9. Sequencing and further steps
 
 1. **Mechanise `Den` first**, in whatever vehicle. The §8.1 definition was written small and independent of §6 precisely to be an oracle; formalising it finds every ambiguity prose has deferred. This pays back even if no verification tool is ever adopted.
-2. **Dafny oracle, scoped to `Den` + expansion functions**, extraction in the test tree (`ways-of-working.md` §9.1 mode 1). Weekend-scale probe; answers the proof-cost open items with numbers.
+2. **Dafny oracle, scoped to `Den` + expansion functions**, extraction in the test tree (`ways-of-working.md` §9, mode 1). Weekend-scale probe; answers the proof-cost open items with numbers.
 3. **Why3 on the Cedar signal** — Dafny automation stalling — same scope, OCaml extraction.
 4. **Lean on the metatheory signal** — both SMT routes stalling on preservation — or on commission of a method showcase.
 5. **Clingo for MDS stage 0** when that project starts, as its own workstream.

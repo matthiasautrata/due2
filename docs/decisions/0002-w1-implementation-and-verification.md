@@ -10,7 +10,7 @@ W1 is the pipeline's highest-risk step: every semantically interesting rewrite h
 ## Decision
 
 1. **All three workflows stay Python.** rdflib is confined to parsing at the input boundary; serialisation, digests, and canonical bytes remain first-party pure functions (`ways-of-working.md` §2.4). No second implementation language enters the runtime.
-2. **Dafny enters as oracle only** (`ways-of-working.md` §9.1, mode 1), scoped to the `Den` oracle (`odrl-compound-to-atomic-normalization.md` §8.1) and the stage-1 expansion functions. Extracted Python lives in the test tree and is never deployed.
+2. **Dafny enters as oracle only** (`ways-of-working.md` §9, mode 1), scoped to the `Den` oracle (`odrl-compound-to-atomic-normalization.md` §8.1) and the stage-1 expansion functions. Extracted Python lives in the test tree and is never deployed.
 3. **OCaml + Why3 is the designated upgrade**, adopted if Dafny's automation stalls on the stage-1 obligations — the brittleness signal Cedar itself hit and acted on.
 4. **Lean is the recorded fallback** for the preservation metatheorem, not a current candidate. It is also the flagship option if a method showcase is ever wanted: a kernel-checked `Den(P0) ≅ Den(N(P0))` is the Cedar playbook applied to due2.
 5. **Clingo/ASP is excluded from the evaluator pipeline.** Its one native fit is pre-W1: the MDS mapper's ambiguity stage, where cautious/brave reasoning over reading choices is exactly the semantics that document specifies. That use belongs to the MDS project if and when it proceeds. Any future clingo backend for W2/W3 is admitted only as a backend under the conformance suite (`due2-architecture.md` §10), which means passing the explicit `Indeterminate` vectors.

@@ -26,3 +26,5 @@ A draft of the same day added a log-position fold, an as-of query over record ti
 
 - Writes to one case contend in practice.
 - An audit question needs what was known by a past moment, rather than what was decided then.
+
+**Note (2026-10-16, coherence):** workflows v0.16 refines the data model, not the decision — an evaluation is an event of its case (it takes a `seq`) but is recorded once, in the `evaluation` relation; `event` carries the content kinds, and an evaluation's request is its case's.
