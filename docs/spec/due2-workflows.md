@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.13
+**Status:** Draft v0.14
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.14** (2026-10-16, `decisions/0007`): the concrete canonical encoding of collections is decided, JCS JSON arrays hashed with SHA-256 (§2; was §9 #1). Canonical N-Quads stay the stage-1 artifact, which is a graph.
 
 **Changes in v0.13** (2026-10-13): the SOTW is the case's snapshot of the world. A pure sweep, `plan`, lists from the corpus's operand bindings and the request what an evaluation will read; the shell records the answers in the case before W2 runs, and nothing is fetched during evaluation. The case records answers, never the datasets behind them; world hierarchy edges are limited to those above the request's entities; a read limit bounds the plan (§3.3).
 
@@ -82,7 +84,14 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 | `Truth` | `T`, `F`, `U` — Kleene strong three-valued logic. |
 | `Enum` | A closed set, listed with the field. |
 
-**Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. Decided: tuples sorted by key in Unicode code-point order of their serialised fields; absent optional fields omitted; no floating point. **[O]** the concrete encoding — JCS JSON arrays or canonical N-Quads. Stage 1 of W1 already emits canonical N-Quads; the corpus encoding is decided with the builder.
+**Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. **[D]** (`decisions/0007`, was §9 #1):
+
+- **Encoding.** A collection is a JSON array of tuples, serialised by RFC 8785 (JCS) to UTF-8. A tuple is a JSON object keyed by field name; absent optional fields are omitted.
+- **Order.** Tuples are sorted by key, field by field in declaration order, each field by Unicode code-point order of its serialised value. A relation with an empty key holds one tuple.
+- **Values.** An `Id`, `Truth`, or `Enum` is a JSON string. A literal is the object `{"v": lexical, "t": datatype}` plus `"l": language` when present; an `Id` is never an object, so the two cannot collide. A number is never a JSON number — it is a literal with a numeric datatype. A field declared as a count or bound is a JSON integer within ±2^53. A flag is a JSON boolean. No floating point.
+- **Digest.** The collection id is `sha256:` followed by the lowercase hex SHA-256 of the canonical bytes.
+
+Canonical N-Quads remain the artifact of W1 stage 1, which carries a graph (normalisation spec §4); nothing downstream of stage 2 reads them.
 
 ---
 
@@ -478,7 +487,7 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 
 | # | Decision | Section | Blocked on |
 |---|---|---|---|
-| 1 | Concrete canonical encoding of collections | §2 | Builder design |
+| 1 | Concrete canonical encoding of collections | §2 | **Resolved 2026-10-16:** JCS JSON arrays, SHA-256 ids (`decisions/0007`). Canonical N-Quads stay the stage-1 artifact |
 | 2 | Cross-policy combination default | §6.2 | A real multi-policy corpus |
 | 3 | Declared preference among frontier alternatives | §6.3 | First incomparable frontier in practice |
 | 4 | Monitoring question — duties currently owed by a party, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements |
