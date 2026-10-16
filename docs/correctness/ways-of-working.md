@@ -348,5 +348,5 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 | 9 | Dafny availability | §9 | Resolved 2026-10-10 (`decisions/0002`): installable — Homebrew Apple-Silicon bottle 4.11.0, .NET 8 + Z3 |
 | 10 | Rust toolchain in the build image | §10.3 | Platform team conversation |
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume |
-| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus |
+| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus. The evaluator vehicle is superseded 2026-10-16 by `decisions/0009` (clingo); the §7.1 principle — maintain a direct rendering of the semantics — is unchanged |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option |

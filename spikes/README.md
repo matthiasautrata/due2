@@ -2,7 +2,7 @@
 
 A spike is a candidate implementation, built to be compared. Spikes share one thing: the pinned vectors and their expected results, read from `conformance/` by one Python suite (`tests/`, harness in `tools/harness/`). Everything else is separate. Each spike is built from the same principles and requirements and judged by the same gate, and in the end their code and scores are compared (`decisions/0006` §5).
 
-The first spike is slow `I`, the L9 oracle (issue #9). The W2/W3 bakeoff spikes follow (#39 Python, #40 Elixir, #41 Clingo).
+The first spike is `clingo-i`, the semantics program (issue #9, `decisions/0009`), implementing `interpret` over the corpus — the L9 oracle's role. The W2/W3 bakeoff spikes follow (#41 Clingo — the same program's relation-level face, and #40 Elixir; Python withdrew, `decisions/0009`).
 
 ## Rules
 
@@ -111,9 +111,9 @@ Latency is wall clock, from writing the request to reading the reply, measured b
 Run `check` at the end of every session, so the journal shows how the compiler and checker complaints evolve, not just where they end up.
 
 ```bash
-uv run python tools/spike_journal.py log slow-i session "completion over literals" --minutes 90 --by claude-opus-5-5
-uv run python tools/spike_journal.py log slow-i bug "guarded duty counted as unguarded" --vector "<case>/<scenario>"
-uv run python tools/spike_journal.py check slow-i
+uv run python tools/spike_journal.py log clingo-i session "completion over literals" --minutes 90 --by claude-opus-5-5
+uv run python tools/spike_journal.py log clingo-i bug "guarded duty counted as unguarded" --vector "<case>/<scenario>"
+uv run python tools/spike_journal.py check clingo-i
 uv run python tools/spike_journal.py summary          # Markdown table, one row per spike
 ```
 
