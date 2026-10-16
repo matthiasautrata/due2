@@ -3,7 +3,7 @@
 **Status:** Draft v0.16
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.16** (2026-10-16): §7.1 — an evaluation is recorded once, in `evaluation`, which shares the case's `seq` counter with `event`; `event` carries only the content kinds (fact, evidence, activation), and an evaluation's request is its case's, not repeated (§3.5 names all four input ids). **History:** v0.5–v0.15 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`.
+**Changes in v0.16** (2026-10-16): §7.1 — an evaluation is recorded once, in `evaluation`, which shares the case's `seq` counter with `event`; `event` carries only the content kinds (fact, evidence, activation), and an evaluation's request is its case's, not repeated (§3.5 names all four input ids). **History:** v0.4–v0.15 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -453,7 +453,7 @@ evaluation  (case_id, seq | corpus, sotw, config, pins, trace?, verdict?, error?
 |---|---|
 | `case` | One per request. `case_id` is assigned by the shell. |
 | `event` | `seq` counts from 1, in the order the shell recorded events, and numbers `evaluation` tuples too. `kind ∈ {fact, evidence, activation}`; `ref` is the content id of the §3.3 tuple recorded. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events: the next evaluation names the new corpus id. |
-| `evaluation` | The evaluation recorded at `seq` — once; `event` does not repeat it. Its input ids — corpus, SOTW, config; the request is its case's and is not repeated (§3.5 names all four) — the normaliser versions in force (`pins`), and the outcome — `trace` and `verdict`, or `error` with its cause. |
+| `evaluation` | The evaluation recorded at `seq`, once; `event` does not repeat it. It holds the corpus, SOTW, and config ids (the request is its case's; §3.5 names all four), the normaliser versions in force (`pins`), and the outcome: `trace` and `verdict`, or `error` with its cause. |
 
 **The SOTW of an evaluation** is the case's events before it, taken as of `sotw.effective_at`: for each fact, the value with the latest `valid_at` no later than `effective_at`. It is frozen as a collection, and its digest is the evaluation's `sotw` id.
 

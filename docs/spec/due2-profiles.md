@@ -3,7 +3,7 @@
 **Status:** Draft v0.6
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context term is corrected to `dprod:currentAgent`; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
+**Changes in v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context table keeps `dprod:agent`, the property `dprod:currentAgent` reads; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -68,7 +68,7 @@ ex:purpose a odrl:LeftOperand ;
 
 | Context property | Value |
 |---|---|
-| `dprod:currentAgent` | the request subject (`request_party` with `odrl:assignee`) |
+| `dprod:agent` | the request subject (`request_party` with `odrl:assignee`) |
 | `dprod:clock` | `sotw.effective_at` — decision time |
 | `due2:actionTime` | the instant of the action being evaluated: `request.at` for a rule matched against the request, the witness's `occurred_at` inside a duty's constraints (`due2-workflows.md` §5.3) |
 

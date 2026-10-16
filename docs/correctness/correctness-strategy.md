@@ -225,7 +225,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 7. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
 8. W1 stage 2, gated by L9 against `I`.
 9. The surviving W2/W3 backends on the full corpus through W1, completing the §4.4 and §4.5 gates.
-10. The ledger data model (§4.7), then the ledger, gated by the stateful machine.
+10. The ledger (data model decided, §4.7), gated by the stateful machine.
 
 ---
 
