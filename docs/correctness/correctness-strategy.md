@@ -164,7 +164,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
   - an evaluation's SOTW is the case's snapshot: the answers it recorded, with their values, not timestamps into a source; a pure `plan` sweep lists them before evaluation, and the case records answers, never the datasets behind them (workflows §3.3);
   - exercise events (access taken under a permit) are out of scope for now.
 
-  The model itself is expected to follow the entity-event pattern: a case and the timeline of events on it.
+  The model follows the entity-event pattern, drafted in workflows §7.1 (2026-10-16, **[O]**, issue #28): an append-only event log per case, the SOTW as a fold over it, and an as-of query over decision time and record time.
 - **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (architecture §7, issue #14), must agree with it.
 - **Properties.**
   - *Replay.* Every recorded evaluation, re-run under its pinned normaliser versions, gives byte-identical traces.
@@ -245,5 +245,5 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
-| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code. Partly settled 2026-10-13 (§4.7): case as thread identity, bitemporal, SOTW as the case's snapshot, plan before evaluate, exercise out of scope; entity-event model to follow |
+| 9 | A ledger data model in `due2-workflows.md` | §4.7 | Specify before ledger code. Partly settled 2026-10-13 (§4.7): case as thread identity, bitemporal, SOTW as the case's snapshot, plan before evaluate, exercise out of scope. Drafted 2026-10-16 in workflows §7.1 (event log, SOTW as a fold, as-of query), awaiting review |
 | 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |

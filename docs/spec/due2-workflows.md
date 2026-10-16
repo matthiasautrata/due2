@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.14
+**Status:** Draft v0.15
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.15** (2026-10-16): a draft ledger data model, an append-only event log per case with a derived as-of query (§7.1, **[O]**, issue #28). Nothing else changes.
 
 **Changes in v0.14** (2026-10-16, `decisions/0007`): the concrete canonical encoding of collections is decided, JCS JSON arrays hashed with SHA-256 (§2; was §9 #1). Canonical N-Quads stay the stage-1 artifact, which is a graph.
 
@@ -458,6 +460,31 @@ This matters wherever one fact is read in both directions. `xone` expands into d
 A case is created when a request is made, and accumulates its history: the evidence submitted to it, the facts its evaluations read, and what they derived. Its SOTW at any time is that record (§3.3). An evaluation is one run of W2 and W3 over the case, and is its four input collection ids. W2 and W3 are pure, so the trace is a function of the evaluation: replay re-runs them and compares digests, and calls no resolver. The ledger (architecture §7) records every case and its evolution: each evaluation, the reads with their values, and the verdict. Re-evaluation is a new evaluation of the same case, over a new SOTW — never an edit to an old trace.
 
 **Crashes [D]** (2026-10-11). A failure that should never happen, such as a violated contract, a broken invariant, or an I/O fault in the shell, is not a verdict. The shell answers `Error(cause)`. The verdict set stays the five values of §1, and `Indeterminate` keeps its one meaning: the data could not decide. What the caller does with an error is the caller's default, as it is for `Indeterminate`. A crashed evaluation produces no trace. The ledger stores the evaluation and the cause. W2 and W3 are pure, so replaying that evaluation reproduces the crash: the evaluation is the bug report. W1 is the same: a crash in normalisation is an error, not diagnostics, and builds no corpus (`ways-of-working.md` §2.2).
+
+### 7.1 The ledger as an event log **[O]** (issue #28)
+
+A draft, to be reviewed before ledger code. The ledger is not a collection of §2: it holds the case's history, and its timestamps stay out of every collection, so the trace remains a function of content alone.
+
+```text
+case        (case_id | opened_by, opened_at)
+event       (case_id, seq | kind, recorded_at, valid_at?, ref)
+evaluation  (event_ref | request, corpus, sotw, config, trace?, verdict?, error?, pins)
+```
+
+| Relation | Meaning |
+|---|---|
+| `case` | Created with a request. `case_id` is assigned by the shell and is the thread identity (§7). |
+| `event` | One entry in the case's timeline. `seq` counts from 1 with no gaps; `recorded_at` is the shell's clock and is never read by W2 or W3. `valid_at` is when the thing held in the world, if it is a world event. `ref` is the content id of the payload. |
+| `event.kind` | `Enum {request, fact, evidence, activation, evaluation, error}`. `fact`, `evidence`, and `activation` carry the §3.3 tuple they record; `request` is the case's opening request. Policy amendments and normaliser upgrades are not events: the next `evaluation` names the new `corpus` id, and a corpus store keeps old ones. |
+| `evaluation` | The four input ids of §7, the normaliser versions in force (`pins`: stage-1 profile IRI and version, stage-2 builder version), and the outcome: `trace` and `verdict` ids, or `error` with its cause. An error evaluation has no trace. |
+
+**SOTW as a fold.** For a case, a decision time `t` and a log position `n`, `sotw(case, t, n)` is the fold of the `fact`, `evidence`, and `activation` events with `seq ≤ n` and `valid_at ≤ t`, taking the latest per key. The terminal rule of §3.3 (a re-resolution that disagrees is a `conflict`) is part of the fold. The `sotw` collection of an evaluation is this fold, frozen, and its id is its digest.
+
+**As-of query.** `asof(case, t, r)` returns the last `evaluation` event with `sotw.effective_at ≤ t` and `recorded_at ≤ r`, unaffected by later events. With `r` omitted it answers "what do we think now of the world at `t`"; with `r`, "what did we decide, knowing only what was recorded by `r`".
+
+**Append-only.** Events are added and never changed. A correction is a new event; a fact that disagrees with an earlier one becomes a `conflict` in the fold, and the earlier event stays.
+
+Open: whether `valid_at` of a fact is the observation time (`attribution.observed_at`) or the effective time of the change; whether `recorded_at` needs a monotone clock guarantee; whether `corpus` ids need a registry relation here or in the architecture.
 
 ---
 
