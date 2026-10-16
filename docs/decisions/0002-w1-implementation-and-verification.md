@@ -50,6 +50,8 @@ Clarification 2 above is superseded in part. `due2-workflows.md` v0.6 completes 
 
 **Note (2026-10-16):** `decisions/0006` exercises #5's carve-out: Clingo, with Python and Elixir, is a candidate W2/W3 backend in a bakeoff under the conformance suite. #1 holds until an adoption record.
 
+**Note (2026-10-16):** `decisions/0009` replaces #7's Python direct interpreter (amendment clarification 1) with a clingo program over flattened ODRL as the L9 oracle and the test generator. #1 and #5 stand: that program is not a pipeline stage.
+
 ## Revisit when
 
 - Dafny's automation stalls on the stage-1 obligations (timeouts, solver-version sensitivity) → adopt OCaml + Why3, same oracle scope.

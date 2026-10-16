@@ -310,6 +310,6 @@ Workflow-level decisions — canonical encoding, cross-policy combination, prefe
 | 3 | Whether any duty constraint is genuinely non-hoistable | §4 item 5 | Resolved by `decisions/0003`: nothing is hoisted, so the question dissolves |
 | 4 | What a void (`invalid`) policy contributes: nothing (default) or `Indeterminate` with a cause | §6.2 | Resolved 2026-10-11: nothing; `Indeterminate` with a cause parked until a real policy needs a void policy to block |
 | 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | Measurement once pending volume is known |
-| 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle (stage 1) plus a Python reference evaluator (stage 2, W2, W3) until a verified backend passes the corpus. Superseded 2026-10-16 (`decisions/0009`): the semantics program is clingo; Python builds no evaluator |
+| 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle (stage 1) plus a Python reference evaluator (stage 2, W2, W3) until a verified backend passes the corpus. Amended 2026-10-16 (`decisions/0009`): the L9 direct interpreter is the clingo semantics program; the production evaluator stays `decisions/0002` #1 and the `decisions/0006` bakeoff |
 | 7 | Policy-diff via query containment | §8.1 | Spike |
 | 8 | Execution target beyond indexed Python | §9 | Measurement per §9.1 |

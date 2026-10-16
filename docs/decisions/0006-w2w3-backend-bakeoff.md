@@ -54,6 +54,8 @@
 - Issue #3 (canonical encoding) becomes a prerequisite; issue #16 (execution target) gains evidence.
 - Work items, to be filed as issues: the encoding (#3), the relation-level vector format in `conformance/README.md` (#36), the first vector suite (#37), the brute-force W3 (#38), and one item per backend: Python (#39), Elixir (#40), Clingo (#41).
 
+**Note (2026-10-16):** since `decisions/0009` the L9 oracle is a clingo program, so #2's "the oracles stay Python" no longer covers it; the brute-force W3 (#38) remains this bakeoff's oracle. Clingo (#41) and Elixir (#40) run first; the Python backend (#39) is deferred until the production evaluator is written. The gate and scoring are unchanged.
+
 ## Revisit when
 
 - Only Python passes the gate: close the bakeoff, and record why.

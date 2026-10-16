@@ -2,7 +2,7 @@
 
 **Status:** v0.5, 2026-10-16 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
 
-**Changes in v0.5** (2026-10-16, `decisions/0009`): the oracle and generator vehicle is a clingo program over flattened ODRL — Python builds no evaluator; §3, §4.1, §5, §8 rewire; RRULE recurrence deferred (occurrence-dependent scenarios report `unsupported: recurrence`).
+**Changes in v0.5** (2026-10-16, `decisions/0009`): the L9 oracle and the generator are a clingo program over flattened ODRL, in place of a Python direct interpreter; the production evaluator is unchanged (`decisions/0002` #1, the `decisions/0006` bakeoff); §3, §4.1, §5, §8 rewire; RRULE recurrence deferred (occurrence-dependent scenarios report `unsupported: recurrence`).
 
 **Changes in v0.4** (2026-10-16): §8 step 1 restated — the strategy is adopted, and the one open item (#10) is set at step 6; the register-tracking convention is stated once in `due2-architecture.md` §11.
 
@@ -92,7 +92,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 |---|---|---|---|---|
 | Hand-derived corpus (99 positive cases plus 8 negative, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
-| The clingo semantics program (`decisions/0009`): Stage A over relation-level vectors, Stage B over authored-form facts | The corpus's verdicts now; the pipeline's verdict (L9) once W1 exists | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the driver, if shared | **[D]** (`decisions/0009`), issue #9 |
+| L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts now; the pipeline's verdict (L9) once W1 exists | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
 | `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
 | `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]**, exists |
 | Laws L1–L9, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
@@ -101,7 +101,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 
 - `I` is the clingo semantics program (`decisions/0009`); it has two modes over one program, differing only in how they complete unknowns.
   - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap (#42) it declines rather than falling back. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
-  - **Fast, later.** It uses §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on generated policies.
+  - **Fast, later.** It uses §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on authored policies.
 - The `Den` oracle has no memoization or fan-out bookkeeping, as §8.1 already requires.
 - A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.
 
@@ -116,9 +116,9 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 ### 4.1 The semantics program: clingo over flattened ODRL (issue #9)
 
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation. R9 when it generates its own vectors.
-- **Encoding obligations** (`decisions/0009`): `U` is data — fact statuses, deadline comparisons, and witness timeliness arrive as facts; every part carries exactly one of `t/f/u`, enforced by an integrity constraint; Kleene connectives are min/max over `f < u < t`; no negation-as-failure anywhere a status can be unknown. The 2026-10-10 audit encoding failed all of these.
+- **Encoding obligations** (`decisions/0009`): `U` is data — fact statuses, deadline comparisons, and witness timeliness arrive as facts; every part carries exactly one of `t/f/u`, enforced by an integrity constraint; Kleene connectives are min/max over `f < u < t`; no negation-as-failure anywhere a status can be unknown; the evaluation layer is stratified Datalog, with choice rules only in the completion and the generator. The 2026-10-10 audit encoding failed all of these.
 - **Oracles for the program.** The corpus (99 positive cases), with disagreements triaged per §6; the external suites' own answers. Its own laws: L4 and L5 on generated inputs; the status matrix and Kleene tables as ASP facts, with the one-value integrity constraint making a forgotten rule a loud failure.
-- **Driver.** **[D]** (2026-10-16) The Python driver flattens corpus cases and policies into relation facts and owns digests, canonical bytes, and id minting (`decisions/0009`); it is not an evaluator. It is tested on its own: agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts, over the corpus, the vendored policies, and the external suites.
+- **Driver.** **[D]** (2026-10-16, `decisions/0009`) The Python driver parses the Turtle and makes a purely syntactic flatten of the authored graph to facts — no lifting, no expansion, no DNF, which are the program's rules — and ranks compared values (32-bit integers; `decisions/0009` #4). It is not an evaluator. Because L9 cannot see a driver bug, it is tested on its own: round trip (facts back to a graph isomorphic to the input), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts, over the corpus, the vendored policies, and the external suites.
 - **Golden vectors.** The corpus. Occurrence-dependent scenarios (8 cases use recurrence) report `unsupported: recurrence` loudly, not as passes; every other scenario is runnable.
 - **Generators.** Coverage targets as choice rules plus constraints, `#minimize` for the smallest witness (§5). Self-generated vectors test other implementations, never the program itself.
 - **Done.** Every runnable scenario agrees, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or the program.
@@ -186,7 +186,7 @@ Requirements:
 - **Structurally complete.** Nested `and`, `or`, `xone`, and `dprod:not`; shared duties; guarded duties; deadlines and recurrences; all three conflict strategies; `violations = deny`.
 - **Valid and invalid.** Each generator has a twin that produces near-miss invalid inputs — one rule left unnamed, an operand unbound, a cycle, a limit exceeded by one — with the expected rejection.
 - **Shared with the enumerator.** The bounded-exhaustive enumerator of §1.1 and the Hypothesis generators draw from one description of the input space, so the two cannot drift apart.
-- **ASP-generated [D]** (`decisions/0009`). Coverage targets as choice rules plus constraints over the same relations the program consumes; `#minimize` yields the smallest witness — stronger than generate-and-filter. Generated vectors test other implementations, never the generator (§4.1).
+- **ASP-generated [D]** (`decisions/0009`). Coverage targets as choice rules plus constraints over the same facts the program consumes; `#minimize` yields the smallest witness — stronger than generate-and-filter. Generated vectors test other implementations, never the generator (§4.1).
 - **Measured.** Each run reports a histogram of which features it exercised, using the feature list behind the coverage-gap list in `conformance/README.md`. A feature with zero hits fails the run. This makes R9 visible rather than assumed.
 
 ---
@@ -221,9 +221,9 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 1. ~~Settle the open items of §9.~~ Adopted 2026-10-11; the remaining item, #10, is set at step 6 by measurement.
 2. ~~Case-format extension for negative cases~~ (done 2026-10-11).
-3. The status matrix and Kleene truth tables, as data. They are spec as much as tests, and `I` uses them first.
-4. The clingo semantics program (issue #9, `decisions/0009`): the driver and flattener, the status matrix and Kleene tables as ASP facts, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (§6.4's computation) follows, differentially against enumeration.
-5. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. Python withdrew as a backend (`decisions/0009`); the brute-force W3 (#38) stays a test-tree checker for disagreements.
+3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
+4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (§6.4's computation) follows, differentially against enumeration.
+5. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written (`decisions/0009`).
 6. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
 7. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
 8. W1 stage 2, gated by L9 against `I`.
@@ -237,8 +237,8 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | # | Decision | Section | Recommendation |
 |---|---|---|---|
 | 1 | Strategy before code, as a standing rule | §1 | **Resolved 2026-10-11:** adopted (CLAUDE.md) |
-| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other. Vehicle changed 2026-10-16 (`decisions/0009`): the clingo program — slow mode is answer-set enumeration under the cap |
-| 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own. 2026-10-16 (`decisions/0009`): the shared artefact is the driver that flattens to relation facts; same rule — tested on its own |
+| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other. Vehicle changed 2026-10-16 (`decisions/0009`): the clingo program — slow mode is answer-set enumeration under the cap (#42) |
+| 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own. Narrowed 2026-10-16 (`decisions/0009`): only the Turtle reading is shared — the driver's flatten is syntactic and the lifting is the program's; the driver is tested on its own |
 | 4 | Negative cases in the case format | §4.2 | **Resolved 2026-10-11:** `expected_rejection` plus the diagnostic registry (`due2-diagnostics.md`); 8 cases |
 | 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | **Resolved 2026-10-11:** extend it now for both (done); brute-force W3 differential later; nested constraints via that and slow `I` |
 | 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
