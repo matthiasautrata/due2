@@ -44,7 +44,7 @@ Managed with `uv` and Python 3.14+ (`.python-version`, `pyproject.toml`, which a
 uv run python tools/check_corpus.py conformance/cases                      # admissibility + case format
 uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # vendored DPROD policies
 uv run python tools/check_odrl22.py --all                                  # ODRL 2.2 validity (SHACL)
-uv run python tools/check_completion.py                                    # §6.4 completion vs brute force
+uv run python tools/check_completion.py                                    # workflows §6.4 completion vs brute force
 uv run pytest                                                              # the spike harness's own tests (spikes/README.md)
 uv run basedpyright                                                        # strict typing (ways-of-working.md §4)
 uv run ruff check . && uv run ruff format --check .                        # Python lint and format (§11)

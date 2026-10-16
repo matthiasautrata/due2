@@ -100,7 +100,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 **Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
 - `I` is the clingo semantics program (`decisions/0009`); it has two modes over one program, differing only in how they complete unknowns.
-  - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap (#42) it declines rather than falling back. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
+  - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals (for example 16) it declines rather than falling back. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
   - **Fast, later.** It uses §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on authored policies.
 - The `Den` oracle has no memoization or fan-out bookkeeping, as §8.1 already requires.
 - A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.
@@ -237,7 +237,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | # | Decision | Section | Recommendation |
 |---|---|---|---|
 | 1 | Strategy before code, as a standing rule | §1 | **Resolved 2026-10-11:** adopted (CLAUDE.md) |
-| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other. Vehicle changed 2026-10-16 (`decisions/0009`): the clingo program — slow mode is answer-set enumeration under the cap (#42) |
+| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other. Vehicle changed 2026-10-16 (`decisions/0009`): the clingo program — slow mode is answer-set enumeration under the variable cap |
 | 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own. Narrowed 2026-10-16 (`decisions/0009`): only the Turtle reading is shared — the driver's flatten is syntactic and the lifting is the program's; the driver is tested on its own |
 | 4 | Negative cases in the case format | §4.2 | **Resolved 2026-10-11:** `expected_rejection` plus the diagnostic registry (`due2-diagnostics.md`); 8 cases |
 | 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | **Resolved 2026-10-11:** extend it now for both (done); brute-force W3 differential later; nested constraints via that and slow `I` |
@@ -245,4 +245,4 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
 | 9 | A ledger data model in `due2-workflows.md` | §4.7 | **Resolved 2026-10-16:** workflows §7.1 (`decisions/0008`) |
-| 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists |
+| 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists (issue #42) |

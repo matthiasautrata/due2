@@ -22,7 +22,7 @@ The L9 oracle and the generators were to be Python (`decisions/0002` #7, `correc
    - Every other compared value reaches the program as an order-preserving integer rank within its value space: instants, decimals, and wider integers. The driver also supplies the instant-plus-duration sums that relative deadlines need (§5.3).
    - No value is truncated, rounded, or dropped. A value the driver cannot place is reported as unsupported, loudly.
    - There are no floats.
-5. **Completion is answer-set enumeration.** One choice rule per unknown literal (the canonical-literal key of workflows §6.4) yields one answer set per completion. A verdict is definite iff it is cautious-entailed. This is slow mode, the §6.4 definition, with no uniform/mixed split; above the variable cap (#42) it declines rather than falling back (`correctness-strategy.md` §3). `max_mixed` and `max_frontier_vars` are the fast computation's limits (W3, `decisions/0004`), not slow mode's. Fast mode (the two extremes) comes later, differentially tested against enumeration below the cap.
+5. **Completion is answer-set enumeration.** One choice rule per unknown literal (the canonical-literal key of workflows §6.4) yields one answer set per completion. A verdict is definite iff it is cautious-entailed. This is slow mode, the §6.4 definition, with no uniform/mixed split; above a variable cap on the unknown literals (for example 16) it declines rather than falling back (`correctness-strategy.md` §3). `max_mixed` and `max_frontier_vars` are the fast computation's limits (W3, `decisions/0004`), not slow mode's. Fast mode (the two extremes) comes later, differentially tested against enumeration below the cap.
 6. **Roles.**
    - **(a) Corpus runner.** The program is the first runner of the corpus: the second derivation the hand-derived verdicts have ever had (R5).
    - **(b) L9 oracle.** It is the L9 oracle against the pipeline, once W1 exists.
@@ -58,7 +58,7 @@ The L9 oracle and the generators were to be Python (`decisions/0002` #7, `correc
 - The `decisions/0006` bakeoff is unchanged in gate and scoring. Clingo (#41) and Elixir (#40) run first, against the brute-force W3 (#38) as 0006 #4 requires. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written.
 - `correctness-strategy.md` register #3 (`I` and W1 share the parser) narrows: only the Turtle reading is shared. The lifting is the program's. The driver is tested on its own (strategy §4.1).
 - Issue #9 becomes the semantics program. Its first spike is `spikes/clingo-i/`, implementing the suite's `interpret` task (`spikes/README.md`).
-- #42's variable cap bounds the ASP enumeration as it bounded slow `I`.
+- The variable cap of `correctness-strategy.md` §3 bounds the ASP enumeration as it bounded slow `I`. It is not #42, which bounds the input-space enumerator (§1.1).
 
 ## Revisit when
 
@@ -75,7 +75,7 @@ The L9 oracle and the generators were to be Python (`decisions/0002` #7, `correc
 The first version of this record went further than the owner agreed, and stated four things wrong. The decision above is the corrected text:
 
 - **Scope.** The first version said "Python builds no evaluator", withdrew the Python bakeoff backend (#39), demoted the brute-force W3 (#38), and superseded 0002 #1 for W2/W3. The owner adopted clingo for the oracle and generator roles only. The production evaluator stays with 0002 #1 and the 0006 bakeoff, and Python may still be spiked when it is written.
-- **The caps.** The first version called `max_mixed` and `max_frontier_vars` slow mode's caps. Slow mode's cap is #42.
+- **The caps.** The first version called `max_mixed` and `max_frontier_vars` slow mode's caps. Slow mode's cap is the variable cap of `correctness-strategy.md` §3.
 - **Numbers.** The first version bounded ASP-visible numbers at ±2^53 "by workflows §2". That bound covers JSON counts only, and clingo's integers are 32-bit.
 - **Order and driver.** The first version said both "relation-level vectors first" and "the whole grammar first", and described the driver as flattening into relation facts in one place and syntactically in another. The authored form comes first, and the flatten is syntactic.
 - **Additions.** The amendment also adds the stratified evaluation layer (decision 3), the Datalog comparison, and the common-mode note in 8.
