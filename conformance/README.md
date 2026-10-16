@@ -18,6 +18,10 @@ conformance/cases/<case>/
 
 Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/matthiasautrata/RL2`, `conformance/usecases/`), `dprod-` for DPROD Contracts examples (`github.com/EKGF/dprod`, `develop`, `dprod-contracts/examples/`), `force-`, `oval-`, and `w3c-fs-` for other evaluators' suites (vendored under `external/`, see `external/README.md`), and `due2-` for cases authored here to cover what no origin exercises.
 
+## Running a backend
+
+Each positive scenario is a vector of the `interpret` task: its policy, request, SOTW, and config in, its `expected` out. `uv run pytest --backend=<spike>` runs every vector against a spike under `spikes/`; the protocol, output shape, and comparison rules are in `spikes/README.md`. Negative cases become vectors when W1 exists.
+
 ## Vendored DPROD examples
 
 The upstream example policies themselves are vendored unmodified under `profiles/vendor/dprod/examples/` — four files, sixteen policies: eleven offers and contracts in `baseline.ttl`, two in `data-contract.ttl`, two in `data-use-policy.ttl`, one in `odcs.ttl` — so the DPROD-compatibility claims are reproducible locally: the command above checks all sixteen against due2's admitted input profile, the DPROD profile selected by their own `odrl:profile`.

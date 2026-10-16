@@ -3,7 +3,7 @@
 **Status:** Draft v0.3
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes, 2026-10-16:** §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11.
+**Changes, 2026-10-16:** §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11. New §7.4: one shared suite for every spike (`spikes/README.md`); §11's basedpyright scope extended to `tests/`.
 
 **Changes in v0.3:** new §2.4 — RDF at the boundary: parse and emit at the edges, plain frozen structures everywhere between.
 
@@ -201,6 +201,10 @@ The fast suite therefore accumulates every hard case the slow tools have ever fo
 
 A surviving mutant is not a build failure. It is a ticket that says "this line has no assertion behind it." The fix lands in the fast tier.
 
+### 7.4 One suite, many spikes **[D]** (2026-10-16)
+
+Candidate implementations (the oracle `I`, the bakeoff backends of `decisions/0006`) are tested by one Python suite, written before them and shared by all. The vectors and expected results are the corpus (`conformance/`), pinned in git. Each candidate is a separate spike under `spikes/` that runs as a subprocess and speaks a JSON-lines protocol: text in, text out, so a spike in any language faces the same tests. The harness measures latency identically for every spike. Each spike commits a scorecard (its last full run) and an append-only journal: effort, attempts, rewrites, bugs, and checker diagnostic counts over time. Code and scores are compared at the end. The contract is in `spikes/README.md`, and the harness in `tools/harness/`. `uv run pytest` alone runs only the harness's self-tests, which pin both ends: a backend that echoes the expected results passes every vector, and one that returns nothing fails every vector.
+
 ---
 
 ## 8. Tiering **[D]**
@@ -297,7 +301,7 @@ If a backend is ever adopted for the **verified** property rather than for speed
 ## 11. Tooling and environment **[D]**
 
 - **ruff** — linting and formatting. Rule sets: `ANN` (annotations required), `B` (bugbear), `S` (security), `RUF`, `C4`, `SIM`, on top of ruff's defaults. Configured once at repo root (`pyproject.toml`), line length 100.
-- **basedpyright** (§4) — strict mode over `tools/`, configured in `pyproject.toml`. **[D]** (2026-10-12) The existing checkers were brought to strict, not ratcheted flag by flag. `tools/import_force.py` is exempt from strict typing and `ANN`: it is a run-once importer, and its output is now maintained by hand.
+- **basedpyright** (§4) — strict mode over `tools/` and `tests/`, configured in `pyproject.toml`; spikes (§7.4) declare their own checkers. **[D]** (2026-10-12) The existing checkers were brought to strict, not ratcheted flag by flag. `tools/import_force.py` is exempt from strict typing and `ANN`: it is a run-once importer, and its output is now maintained by hand.
 - **rumdl** — Markdown lint. **[D]** (2026-10-12) Every Markdown file outside the vendored suites (`conformance/external/`, `profiles/vendor/`) is lint-clean. `MD013` (line length) is off, because a paragraph is one line. rumdl rather than markdownlint-cli2 keeps the toolchain uv-only; the two differ slightly (markdownlint's `MD060` table style and `MD029` list numbering), and rumdl is the gate.
 - **uv** — dependency management with hashed lockfiles. Reproducibility and supply-chain provenance are not optional in this environment.
 - **pip-audit** — dependency vulnerability scan in the slow tier.

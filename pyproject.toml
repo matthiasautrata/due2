@@ -16,6 +16,7 @@ package = false
 dev = [
     "basedpyright>=1.40.2",
     "hypothesis>=6.169.0",
+    "pytest>=9.1.1",
     "ruff>=0.17.0",
     "rumdl>=0.2.79",
 ]
@@ -23,15 +24,17 @@ dev = [
 # ways-of-working.md §4: basedpyright strict, editor and gate.
 # import_force.py is a run-once importer (its docstring); it is not typed.
 [tool.basedpyright]
-include = ["tools"]
+include = ["tools", "tests"]
 exclude = ["tools/import_force.py"]
+extraPaths = ["tools"]
 pythonVersion = "3.14"
 typeCheckingMode = "strict"
 
-# ways-of-working.md §11.
+# ways-of-working.md §11. Each spike lints itself (its backend.toml checks).
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+extend-exclude = ["spikes"]
 
 [tool.ruff.lint]
 extend-select = ["ANN", "B", "S", "RUF", "C4", "SIM"]
@@ -39,6 +42,13 @@ extend-select = ["ANN", "B", "S", "RUF", "C4", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 "tools/check_completion.py" = ["S311"]  # seeded, reproducible sampling; not cryptographic
 "tools/import_force.py" = ["ANN"]
+"tests/**" = ["S101"]  # pytest asserts
+
+# The shared suite (spikes/README.md). The harness lives in tools/harness/.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tools"]
+addopts = ["-p", "no:cacheprovider"]
 
 # ways-of-working.md §11. Vendored suites are never edited. Paragraphs are
 # one line each, so line length is not checked.

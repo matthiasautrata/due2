@@ -29,6 +29,9 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `tools/check_corpus.py` | Checks the corpus and any ODRL policy file against the admitted profile, without an evaluator |
 | `tools/check_odrl22.py` | Validates policies against ODRL 2.2 itself: `odrl22-shape.ttl` plus the vendored official vocabulary (`profiles/vendor/w3c/ODRL22.ttl`), via pyshacl |
 | `tools/import_force.py` | One-shot translation of the FORCE suite into `force-*` corpus cases, with an independent due2 derivation |
+| `spikes/` | Candidate implementations, one directory each, run against the corpus by one shared suite; the contract, protocol, scorecard, and journal in its `README.md` |
+| `tests/`, `tools/harness/` | The shared suite and its harness: corpus vectors, the comparator, the line protocol, scorecards (`pytest --backend=<spike>`) |
+| `tools/spike_journal.py` | A spike's journal (effort, attempts, rewrites, bugs, checker diagnostics) and the cross-spike comparison table |
 | `tools/check_completion.py` | Randomised check of the workflows §6.4 completion algorithm against brute force: canonical literals (v0.6), the `max_mixed` fallback, guarded duties (`decisions/0003`), deadlines with `violations = deny`, and `frontier_complete` by bounded enumeration (`decisions/0004`) |
 
 Documents cite each other by file name (`due2-workflows.md` §5) and decision records as `decisions/NNNN`; names are unique under `docs/`.
@@ -42,6 +45,7 @@ uv run python tools/check_corpus.py conformance/cases                      # adm
 uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # vendored DPROD policies
 uv run python tools/check_odrl22.py --all                                  # ODRL 2.2 validity (SHACL)
 uv run python tools/check_completion.py                                    # §6.4 completion vs brute force
+uv run pytest                                                              # the spike harness's own tests (spikes/README.md)
 uv run basedpyright                                                        # strict typing (ways-of-working.md §4)
 uv run ruff check . && uv run ruff format --check .                        # Python lint and format (§11)
 uv run rumdl check .                                                       # Markdown lint (§11)
