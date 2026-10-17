@@ -36,6 +36,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 | verdict | Permit · Deny · Pending(frontier) · NotApplicable · Indeterminate | §6.1 |
 | frontier | The `Pending` answer's routes, incomparable ones all listed | workflows §6.3 |
 | trace / explanation | What W2 and W3 emit for an evaluation; the explanation is the part reachable from the verdict (`verdict_basis`, `eliminated`) | workflows §3.5, §3.7 |
+| opaque part | A `U` part whose value is missing, invalid, in conflict, or does not fit its operator: a completion variable of its own, never shared or paired with a complement | workflows §6.4, `decisions/0016` |
 | pivotal literal | A literal whose flip alone changes some completion's verdict; an `Indeterminate` names the `U` atoms that hold one, and its `verdict_range` | workflows §6.4, `decisions/0011` |
 | in force | An obligation travels with its policy: in force when that policy matches | workflows §5.2 |
 | profile | An ODRL extension, declared as data and compiled mechanically | profiles §1 |

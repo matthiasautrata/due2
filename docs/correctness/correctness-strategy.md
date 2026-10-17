@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.8, 2026-10-17 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+**Status:** v0.9, 2026-10-17 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
 
-**Changes in v0.8** (2026-10-17, #48): slow `I`'s variable cap is set by measurement, at 64 (§3).
+**Changes in v0.9** (2026-10-17, `decisions/0016`): §4.3's properties pair only completed parts; an opaque part is a variable of its own. **v0.8** (2026-10-17, #48): slow `I`'s variable cap is set by measurement, at 64 (§3).
 
 **Changes in v0.7** (2026-10-17, `decisions/0011`): an `Indeterminate`'s pivotal `unknown` atoms and its `verdict_range` are checked against brute force over the completions, in clingo-i (§4.1) and in W3 (§4.5).
 
@@ -141,7 +141,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 
 - **Risks.** R1 (DNF, `xone`, `dprod:not` pushed inward, instantiation), R3 (the canonical-literal key is derived here).
 - **Oracles.** `I`, through L9 on generated policies.
-- **Properties.** L9. Complement pairs (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`) map to one variable with opposite polarity, and identical parts map to one variable. The atom-count limit fails before any output.
+- **Properties.** L9. Complement pairs (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`) map to one variable with opposite polarity, and identical parts map to one variable, when the parts are completed. An opaque part maps to a variable of its own (workflows §6.4, `decisions/0016`). The atom-count limit fails before any output.
 - **Lineage.** Every atom's lineage names its authored rule, its stage-1 selection tuple, its constraint disjunct, and its parameter binding (workflows §3.6), which L10 needs.
 - **Done.** L9 holds on the `fast` and `nightly` Hypothesis profiles (`ways-of-working.md` §7.2), and the corpus runs through W1 without rejections other than expected ones.
 
