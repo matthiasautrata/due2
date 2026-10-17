@@ -1,1882 +1,1882 @@
 {
  "machine": "Darwin arm64 · Python 3.14.8",
- "recorded_at": "2026-10-17T19:54:54Z",
- "revision": "d82fc34",
+ "recorded_at": "2026-10-17T19:58:29Z",
+ "revision": "e301c46",
  "spike": "clingo-i",
  "startup_ms": [
-  84.5
+  82.8
  ],
  "tasks": {
   "interpret": {
    "items": {
     "dprod-analytics-contract/analytics distributes customer data": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 16.2,
+     "ms": 16.04,
      "status": "unsupported"
     },
     "dprod-analytics-contract/analytics reads, yesterday delivered, today still open": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 18.15,
+     "ms": 17.86,
      "status": "unsupported"
     },
     "dprod-analytics-contract/overdue usage report under DPROD-faithful deny": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 16.06,
+     "ms": 15.73,
      "status": "unsupported"
     },
     "dprod-analytics-contract/the grantor reads under its own contract": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 16.75,
+     "ms": 16.49,
      "status": "unsupported"
     },
     "dprod-audit-logs/compliance read of a two-year retention": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.7,
+     "ms": 14.02,
      "status": "unsupported"
     },
     "dprod-audit-logs/compliance read of an eight-year retention": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.68,
+     "ms": 14.32,
      "status": "unsupported"
     },
     "dprod-audit-logs/export the audit logs": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.76,
+     "ms": 14.06,
      "status": "unsupported"
     },
     "dprod-audit-logs/read without stating the purpose": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.43,
+     "ms": 14.14,
      "status": "unsupported"
     },
     "dprod-audit-logs/retention stated in days against a limit in years": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.68,
+     "ms": 14.42,
      "status": "unsupported"
     },
     "dprod-compensation-access/analytics purpose is not admitted": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 15.7,
+     "ms": 15.72,
      "status": "unsupported"
     },
     "dprod-compensation-access/compliance read stating a long retention period": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 15.51,
+     "ms": 16.0,
      "status": "unsupported"
     },
     "dprod-compensation-access/division member reads for compliance on legitimate interest": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 24.93,
+     "ms": 16.7,
      "status": "unsupported"
     },
     "dprod-compensation-access/purpose admitted, legal basis missing": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 15.36,
+     "ms": 15.97,
      "status": "unsupported"
     },
     "dprod-compensation-access/purpose missing, legal basis wrong": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 15.24,
+     "ms": 15.91,
      "status": "unsupported"
     },
     "dprod-compensation-access/requester outside the division, purpose missing": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 15.3,
+     "ms": 15.59,
      "status": "unsupported"
     },
     "dprod-country-ref/distribute the reference table": {
-     "ms": 25.84,
+     "ms": 26.89,
      "status": "pass"
     },
     "dprod-country-ref/modify the reference table": {
-     "ms": 25.33,
+     "ms": 26.83,
      "status": "pass"
     },
     "dprod-country-ref/query the reference table": {
-     "ms": 25.59,
+     "ms": 26.83,
      "status": "pass"
     },
     "dprod-country-ref/read the reference table": {
-     "ms": 25.7,
+     "ms": 27.09,
      "status": "pass"
     },
     "dprod-customer-api-v1/display customer data": {
-     "ms": 25.31,
-     "status": "pass"
-    },
-    "dprod-customer-api-v1/export customer data": {
      "ms": 25.33,
      "status": "pass"
     },
+    "dprod-customer-api-v1/export customer data": {
+     "ms": 25.47,
+     "status": "pass"
+    },
     "dprod-customer-api-v1/read customer data under a retired offer": {
-     "ms": 24.21,
+     "ms": 25.85,
      "status": "pass"
     },
     "dprod-customer-api-v2/derivation without stating the type": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.77,
+     "ms": 15.11,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/distribute customer data": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.39,
+     "ms": 14.7,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/first read: one delivery owed today, not yet due": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.23,
+     "ms": 15.06,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/the same read under DPROD-faithful violations = deny": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.17,
+     "ms": 15.05,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/third day: yesterday's delivery missed, today's window still open": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.53,
+     "ms": 15.4,
      "status": "unsupported"
     },
     "dprod-divergences/grantee displays": {
-     "ms": 29.47,
+     "ms": 30.4,
      "status": "pass"
     },
     "dprod-divergences/grantor derives without a retention period (error in a rule that does not apply)": {
-     "ms": 29.04,
+     "ms": 31.64,
      "status": "pass"
     },
     "dprod-divergences/grantor displays (exception 4)": {
-     "ms": 29.46,
+     "ms": 30.27,
      "status": "pass"
     },
     "dprod-divergences/grantor redistributes (exception 4, prohibition side)": {
-     "ms": 28.91,
+     "ms": 30.44,
      "status": "pass"
     },
     "dprod-divergences/non-party displays": {
-     "ms": 29.66,
+     "ms": 31.39,
      "status": "pass"
     },
     "dprod-divergences/retention given as an integer (exception 1)": {
      "detail": "unsupported: completion",
-     "ms": 21.05,
+     "ms": 21.69,
      "status": "unsupported"
     },
     "dprod-divergences/retention in days against a limit in years (exception 1, duration order)": {
      "detail": "unsupported: completion",
-     "ms": 21.32,
+     "ms": 21.58,
      "status": "unsupported"
     },
     "dprod-divergences/retention over a year": {
-     "ms": 30.14,
+     "ms": 31.44,
      "status": "pass"
     },
     "dprod-employee-directory/distribute the directory": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.63,
+     "ms": 14.67,
      "status": "unsupported"
     },
     "dprod-employee-directory/model training on the directory": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.77,
+     "ms": 14.54,
      "status": "unsupported"
     },
     "dprod-employee-directory/operational read of the directory": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.46,
+     "ms": 17.0,
      "status": "unsupported"
     },
     "dprod-employee-directory/read for a purpose the policy does not admit": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.54,
+     "ms": 15.38,
      "status": "unsupported"
     },
     "dprod-employee-directory/read without stating the purpose": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.82,
+     "ms": 16.74,
      "status": "unsupported"
     },
     "dprod-hr-data-access/HR analytics reads a member asset of the collection": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 17.05,
+     "ms": 17.33,
      "status": "unsupported"
     },
     "dprod-hr-data-access/HR analytics reads the collection for analytics in production": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 16.78,
+     "ms": 17.75,
      "status": "unsupported"
     },
     "dprod-hr-data-access/audit log overdue, DPROD-faithful violations": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 16.82,
+     "ms": 17.52,
      "status": "unsupported"
     },
     "dprod-hr-data-access/compliance team asks for an analytics purpose": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 16.81,
+     "ms": 17.62,
      "status": "unsupported"
     },
     "dprod-hr-data-access/development environment and processing mode not supplied": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 16.54,
+     "ms": 17.36,
      "status": "unsupported"
     },
     "dprod-hr-data-access/environment not supplied": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 16.72,
+     "ms": 17.47,
      "status": "unsupported"
     },
     "dprod-hr-data-access/read from a development environment": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 16.85,
+     "ms": 17.52,
      "status": "unsupported"
     },
     "dprod-market-data-feed/display the feed": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.12,
+     "ms": 14.5,
      "status": "unsupported"
     },
     "dprod-market-data-feed/non-display use by an external recipient": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.21,
+     "ms": 14.65,
      "status": "unsupported"
     },
     "dprod-market-data-feed/non-display use by an internal recipient": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.11,
+     "ms": 14.67,
      "status": "unsupported"
     },
     "dprod-market-data-feed/non-display use without stating the recipient type": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 15.23,
+     "ms": 15.45,
      "status": "unsupported"
     },
     "dprod-market-data-feed/two intervals missed, the third still open, under deny": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.12,
+     "ms": 15.02,
      "status": "unsupported"
     },
     "dprod-multi-asset-offer/aggregate a listed asset in production": {
-     "ms": 32.46,
+     "ms": 32.49,
      "status": "pass"
     },
     "dprod-multi-asset-offer/aggregate the bundle in production": {
-     "ms": 31.5,
+     "ms": 33.24,
      "status": "pass"
     },
     "dprod-multi-asset-offer/distribute a listed asset": {
-     "ms": 31.35,
+     "ms": 32.77,
      "status": "pass"
     },
     "dprod-multi-asset-offer/read a listed asset": {
-     "ms": 31.22,
+     "ms": 32.42,
      "status": "pass"
     },
     "dprod-multi-asset-offer/read a member of a listed collection": {
-     "ms": 31.54,
+     "ms": 31.78,
      "status": "pass"
     },
     "dprod-multi-asset-offer/read after the offer's expiration date": {
-     "ms": 32.07,
+     "ms": 32.8,
      "status": "pass"
     },
     "dprod-not-negated-purpose/confidential data to an external environment": {
-     "ms": 31.21,
+     "ms": 32.48,
      "status": "pass"
     },
     "dprod-not-negated-purpose/environment missing, data public": {
-     "ms": 30.83,
+     "ms": 32.13,
      "status": "pass"
     },
     "dprod-not-negated-purpose/marketing read": {
-     "ms": 31.3,
+     "ms": 32.81,
      "status": "pass"
     },
     "dprod-not-negated-purpose/purpose missing": {
      "detail": "unsupported: completion",
-     "ms": 23.22,
+     "ms": 23.53,
      "status": "unsupported"
     },
     "dprod-not-negated-purpose/research read of confidential data internally": {
-     "ms": 31.27,
+     "ms": 32.79,
      "status": "pass"
     },
     "dprod-not-negated-purpose/retention period given in the wrong type": {
      "detail": "unsupported: completion",
-     "ms": 22.11,
+     "ms": 23.96,
      "status": "unsupported"
     },
     "dprod-not-negated-purpose/retention period over a year": {
-     "ms": 31.04,
+     "ms": 31.9,
      "status": "pass"
     },
     "dprod-odcs-seller-contract/a BigQuery Unica user modifies the seller data": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 27.94,
+     "ms": 28.7,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/a MicroStrategy user reads the seller data product": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 28.47,
+     "ms": 29.31,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/a party outside every role reads the product": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 27.75,
+     "ms": 28.52,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/external distribution of restricted data": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 28.32,
+     "ms": 28.89,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/use for model training": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 27.61,
+     "ms": 28.59,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/use in a development environment": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 28.89,
+     "ms": 29.6,
      "status": "unsupported"
     },
     "dprod-quant-market-data/consumer displays while the provider is in breach of today's delivery": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 15.3,
+     "ms": 15.7,
      "status": "unsupported"
     },
     "dprod-quant-market-data/consumer files its usage report": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 15.51,
+     "ms": 15.77,
      "status": "unsupported"
     },
     "dprod-quant-market-data/consumer redistributes": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 15.33,
+     "ms": 15.57,
      "status": "unsupported"
     },
     "dprod-quant-market-data/provider asks to display under the consumer's rights": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 16.17,
+     "ms": 16.58,
      "status": "unsupported"
     },
     "dprod-quant-market-data/provider performs its delivery": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 15.33,
+     "ms": 15.42,
      "status": "unsupported"
     },
     "dprod-risk-metrics/display of non-real-time data": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.99,
+     "ms": 14.49,
      "status": "unsupported"
     },
     "dprod-risk-metrics/real-time display, first evaluation": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.91,
+     "ms": 14.61,
      "status": "unsupported"
     },
     "dprod-risk-metrics/timeliness not stated": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 14.0,
+     "ms": 14.28,
      "status": "unsupported"
     },
     "dprod-risk-metrics/two minutes missed under DPROD-faithful deny": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.94,
+     "ms": 14.62,
      "status": "unsupported"
     },
     "dprod-trading-contract/analytics displays the feed, one interval missed": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.98,
+     "ms": 15.27,
      "status": "unsupported"
     },
     "dprod-trading-contract/analytics distributes market data externally": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.54,
+     "ms": 15.35,
      "status": "unsupported"
     },
     "dprod-trading-contract/analytics runs non-display analytics internally": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.67,
+     "ms": 14.96,
      "status": "unsupported"
     },
     "dprod-trading-contract/the grantor displays under its own contract": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 14.73,
+     "ms": 15.49,
      "status": "unsupported"
     },
     "dprod-transaction-files/June read: last month's cycle missed, this month's open": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.45,
+     "ms": 13.67,
      "status": "unsupported"
     },
     "dprod-transaction-files/export transaction files": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.17,
+     "ms": 13.63,
      "status": "unsupported"
     },
     "dprod-transaction-files/modify transaction files": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.11,
+     "ms": 13.44,
      "status": "unsupported"
     },
     "dprod-transaction-files/the same read under DPROD-faithful deny": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 13.72,
+     "ms": 14.24,
      "status": "unsupported"
     },
     "due2-conditional-duties/all nine modules enabled, all fees paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 21.46,
+     "ms": 22.42,
      "status": "unsupported"
     },
     "due2-conditional-duties/all nine modules enabled, nothing paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 20.88,
+     "ms": 22.21,
      "status": "unsupported"
     },
     "due2-conditional-duties/all nine modules unknown, all fees paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 21.22,
+     "ms": 21.67,
      "status": "unsupported"
     },
     "due2-conditional-duties/all nine modules unknown, nothing paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 21.77,
+     "ms": 21.72,
      "status": "unsupported"
     },
     "due2-conditional-duties/one module enabled, eight unknown, all fees paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 21.17,
+     "ms": 21.85,
      "status": "unsupported"
     },
     "due2-grant-signers/payment discharges this download": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.62,
+     "ms": 7.96,
      "status": "unsupported"
     },
     "due2-grant-signers/payment with no issuer": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.99,
+     "ms": 7.78,
      "status": "unsupported"
     },
     "due2-grant-signers/request without a reference falls back to member scope": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 10.85,
+     "ms": 11.21,
      "status": "unsupported"
     },
     "due2-grant-signers/self-attested payment": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.83,
+     "ms": 7.86,
      "status": "unsupported"
     },
     "due2-grant-signers/the same payment, a second download": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.66,
+     "ms": 7.86,
      "status": "unsupported"
     },
     "due2-incomparable-frontier/approval by the wrong party": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.48,
+     "ms": 8.77,
      "status": "unsupported"
     },
     "due2-incomparable-frontier/manager has approved": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.57,
+     "ms": 8.95,
      "status": "unsupported"
     },
     "due2-incomparable-frontier/nothing done yet": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.66,
+     "ms": 9.18,
      "status": "unsupported"
     },
     "due2-max-mixed/all flags true, no approval": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 22.34,
+     "ms": 22.94,
      "status": "unsupported"
     },
     "due2-max-mixed/all nine flags unknown (k = 9, beyond the bound)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 22.08,
+     "ms": 22.76,
      "status": "unsupported"
     },
     "due2-max-mixed/flag 1 true, eight unknown (k = 8, at the bound)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 21.88,
+     "ms": 22.31,
      "status": "unsupported"
     },
     "due2-max-mixed/flag 1 true, the rest false": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 22.34,
+     "ms": 23.36,
      "status": "unsupported"
     },
     "due2-or-unknown/both fail": {
-     "ms": 27.07,
+     "ms": 27.4,
      "status": "pass"
     },
     "due2-or-unknown/both missing": {
      "detail": "unsupported: completion",
-     "ms": 18.21,
+     "ms": 18.56,
      "status": "unsupported"
     },
     "due2-or-unknown/clearance fails, membership unknown": {
      "detail": "unsupported: completion",
-     "ms": 19.04,
+     "ms": 19.56,
      "status": "unsupported"
     },
     "due2-or-unknown/clearance suffices, membership unknown": {
-     "ms": 26.68,
+     "ms": 27.12,
      "status": "pass"
     },
     "due2-or-unknown/membership suffices, clearance invalid": {
-     "ms": 26.4,
+     "ms": 27.23,
      "status": "pass"
     },
     "due2-repeated-right-operand/list: region in the set": {
-     "ms": 26.33,
+     "ms": 27.58,
      "status": "pass"
     },
     "due2-repeated-right-operand/list: region outside the set": {
-     "ms": 26.59,
+     "ms": 27.77,
      "status": "pass"
     },
     "due2-repeated-right-operand/list: region unknown": {
      "detail": "unsupported: completion",
-     "ms": 18.02,
+     "ms": 18.84,
      "status": "unsupported"
     },
     "due2-repeated-right-operand/repeated values: region in the set": {
-     "ms": 25.73,
+     "ms": 28.45,
      "status": "pass"
     },
     "due2-repeated-right-operand/repeated values: region outside the set": {
-     "ms": 26.23,
+     "ms": 28.53,
      "status": "pass"
     },
     "due2-repeated-right-operand/repeated values: region unknown": {
      "detail": "unsupported: completion",
-     "ms": 17.86,
+     "ms": 18.81,
      "status": "unsupported"
     },
     "due2-shared-reads/both named": {
-     "ms": 17.11,
+     "ms": 17.66,
      "status": "pass"
     },
     "due2-shared-reads/no assignee": {
-     "ms": 17.16,
+     "ms": 17.59,
      "status": "pass"
     },
     "due2-shared-reads/no target": {
-     "ms": 16.55,
+     "ms": 17.85,
      "status": "pass"
     },
     "due2-xone-unknown/EU only": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 14.4,
+     "ms": 15.46,
      "status": "unsupported"
     },
     "due2-xone-unknown/EU-domiciled, US domicile unknown, attestation on file": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 14.87,
+     "ms": 15.48,
      "status": "unsupported"
     },
     "due2-xone-unknown/EU-domiciled, US domicile unknown, no attestation": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 14.24,
+     "ms": 15.01,
      "status": "unsupported"
     },
     "due2-xone-unknown/both domiciles unknown, attestation on file": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 14.1,
+     "ms": 14.91,
      "status": "unsupported"
     },
     "due2-xone-unknown/dual-domiciled, no attestation": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 14.28,
+     "ms": 14.84,
      "status": "unsupported"
     },
     "due2-xone-unknown/neither domicile": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 14.37,
+     "ms": 15.2,
      "status": "unsupported"
     },
     "force-08/testcase-026-alice-read-x (temporal)": {
-     "ms": 16.31,
+     "ms": 17.89,
      "status": "pass"
     },
     "force-08/testcase-027-alice-write-x (temporal)": {
-     "ms": 16.53,
+     "ms": 17.35,
      "status": "pass"
     },
     "force-08/testcase-028-alice-read-y (temporal)": {
-     "ms": 16.49,
+     "ms": 17.59,
      "status": "pass"
     },
     "force-08/testcase-029-bob-write-y (temporal)": {
-     "ms": 15.97,
+     "ms": 17.29,
      "status": "pass"
     },
     "force-09/testcase-030-alice-read-x (temporal)": {
-     "ms": 16.85,
+     "ms": 18.34,
      "status": "pass"
     },
     "force-09/testcase-031-alice-read-x-past (temporal-past)": {
-     "ms": 16.92,
+     "ms": 18.2,
      "status": "pass"
     },
     "force-09/testcase-032-alice-read-x-future (temporal-future)": {
-     "ms": 16.68,
+     "ms": 18.35,
      "status": "pass"
     },
     "force-10/testcase-033-alice-read-x (temporal)": {
-     "ms": 16.66,
+     "ms": 18.22,
      "status": "pass"
     },
     "force-10/testcase-034-alice-read-x-past (temporal-past)": {
-     "ms": 16.81,
+     "ms": 18.05,
      "status": "pass"
     },
     "force-10/testcase-035-alice-read-x-future (temporal-future)": {
-     "ms": 16.95,
+     "ms": 18.11,
      "status": "pass"
     },
     "force-11/testcase-036-alice-read-x (temporal-future)": {
-     "ms": 16.86,
+     "ms": 18.15,
      "status": "pass"
     },
     "force-11/testcase-037-alice-read-x-past (temporal-past)": {
-     "ms": 16.52,
+     "ms": 17.9,
      "status": "pass"
     },
     "force-11/testcase-038-alice-read-x-future (temporal-future)": {
-     "ms": 16.77,
+     "ms": 17.94,
      "status": "pass"
     },
     "force-12/testcase-039-alice-read-x (temporal)": {
-     "ms": 16.65,
+     "ms": 18.8,
      "status": "pass"
     },
     "force-12/testcase-040-alice-read-x-past (temporal-past)": {
-     "ms": 16.86,
+     "ms": 18.79,
      "status": "pass"
     },
     "force-12/testcase-041-alice-read-x-future (temporal-future)": {
-     "ms": 17.18,
+     "ms": 18.25,
      "status": "pass"
     },
     "force-13/testcase-042-alice-read-x (temporal)": {
-     "ms": 16.91,
+     "ms": 17.4,
      "status": "pass"
     },
     "force-13/testcase-043-alice-read-x-past (temporal-past)": {
-     "ms": 16.76,
+     "ms": 17.75,
      "status": "pass"
     },
     "force-13/testcase-044-alice-read-x-future (temporal-future)": {
-     "ms": 16.65,
+     "ms": 17.93,
      "status": "pass"
     },
     "force-14/testcase-045-alice-read-x (temporal)": {
-     "ms": 16.63,
+     "ms": 17.71,
      "status": "pass"
     },
     "force-14/testcase-046-alice-read-x-past (temporal-past)": {
-     "ms": 16.79,
+     "ms": 17.73,
      "status": "pass"
     },
     "force-14/testcase-047-alice-read-x-future (temporal-future)": {
-     "ms": 16.7,
+     "ms": 17.69,
      "status": "pass"
     },
     "force-15/testcase-048-alice-read-x (temporal)": {
-     "ms": 17.86,
+     "ms": 18.3,
      "status": "pass"
     },
     "force-15/testcase-049-alice-read-x-past (temporal-past)": {
-     "ms": 17.6,
+     "ms": 18.0,
      "status": "pass"
     },
     "force-15/testcase-050-alice-read-x-future (temporal-future)": {
-     "ms": 17.64,
+     "ms": 18.6,
      "status": "pass"
     },
     "force-16/testcase-051-alice (partyMembership)": {
-     "ms": 16.48,
+     "ms": 16.96,
      "status": "pass"
     },
     "force-16/testcase-052-bob-read-x (partyMembership)": {
-     "ms": 16.47,
+     "ms": 17.23,
      "status": "pass"
     },
     "force-17/testcase-053-alice-read-x (assetMembership)": {
-     "ms": 16.67,
+     "ms": 17.38,
      "status": "pass"
     },
     "force-17/testcase-054-alice-read-y (assetMembership)": {
-     "ms": 16.46,
-     "status": "pass"
-    },
-    "force-18/testcase-055-alice-read-x (bothMembership)": {
      "ms": 16.83,
      "status": "pass"
     },
+    "force-18/testcase-055-alice-read-x (bothMembership)": {
+     "ms": 17.88,
+     "status": "pass"
+    },
     "force-18/testcase-056-alice-read-y (bothMembership)": {
-     "ms": 16.34,
+     "ms": 17.75,
      "status": "pass"
     },
     "force-18/testcase-057-bob-read-x (bothMembership)": {
-     "ms": 16.58,
+     "ms": 17.26,
      "status": "pass"
     },
     "force-18/testcase-058-bob-write-y (bothMembership)": {
-     "ms": 16.46,
+     "ms": 17.37,
      "status": "pass"
     },
     "force-19/testcase-059-nonset (dutyNonset)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.31,
+     "ms": 7.63,
      "status": "unsupported"
     },
     "force-19/testcase-060-fulfilled (dutyFulfilled)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.51,
+     "ms": 7.95,
      "status": "unsupported"
     },
     "force-19/testcase-061-violated (dutyViolated)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.77,
+     "ms": 7.54,
      "status": "unsupported"
     },
     "force-20/testcase-062-big-policy (temporal)": {
-     "ms": 435.93,
+     "ms": 444.84,
      "status": "pass"
     },
     "force-20/testcase-063-big-policy-OoO (out-of-office)": {
-     "ms": 447.79,
+     "ms": 453.02,
      "status": "pass"
     },
     "force-20/testcase-064-big-policy-past (temporal-past)": {
-     "ms": 441.12,
+     "ms": 435.09,
      "status": "pass"
     },
     "force-21/testcase-065-alice (all-2024)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.86,
+     "ms": 9.13,
      "status": "unsupported"
     },
     "force-21/testcase-066-bob-sell (all-2024)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.68,
+     "ms": 8.55,
      "status": "unsupported"
     },
     "force-21/testcase-067-alice-past (all-2023)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.59,
+     "ms": 8.62,
      "status": "unsupported"
     },
     "force-21/testcase-068-bob-write-y-past (all-2023)": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.22,
+     "ms": 8.51,
      "status": "unsupported"
     },
     "oval-action-hierarchy/play under a permission on use (includedIn1)": {
-     "ms": 16.22,
+     "ms": 16.73,
      "status": "pass"
     },
     "oval-action-hierarchy/sell under a permission on use (includedIn3)": {
-     "ms": 15.83,
+     "ms": 17.19,
      "status": "pass"
     },
     "oval-action-hierarchy/use under a permission on play (includedIn2)": {
-     "ms": 15.93,
+     "ms": 17.06,
      "status": "pass"
     },
     "oval-conflict-invalid/Alice uses the movie (added)": {
-     "ms": 16.6,
+     "ms": 16.89,
      "status": "pass"
     },
     "oval-conflict-invalid/Bob uses the movie (OVAL request)": {
-     "ms": 16.37,
+     "ms": 17.26,
      "status": "pass"
     },
     "oval-conflict-perm/Alice uses the movie (added)": {
-     "ms": 16.14,
+     "ms": 16.88,
      "status": "pass"
     },
     "oval-conflict-perm/Bob uses the movie (OVAL request)": {
-     "ms": 16.4,
+     "ms": 17.13,
      "status": "pass"
     },
     "oval-conflict-prohibit/Alice uses the movie (added)": {
-     "ms": 15.82,
+     "ms": 16.94,
      "status": "pass"
     },
     "oval-conflict-prohibit/Bob uses the movie (OVAL request)": {
-     "ms": 15.98,
+     "ms": 17.23,
      "status": "pass"
     },
     "oval-duty-payment/no payment (added)": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.08,
+     "ms": 12.71,
      "status": "unsupported"
     },
     "oval-duty-payment/paid 2 EUR (duty2, duty3)": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.46,
+     "ms": 13.49,
      "status": "unsupported"
     },
     "oval-duty-payment/paid 6.1 EUR before the request (duty1)": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 23.69,
+     "ms": 23.86,
      "status": "unsupported"
     },
     "oval-list-right-operand/one listed and one unlisted page (listRightOperand3)": {
-     "ms": 25.64,
+     "ms": 27.16,
      "status": "pass"
     },
     "oval-list-right-operand/one listed page (listRightOperand1)": {
-     "ms": 26.05,
+     "ms": 27.05,
      "status": "pass"
     },
     "oval-list-right-operand/one unlisted page (listRightOperand4)": {
-     "ms": 25.66,
+     "ms": 26.85,
      "status": "pass"
     },
     "oval-list-right-operand/two listed pages (listRightOperand2)": {
-     "ms": 26.79,
+     "ms": 26.97,
      "status": "pass"
     },
     "oval-no-target-permission/no target (default_sem1-3)": {
-     "ms": 22.28,
+     "ms": 23.48,
      "status": "pass"
     },
     "oval-no-target-permission/target named (permission1-3)": {
-     "ms": 16.36,
+     "ms": 16.58,
      "status": "pass"
     },
     "oval-no-target-prohibition/no target (default_sem4-6)": {
-     "ms": 22.72,
+     "ms": 23.47,
      "status": "pass"
     },
     "oval-no-target-prohibition/target named (prohibition1-3)": {
-     "ms": 16.0,
+     "ms": 16.61,
      "status": "pass"
     },
     "oval-party-collection/a member requests (partOf2)": {
-     "ms": 16.81,
+     "ms": 17.51,
      "status": "pass"
     },
     "oval-party-collection/a non-member requests (partOf3)": {
-     "ms": 16.94,
+     "ms": 17.12,
      "status": "pass"
     },
     "oval-party-collection/the collection itself requests (partOf1)": {
-     "ms": 16.71,
+     "ms": 17.24,
      "status": "pass"
     },
     "rl2-anonymization-required/approved anonymization assessment": {
-     "ms": 25.74,
+     "ms": 26.56,
      "status": "pass"
     },
     "rl2-anonymization-required/assessment missing": {
      "detail": "unsupported: completion",
-     "ms": 17.05,
+     "ms": 17.82,
      "status": "unsupported"
     },
     "rl2-anonymization-required/assessments disagree": {
      "detail": "unsupported: completion",
-     "ms": 17.29,
+     "ms": 18.38,
      "status": "unsupported"
     },
     "rl2-asset-collection-access/asset outside the collection": {
-     "ms": 17.34,
+     "ms": 17.77,
      "status": "pass"
     },
     "rl2-asset-collection-access/direct member Demographics": {
-     "ms": 17.05,
+     "ms": 17.59,
      "status": "pass"
     },
     "rl2-asset-collection-access/direct member Outcomes": {
-     "ms": 17.54,
+     "ms": 17.6,
      "status": "pass"
     },
     "rl2-asset-collection-access/member of a nested collection": {
-     "ms": 16.88,
+     "ms": 17.57,
      "status": "pass"
     },
     "rl2-attestation-gating/attest request, attestation fulfilled": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.21,
+     "ms": 13.04,
      "status": "unsupported"
     },
     "rl2-attestation-gating/attested before the window opened": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.36,
+     "ms": 13.14,
      "status": "unsupported"
     },
     "rl2-attestation-gating/attested inside the window": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.56,
+     "ms": 13.8,
      "status": "unsupported"
     },
     "rl2-attestation-gating/before the window opens": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.7,
+     "ms": 13.21,
      "status": "unsupported"
     },
     "rl2-attestation-gating/inside the window, not yet attested": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.95,
+     "ms": 13.31,
      "status": "unsupported"
     },
     "rl2-attestation-gating/window closed without attestation": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.71,
+     "ms": 13.34,
      "status": "unsupported"
     },
     "rl2-attestation-gating/window closed without attestation, DPROD-faithful violations": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.71,
+     "ms": 13.14,
      "status": "unsupported"
     },
     "rl2-audit-trail/audit record created": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.71,
+     "ms": 8.19,
      "status": "unsupported"
     },
     "rl2-audit-trail/no audit record yet": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.53,
+     "ms": 8.02,
      "status": "unsupported"
     },
     "rl2-audit-trail/record logged after the decision instant": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.47,
+     "ms": 7.76,
      "status": "unsupported"
     },
     "rl2-audit-trail/record written by someone else": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.61,
+     "ms": 7.9,
      "status": "unsupported"
     },
     "rl2-break-glass/break-glass active for the requester": {
-     "ms": 25.85,
+     "ms": 26.22,
      "status": "pass"
     },
     "rl2-break-glass/break-glass not active": {
-     "ms": 26.33,
+     "ms": 26.03,
      "status": "pass"
     },
     "rl2-break-glass/only another agent has activated break-glass": {
      "detail": "unsupported: completion",
-     "ms": 17.36,
+     "ms": 17.7,
      "status": "unsupported"
     },
     "rl2-check-signing-sod/Alice asks to sign": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.21,
+     "ms": 7.81,
      "status": "unsupported"
     },
     "rl2-check-signing-sod/Alice prepared a different check": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.11,
+     "ms": 7.77,
      "status": "unsupported"
     },
     "rl2-check-signing-sod/Alice prepared the check": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.97,
+     "ms": 7.94,
      "status": "unsupported"
     },
     "rl2-check-signing-sod/Bob prepared the check himself": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 8.28,
+     "ms": 7.69,
      "status": "unsupported"
     },
     "rl2-chinese-wall/analyst reads before publication": {
-     "ms": 27.32,
+     "ms": 27.96,
      "status": "pass"
     },
     "rl2-chinese-wall/banker reads after publication": {
-     "ms": 30.41,
+     "ms": 27.86,
      "status": "pass"
     },
     "rl2-chinese-wall/banker reads before publication": {
-     "ms": 29.8,
+     "ms": 28.29,
      "status": "pass"
     },
     "rl2-chinese-wall/publication status unknown": {
      "detail": "unsupported: completion",
-     "ms": 18.96,
+     "ms": 19.12,
      "status": "unsupported"
     },
     "rl2-classification-targeting/assembler omits the anyAsset membership": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.98,
+     "ms": 13.06,
      "status": "unsupported"
     },
     "rl2-classification-targeting/asset with another classification": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.08,
+     "ms": 13.3,
      "status": "unsupported"
     },
     "rl2-classification-targeting/classification missing": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.2,
+     "ms": 12.99,
      "status": "unsupported"
     },
     "rl2-classification-targeting/home-loan asset": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.74,
+     "ms": 13.67,
      "status": "unsupported"
     },
     "rl2-classification-targeting/home-loan read already logged": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.72,
+     "ms": 13.06,
      "status": "unsupported"
     },
     "rl2-compliance-attestation/admissible attestation: certified": {
-     "ms": 25.98,
+     "ms": 26.34,
      "status": "pass"
     },
     "rl2-compliance-attestation/attestation from an issuer the profile does not accept": {
      "detail": "unsupported: completion",
-     "ms": 17.36,
+     "ms": 17.82,
      "status": "unsupported"
     },
     "rl2-compliance-attestation/attestation missing": {
      "detail": "unsupported: completion",
-     "ms": 17.8,
+     "ms": 17.65,
      "status": "unsupported"
     },
     "rl2-compliance-attestation/attested as suspended": {
-     "ms": 25.53,
+     "ms": 26.29,
      "status": "pass"
     },
     "rl2-compliance-attestation/conflicting attestations": {
      "detail": "unsupported: completion",
-     "ms": 17.15,
+     "ms": 18.56,
      "status": "unsupported"
     },
     "rl2-concurrent-seats/49 active seats": {
-     "ms": 26.67,
+     "ms": 27.05,
      "status": "pass"
     },
     "rl2-concurrent-seats/50 active seats": {
-     "ms": 26.6,
+     "ms": 27.48,
      "status": "pass"
     },
     "rl2-concurrent-seats/licence service unavailable": {
      "detail": "unsupported: completion",
-     "ms": 18.33,
+     "ms": 19.16,
      "status": "unsupported"
     },
     "rl2-concurrent-seats/seat count of the wrong type": {
      "detail": "unsupported: completion",
-     "ms": 17.98,
+     "ms": 18.46,
      "status": "unsupported"
     },
     "rl2-connector-certification/no current certification record": {
      "detail": "unsupported: completion",
-     "ms": 17.57,
+     "ms": 18.26,
      "status": "unsupported"
     },
     "rl2-connector-certification/registry reports the certification invalid": {
-     "ms": 25.66,
+     "ms": 26.84,
      "status": "pass"
     },
     "rl2-connector-certification/valid certification": {
-     "ms": 25.34,
+     "ms": 26.51,
      "status": "pass"
     },
     "rl2-data-freshness-promise/dataset seven hours old": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.11,
+     "ms": 12.44,
      "status": "unsupported"
     },
     "rl2-data-freshness-promise/dataset two hours old": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.09,
+     "ms": 12.57,
      "status": "unsupported"
     },
     "rl2-data-freshness-promise/request for the obligation's own action": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.24,
+     "ms": 12.79,
      "status": "unsupported"
     },
     "rl2-data-product-offer/read daily port after attestation": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.44,
+     "ms": 13.89,
      "status": "unsupported"
     },
     "rl2-data-product-offer/read daily port, no attestation yet": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.14,
+     "ms": 13.58,
      "status": "unsupported"
     },
     "rl2-data-product-offer/read history port, attestation by the wrong party, daily port stale": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.49,
+     "ms": 13.71,
      "status": "unsupported"
     },
     "rl2-data-retention-limit/deadline missed, DPROD-faithful violations": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.98,
+     "ms": 13.43,
      "status": "unsupported"
     },
     "rl2-data-retention-limit/deleted before the window opened": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.88,
+     "ms": 13.39,
      "status": "unsupported"
     },
     "rl2-data-retention-limit/deleted inside the window": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.49,
+     "ms": 13.78,
      "status": "unsupported"
     },
     "rl2-data-retention-limit/retain after expiry, not yet deleted": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.22,
+     "ms": 13.18,
      "status": "unsupported"
     },
     "rl2-data-retention-limit/retain before expiry": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.89,
+     "ms": 13.37,
      "status": "unsupported"
     },
     "rl2-data-sovereignty/other purpose": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.18,
+     "ms": 12.54,
      "status": "unsupported"
     },
     "rl2-data-sovereignty/production-support purpose": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.45,
+     "ms": 12.69,
      "status": "unsupported"
     },
     "rl2-data-sovereignty/purpose not supplied": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.24,
+     "ms": 12.71,
      "status": "unsupported"
     },
     "rl2-data-sovereignty/usage record submitted": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.48,
+     "ms": 12.83,
      "status": "unsupported"
     },
     "rl2-data-stewardship/no stewardship evidence yet": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.59,
+     "ms": 7.7,
      "status": "unsupported"
     },
     "rl2-data-stewardship/stewardship dated after the decision time": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.61,
+     "ms": 7.77,
      "status": "unsupported"
     },
     "rl2-data-stewardship/stewardship performed": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.91,
+     "ms": 7.84,
      "status": "unsupported"
     },
     "rl2-deletion-after-use/completion status unresolved": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.19,
+     "ms": 12.63,
      "status": "unsupported"
     },
     "rl2-deletion-after-use/deadline missed, DPROD-faithful violations": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.49,
+     "ms": 12.95,
      "status": "unsupported"
     },
     "rl2-deletion-after-use/deadline missed, violations ignored": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.5,
+     "ms": 12.94,
      "status": "unsupported"
     },
     "rl2-deletion-after-use/deleted inside the window": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.69,
+     "ms": 13.2,
      "status": "unsupported"
     },
     "rl2-deletion-after-use/processing after completion": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.54,
+     "ms": 12.97,
      "status": "unsupported"
     },
     "rl2-derived-data-restriction/assessment of the wrong type": {
      "detail": "unsupported: completion",
-     "ms": 17.16,
+     "ms": 17.75,
      "status": "unsupported"
     },
     "rl2-derived-data-restriction/assessment says non-reconstructing": {
-     "ms": 26.15,
+     "ms": 26.63,
      "status": "pass"
     },
     "rl2-derived-data-restriction/assessment says reconstructing": {
-     "ms": 26.02,
+     "ms": 26.49,
      "status": "pass"
     },
     "rl2-derived-data-restriction/conflicting assessments": {
      "detail": "unsupported: completion",
-     "ms": 17.15,
+     "ms": 17.65,
      "status": "unsupported"
     },
     "rl2-derived-data-restriction/no assessment": {
      "detail": "unsupported: completion",
-     "ms": 17.27,
+     "ms": 17.67,
      "status": "unsupported"
     },
     "rl2-derived-data-restriction/unknown assessment for another party's request": {
-     "ms": 25.47,
+     "ms": 25.78,
      "status": "pass"
     },
     "rl2-display-vs-nondisplay/another party displays quotations": {
-     "ms": 16.59,
+     "ms": 17.01,
      "status": "pass"
     },
     "rl2-display-vs-nondisplay/automated trading by an unnamed requester": {
-     "ms": 24.12,
+     "ms": 24.18,
      "status": "pass"
     },
     "rl2-display-vs-nondisplay/subscriber displays quotations": {
-     "ms": 16.62,
+     "ms": 17.51,
      "status": "pass"
     },
     "rl2-display-vs-nondisplay/subscriber trades automatically": {
-     "ms": 16.92,
+     "ms": 17.95,
      "status": "pass"
     },
     "rl2-ethics-approval/Alice holds a valid approval": {
-     "ms": 26.08,
+     "ms": 26.37,
      "status": "pass"
     },
     "rl2-ethics-approval/approval fact missing": {
      "detail": "unsupported: completion",
-     "ms": 17.73,
+     "ms": 18.22,
      "status": "unsupported"
     },
     "rl2-ethics-approval/request names no subject": {
      "detail": "unsupported: completion",
-     "ms": 17.06,
+     "ms": 18.22,
      "status": "unsupported"
     },
     "rl2-ethics-approval/requester's approval is not valid": {
-     "ms": 25.86,
+     "ms": 26.63,
      "status": "pass"
     },
     "rl2-exclusive-use-category/advertising use": {
-     "ms": 27.43,
+     "ms": 29.09,
      "status": "pass"
     },
     "rl2-exclusive-use-category/category missing": {
      "detail": "unsupported: completion",
-     "ms": 18.71,
+     "ms": 19.38,
      "status": "unsupported"
     },
     "rl2-exclusive-use-category/category outside the three": {
-     "ms": 27.44,
+     "ms": 28.1,
      "status": "pass"
     },
     "rl2-exclusive-use-category/conflicting categories": {
      "detail": "unsupported: completion",
-     "ms": 19.27,
+     "ms": 20.21,
      "status": "unsupported"
     },
     "rl2-exclusive-use-category/editorial use": {
-     "ms": 28.12,
+     "ms": 29.73,
      "status": "pass"
     },
     "rl2-fire-alarm/alarm active": {
-     "ms": 25.8,
+     "ms": 26.32,
      "status": "pass"
     },
     "rl2-fire-alarm/alarm inactive": {
-     "ms": 26.05,
+     "ms": 26.88,
      "status": "pass"
     },
     "rl2-fire-alarm/alarm state invalid": {
      "detail": "unsupported: completion",
-     "ms": 17.21,
+     "ms": 17.69,
      "status": "unsupported"
     },
     "rl2-fire-alarm/alarm state missing": {
      "detail": "unsupported: completion",
-     "ms": 17.41,
+     "ms": 17.97,
      "status": "unsupported"
     },
     "rl2-fire-alarm/request names no assignee": {
-     "ms": 33.77,
+     "ms": 35.06,
      "status": "pass"
     },
     "rl2-fire-alarm/requester is not the occupant": {
-     "ms": 24.86,
+     "ms": 26.01,
      "status": "pass"
     },
     "rl2-fulfillment-evidence/delivered inside the window": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.12,
+     "ms": 12.67,
      "status": "unsupported"
     },
     "rl2-fulfillment-evidence/delivery requested before the window": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 11.93,
+     "ms": 12.31,
      "status": "unsupported"
     },
     "rl2-fulfillment-evidence/delivery requested inside the window": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.25,
+     "ms": 12.67,
      "status": "unsupported"
     },
     "rl2-fulfillment-evidence/window closed, not delivered": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.05,
+     "ms": 12.87,
      "status": "unsupported"
     },
     "rl2-fulfillment-evidence/window open, not delivered": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.61,
+     "ms": 12.33,
      "status": "unsupported"
     },
     "rl2-gdpr-erasure/erasure request validity unknown": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.03,
+     "ms": 12.37,
      "status": "unsupported"
     },
     "rl2-gdpr-erasure/no valid erasure request": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 11.97,
+     "ms": 12.36,
      "status": "unsupported"
     },
     "rl2-gdpr-erasure/valid erasure request present": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.0,
+     "ms": 12.47,
      "status": "unsupported"
     },
     "rl2-geo-restriction/EU jurisdiction": {
-     "ms": 25.11,
+     "ms": 26.12,
      "status": "pass"
     },
     "rl2-geo-restriction/jurisdiction in conflict": {
      "detail": "unsupported: completion",
-     "ms": 17.33,
+     "ms": 17.63,
      "status": "unsupported"
     },
     "rl2-geo-restriction/jurisdiction unresolved": {
      "detail": "unsupported: completion",
-     "ms": 17.11,
+     "ms": 17.86,
      "status": "unsupported"
     },
     "rl2-geo-restriction/non-EU jurisdiction": {
-     "ms": 25.81,
+     "ms": 26.71,
      "status": "pass"
     },
     "rl2-internal-use-only/external recipient": {
-     "ms": 25.19,
+     "ms": 26.52,
      "status": "pass"
     },
     "rl2-internal-use-only/internal recipient": {
-     "ms": 25.15,
+     "ms": 26.94,
      "status": "pass"
     },
     "rl2-internal-use-only/narrower action through the action closure": {
-     "ms": 25.21,
+     "ms": 26.16,
      "status": "pass"
     },
     "rl2-internal-use-only/recipient class missing": {
      "detail": "unsupported: completion",
-     "ms": 17.52,
+     "ms": 17.65,
      "status": "unsupported"
     },
     "rl2-legal-review-gate/approval fact in conflict": {
      "detail": "unsupported: completion",
-     "ms": 18.39,
+     "ms": 17.93,
      "status": "unsupported"
     },
     "rl2-legal-review-gate/approval fact invalid": {
      "detail": "unsupported: completion",
-     "ms": 18.41,
+     "ms": 17.71,
      "status": "unsupported"
     },
     "rl2-legal-review-gate/approval fact missing": {
      "detail": "unsupported: completion",
-     "ms": 17.96,
+     "ms": 17.84,
      "status": "unsupported"
     },
     "rl2-legal-review-gate/legal review approved": {
-     "ms": 25.57,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/legal review not approved": {
      "ms": 26.02,
      "status": "pass"
     },
+    "rl2-legal-review-gate/legal review not approved": {
+     "ms": 26.23,
+     "status": "pass"
+    },
     "rl2-legal-review-gate/other asset, approval fact missing": {
-     "ms": 26.28,
+     "ms": 27.1,
      "status": "pass"
     },
     "rl2-logging-notification/access after both duties were performed": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.03,
+     "ms": 12.73,
      "status": "unsupported"
     },
     "rl2-logging-notification/access during a confirmed incident": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 15.14,
+     "ms": 13.04,
      "status": "unsupported"
     },
     "rl2-logging-notification/access, incident state unknown": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 14.47,
+     "ms": 13.26,
      "status": "unsupported"
     },
     "rl2-logging-notification/incident notification requested": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.83,
+     "ms": 12.75,
      "status": "unsupported"
     },
     "rl2-multi-certification/certification lookup unanswered": {
      "detail": "unsupported: completion",
-     "ms": 18.71,
+     "ms": 18.62,
      "status": "unsupported"
     },
     "rl2-multi-certification/holds a superset": {
-     "ms": 28.18,
+     "ms": 27.17,
      "status": "pass"
     },
     "rl2-multi-certification/holds every required certification": {
-     "ms": 27.62,
+     "ms": 26.99,
      "status": "pass"
     },
     "rl2-multi-certification/holds no certifications": {
-     "ms": 27.62,
+     "ms": 26.67,
      "status": "pass"
     },
     "rl2-multi-certification/one required certification missing": {
-     "ms": 27.46,
+     "ms": 26.52,
      "status": "pass"
     },
     "rl2-multi-level-approval/all approvals valid": {
-     "ms": 26.65,
+     "ms": 26.01,
      "status": "pass"
     },
     "rl2-multi-level-approval/an approval has expired": {
-     "ms": 27.85,
+     "ms": 26.45,
      "status": "pass"
     },
     "rl2-multi-level-approval/approval data in conflict": {
      "detail": "unsupported: completion",
-     "ms": 19.13,
+     "ms": 18.25,
      "status": "unsupported"
     },
     "rl2-multi-level-approval/approval data missing": {
      "detail": "unsupported: completion",
-     "ms": 18.91,
+     "ms": 17.48,
      "status": "unsupported"
     },
     "rl2-negated-condition/active account": {
-     "ms": 29.23,
+     "ms": 26.26,
      "status": "pass"
     },
     "rl2-negated-condition/another agent with an active account": {
-     "ms": 27.39,
+     "ms": 26.69,
      "status": "pass"
     },
     "rl2-negated-condition/conflicting status": {
      "detail": "unsupported: completion",
-     "ms": 18.76,
+     "ms": 18.12,
      "status": "unsupported"
     },
     "rl2-negated-condition/status missing": {
      "detail": "unsupported: completion",
-     "ms": 18.87,
+     "ms": 17.88,
      "status": "unsupported"
     },
     "rl2-negated-condition/suspended account": {
-     "ms": 29.32,
+     "ms": 27.35,
      "status": "pass"
     },
     "rl2-no-ml-training/a third party trains a model": {
-     "ms": 17.27,
+     "ms": 17.23,
      "status": "pass"
     },
     "rl2-no-ml-training/licensee searches": {
-     "ms": 17.93,
+     "ms": 17.45,
      "status": "pass"
     },
     "rl2-no-ml-training/licensee trains a model": {
-     "ms": 18.21,
+     "ms": 17.26,
      "status": "pass"
     },
     "rl2-no-ml-training/training request naming no assignee": {
-     "ms": 24.36,
+     "ms": 24.59,
      "status": "pass"
     },
     "rl2-no-redistribution/disclosure status unavailable": {
      "detail": "unsupported: completion",
-     "ms": 17.12,
+     "ms": 17.73,
      "status": "unsupported"
     },
     "rl2-no-redistribution/legally required disclosure": {
-     "ms": 25.62,
+     "ms": 26.47,
      "status": "pass"
     },
     "rl2-no-redistribution/ordinary use of the data": {
-     "ms": 25.32,
+     "ms": 26.32,
      "status": "pass"
     },
     "rl2-no-redistribution/redistribution, no required disclosure": {
-     "ms": 25.85,
+     "ms": 26.33,
      "status": "pass"
     },
     "rl2-owner-access/Alice reads her own file": {
-     "ms": 25.06,
+     "ms": 26.1,
      "status": "pass"
     },
     "rl2-owner-access/conflicting owner assertions": {
      "detail": "unsupported: completion",
-     "ms": 17.34,
+     "ms": 18.05,
      "status": "unsupported"
     },
     "rl2-owner-access/file owned by someone else": {
-     "ms": 25.93,
+     "ms": 26.32,
      "status": "pass"
     },
     "rl2-owner-access/no owner recorded": {
      "detail": "unsupported: completion",
-     "ms": 17.18,
+     "ms": 17.61,
      "status": "unsupported"
     },
     "rl2-pass-through-terms/binding maintained": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.88,
+     "ms": 12.82,
      "status": "unsupported"
     },
     "rl2-pass-through-terms/customer bound by downstream terms": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.35,
+     "ms": 12.81,
      "status": "unsupported"
     },
     "rl2-pass-through-terms/customer not bound": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.44,
+     "ms": 12.79,
      "status": "unsupported"
     },
     "rl2-pass-through-terms/registry did not answer": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.22,
+     "ms": 12.71,
      "status": "unsupported"
     },
     "rl2-pass-through-terms/request for the obligated action itself": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/obligation",
-     "ms": 12.43,
+     "ms": 12.93,
      "status": "unsupported"
     },
     "rl2-pay-to-play/Alice has not paid": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.52,
+     "ms": 7.81,
      "status": "unsupported"
     },
     "rl2-pay-to-play/Alice has paid": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.66,
+     "ms": 8.05,
      "status": "unsupported"
     },
     "rl2-pay-to-play/another agent requests a view": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.6,
+     "ms": 7.97,
      "status": "unsupported"
     },
     "rl2-pay-to-play/only another customer has paid": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.63,
+     "ms": 7.98,
      "status": "unsupported"
     },
     "rl2-purpose-restriction/epidemiological research": {
-     "ms": 25.46,
+     "ms": 25.99,
      "status": "pass"
     },
     "rl2-purpose-restriction/no purpose declared": {
      "detail": "unsupported: completion",
-     "ms": 17.13,
+     "ms": 17.75,
      "status": "unsupported"
     },
     "rl2-purpose-restriction/two purposes declared": {
      "detail": "unsupported: completion",
-     "ms": 17.13,
+     "ms": 18.21,
      "status": "unsupported"
     },
     "rl2-purpose-restriction/unrelated purpose": {
-     "ms": 25.37,
+     "ms": 26.25,
      "status": "pass"
     },
     "rl2-quality-circuit-breaker/error rate 0.02": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.91,
+     "ms": 13.79,
      "status": "unsupported"
     },
     "rl2-quality-circuit-breaker/error rate 0.08": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.35,
+     "ms": 13.94,
      "status": "unsupported"
     },
     "rl2-quality-circuit-breaker/error rate exactly at the threshold": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.54,
+     "ms": 14.18,
      "status": "unsupported"
     },
     "rl2-quality-circuit-breaker/error rate not reported": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.13,
+     "ms": 13.55,
      "status": "unsupported"
     },
     "rl2-role-hierarchy/role fact missing": {
      "detail": "unsupported: completion",
-     "ms": 17.54,
+     "ms": 18.43,
      "status": "unsupported"
     },
     "rl2-role-hierarchy/role outside the analyst branch": {
-     "ms": 26.43,
+     "ms": 27.07,
      "status": "pass"
     },
     "rl2-role-hierarchy/senior analyst reads": {
-     "ms": 25.85,
+     "ms": 26.91,
      "status": "pass"
     },
     "rl2-schema-evolution/breaking change after the notice period": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 14.16,
+     "ms": 14.48,
      "status": "unsupported"
     },
     "rl2-schema-evolution/breaking change inside the notice period": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 14.15,
+     "ms": 14.61,
      "status": "unsupported"
     },
     "rl2-schema-evolution/breaking flag unresolved, notice elapsed": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.83,
+     "ms": 14.35,
      "status": "unsupported"
     },
     "rl2-schema-evolution/compatible change": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.92,
+     "ms": 15.08,
      "status": "unsupported"
     },
     "rl2-schema-evolution/request to notify consumers of a breaking change": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.74,
+     "ms": 14.26,
      "status": "unsupported"
     },
     "rl2-sla-credit-clause/uptime commitment violated, credit not yet issued": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.7,
+     "ms": 13.89,
      "status": "unsupported"
     },
     "rl2-sla-credit-clause/violation status unresolved": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.16,
+     "ms": 13.56,
      "status": "unsupported"
     },
     "rl2-step-up-auth/authentication level unresolved": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 13.07,
+     "ms": 13.5,
      "status": "unsupported"
     },
     "rl2-step-up-auth/multi-factor authentication": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.74,
+     "ms": 13.27,
      "status": "unsupported"
     },
     "rl2-step-up-auth/password only": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.76,
+     "ms": 13.27,
      "status": "unsupported"
     },
     "rl2-step-up-auth/password only, request to authenticate": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/constraint",
-     "ms": 12.56,
+     "ms": 13.01,
      "status": "unsupported"
     },
     "rl2-team-license/administrator has paid": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.6,
+     "ms": 7.89,
      "status": "unsupported"
     },
     "rl2-team-license/licence not yet paid": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.61,
+     "ms": 8.12,
      "status": "unsupported"
     },
     "rl2-team-license/member pays instead of the administrator": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.46,
+     "ms": 7.88,
      "status": "unsupported"
     },
     "rl2-team-license/payment does not extend to an unnamed agent": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.6,
+     "ms": 7.83,
      "status": "unsupported"
     },
     "rl2-time-window-access/action proposed inside, decided after the window": {
-     "ms": 25.67,
+     "ms": 26.8,
      "status": "pass"
     },
     "rl2-time-window-access/at the exclusive end": {
-     "ms": 26.41,
+     "ms": 26.51,
      "status": "pass"
     },
     "rl2-time-window-access/at the inclusive start": {
-     "ms": 25.7,
+     "ms": 26.59,
      "status": "pass"
     },
     "rl2-time-window-access/inside the study period": {
-     "ms": 26.64,
+     "ms": 27.26,
      "status": "pass"
     },
     "rl2-trial-period/execute after expiry": {
-     "ms": 42.3,
+     "ms": 27.47,
      "status": "pass"
     },
     "rl2-trial-period/execute at expiry": {
-     "ms": 27.83,
+     "ms": 28.2,
      "status": "pass"
     },
     "rl2-trial-period/execute before expiry": {
-     "ms": 27.62,
+     "ms": 28.72,
      "status": "pass"
     },
     "rl2-trial-period/other agent executes after expiry": {
-     "ms": 27.29,
+     "ms": 28.59,
      "status": "pass"
     },
     "rl2-trial-period/read after expiry": {
-     "ms": 27.81,
+     "ms": 28.25,
      "status": "pass"
     },
     "rl2-universe-selection/another agent reads": {
-     "ms": 16.44,
+     "ms": 16.89,
      "status": "pass"
     },
     "rl2-universe-selection/request names no assignee": {
-     "ms": 23.88,
+     "ms": 23.62,
      "status": "pass"
     },
     "rl2-universe-selection/subscriber reads": {
-     "ms": 16.84,
+     "ms": 16.69,
      "status": "pass"
     },
     "rl2-usage-metering/metering service unavailable": {
      "detail": "unsupported: completion",
-     "ms": 18.17,
+     "ms": 17.85,
      "status": "unsupported"
     },
     "rl2-usage-metering/quota admits the request": {
-     "ms": 26.79,
+     "ms": 27.04,
      "status": "pass"
     },
     "rl2-usage-metering/quota exhausted": {
-     "ms": 27.27,
+     "ms": 26.03,
      "status": "pass"
     },
     "rl2-volume-limit/above the per-request ceiling": {
-     "ms": 27.46,
+     "ms": 27.65,
      "status": "pass"
     },
     "rl2-volume-limit/quota fact unavailable": {
      "detail": "unsupported: completion",
-     "ms": 19.0,
+     "ms": 18.9,
      "status": "unsupported"
     },
     "rl2-volume-limit/within ceiling and quota": {
-     "ms": 31.77,
+     "ms": 27.19,
      "status": "pass"
     },
     "rl2-wire-transfer-sod/Bob approved a different transfer": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.45,
+     "ms": 7.82,
      "status": "unsupported"
     },
     "rl2-wire-transfer-sod/Bob approved the transfer": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.64,
+     "ms": 8.03,
      "status": "unsupported"
     },
     "rl2-wire-transfer-sod/approver tries to execute": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.59,
+     "ms": 7.74,
      "status": "unsupported"
     },
     "rl2-wire-transfer-sod/only Alice approved": {
      "detail": "unsupported: http://www.w3.org/ns/odrl/2/duty",
-     "ms": 7.71,
+     "ms": 7.92,
      "status": "unsupported"
     },
     "w3c-fs-a1/A11: before the deadline": {
-     "ms": 17.16,
+     "ms": 17.46,
      "status": "pass"
     },
     "w3c-fs-a1/A12: after the deadline": {
-     "ms": 16.47,
+     "ms": 17.57,
      "status": "pass"
     },
     "w3c-fs-b1/B11: 1000 dpi": {
-     "ms": 25.7,
+     "ms": 26.41,
      "status": "pass"
     },
     "w3c-fs-b1/B12: 1300 dpi": {
-     "ms": 25.75,
+     "ms": 26.3,
      "status": "pass"
     },
     "w3c-fs-b1/resolution not stated (added)": {
      "detail": "unsupported: completion",
-     "ms": 17.92,
+     "ms": 17.71,
      "status": "unsupported"
     },
     "w3c-fs-c1/C11: not yet paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.49,
+     "ms": 12.51,
      "status": "unsupported"
     },
     "w3c-fs-c1/C12: paid 5.00 EUR": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.08,
+     "ms": 12.6,
      "status": "unsupported"
     },
     "w3c-fs-c2/C21: Tuesday — duty not owed": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.68,
+     "ms": 12.95,
      "status": "unsupported"
     },
     "w3c-fs-c2/C22: Sunday, not paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.6,
+     "ms": 13.11,
      "status": "unsupported"
     },
     "w3c-fs-c2/C23: Sunday, paid": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.51,
+     "ms": 13.13,
      "status": "unsupported"
     },
     "w3c-fs-c2/weekday unknown, not paid (added)": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.98,
+     "ms": 13.28,
      "status": "unsupported"
     },
     "w3c-fs-c2/weekday unknown, paid (added)": {
      "detail": "unsupported: http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
-     "ms": 12.84,
+     "ms": 13.2,
      "status": "unsupported"
     }
    },
    "summary": {
     "error": 0,
     "fail": 0,
-    "max_ms": 447.79,
-    "p50_ms": 25.58,
-    "p95_ms": 31.52,
-    "p99_ms": 437.43,
+    "max_ms": 453.02,
+    "p50_ms": 26.28,
+    "p95_ms": 32.62,
+    "p99_ms": 437.91,
     "pass": 172,
-    "total_ms": 5255.0,
+    "total_ms": 5361.1,
     "unsupported": 234,
     "vectors": 406
    }
