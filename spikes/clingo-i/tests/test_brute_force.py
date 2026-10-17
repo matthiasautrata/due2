@@ -438,14 +438,16 @@ def unknown(case: Case) -> list[str]:
 
 
 def unknown_parts(case: Case) -> list[Json]:
-    """Every `u` part of every rule, `f` rules included (decisions/0016 #3).
+    """Every `u` part of every rule whose finding is not `f` (decisions/0016 #3, amendment).
 
     An absent target or party is `missing`, and so is a leaf whose parameter is absent; a leaf
-    whose property has no fact is `unresolved`. The rows are sorted by full IRI, as the reply's
-    are.
+    whose property has no fact is `unresolved`. A `u` leaf of a `t` rule, under a node another
+    member decides, is a row too. The rows are sorted by full IRI, as the reply's are.
     """
     rows: set[tuple[str, str, str]] = set()
     for r in case.rules:
+        if finding(parts(case, r)) is False:
+            continue
         if case.target is None:
             rows.add((EX + r.name, ODRL + "target", "missing"))
         if r.assignee is not None and case.assignee is None:
@@ -574,7 +576,7 @@ EXAMPLES = [
         PAIRED,
     ),
     # An f atom (a foreign action) with an absent target and a missing leaf: its u parts are
-    # reported, though it reads no variable.
+    # not reported, because an index may skip it (decisions/0016, amendment).
     Case(
         "prohibit",
         (Rule("r0", True, "play", "a", None, (eq(0),)), Rule("r1", False, "use", "b", None)),
@@ -732,13 +734,23 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
             )
         ],
     ),
-    # The unknown target of an f atom dropped: only u atoms report their parts.
+    # The absent target of an f atom reported: the reply would depend on the index.
+    "unknown-parts-of-f-atoms": (
+        "explain.lp",
+        [
+            (
+                "holds(part(X, target), u),\n    not holds(applies(X), f).",
+                "holds(part(X, target), u).",
+            )
+        ],
+    ),
+    # The u leaves of a t atom dropped: only u atoms report their leaves.
     "unknown-parts-of-u-atoms-only": (
         "explain.lp",
         [
             (
-                "unknown_part(X, target, missing) :- atom(X),",
-                "unknown_part(X, target, missing) :- holds(applies(X), u),",
+                "prop(Op, Prop),\n    not holds(applies(X), f).",
+                "prop(Op, Prop), holds(applies(X), u).",
             )
         ],
     ),
@@ -829,8 +841,8 @@ def shapes(case: Case) -> Iterator[str]:
         for p in parts(case, r)
     ):
         yield "an open tree with an opaque and a paired leaf"
-    if any(finding(parts(case, r)) is False for r in case.rules) and out["unknown_parts"]:
-        yield "an f atom beside unknown parts"
+    if case.target is None and any(finding(parts(case, r)) is False for r in case.rules):
+        yield "an f atom on an absent target"
     polarities: dict[Literal, set[bool]] = {}
     for r in case.rules:
         if finding(parts(case, r)) is not None:
@@ -867,7 +879,7 @@ def test_generator_reaches_each_shape() -> None:
         "two u atoms sharing a variable",
         "an atom with a variable of its own",
         "an open tree with an opaque and a paired leaf",
-        "an f atom beside unknown parts",
+        "an f atom on an absent target",
         "constraint parts sharing a key",
         "u leaf under a deciding connective",
     }

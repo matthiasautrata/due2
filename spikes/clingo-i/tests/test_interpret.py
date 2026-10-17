@@ -973,9 +973,10 @@ def test_opaque_is_not_paired(
 
 
 # Each status of due2-profiles.md §3 is reported as the operand's read gives it, and an absent
-# target or party names the field it reads. The last rows are atoms that are f (a foreign
-# action): their u parts are reported too (decisions/0016 #3). Without these rows a status
-# could be reported as another, or a u part of an f atom dropped.
+# target or party names the field it reads. The last row is an atom that is f (a foreign
+# action): its u parts are not reported, because an index may skip it (decisions/0016,
+# amendment). Without these rows a status could be reported as another, or an f atom's parts
+# reported.
 @pytest.mark.parametrize(
     ("changes", "fact", "expected"),
     [
@@ -995,8 +996,7 @@ def test_opaque_is_not_paired(
          [("ex:r", "odrl:target", "missing")]),
         ({"parties": {}}, {"status": "resolved", "values": [iri("ex:v")]},
          [("ex:r", "odrl:assignee", "missing")]),
-        ({"action": "ex:other", "parties": {}}, None,
-         [("ex:r", "ex:x", "unresolved"), ("ex:r", "odrl:assignee", "missing")]),
+        ({"action": "ex:other", "parties": {}}, None, []),
     ],
 )  # fmt: skip
 def test_unknown_parts(
@@ -1013,6 +1013,18 @@ def test_unknown_parts(
         if x is None:
             del request[k]
     assert unknown_parts(interpreter.reply(v)) == expected
+
+
+def test_decided_leaf_is_reported(interpreter: Interpreter) -> None:
+    # A t atom whose or has a t member and a u leaf: the u leaf decides nothing, and is
+    # reported (decisions/0016 #3). Reporting only u atoms would drop it.
+    y = "[ odrl:leftOperand ex:y ; odrl:operator odrl:eq ; odrl:rightOperand ex:w ]"
+    pol = constrained(
+        f"[ odrl:or ( {leaf('eq', 'ex:v')} {y} ) ]", bound("x"), bound("y", "stateSource")
+    )
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": iri("ex:v")}}))
+    assert outcome(reply) == "Permit"
+    assert unknown_parts(reply) == [("ex:r", "ex:y", "unresolved")]
 
 
 def test_invalid_read_is_reported(interpreter: Interpreter) -> None:

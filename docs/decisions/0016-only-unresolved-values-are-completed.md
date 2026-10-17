@@ -73,3 +73,11 @@ An example: `x eq 5 or not (x eq 5)` with `x` absent. `I` gets `U or U = U` and 
 
 - A profile declares an operand total, so that `missing` contradicts the profile instead of meaning "no value". Then the value exists, and pairing could hold for it.
 - A real policy needs a decision while its data is missing, and supplying the data is not possible.
+
+## Amendment (2026-10-17, the index)
+
+Item 3 of § Decision named every `U` part of every finding W2 produces. `due2-workflows.md` §5.5 lets an index skip a root atom that is certainly `F`, such as a rule for another action, so whether that atom's `U` parts were named depended on the index, and two conformant evaluators could return different traces for one evaluation (#73).
+
+`unknown_part` names the `U` parts of every finding W2 produces whose value is `T` or `U`. The relation is then the same whatever the index, because `due2-workflows.md` §5.5 lets an index skip only an atom that is certainly `F`. Nothing a reader needs is lost: an `F` finding stays `F` whatever its `U` parts are, so none of them is an input the request needs. A `U` leaf under a decided node of a `T` or `U` finding is still named, as item 3 asks.
+
+The alternative, naming the parts of every atom and requiring an index to emit them for the atoms it skips, was rejected: it keeps a rule for another action reporting its missing assignee, which is noise for the use #61 has in mind, and it takes back most of what the index saves. `due2-workflows.md` v0.26 §3.5 and §3.7, `conformance/README.md`, and clingo-i follow. No corpus scenario changes, since no expected row comes from an `F` atom.

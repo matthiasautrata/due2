@@ -2,12 +2,13 @@
 %
 % The reply's `eliminated` and `unknown_parts` rows. The `eliminated` rows
 % (due2-workflows.md §3.5, §6.2; decisions/0011 #4) are read from the findings before completion,
-% not from a world, so they do not depend on the completion. A remover has finding `t`. A removed atom has finding `t` or `u`:
-% a `u` atom removes nothing (due2-workflows.md §6.2), but it can be removed. Each row names one
-% removed atom, one remover, and the strategy; an atom removed by two forbids has two rows
-% (due2-workflows.md §3.5 **[D]**, #57). Variable letters: DESIGN.md § Vocabulary; in an `elim` row
-% `X` is removed and `Y` removes it. The `unknown_part` rows name every `u` part of every atom, with
-% what it reads and why it is `u` (decisions/0016 #3).
+% not from a world, so they do not depend on the completion. A remover has finding `t`. A removed
+% atom has finding `t` or `u`: a `u` atom removes nothing (due2-workflows.md §6.2), but it can be
+% removed. Each row names one removed atom, one remover, and the strategy; an atom removed by two
+% forbids has two rows (due2-workflows.md §3.5 **[D]**, #57). Variable letters:
+% DESIGN.md § Vocabulary; in an `elim` row `X` is removed and `Y` removes it. The `unknown_part`
+% rows name every `u` part of every atom whose finding is not `f`, with what it reads and why it is
+% `u` (decisions/0016 #3 and its amendment).
 %
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
 %   `conflict/2` (structure.lp); `holds/2`, `atom_constraint/2` (applies.lp); `member/2`,
@@ -107,12 +108,18 @@ Atom `X` has a `u` part that reads `Input` with status `S`. The relation is the
 `unknown_part` of due2-workflows.md §3.5 and decisions/0016 #3. `Input` is `target` for the
 request's target, `party(F)` for its party under function `F`, and `prop(Prop)` for a `u` leaf
 whose left operand reads the property `Prop`. An absent target or party is `missing`, and a
-leaf has its `leaf_status/2`. Every atom is reported, whatever its finding, and every `u` leaf
-of its trees, whether or not it decides its node: the reply names what was missing even where
-it did not matter.
+leaf has its `leaf_status/2`. Every atom whose finding is `t` or `u` is reported, with every `u`
+leaf of its trees, whether or not it decides its node: the reply names what was missing even
+where it did not matter. An `f` atom is not reported. None of its `u` parts can change it, and
+due2-workflows.md §5.5 lets an index skip it, so reporting it would make the reply depend on the
+index (decisions/0016, amendment).
 *%
-unknown_part(X, target, missing) :- atom(X), holds(part(X, target), u).
-unknown_part(X, party(F), missing) :- atom_party(X, F, _), holds(part(X, party(F)), u).
-unknown_part(X, prop(Prop), S) :- in_tree(X, C), leaf_status(C, S), left(C, Op), prop(Op, Prop).
+% `holds(applies(X), V)` has exactly one `V` (kleene.lp), so `not ... f` is "`t` or `u`".
+unknown_part(X, target, missing) :- atom(X), holds(part(X, target), u),
+    not holds(applies(X), f).
+unknown_part(X, party(F), missing) :- atom_party(X, F, _), holds(part(X, party(F)), u),
+    not holds(applies(X), f).
+unknown_part(X, prop(Prop), S) :- in_tree(X, C), leaf_status(C, S), left(C, Op), prop(Op, Prop),
+    not holds(applies(X), f).
 
 #show unknown_part/3.
