@@ -1,0 +1,134 @@
+{
+  "case": "due2-rebound-pay-amount",
+  "source": "due2-native: a policy restates where odrl:payAmount reads and keeps the type the baseline owns (decisions/0014)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The policy rebinds odrl:payAmount from due2:witnessSource to dprod:requestSource, which due2-profiles.md §2 lets a higher layer do: source and property come from the highest layer that states them. The range xsd:decimal stays the baseline's, the layer that owns the type, so the requested amount is checked against it. Contrast due2-retyped-operand, where the policy also restates the range and is rejected, and due2-witness-outside-duty, where the same operand on a permission keeps the witness source and is rejected.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "amount within the limit",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:payAmount": {
+            "@value": "80",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:buy",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "The requested odrl:payAmount 80 is an xsd:integer, a numeric kind like the baseline's xsd:decimal range, so it conforms, and 80 ≤ 100.00 is T. ex:buy applies and nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "amount over the limit",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:payAmount": {
+            "@value": "120.50",
+            "@type": "xsd:decimal"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "120.50 ≤ 100.00 is F, so ex:buy does not apply; no other rule targets ex:Dataset."
+      }
+    },
+    {
+      "name": "amount not a number",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:payAmount": {
+            "@value": "eighty",
+            "@type": "xsd:string"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:buy",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "why": "An xsd:string is not of the kind of the range xsd:decimal, which the baseline owns, so the read is a TypeMismatch and the constraint is U (due2-profiles.md §3). Completing ex:buy T gives Permit and F gives NotApplicable, so Indeterminate."
+      }
+    }
+  ]
+}

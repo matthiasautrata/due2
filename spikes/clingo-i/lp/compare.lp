@@ -8,9 +8,9 @@
 % `xone` the value of its expansion (DESIGN.md § `compare.lp`). Ranks are those of kleene.lp.
 % Variable letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
+% - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
 %   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `op/2`,
-%   `right/2` (constraint.lp); `has_range/1`, `read_ok/1`, `read_u/1`, `read_value/2`
+%   `right/2` (constraint.lp); `read_ok/1`, `read_u/1`, `read_value/2`
 %   (operand.lp).
 % - **Provides:** `cpair/3`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `ordered/1`,
 %   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
@@ -47,11 +47,13 @@ point".
 same_type(Lv, Rv) :- pair(Lv, Rv), Lv = lit(_, Dt), Rv = lit(_, Dt).
 same_type(Lv, Rv) :- pair(Lv, Rv), Lv = lit(_, Dt, Tag), Rv = lit(_, Dt, Tag).
 
-% Two literals placed in one space with different datatypes, under an operand with no range:
-% due2-profiles.md §3 does not say whether they compare by value or by identity (#65).
-unsupported_value("value: datatypes differ without a range") :- cpair(C, Lv, Rv), left(C, Op),
-    not has_range(Op), value(Lv, Space, _), value(Rv, Space, _), Lv = lit(_, Dt),
-    Rv = lit(_, Dt2), Dt != Dt2.
+% Two unplaced literals of one kind but different datatypes, such as an `xsd:token` and an
+% `xsd:string`: decisions/0014 #6 compares them by value, and the spike does not apply the
+% whitespace facets that map a derived string to its value. Placed literals need no rule: each
+% value space holds one kind (DESIGN.md § Values), and a position compares them by value.
+unsupported_value("value: derived string datatypes") :- pair(Lv, Rv), not placed(Lv),
+    not placed(Rv), Lv = lit(_, Dt), Rv = lit(_, Dt2), Dt != Dt2, dt_kind(Dt, K),
+    dt_kind(Dt2, K).
 
 %## Equality
 

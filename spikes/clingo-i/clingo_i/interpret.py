@@ -137,16 +137,18 @@ class Interpreter:
         graph = flatten.parse(as_str(vector["policy"], "policy"))
 
         facts = flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
-        paths = set(self._core)
+        # A path's layer: `core`, or `module(Iri)` for the profile whose module it is part of
+        # (decisions/0014 #3). A file in both the core and a profile is core.
+        layers: dict[str, Symbol] = {path: Function("core") for path in self._core}
         for iri in flatten.profiles(graph):
             if iri not in self._profiles:
                 raise ValueError(f"unknown profile {iri}")
-            paths.update(self._profiles[iri])
+            for path in self._profiles[iri]:
+                layers.setdefault(path, Function("module", [String(iri)]))
             facts.append(Function("selected_profile", [String(iri)]))
-        for path in sorted(paths):
+        for path in sorted(layers):
             facts.extend(self._modules[path])
-            layer = "core" if path in self._core else "profile"
-            facts.append(Function("layer", [String(path), Function(layer)]))
+            facts.append(Function("layer", [String(path), layers[path]]))
         text = flatten.render(facts + values.value_facts(values.literals(facts)))
 
         self._structure(text)

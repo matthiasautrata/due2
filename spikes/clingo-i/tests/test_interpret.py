@@ -517,9 +517,9 @@ def test_unit_labels_without_converting(interpreter: Interpreter) -> None:
     assert outcome(interpreter.reply(v)) == "Permit"
 
 
-# Each layer declares ex:x's property: the policy reads ex:fromPolicy, a profile ex:fromProfile,
-# and the core ex:fromCore. The request gives only the property the winning layer names.
-def layered_init(profile_modules: int) -> Obj:
+# Each layer declares ex:x's property: the policy reads ex:fromPolicy, each profile the property
+# its module names, and the core ex:fromCore. The request gives only the property `param`.
+def layered_init(props: tuple[str, ...]) -> Obj:
     def decl(prop: str) -> str:
         return (
             CONSTRAINT_PREFIXES
@@ -527,24 +527,30 @@ def layered_init(profile_modules: int) -> Obj:
         )
 
     modules: Obj = {"core.ttl": decl("fromCore")}
-    names: list[Json] = [f"prof{i}.ttl" for i in range(profile_modules)]
-    for n in names:
-        modules[str(n)] = decl("fromProfile" if n == "prof0.ttl" else "fromOther")
-    return {"modules": modules, "core": ["core.ttl"], "profiles": {PROF: names}}
+    profiles: Obj = {}
+    for i, prop in enumerate(props):
+        modules[f"prof{i}.ttl"] = decl(prop)
+        profiles[f"{PROF}{i}"] = [f"prof{i}.ttl"]
+    return {"modules": modules, "core": ["core.ttl"], "profiles": profiles}
 
 
+# decisions/0014: the highest layer that states the property gives it, and two profile modules
+# have no order, so a difference between them is ConflictingProfileDeclaration. Without the last
+# two rows, a resolution that let one module win, or that compared files rather than profiles,
+# would pass.
 @pytest.mark.parametrize(
-    ("in_policy", "profile_modules", "param", "expected"),
+    ("in_policy", "props", "param", "expected"),
     [
-        (False, 0, "fromCore", "Permit"),
-        (False, 1, "fromProfile", "Permit"),
-        (False, 1, "fromCore", "completion"),  # the profile's whole declaration wins
-        (True, 1, "fromPolicy", "Permit"),
-        (False, 2, "fromProfile", "binding: two profile modules"),
+        (False, (), "fromCore", "Permit"),
+        (False, ("fromProfile",), "fromProfile", "Permit"),
+        (False, ("fromProfile",), "fromCore", "completion"),  # the profile's property wins
+        (True, ("fromProfile",), "fromPolicy", "Permit"),
+        (False, ("fromProfile", "fromProfile"), "fromProfile", "Permit"),  # modules agree
+        (False, ("fromProfile", "fromOther"), "fromProfile", "error"),
     ],
 )
-def test_binding_layers(in_policy: bool, profile_modules: int, param: str, expected: str) -> None:
-    profile = f"ex:p odrl:profile <{PROF}> .\n" if profile_modules else ""
+def test_binding_layers(in_policy: bool, props: tuple[str, ...], param: str, expected: str) -> None:
+    profile = "".join(f"ex:p odrl:profile <{PROF}{i}> .\n" for i in range(len(props)))
     own = (
         "ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:fromPolicy .\n"
         if in_policy
@@ -552,7 +558,79 @@ def test_binding_layers(in_policy: bool, profile_modules: int, param: str, expec
     )
     pol = constrained(leaf("eq", "ex:v"), own) + profile
     v = vector(pol, request={"action": "odrl:use", "params": {f"ex:{param}": iri("ex:v")}})
-    assert outcome(Interpreter(layered_init(profile_modules)).reply(v)) == expected
+    reply = Interpreter(layered_init(props)).reply(v)
+    assert outcome(reply) == expected
+    if expected == "error":
+        assert "ConflictingProfileDeclaration" in str(reply["error"]), reply
+
+
+def test_profile_module_spans_files() -> None:
+    # A profile's module may be several files, as DPROD's is: they are one layer, so one file
+    # giving the source and another the property is one binding, not two modules that differ.
+    init: Obj = {
+        "modules": {
+            "core.ttl": CONSTRAINT_PREFIXES,
+            "a.ttl": CONSTRAINT_PREFIXES + "ex:x dprod:operandSource dprod:requestSource .\n",
+            "b.ttl": CONSTRAINT_PREFIXES + "ex:x dprod:operandProperty ex:y .\n",
+        },
+        "core": ["core.ttl"],
+        "profiles": {PROF: ["a.ttl", "b.ttl"]},
+    }
+    pol = constrained(leaf("eq", "ex:v")) + f"ex:p odrl:profile <{PROF}> .\n"
+    v = vector(pol, request={"action": "odrl:use", "params": {"ex:y": iri("ex:v")}})
+    assert outcome(Interpreter(init).reply(v)) == "Permit"
+
+
+# The core owns ex:x's type: a decimal range, and the default cardinality. A policy may restate
+# where ex:x reads, or a type attribute with the owner's value, but no other type (decisions/0014
+# #1-#2). The default counts as stated: without the `set` row, a check that compared stated
+# values only would pass.
+@pytest.mark.parametrize(
+    ("restated", "expected"),
+    [
+        ("dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:y", "Permit"),
+        ("rdfs:range xsd:decimal", "Permit"),
+        ("due2:cardinality due2:one", "Permit"),
+        ("rdfs:range xsd:string", "error"),
+        ("due2:cardinality due2:set", "error"),
+    ],
+)
+def test_retyped_operand(restated: str, expected: str) -> None:
+    core = CONSTRAINT_PREFIXES + (
+        "ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:y ;"
+        + " rdfs:range xsd:decimal .\n"
+    )
+    init: Obj = {"modules": {"core.ttl": core}, "core": ["core.ttl"], "profiles": {}}
+    pol = constrained(leaf("eq", "5"), f"ex:x {restated} .\n")
+    v = vector(pol, request={"action": "odrl:use", "params": {"ex:y": typed("5", "integer")}})
+    reply = Interpreter(init).reply(v)
+    assert outcome(reply) == expected
+    if expected == "error":
+        assert "RetypedOperand" in str(reply["error"]), reply
+
+
+# A binding's range must be of the kind of the range of the property it reads (decisions/0014
+# #5): integer and decimal are one kind, `rdfs:Literal` admits any literal but no IRI, and a date
+# is not a number. An operand that reads itself is not compared with itself.
+@pytest.mark.parametrize(
+    ("op_range", "prop_range", "expected"),
+    [
+        ("xsd:integer", "xsd:decimal", "Permit"),
+        ("xsd:integer", "rdfs:Literal", "Permit"),
+        ("xsd:integer", "xsd:date", "error"),
+        ("ex:Thing", "xsd:date", "error"),
+        ("ex:Thing", "rdfs:Literal", "error"),
+    ],
+)
+def test_operand_range_mismatch(op_range: str, prop_range: str, expected: str) -> None:
+    b = f"ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:y ; rdfs:range {op_range} .\n"
+    pol = constrained(leaf("eq", "5"), b, f"ex:y rdfs:range {prop_range} .\n")
+    v = vector(pol, request={"action": "odrl:use", "params": {"ex:y": typed("5", "integer")}})
+    reply = Interpreter(INIT).reply(v)
+    if expected == "error":
+        assert "error" in reply and "OperandRangeMismatch" in str(reply["error"]), reply
+    else:
+        assert outcome(reply) == expected
 
 
 @pytest.mark.parametrize(
@@ -672,13 +750,28 @@ def test_deleted_constraint_rule_fails_loudly(file: str, line: str) -> None:
 
 
 def test_datatypes_differ_without_a_range(interpreter: Interpreter) -> None:
-    # 5 and 5.00 are one number, but with no range due2-profiles.md §3 does not say whether
-    # integer and decimal compare by value or by identity (#65).
+    # With no range, values of one kind compare by value (decisions/0014 #6), so 5 = 5.0. A value
+    # of another kind is a misfit: a string "5" is not a number, so u, and the request completes.
     v = vector(
         constrained(leaf("eq", "5"), bound("x")),
         request={"params": {"ex:x": typed("5.0", "decimal")}},
     )
-    assert interpreter.reply(v) == {"unsupported": "value: datatypes differ without a range"}
+    assert outcome(interpreter.reply(v)) == "Permit"
+    v = vector(
+        constrained(leaf("eq", "5"), bound("x")),
+        request={"params": {"ex:x": typed("5", "string")}},
+    )
+    assert outcome(interpreter.reply(v)) == "completion"
+
+
+def test_derived_strings_decline(interpreter: Interpreter) -> None:
+    # xsd:token and xsd:string are one kind, compared by value after the whitespace facet, which
+    # the spike does not apply (compare.lp).
+    v = vector(
+        constrained(leaf("eq", '"a"'), bound("x")),
+        request={"params": {"ex:x": typed("a", "token")}},
+    )
+    assert interpreter.reply(v) == {"unsupported": "value: derived string datatypes"}
 
 
 # --- declines ---

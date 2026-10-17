@@ -1,0 +1,32 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. ex:useDate reads the
+# action time, the context property due2:actionTime, but gives it the range
+# xsd:date. The baseline gives due2:actionTime the range xsd:dateTime
+# (profiles/due2-core.ttl). A date and a dateTime are different kinds, so every
+# value the property gives would fail the binding's range (decisions/0014 #5).
+
+ex:licencePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:display .
+
+ex:display a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:useDate ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "2026-12-31"^^xsd:date
+    ] .
+
+ex:useDate a odrl:LeftOperand ;
+    dprod:operandSource dprod:contextSource ;
+    dprod:operandProperty due2:actionTime ;
+    rdfs:range xsd:date .

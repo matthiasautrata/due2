@@ -1,19 +1,21 @@
 %# operand.lp: each left operand's binding, and what it reads
 %
-% Binds each left operand a constraint uses, through the layers of due2-profiles.md §2, and
-% reads its values from the request, the SOTW, or the context (due2-profiles.md §3). A read is
-% `ok`, with its values, or `u`: its source could not answer, gave the wrong number of values,
-% or gave a value outside the range. A `u` read makes its constraint `u`, never `f`
+% Binds each left operand a constraint uses, through the layers of due2-profiles.md §2
+% (decisions/0014), and reads its values from the request, the SOTW, or the context
+% (due2-profiles.md §3). A read is `ok`, with its values, or `u`: its source could not answer,
+% gave the wrong number of values, or gave a value outside the range. A `u` read makes its constraint `u`, never `f`
 % (ways-of-working.md §5.1). A binding that is not admissible gets a `reject`. Variable
 % letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `decl/4`, `layer_rank/2`, `source_kind/2`, `context_property/2`,
-%   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`, `kind/2`,
-%   `voc/2` (lift.lp); `request_param/2`, `request_param_set/1`, `fact/2`, `fact_value/2`,
+%   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2` (lift.lp);
+%   `request_param/2`, `request_param_set/1`, `fact/2`, `fact_value/2`,
 %   `request_party/2`, `sotw_effective_at/1`, `request_at/1`, `value/3` (driver); `left/2`,
 %   `c_operator/2`, `op/2`, `right/2` (constraint.lp).
-% - **Provides:** `used/1`, `decl_rank/2`, `bound_rank/2`, `binding_layer/2`, `bdecl/3`,
-%   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`, `has_allowed/1`,
+% - **Provides:** `used/1`, `declares/2`, `where_key/1`, `type_key/1`, `module_differs/1`,
+%   `where_rank/3`, `owner_rank/2`, `bdecl/3`, `owned/3`, `retyped/1`, `src/2`, `prop/2`,
+%   `card/2`, `has_range/1`, `range_kind/2`, `has_range_kind/1`, `prop_range_kind/2`,
+%   `allowed/2`, `has_allowed/1`,
 %   `single_left/1`, `candidate_value/2`, `conforms/2`, `read_value/2`, `read_resolved/1`,
 %   `nonconforming/1`, `card_ok/1`, `read_ok/1`, `read_u/1`; extends `reject/2` (structure.lp)
 %   and `unsupported/1` (lift.lp).
@@ -26,42 +28,89 @@ A constraint the program evaluates has left operand `Op`.
 *%
 used(Op) :- left(_, Op).
 
-%*! decl_rank(Op, N)
+%*! declares(Layer, Op)
 
-A layer of precedence `N` declares the used operand `Op`: it states a source or a property for
-it. A layer that states only a range or a cardinality does not declare the operand.
+Layer `Layer` declares the used operand `Op`: it states one of its binding attributes
+(`binding_key/1`).
 *%
-decl_rank(Op, N) :- used(Op), decl(Layer, Op, operandSource, _), layer_rank(Layer, N).
-decl_rank(Op, N) :- used(Op), decl(Layer, Op, operandProperty, _), layer_rank(Layer, N).
+declares(Layer, Op) :- used(Op), decl(Layer, Op, _, _).
 
-%*! bound_rank(Op, N)
+%*! where_key(Key)
 
-`N` is the highest precedence (the least rank) of a layer that declares `Op`.
+`Key` says where `Op` reads: its source or its property. A higher layer may restate it.
 *%
-bound_rank(Op, N) :- decl_rank(Op, _), N = #min { M : decl_rank(Op, M) }.
+where_key(operandSource; operandProperty).
 
-%*! binding_layer(Op, Layer)
+%*! type_key(Key)
 
-`Layer` gives `Op`'s binding: a declaring layer of the highest precedence. The whole
-declaration comes from that one layer, never attribute by attribute from several (DESIGN.md
-§ `operand.lp`).
+`Key` is a type attribute: the range, the cardinality, or the allowed operators. Only the
+lowest declaring layer states it (decisions/0014 #1).
 *%
-binding_layer(Op, Layer) :- bound_rank(Op, N), layer_rank(Layer, N),
-    decl(Layer, Op, Key, _), Key = (operandSource; operandProperty).
-% Two selected modules at one precedence: the order of odrl:profile values is not in the RDF,
-% so which wins cannot be read (due2-profiles.md §2).
-unsupported("binding: two profile modules") :- binding_layer(Op, Layer), binding_layer(Op, Layer2),
-    Layer != Layer2.
+type_key(range; cardinality; allowedOperator).
+
+%*! module_differs(Op)
+
+Two selected profile modules state one attribute of `Op` with different values. The modules
+have no order, so neither wins: that is `ConflictingProfileDeclaration` (decisions/0014 #3).
+*%
+module_differs(Op) :- used(Op), decl(module(P), Op, Key, V), decl(module(P2), Op, Key, _),
+    P != P2, not decl(module(P2), Op, Key, V).
+reject("ConflictingProfileDeclaration", C) :- left(C, Op), module_differs(Op).
+
+%*! where_rank(Op, Key, N)
+
+`N` is the least rank of a layer that states `Op`'s source or property `Key`: the highest layer
+that states it gives it (decisions/0014 #2).
+*%
+where_rank(Op, Key, N) :- used(Op), where_key(Key), decl(_, Op, Key, _), not module_differs(Op),
+    N = #min { M : decl(L, Op, Key, _), layer_rank(L, M) }.
+
+%*! owner_rank(Op, N)
+
+`N` is the rank of the lowest layer that declares `Op`, the layer that owns its type
+(decisions/0014 #1).
+*%
+owner_rank(Op, N) :- declares(_, Op), not module_differs(Op),
+    N = #max { M : declares(L, Op), layer_rank(L, M) }.
 
 %*! bdecl(Op, Key, Value)
 
-`Op`'s binding has `Value` for attribute `Key`.
+`Op`'s binding has `Value` for attribute `Key`: its source and property from the highest layer
+that states each, its type attributes from the owner. An attribute the owner omits has none here,
+and its default is read where it is used (`card/2`, `has_allowed/1`, `conforms/2`).
 *%
-bdecl(Op, Key, Value) :- binding_layer(Op, Layer), decl(Layer, Op, Key, Value).
+bdecl(Op, Key, Value) :- where_rank(Op, Key, N), decl(L, Op, Key, Value), layer_rank(L, N).
+bdecl(Op, Key, Value) :- owner_rank(Op, N), type_key(Key), decl(L, Op, Key, Value),
+    layer_rank(L, N).
+
+%*! owned(Op, Key, Value)
+
+`Op`'s type attribute `Key` has `Value`, as the owner states it, or as the default fills it in:
+`due2:one` for a cardinality the owner omits. An omitted range or operator list has no value,
+which is the default (due2-profiles.md §3 Defaults).
+*%
+owned(Op, Key, Value) :- bdecl(Op, Key, Value), type_key(Key).
+owned(Op, cardinality, Iri) :- owner_rank(Op, _), not bdecl(Op, cardinality, _),
+    cardinality_value(Iri, one).
+
+%*! retyped(Op)
+
+A layer above the owner states a type attribute of `Op` with other values than the owner's, a
+default included: that is `RetypedOperand` (decisions/0014 #2). An omitted operator list is
+every core operator, and the spike does not compute that list, so any operator list a higher
+layer states over an omitted one counts.
+*%
+retyped(Op) :- owner_rank(Op, N), decl(L, Op, Key, V), type_key(Key), layer_rank(L, M), M < N,
+    not owned(Op, Key, V).
+retyped(Op) :- owner_rank(Op, N), owned(Op, Key, V), decl(L, Op, Key, _), layer_rank(L, M),
+    M < N, not decl(L, Op, Key, V).
+reject("RetypedOperand", C) :- left(C, Op), retyped(Op).
 
 % Exactly one source and one property (due2-profiles.md §3).
-reject("UnboundLeftOperand", C) :- left(C, Op), #count { Src : bdecl(Op, operandSource, Src) } != 1.
-reject("UnboundLeftOperand", C) :- left(C, Op),
+% A conflicted operand is rejected for the conflict alone.
+reject("UnboundLeftOperand", C) :- left(C, Op), not module_differs(Op),
+    #count { Src : bdecl(Op, operandSource, Src) } != 1.
+reject("UnboundLeftOperand", C) :- left(C, Op), not module_differs(Op),
     #count { Prop : bdecl(Op, operandProperty, Prop) } != 1.
 % A closed source, an IRI property, and a built-in context property.
 reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandSource, Src), not source_kind(Src, _).
@@ -102,16 +151,32 @@ has_range(Op) :- bdecl(Op, range, _).
 
 %*! range_kind(Op, K)
 
-`Op`'s range is `numeric` (`xsd:decimal` or derived), another `datatype`, `literal`
-(`rdfs:Literal`), or a `class`.
+`Op`'s range admits values of kind `K` (`admits_kind/2`).
 *%
-range_kind(Op, numeric) :- bdecl(Op, range, Rg), numeric_datatype(Rg).
-range_kind(Op, datatype) :- bdecl(Op, range, Rg), xsd_datatype(Rg), not numeric_datatype(Rg).
-range_kind(Op, literal) :- bdecl(Op, range, Rg), any_literal(Rg).
-range_kind(Op, class) :- bdecl(Op, range, Rg), kind(Rg, iri), not xsd_datatype(Rg),
-    not any_literal(Rg).
+range_kind(Op, K) :- bdecl(Op, range, Rg), admits_kind(Rg, K).
 unsupported("binding: range") :- bdecl(Op, range, Rg), bdecl(Op, range, Rg2), Rg != Rg2.
 unsupported("binding: range") :- bdecl(Op, range, Rg), not kind(Rg, iri).
+
+%*! has_range_kind(Op)
+
+`Op`'s range has a kind. `rdfs:Resource` has none, so it admits every term.
+*%
+has_range_kind(Op) :- range_kind(Op, _).
+
+%*! prop_range_kind(Op, K)
+
+The property `Op` reads has a range, stated in some layer, that admits kind `K`. An operand that
+reads itself, such as `odrl:payAmount`, has its own range as its property's, so it is left out.
+*%
+prop_range_kind(Op, K) :- prop(Op, Prop), Prop != Op, decl(_, Prop, range, Rg),
+    admits_kind(Rg, K).
+
+% The binding's range and the property's are of different kinds (decisions/0014 #5). `literal`
+% admits a literal of every kind, so it meets every kind but `iri`: a literal is never an IRI.
+reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, K), prop_range_kind(Op, K2),
+    K != K2, K != literal, K2 != literal.
+reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, literal), prop_range_kind(Op, iri).
+reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, iri), prop_range_kind(Op, literal).
 
 %## Operator checks
 
@@ -157,18 +222,21 @@ candidate_value(Op, Term) :- left(C, Op), right(C, Term).
 
 %*! conforms(Term, Op)
 
-`Term` conforms to `Op`'s range: anything when there is no range; a literal placed in the
-numeric space for a numeric range; a literal of exactly that datatype for another datatype; any
-literal for `rdfs:Literal`; an IRI for a class. These are the defaults of due2-profiles.md §3.
+`Term` conforms to `Op`'s range: anything when there is no range or a range without a kind; a
+term of the range's kind; any literal for `rdfs:Literal`. These are the defaults of
+due2-profiles.md §3, so `5` and `5.00` both conform to `xsd:decimal`, and a `xsd:dateTimeStamp`
+to `xsd:dateTime`.
 *%
 conforms(Term, Op) :- candidate_value(Op, Term), not has_range(Op).
-conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, numeric), value(Term, numeric, _).
-conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, datatype), bdecl(Op, range, Rg),
-    Term = lit(_, Rg).
-conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, datatype), bdecl(Op, range, Rg),
-    Term = lit(_, Rg, _).
+conforms(Term, Op) :- candidate_value(Op, Term), has_range(Op), not has_range_kind(Op).
+conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, K), term_kind(Term, K),
+    K != numeric.
+% A numeric value must be placed in the numeric space. An ill-typed one is invalid, and so is an
+% `xsd:float` or `xsd:double`, which has no exact equality (due2-profiles.md §4), so neither
+% conforms, and the read is `u`.
+conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, numeric),
+    value(Term, numeric, _).
 conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, literal), kind(Term, lit).
-conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, class), kind(Term, iri).
 
 %## Reads
 

@@ -1,0 +1,17 @@
+{
+  "case": "due2-operand-range-mismatch",
+  "source": "due2-native: a binding whose range is of another kind than the property it reads (decisions/0014)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. Without the check, every value of due2:actionTime, an xsd:dateTime, would fail the range xsd:date, so every evaluation of ex:display would be U: an authoring error found only at request time. A policy that means the calendar date of the action compares the dateTime with an instant, such as 2027-01-01T00:00:00Z with lt, which also names the time zone the date lacks.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperandRangeMismatch"
+    ],
+    "why": "ex:useDate reads due2:actionTime, whose rdfs:range is xsd:dateTime, but its own range is xsd:date. A date and a dateTime are different kinds (due2-profiles.md §3), so W1 rejects the policy in stage 2 (decisions/0014 #5)."
+  }
+}

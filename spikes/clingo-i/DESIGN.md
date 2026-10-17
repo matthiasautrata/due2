@@ -84,7 +84,7 @@ tests/                 the spike's own tests (§ Tests)
 ## Data flow
 
 1. **Init.** The driver parses every module once and keeps its facts.
-2. **Flatten** (`flatten.py`). The policy graph becomes `triple/3`. The core modules, and the modules of each profile the policy's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `profile`. The request, SOTW, and config become facts (§ Input facts). Then `values.py` places every RDF literal in those facts (§ Values).
+2. **Flatten** (`flatten.py`). The policy graph becomes `triple/3`. The core modules, and the modules of each profile the policy's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `module(Iri)`, the module of the profile `Iri`. The request, SOTW, and config become facts (§ Input facts). Then `values.py` places every RDF literal in those facts (§ Values).
 3. **Solve 1:** facts, and `lift.lp` to `applies.lp` (the first seven files). The program has no choice rule and is stratified, so it has exactly one model. It is read in this order, and the first hit decides:
    1. any `unsupported(Feature)`: the vector is declined, naming the smallest such feature in code-point order, so the same vector always gives the same reason;
    2. any `reject(Code, Node)`: an `error` reply, because `interpret` receives only admissible policies;
@@ -168,7 +168,7 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 |---|---|---|
 | `triple/3`: `triple(S, P, O)` | each policy triple | `lift.lp`, `structure.lp`, `constraint.lp` |
 | `module/4`: `module(Path, S, P, O)` | each triple of a selected module, `Path` the module's path. Its blank nodes are scoped by `Path` | `lift.lp` |
-| `layer/2`: `layer(Path, core \| profile)` | each selected module: `core` for a core module, `profile` for a module of a selected profile (`interpret.py`) | `lift.lp` |
+| `layer/2`: `layer(Path, core \| module(Iri))` | each selected module file: `core` for a core file, `module(Iri)` for a file of the selected profile `Iri`, so a profile whose module is several files is one layer; a file in both is `core` (`interpret.py`) | `lift.lp` |
 | `pred_ns/2`: `pred_ns(P, NS)` | each policy predicate. `NS` is `P` up to and including its last `#` or `/` | `lift.lp` |
 | `selected_profile/1`: `selected_profile(Iri)` | each `odrl:profile` value that names a shipped profile | `lift.lp` |
 
@@ -256,10 +256,11 @@ These are the value spaces of `due2-profiles.md` §4. The first five are ordered
 
 Lifts the triples to relations that name no IRI. It provides:
 
-- **The vocabulary.** `voc/2` maps each short name to its IRI; the registries list the conflict strategies, policy classes, the 14 function predicates of `odrl-compound-to-atomic-normalization.md` §3, the match keys (`due2-workflows.md` §5.2; v1 has one, `odrl:assignee`), the 12 core operators of `due2-profiles.md` §4 (`operator/2`, six of them `set_based/1`), the connectives (`connective/1`), the binding attributes, sources, context built-ins, and cardinalities of `due2-profiles.md` §3, and the XSD datatypes a range can name (`xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`).
+- **The vocabulary.** `voc/2` maps each short name to its IRI; the registries list the conflict strategies, policy classes, the 14 function predicates of `odrl-compound-to-atomic-normalization.md` §3, the match keys (`due2-workflows.md` §5.2; v1 has one, `odrl:assignee`), the 12 core operators of `due2-profiles.md` §4 (`operator/2`, six of them `set_based/1`), the connectives (`connective/1`), the binding attributes, sources, context built-ins, and cardinalities of `due2-profiles.md` §3, the XSD datatypes a range can name (`xsd_datatype/1`, `numeric_datatype/1`, `floating_datatype/1`, `derived_from/2`), and the two RDF Schema classes that admit values of several kinds (`any_literal/1`, `any_resource/1`).
 - **The lifted policy.** `type/2`, `subclass/2` (declared, direct edges from the selected modules), `has_rule/3`, `stated/3` (the value a policy or rule node states for a family), `stated_conflict/2`, and `profile_conflict/1`.
 - **Terms and lists.** `term/1` collects every term of the graphs and of the inputs the constraints read, and `kind/2` gives each its shape: `iri`, `lit`, or `blank`. `list_cell/2`, `list_item/2`, and `is_list/1` read RDF lists of the policy graph; `rdf:nil` is the empty list.
-- **Bindings.** `decl(Layer, Op, Key, Value)` is one attribute of a binding declared in one layer: `policy` for the policy graph, or a module path. `layer_rank/2` gives the layer precedence of `due2-profiles.md` §2: the policy 0, the profile modules 1, the core modules 2.
+- **Bindings.** `decl(Layer, Op, Key, Value)` is one attribute of a binding stated in one layer: `policy` for the policy graph, `module(Iri)` for the files of a selected profile, or `core`. `layer_rank/2` orders the layers of `due2-profiles.md` §2 from the top: the policy 0, every profile module 1, the core 2. The profile modules share a rank because they have no order.
+- **Kinds.** `dt_kind(Dt, K)` gives a datatype's kind (`due2-profiles.md` §3 *Kinds*): `numeric` for every XSD numeric type, the primitive for a derived XSD type, and the datatype itself otherwise. `term_kind(Term, K)` gives a term's kind, `iri` for an IRI. `admits_kind(Rg, K)` gives the kind a stated range admits: `literal` for `rdfs:Literal`, none for `rdfs:Resource`, and `iri` for a class.
 - **The hierarchies.** `closure(Key, Lo, Hi)` holds each declared `includedIn`, `partOf`, `rdf:type`, or `rdfs:subClassOf` edge from the policy, a selected module, or the SOTW closure. The edges are closed-world: an undeclared edge does not hold (`due2-profiles.md` §6). `coll_kind/2` types a collection (`odrl:AssetCollection` is `asset`, `odrl:PartyCollection` is `party`), and `node_kind/2` also types an `odrl:Asset` or `odrl:Party`. `le_k(Lo, Hi, K)` is the typed `partOf` of `due2-profiles.md` §6: the transitive closure through collections of kind `K` only. It is not reflexive; its readers add identity.
 - **The declines and the rejections of the graph** (§ Declines). A `partOf` edge into an untyped node, or one typed both ways, declines as `odrl:partOf: untyped collection`, and an edge from a node of one kind into a collection of the other as `odrl:partOf: cross-kind edge`: a cross-kind path is invalid (`due2-profiles.md` §6), and the spike has no reading it trusts for either. `odrl:source` off a collection, or `odrl:refinement` on a collection, is `reject("UnsupportedConstruct", Node)` (`due2-diagnostics.md`). On a collection, `odrl:source` is inert: the spike reads membership only from the `partOf` edges. `rdf:value` is read only on an action term, and declines anywhere else.
 
@@ -311,20 +312,24 @@ Reads the constraint trees the policy authored (`due2-profiles.md` §4, §5), an
 
 Binds each left operand a leaf uses (`used/1`), and reads its values (`due2-profiles.md` §2, §3).
 
-**Binding.** A layer *declares* an operand when it states its `dprod:operandSource` or its `dprod:operandProperty`. The binding is the whole declaration of the declaring layer with the least rank (`binding_layer/2`), never assembled attribute by attribute from several layers: `bdecl(Op, Key, Value)` reads every attribute from that one layer. A layer that states only a range or a cardinality does not declare the operand, and its attributes are not read. Two layers at the same rank, which can only be two selected profile modules, decline as `binding: two profile modules`: the order of `odrl:profile` values is not in the RDF, so which wins cannot be read (`due2-profiles.md` §2).
+**Binding** (`decisions/0014` #1–#3). A layer *declares* an operand when it states any of its binding attributes: source, property, range, cardinality, or allowed operators (`declares/2`). The binding is assembled from the layers in two parts:
 
-`tools/check_corpus.py` resolves bindings differently: it falls through the layers attribute by attribute. The two agree on every corpus vector, because no corpus layer declares part of a binding that another layer completes. A vector whose policy restates only the property of a core binding would separate them.
+- **Where it reads.** The source and the property each come from the highest layer that states them (`where_rank/3`). A policy may rebind a baseline operand, as `due2-rebound-pay-amount` rebinds `odrl:payAmount` to the request.
+- **Its type.** The range, cardinality, and allowed operators come from the lowest declaring layer, the operand's *owner* (`owner_rank/2`). An attribute the owner omits has its default, and the default counts as stated: `owned(Op, cardinality, due2:one)` when the owner gives no cardinality. A higher layer that states a type attribute with other values than the owner's, defaults included, is `reject("RetypedOperand", C)` (`retyped/1`).
+
+`bdecl(Op, Key, Value)` is the assembled binding. Two profile modules that state one attribute of an operand with different values are `reject("ConflictingProfileDeclaration", C)` (`module_differs/1`): the modules have no order, so neither wins, and such an operand gets no binding and no `UnboundLeftOperand`. Modules that agree are one declaration. `tools/check_corpus.py` resolves bindings by the same rules (`Bindings`).
 
 The binding gives:
 
 - `src(Op, Src)` and `prop(Op, Prop)`, exactly one each, or `reject("UnboundLeftOperand", C)`. A source outside the four, a property that is not an IRI, or a context property that is not a built-in is `reject("InvalidBinding", C)`. The `witness` source is read only in a duty's constraints, so a rule constraint on it is `reject("WitnessOutsideDuty", C)`.
 - `card(Op, K)`: `set` if the binding states `due2:set`, otherwise `one`. Another cardinality IRI, or two, declines as `binding: cardinality`.
-- `range_kind(Op, K)`: `numeric` (`xsd:decimal` or a type derived from it), `datatype` (another XSD datatype or `rdf:langString`), `literal` (`rdfs:Literal`), or `class` (any other IRI). Two ranges, or one that is not an IRI, decline as `binding: range`.
+- `range_kind(Op, K)`: the kind the owner's range admits (`admits_kind/2`). `rdfs:Resource` admits every kind, so it has no `range_kind`. Two ranges, or one that is not an IRI, decline as `binding: range`.
+- `prop_range_kind(Op, K)`: the kind of the `rdfs:range` that some layer states for the property `Op` reads. When no value has both kinds, the binding is `reject("OperandRangeMismatch", C)` (`decisions/0014` #5): every value the property gives would fail the range. Two kinds that differ have no value in common, except that `literal` shares its values with every kind but `iri`. An operand that reads itself, such as `odrl:payAmount`, is not compared with itself.
 - `allowed(Op, Iri)`, the `due2:allowedOperator` values. An operator outside a stated list is `reject("OperatorTypeMismatch", C)`. Without a list every core operator is allowed. `due2-profiles.md` §3 narrows that default by the operators' signatures over the range, and the spike does not check the narrowing: a leaf whose operator does not fit its range evaluates as a misfit, `u`, where W1 would reject it. `interpret` receives only admissible policies, so only a negative vector can tell.
 
 `isA` over a set-valued operand is `reject("OperatorTypeMismatch", C)`. A set-valued operand under an operator of one left value (`single_left/1`: `eq`, `neq`, the order operators, `isAnyOf`, `isNoneOf`) has no reading in the spec, and declines as `constraint: set-valued operand on a single-value operator`.
 
-**Range conformance** (`conforms/2`, the defaults of `due2-profiles.md` §3). Without a range, every value conforms. A `numeric` range takes a literal placed in the numeric space, so `5` and `5.00` both conform to `xsd:decimal`. A `datatype` range takes a literal of exactly that datatype. A `literal` range takes any literal, and a `class` range any IRI. A right operand value that does not conform is `reject("OperatorTypeMismatch", C)`.
+**Range conformance** (`conforms/2`, the defaults of `due2-profiles.md` §3). Without a range, or with `rdfs:Resource`, every value conforms. Otherwise a value conforms when its kind is the range's: an IRI to a class, an `xsd:dateTimeStamp` to `xsd:dateTime`. A `numeric` range also needs the literal placed in the numeric space, so `5` and `5.00` both conform to `xsd:decimal`, but an ill-typed number does not, nor an `xsd:double`, which has no exact equality (`due2-profiles.md` §4). `rdfs:Literal` takes any literal. A right operand value that does not conform is `reject("OperatorTypeMismatch", C)`.
 
 **Reads.** `read_value(Op, Term)` is what the source gives, and `read_resolved(Op)` says the source answered:
 
@@ -358,7 +363,7 @@ Gives every constraint node its rank, `crank(C, N)`, and every node item its tru
 
 **Units.** `odrl:unit` labels a right operand, and the completion key will include it (#48). It converts nothing, and what a unit means for a comparison is open (#67), so a leaf compares the values alone: `5` with unit `ex:EUR` equals a read `5` (`test_unit_labels_without_converting`).
 
-**Two datatypes, no range.** When a pair's literals lie in one space with different datatypes and the operand has no range, `due2-profiles.md` §3 does not say whether they compare by value or by identity, so the vector declines as `value: datatypes differ without a range` (#65).
+**Two datatypes of one kind.** Values of one kind compare by value, with or without a range (`decisions/0014` #6). Each value space of § Values holds one kind, so placed literals need no rule: `5` equals `5.0`. Two unplaced literals of one kind and different datatypes, such as an `xsd:token` and an `xsd:string`, decline as `value: derived string datatypes`: their values are their lexical forms after the whitespace facet, which the spike does not apply. Values of different kinds are a misfit, `u`.
 
 **Worked example.** This is the vector of `test_constraint_worked_example`, copied from runs. The rule `ex:r` permits `odrl:use` on `ex:a`, and the request matches its action and target, so only the constraint part decides:
 
@@ -534,7 +539,6 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 |---|---|---|
 | `action: blank node without rdf:value`, `action: several rdf:value` | `structure.lp` | the action term names no single action |
 | `binding: cardinality`, `binding: range` | `operand.lp` | a cardinality or range the spike cannot read, or two of them |
-| `binding: two profile modules` | `operand.lp` | two layers at one precedence |
 | `constraint: cycle`, `constraint: dprod:not without one member`, `constraint: empty list`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: set-valued operand on a single-value operator` | `operand.lp` | no reading in `due2-profiles.md` §4 |
 | `odrl:partOf: cross-kind edge`, `odrl:partOf: untyped collection` | `lift.lp` | a hierarchy the spike does not trust |
@@ -548,7 +552,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 
 `request.params`, `sotw.facts`, and the context values are read by `operand.lp`. An empty field gives no facts, so it is not declined. When several fields hold, the smallest name wins: `config.*` before `request.*` before `sotw.*`.
 
-**In the values.** `unsupported_value(Reason)`, read after the input declines: an unplaceable compared literal (§ Values), or `value: datatypes differ without a range` (§ `compare.lp`, #65).
+**In the values.** `unsupported_value(Reason)`, read after the input declines: an unplaceable compared literal (§ Values), or `value: derived string datatypes` (§ `compare.lp`).
 
 **In the parts.** `unsupported_part("completion")`, read last: a `u` constraint part of a `u` atom (§ `applies.lp`, #48).
 
@@ -559,7 +563,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 These are an `error` reply, not a decline:
 
 - an unknown `odrl:profile`;
-- a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, and `MissingTarget` (`structure.lp`); `UnsupportedConstruct` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); and `UnboundLeftOperand`, `InvalidBinding`, `WitnessOutsideDuty`, and `OperatorTypeMismatch` (`operand.lp`). Each is defined in `due2-diagnostics.md`;
+- a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, and `MissingTarget` (`structure.lp`); `UnsupportedConstruct` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); and `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, `WitnessOutsideDuty`, and `OperatorTypeMismatch` (`operand.lp`). Each is defined in `due2-diagnostics.md`;
 - a malformed vector (§ Input facts);
 - an unsatisfiable program.
 
@@ -576,10 +580,10 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
 - **Worked examples** (`test_worked_example`, `test_constraint_worked_example`). The replies of § Worked example and of the example in § `compare.lp`, so this note cannot drift from the program.
 - **Operators** (`test_operators`, `test_hierarchy_operators`). Each operator on a value that makes it `t` and one that makes it `f`, so a rule that answers one way regardless is caught; and each misfit on a value that would be `f` under a two-valued reading: an IRI against a string, two language tags, an instant against a number. `isA` reads an `rdf:type` edge from the SOTW closure, so a closure the driver dropped would show. An empty read set is vacuously part of anything.
 - **Reads** (`test_state_read`, `test_reads`). Every SOTW status but `resolved`, and no fact at all, is `u`, never `f`; so are two values and no value for a `one` operand, and a read value outside the range. The context reads the assignee and the clock.
-- **Bindings** (`test_binding_layers`). Each layer wins over the ones after it, and the winning layer's declaration is read whole: with a profile binding, a request giving only the core property is `u`, not a match. Two profile modules decline.
+- **Bindings** (`test_binding_layers`, `test_profile_module_spans_files`, `test_retyped_operand`, `test_operand_range_mismatch`). The highest layer that states the property gives it: with a profile binding, a request giving only the core property is `u`, not a match. Two profile modules that agree bind, and two that differ are rejected, so a rule that let one module win is caught. A profile split over two files is one module, so a rule that compared files is caught. A policy may restate where a baseline operand reads, or its type with the owner's values, and any other type is rejected; the `due2:set` row fails if the default does not count as stated. A range of another kind than the read property's is rejected, and `rdfs:Literal` matches any literal range but not a class range.
 - **Hierarchies** (`test_typed_part_of`). A requested asset in a target collection matches, and one that is not a member does not; a named party in an assignee collection matches; an untyped collection and a cross-kind edge decline.
 - **Rules, refinements, and units** (`test_prohibition_constraint`, `test_refinement`, `test_unit_labels_without_converting`). A constraint on a prohibition decides a `Deny`; a refinement is a conjunct of the atom; a unit does not change a comparison.
-- **Rejections and declines** (`test_constraint_rejections`, `test_constraint_declines`, `test_datatypes_differ_without_a_range`). Each code and reason of § Declines and § Errors that a constraint or a binding produces, on a minimal policy, so a check that is deleted or never fires is caught.
+- **Rejections and declines** (`test_constraint_rejections`, `test_constraint_declines`, `test_datatypes_differ_without_a_range`, `test_derived_strings_decline`). Each code and reason of § Declines and § Errors that a constraint or a binding produces, on a minimal policy, so a check that is deleted or never fires is caught.
 - **Declines.** A feature the spike does not read must decline, never be ignored. A policy with both `odrl:duty` and `odrl:remedy` declines naming `odrl:duty`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
 - **Protocol.** `main.py` answers `init` with `ready`, declaring `interpret`, and echoes the request `id`.
 

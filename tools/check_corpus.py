@@ -40,7 +40,7 @@ PROFILES = ROOT / "profiles"
 CORE = [PROFILES / "due2-core.ttl", PROFILES / "odrl-actions.ttl"]
 MODULES = {
     str(DPROD): [*sorted((PROFILES / "vendor" / "dprod").glob("*.ttl")), PROFILES / "dprod.ttl"],
-    str(DUE2): [PROFILES / "due2-core.ttl"],
+    str(DUE2): [],  # the baseline, always loaded: selecting it adds no module (decisions/0014)
 }
 ALIASES = {"dprod": str(DPROD), "due2": str(DUE2)}
 # IM 2.1: a policy uses only Core terms, or declares the profiles whose terms
@@ -97,14 +97,13 @@ REJECTED = {
 }
 CONFLICT_VALUES = {ODRL.prohibit, ODRL.perm, ODRL.invalid}
 NUMERIC = {
-    XSD.integer,
-    XSD.decimal,
-    XSD.int,
-    XSD.long,
-    XSD.nonNegativeInteger,
-    XSD.positiveInteger,
-    XSD.short,
-}
+    XSD[t]
+    for t in (
+        *("decimal", "float", "double", "integer", "nonPositiveInteger", "negativeInteger"),
+        *("long", "int", "short", "byte", "nonNegativeInteger", "positiveInteger"),
+        *("unsignedLong", "unsignedInt", "unsignedShort", "unsignedByte"),
+    )
+}  # one kind (due2-profiles.md §3 Kinds)
 REJECTED_CODE = {ODRL.andSequence: "UnsupportedConnective"}  # others: UnsupportedConstruct
 FLOATING = {XSD.float, XSD.double}
 VERDICTS = {"Permit", "Deny", "Pending", "NotApplicable", "Indeterminate"}
@@ -254,26 +253,171 @@ def check_duty_timing(g: Graph, rule: Node, kind: Node, r: Report) -> None:
             )
 
 
+WHERE_ATTRS = (DPROD.operandSource, DPROD.operandProperty)
+TYPE_ATTRS = (RDFS.range, DUE2.cardinality, DUE2.allowedOperator)
+DEFAULTS: dict[Node, frozenset[Node]] = {DUE2.cardinality: frozenset({DUE2.one})}
+# Derived XSD datatypes, by the primitive whose kind they have (XSD 1.1 Part 2 §3.3-3.4).
+DERIVED: dict[Node, Node] = {
+    **{
+        XSD[t]: XSD.string
+        for t in (
+            *("normalizedString", "token", "language", "Name", "NCName", "NMTOKEN"),
+            *("ID", "IDREF", "ENTITY"),
+        )
+    },
+    XSD.dateTimeStamp: XSD.dateTime,
+    XSD.dayTimeDuration: XSD.duration,
+    XSD.yearMonthDuration: XSD.duration,
+}
+RDF_DATATYPES = {RDF.langString}
+LITERAL = "literal"  # rdfs:Literal's kind: it admits a literal of any kind
+
+
+def datatype_kind(dt: Node) -> str:
+    """A datatype's kind (due2-profiles.md §3 Kinds, decisions/0014 #4)."""
+    if dt in NUMERIC:
+        return "numeric"
+    return str(DERIVED.get(dt, dt))
+
+
+def kinds_apart(k: str, k2: str) -> bool:
+    """Whether no value has both kinds. `rdfs:Literal`'s kind meets every literal
+    kind, but never the IRI kind."""
+    if LITERAL in (k, k2):
+        return "IRI" in (k, k2)
+    return k != k2
+
+
+def value_kind(v: Node) -> str | None:
+    """A right operand's kind; None for a node that is neither an IRI nor a literal."""
+    if isinstance(v, URIRef):
+        return "IRI"
+    if isinstance(v, Literal):
+        return datatype_kind(v.datatype or (RDF.langString if v.language else XSD.string))
+    return None
+
+
+@dataclass
+class Binding:
+    """One left operand's binding, resolved through the layers. An empty `allowed`
+    is the default: every core operator."""
+
+    source: frozenset[Node]
+    prop: frozenset[Node]
+    range: frozenset[Node]
+    card: Node
+    allowed: frozenset[Node]
+
+
 class Bindings:
-    """Operand bindings by precedence: policy graph > selected profiles > core."""
+    """Operand bindings resolved through the layers of due2-profiles.md §2
+    (decisions/0014 #1-#3): the policy graph, the selected profile modules, and
+    the baseline, from highest to lowest.
 
-    def __init__(self, layers: list[Graph]) -> None:
-        self.layers = layers
+    The modules are one layer without order: each is kept as its own graph, so
+    that two which state an attribute of one operand differently are a
+    `ConflictingProfileDeclaration`, not a merge. The source and property come
+    from the highest layer that states them. The range, cardinality, and allowed
+    operators come from the lowest layer that declares the operand, its owner,
+    and a higher layer that restates one with another value is a
+    `RetypedOperand`. An omitted allowed-operator list defaults to every core
+    operator; the checker does not narrow it by operator signatures, so any
+    restatement of an omitted list counts as a retyping.
 
-    def lookup(self, op: Node) -> tuple[list[Node], list[Node], Graph | None]:
-        for g in self.layers:
-            src = list(g.objects(op, DPROD.operandSource))
-            prop = list(g.objects(op, DPROD.operandProperty))
-            if src or prop:
-                return src, prop, g
-        return [], [], None
+    `resolve` reports each operand's binding diagnostics to `r`, once per policy,
+    whichever check asks first.
+    """
 
-    def attr(self, op: Node, pred: Node) -> list[Node]:
-        for g in self.layers:
-            vals = list(g.objects(op, pred))
-            if vals:
-                return vals
-        return []
+    def __init__(self, policy: Graph, modules: list[Graph], core: Graph, r: Report) -> None:
+        self.g, self.r = policy, r
+        self.layers: list[list[Graph]] = [[policy], modules, [core]]
+        self.all = [g for layer in self.layers for g in layer]
+        self.cache: dict[Node, Binding | None] = {}
+        self.conflicted: set[Node] = set()  # operands whose modules disagree; not unbound
+
+    def stated(self, layer: list[Graph], op: Node, pred: Node) -> frozenset[Node]:
+        return frozenset(o for g in layer for o in g.objects(op, pred))
+
+    def resolve(self, op: Node) -> Binding | None:
+        """The operand's binding, or None when it has no single source and property,
+        or when its modules conflict (then `op` is in `conflicted`)."""
+        if op not in self.cache:
+            self.cache[op] = self._resolve(self.g, op, self.r)
+        return self.cache[op]
+
+    def _resolve(self, g: Graph, op: Node, r: Report) -> Binding | None:
+        conflicted = False
+        for pred in (*WHERE_ATTRS, *TYPE_ATTRS):
+            seen = {v for m in self.layers[1] if (v := self.stated([m], op, pred))}
+            if len(seen) > 1:
+                conflicted = True
+                r.diag(
+                    "ConflictingProfileDeclaration",
+                    f"{q(g, op)}: two selected profile modules state {q(g, pred)} differently "
+                    f"(due2-profiles.md 2, decisions/0014 #3)",
+                )
+        if conflicted:
+            self.conflicted.add(op)
+            return None
+        declaring = [
+            lay
+            for lay in self.layers
+            if any(self.stated(lay, op, p) for p in (*WHERE_ATTRS, *TYPE_ATTRS))
+        ]
+        none: frozenset[Node] = frozenset()
+        where = [
+            next((v for lay in self.layers if (v := self.stated(lay, op, p))), none)
+            for p in WHERE_ATTRS
+        ]
+        if not declaring or any(len(v) != 1 for v in where):
+            return None
+        owner = declaring[-1]
+        typed: dict[Node, frozenset[Node]] = {}
+        for pred in TYPE_ATTRS:
+            typed[pred] = self.stated(owner, op, pred) or DEFAULTS.get(pred, none)
+            for lay in self.layers[: self.layers.index(owner)]:
+                v = self.stated(lay, op, pred)
+                if v and v != typed[pred]:
+                    r.diag(
+                        "RetypedOperand",
+                        f"{q(g, op)}: {q(g, pred)} restated above the layer that owns "
+                        f"the operand's type (due2-profiles.md 2, decisions/0014 #2)",
+                    )
+        (card,) = typed[DUE2.cardinality] if len(typed[DUE2.cardinality]) == 1 else (DUE2.one,)
+        b = Binding(where[0], where[1], typed[RDFS.range], card, typed[DUE2.allowedOperator])
+        self._check_range(g, op, b, r)
+        return b
+
+    def range_kind(self, rng: Node) -> str | None:
+        """A range's kind (decisions/0014 #4); None when it has none to check: a
+        blank-node range, or `rdfs:Resource`, which admits every value."""
+        if not isinstance(rng, URIRef) or rng == RDFS.Resource:
+            return None
+        if rng == RDFS.Literal:
+            return LITERAL
+        if str(rng).startswith(str(XSD)) or rng in RDF_DATATYPES:
+            return datatype_kind(rng)
+        if any((rng, RDF.type, RDFS.Datatype) in lg for lg in self.all):
+            return str(rng)
+        return "IRI"
+
+    def _check_range(self, g: Graph, op: Node, b: Binding, r: Report) -> None:
+        """`OperandRangeMismatch` (decisions/0014 #5). An operand that reads itself,
+        such as `odrl:payAmount`, has its own range as the property's, and a
+        restatement of it is already a `RetypedOperand`."""
+        (prop,) = b.prop
+        if prop == op:
+            return
+        mine = {k for v in b.range if (k := self.range_kind(v))}
+        theirs = {
+            k for lg in self.all for v in lg.objects(prop, RDFS.range) if (k := self.range_kind(v))
+        }
+        if any(kinds_apart(k, k2) for k in mine for k2 in theirs):
+            r.diag(
+                "OperandRangeMismatch",
+                f"{q(g, op)}: its range is of kind {sorted(mine)}, but {q(g, prop)} "
+                f"has range kind {sorted(theirs)} (due2-profiles.md 3, decisions/0014 #5)",
+            )
 
 
 def check_constraint(
@@ -328,53 +472,59 @@ def check_constraint(
             f"{q(g, c)}: {q(g, operator)} with a list right operand "
             f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)",
         )
-    src, prop, _ = b.lookup(op)
-    if len(src) != 1 or len(prop) != 1:
-        r.diag("UnboundLeftOperand", f"{q(g, c)}: left operand {q(g, op)} has no single binding")
+    bnd = b.resolve(op)
+    if bnd is None:
+        if op not in b.conflicted:
+            r.diag(
+                "UnboundLeftOperand", f"{q(g, c)}: left operand {q(g, op)} has no single binding"
+            )
         return
-    if src[0] not in SOURCES:
+    (src,), (prop,), card = bnd.source, bnd.prop, bnd.card
+    if src not in SOURCES:
         r.diag(
             "InvalidBinding",
-            f"{q(g, c)}: operand source {q(g, src[0])} is not one of the closed sources",
+            f"{q(g, c)}: operand source {q(g, src)} is not one of the closed sources",
         )
-    if src[0] == DUE2.witnessSource and not in_duty:
+    if src == DUE2.witnessSource and not in_duty:
         r.diag("WitnessOutsideDuty", f"{q(g, c)}: witness-source operand {q(g, op)} outside a duty")
-    if not isinstance(prop[0], URIRef):
+    if not isinstance(prop, URIRef):
         r.diag("InvalidBinding", f"{q(g, c)}: operandProperty of {q(g, op)} is not an IRI")
-    if src[0] == DPROD.contextSource and prop[0] not in CONTEXT_PROPS:
-        r.diag("InvalidBinding", f"{q(g, c)}: context property {q(g, prop[0])} is not a built-in")
-    card = b.attr(op, DUE2.cardinality)
-    used[op] = (src[0], prop[0], card[0] if card else DUE2.one)
-    if card and card[0] == DUE2.set and operator in (ODRL.isPartOf, ODRL.hasPart):
+    if src == DPROD.contextSource and prop not in CONTEXT_PROPS:
+        r.diag("InvalidBinding", f"{q(g, c)}: context property {q(g, prop)} is not a built-in")
+    used[op] = (src, prop, card)
+    if card == DUE2.set and operator in (ODRL.isPartOf, ODRL.hasPart):
         r.diag(
             "ContestedOperatorReading",
             f"{q(g, c)}: {q(g, operator)} over a set-valued operand "
             f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)",
         )
-    elif operator == ODRL.isA and card and card[0] == DUE2.set:
+    elif operator == ODRL.isA and card == DUE2.set:
         r.diag("OperatorTypeMismatch", f"{q(g, c)}: isA takes one left value (due2-profiles.md 4)")
-    allowed = b.attr(op, DUE2.allowedOperator)
-    if allowed and operator not in allowed:
+    if bnd.allowed and operator not in bnd.allowed:
         r.diag(
             "OperatorTypeMismatch",
             f"{q(g, c)}: operator {q(g, operator)} not allowed for {q(g, op)}",
         )
-    rng = b.attr(op, RDFS.range)
+    # The right operand's kind against the range's (due2-profiles.md 3 Kinds); a range
+    # without a kind (a blank-node union, rdfs:Resource) admits any value, and
+    # rdfs:Literal any literal.
+    want = {k for v in bnd.range if (k := b.range_kind(v))}
     for ro in rights:
         for v in members(g, ro):
-            if isinstance(v, Literal):
-                if v.datatype in FLOATING:
-                    r.diag(
-                        "FloatingPointOperand",
-                        f"{q(g, c)}: floating-point right operand is not admitted",
-                    )
-                if rng and isinstance(rng[0], URIRef) and str(rng[0]).startswith(str(XSD)):
-                    want, have = rng[0], v.datatype or XSD.string
-                    if want != have and not (want in NUMERIC and have in NUMERIC):
-                        r.diag(
-                            "OperatorTypeMismatch",
-                            f"{q(g, c)}: right operand {v!r} does not conform to range {q(g, want)}",
-                        )
+            if isinstance(v, Literal) and v.datatype in FLOATING:
+                r.diag(
+                    "FloatingPointOperand",
+                    f"{q(g, c)}: floating-point right operand is not admitted",
+                )
+            have = value_kind(v)
+            if LITERAL in want and isinstance(v, Literal):
+                continue
+            if want and have and have not in want:
+                r.diag(
+                    "OperatorTypeMismatch",
+                    f"{q(g, c)}: right operand {q(g, v)} is of kind {have}, "
+                    f"not the range's {sorted(want)}",
+                )
 
 
 def witness_kinds(g: Graph, c: Node, b: Bindings) -> set[str]:
@@ -390,8 +540,8 @@ def witness_kinds(g: Graph, c: Node, b: Bindings) -> set[str]:
     left = list(g.objects(c, ODRL.leftOperand))
     if len(left) != 1:
         return set()
-    src, prop, _ = b.lookup(left[0])
-    if src and (src[0] == DUE2.witnessSource or (prop and prop[0] == DUE2.actionTime)):
+    bnd = b.resolve(left[0])
+    if bnd and (DUE2.witnessSource in bnd.source or DUE2.actionTime in bnd.prop):
         return {"witness"}
     return {"guard"}
 
@@ -505,9 +655,7 @@ def asset_party_nodes(g: Graph) -> set[Node]:
     return nodes
 
 
-def check_policy(
-    g: Graph, policy: Node, b: Bindings, profiles_graph: Graph, r: Report, named: bool
-) -> Used:
+def check_policy(g: Graph, policy: Node, b: Bindings, r: Report, named: bool) -> Used:
 
     used: Used = {}
     declared = {str(p) for p in g.objects(policy, ODRL.profile)}
@@ -595,17 +743,13 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
     for policy in policies:
         r = Report(f"{path.name} :: {q(g, policy)}")
         sel = selected_profiles(g, policy, explicit)
-        layers = [g]
-        profile_graph = Graph()
+        modules: list[Graph] = []
         for p in sel:
             if p not in MODULES:
                 r.warn(f"profile {p} has no due2 binding module; its terms are metadata")
-                continue
-            profile_graph += parse(MODULES[p])
-        if len(profile_graph):
-            layers.append(profile_graph)
-        layers.append(parse(CORE))
-        used = check_policy(g, policy, Bindings(layers), profile_graph, r, named)
+            elif MODULES[p]:
+                modules.append(parse(MODULES[p]))
+        used = check_policy(g, policy, Bindings(g, modules, parse(CORE), r), r, named)
         out.append((r, used, g))
     return out
 

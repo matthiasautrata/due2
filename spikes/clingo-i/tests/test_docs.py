@@ -190,7 +190,7 @@ def test_docs_entry_point_includes_the_program_in_order() -> None:
 _SECTION = r"§(?:\s[A-Z][\w-]*(?:\s[\w-]+)*|[\w.]*\w)(?:\s\*\*\[D\]\*\*)?(?:\s#\d+)?"
 _CHAIN = r"(?:(?:,\s*|\sand\s|\sto\s|[\u2013-])" + _SECTION + r")*"
 ANCHORED = re.compile(
-    r"(?:\S+\.md`?|IM 2\.2|XSD 1\.1 Part \d)[\s%#]+" + _SECTION + _CHAIN,
+    r"(?:\S+\.md`?|IM 2\.2|XSD 1\.1 Part \d|RDF Schema 1\.1)[\s%#]+" + _SECTION + _CHAIN,
 )
 DOCUMENTED = [
     "DESIGN.md",

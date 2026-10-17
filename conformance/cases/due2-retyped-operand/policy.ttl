@@ -1,0 +1,31 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. As in
+# due2-rebound-pay-amount, the policy rebinds odrl:payAmount to the request,
+# which is allowed. It also narrows the range to xsd:integer. The baseline
+# declares the operand, so the baseline owns its range, xsd:decimal, and a
+# policy that states another range retypes it (decisions/0014 #1-#2).
+
+ex:quotePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:buy .
+
+ex:buy a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:payAmount ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 100
+    ] .
+
+odrl:payAmount
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty odrl:payAmount ;
+    rdfs:range xsd:integer .

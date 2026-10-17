@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: a policy that means the requested amount, not a payment. The
+# baseline binds odrl:payAmount to the witness source (profiles/due2-core.ttl),
+# so a permission cannot read it (due2-witness-outside-duty). This policy
+# restates where the operand reads: the request's odrl:payAmount parameter. The
+# baseline still owns its type, the xsd:decimal range (decisions/0014 #1-#2),
+# and the policy does not restate it.
+
+ex:quotePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:buy .
+
+ex:buy a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:payAmount ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "100.00"^^xsd:decimal
+    ] .
+
+odrl:payAmount
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty odrl:payAmount .

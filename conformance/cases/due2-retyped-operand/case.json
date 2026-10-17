@@ -1,0 +1,17 @@
+{
+  "case": "due2-retyped-operand",
+  "source": "due2-native: a policy that restates the range of an operand the baseline owns (decisions/0014)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. The policy restates both where odrl:payAmount reads, which is allowed, and its range, which is not. Under due2-profiles.md §2 the lowest layer that declares an operand owns its type, and profiles/due2-core.ttl declares odrl:payAmount with the range xsd:decimal. A policy that wants whole amounts can bind its own operand, as ex:wholeAmount, with its own range; it then reads odrl:payAmount without retyping it. Contrast due2-rebound-pay-amount, which restates only the source and is admitted.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "RetypedOperand"
+    ],
+    "why": "The baseline layer declares odrl:payAmount, so it owns the range xsd:decimal. The policy layer, above it, states the range xsd:integer, so W1 rejects the policy in stage 2 (due2-profiles.md §2, decisions/0014)."
+  }
+}

@@ -16,10 +16,12 @@
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
 %   `match_key/1`, `vocab_ns/1`, `annotation/1`, `annotation_ns/1`, `operator/2`,
 %   `set_based/1`, `connective/1`, `binding_key/1`, `source_kind/2`, `context_property/2`,
-%   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`); the lifted
-%   relations (`type/2`, `subclass/2`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`,
-%   `stated_conflict/2`, `profile_conflict/1`, `term/1`, `kind/2`, `list_cell/2`, `list_item/2`,
-%   `is_list/1`, `decl/4`, `layer_rank/2`); the hierarchies (`closure_key/1`, `closure/3`,
+%   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`,
+%   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
+%   `subclass/2`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`, `stated_conflict/2`,
+%   `profile_conflict/1`, `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`,
+%   `decl/4`, `layer_rank/2`); the kinds (`declared_datatype/1`, `datatype/1`, `dt_kind/2`,
+%   `term_kind/2`, `admits_kind/2`, `range_iri/1`); the hierarchies (`closure_key/1`, `closure/3`,
 %   `coll_kind/2`, `node_kind/2`, `le_k/3`); the declines (`policy_predicate/1`,
 %   `family_predicate/1`, `anywhere_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`,
 %   `closure_relation/1`, `unsupported_input/1`, `compared/1`, `unsupported_value/1`); extends
@@ -39,6 +41,7 @@ Args:
 voc(type,        "http://www.w3.org/1999/02/22-rdf-syntax-ns#type").
 voc(value,       "http://www.w3.org/1999/02/22-rdf-syntax-ns#value").
 voc(subclass,    "http://www.w3.org/2000/01/rdf-schema#subClassOf").
+voc(datatype,    "http://www.w3.org/2000/01/rdf-schema#Datatype").
 voc(uid,         "http://www.w3.org/ns/odrl/2/uid").
 voc(profile,     "http://www.w3.org/ns/odrl/2/profile").
 voc(conflict,    "http://www.w3.org/ns/odrl/2/conflict").
@@ -281,9 +284,8 @@ xsd_datatype("http://www.w3.org/2001/XMLSchema#anySimpleType").
 
 %*! numeric_datatype(Iri)
 
-`Iri` is `xsd:decimal` or a datatype derived from it. A numeric range accepts a literal of any of
-them that is placed in the numeric space (due2-profiles.md §3, DESIGN.md § Values). `xsd:float`
-and `xsd:double` are rejected, so they are not listed.
+`Iri` is `xsd:decimal` or a datatype derived from it. With `xsd:float` and `xsd:double`
+(`floating_datatype/1`) they make the numeric kind (due2-profiles.md §3 Kinds).
 *%
 numeric_datatype("http://www.w3.org/2001/XMLSchema#decimal").
 numeric_datatype("http://www.w3.org/2001/XMLSchema#integer").
@@ -305,6 +307,41 @@ numeric_datatype("http://www.w3.org/2001/XMLSchema#positiveInteger").
 The range `Iri` accepts any RDF literal: `rdfs:Literal`.
 *%
 any_literal("http://www.w3.org/2000/01/rdf-schema#Literal").
+
+%*! any_resource(Iri)
+
+The range `Iri` accepts any RDF term, since it is `rdfs:Resource`. RDF Schema 1.1 §2.1 makes
+it the class of everything.
+*%
+any_resource("http://www.w3.org/2000/01/rdf-schema#Resource").
+
+%*! floating_datatype(Iri)
+
+`Iri` is `xsd:float` or `xsd:double`. They are numeric, but a value of either declines (DESIGN.md
+§ Values), and a right operand of either is rejected (due2-profiles.md §4).
+*%
+floating_datatype("http://www.w3.org/2001/XMLSchema#float").
+floating_datatype("http://www.w3.org/2001/XMLSchema#double").
+
+%*! derived_from(Dt, Prim)
+
+The XSD datatype `Dt` is derived from the primitive `Prim` by restriction, so it has `Prim`'s
+kind. The derivations are those of XSD 1.1 Part 2 §3.3-3.4. The numeric types are one kind of their own (`numeric_datatype/1`).
+The list types `xsd:NMTOKENS`, `xsd:IDREFS`, and `xsd:ENTITIES` are not derived by restriction,
+so they are kinds of their own.
+*%
+derived_from("http://www.w3.org/2001/XMLSchema#normalizedString", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#token", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#language", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#NMTOKEN", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#Name", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#NCName", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#ID", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#IDREF", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#ENTITY", "http://www.w3.org/2001/XMLSchema#string").
+derived_from("http://www.w3.org/2001/XMLSchema#dateTimeStamp", "http://www.w3.org/2001/XMLSchema#dateTime").
+derived_from("http://www.w3.org/2001/XMLSchema#dayTimeDuration", "http://www.w3.org/2001/XMLSchema#duration").
+derived_from("http://www.w3.org/2001/XMLSchema#yearMonthDuration", "http://www.w3.org/2001/XMLSchema#duration").
 
 %*! type(Node, Cls)
 
@@ -405,20 +442,83 @@ is_list(Node) :- voc(nil, Node).
 
 %*! decl(Layer, Op, Key, Value)
 
-Layer `Layer` declares `Value` for attribute `Key` of left operand `Op`'s binding
-(`binding_key/1`). `Layer` is `policy` for the policy graph, or a module path (`layer/2`).
+Layer `Layer` states `Value` for attribute `Key` of `Op`, a left operand or a property
+(`binding_key/1`). `Layer` is `policy` for the policy graph, `module(Prof)` for the files of
+selected profile `Prof`'s module, or `core` for the baseline (`layer/2`).
 *%
 decl(policy, Op, Key, Value) :- triple(Op, Pred, Value), voc(Key, Pred), binding_key(Key).
-decl(Path, Op, Key, Value) :- module(Path, Op, Pred, Value), voc(Key, Pred), binding_key(Key).
+decl(Layer, Op, Key, Value) :- module(Path, Op, Pred, Value), voc(Key, Pred), binding_key(Key),
+    layer(Path, Layer).
 
 %*! layer_rank(Layer, N)
 
-Layer `Layer` has precedence `N`, lowest first: the policy graph 0, the selected profile
-modules 1, and the core modules 2. That is the layer precedence of due2-profiles.md §2.
+Layer `Layer` has rank `N`, highest first: the policy graph 0, every selected profile module 1,
+and the baseline 2. The layers of due2-profiles.md §2; the modules share one rank, because they
+have no order.
 *%
 layer_rank(policy, 0).
-layer_rank(Path, 1) :- layer(Path, profile).
-layer_rank(Path, 2) :- layer(Path, core).
+layer_rank(Layer, 1) :- layer(_, Layer), Layer = module(_).
+layer_rank(core, 2).
+
+%## Kinds
+
+%*! declared_datatype(Dt)
+
+`Dt` is typed `rdfs:Datatype` in the policy graph or a selected module: a datatype outside XSD.
+*%
+declared_datatype(Dt) :- triple(Dt, Pred, Cls), voc(type, Pred), voc(datatype, Cls).
+declared_datatype(Dt) :- module(_, Dt, Pred, Cls), voc(type, Pred), voc(datatype, Cls).
+
+%*! datatype(Dt)
+
+`Dt` is a datatype: an XSD built-in or `rdf:langString`, a declared datatype, or the datatype of
+a literal among the terms. It is the domain of `dt_kind/2`.
+*%
+datatype(Dt) :- xsd_datatype(Dt).
+datatype(Dt) :- declared_datatype(Dt).
+datatype(Dt) :- term(lit(_, Dt)).
+datatype(Dt) :- term(lit(_, Dt, _)).
+
+%*! dt_kind(Dt, K)
+
+The datatype `Dt` has kind `K`, which says what its values can be compared with. Kinds are
+defined in due2-profiles.md §3. The kind is `numeric` for every XSD numeric type, the primitive for a
+derived XSD type, and `Dt` itself otherwise, `rdf:langString` and every datatype outside XSD
+included.
+*%
+dt_kind(Dt, numeric) :- datatype(Dt), numeric_datatype(Dt).
+dt_kind(Dt, numeric) :- datatype(Dt), floating_datatype(Dt).
+dt_kind(Dt, Prim) :- datatype(Dt), derived_from(Dt, Prim).
+dt_kind(Dt, Dt) :- datatype(Dt), not numeric_datatype(Dt), not floating_datatype(Dt),
+    not derived_from(Dt, _).
+
+%*! term_kind(Term, K)
+
+The term `Term` has kind `K`: `iri` for an IRI, its datatype's kind for a literal. A blank node
+has no kind.
+*%
+term_kind(Term, iri) :- kind(Term, iri).
+term_kind(Term, K) :- term(Term), Term = lit(_, Dt), dt_kind(Dt, K).
+term_kind(Term, K) :- term(Term), Term = lit(_, Dt, _), dt_kind(Dt, K).
+
+%*! admits_kind(Rg, K)
+
+The range `Rg` admits values of kind `K`: a datatype range its datatype's kind, and a class range
+`iri`. Both are the kinds of due2-profiles.md §3. `rdfs:Literal` gets `literal`, which admits a literal of any
+kind; `rdfs:Resource` admits every term, so it has no kind. Defined for the IRI ranges that a
+layer states (`decl/4`), of an operand or of the property an operand reads.
+*%
+admits_kind(Rg, K) :- range_iri(Rg), xsd_datatype(Rg), dt_kind(Rg, K).
+admits_kind(Rg, K) :- range_iri(Rg), declared_datatype(Rg), dt_kind(Rg, K).
+admits_kind(Rg, literal) :- range_iri(Rg), any_literal(Rg).
+admits_kind(Rg, iri) :- range_iri(Rg), not xsd_datatype(Rg), not declared_datatype(Rg),
+    not any_literal(Rg), not any_resource(Rg).
+
+%*! range_iri(Rg)
+
+Some layer states the IRI `Rg` as a range.
+*%
+range_iri(Rg) :- decl(_, _, range, Rg), kind(Rg, iri).
 
 %## Hierarchies
 
