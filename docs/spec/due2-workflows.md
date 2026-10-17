@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.18
+**Status:** Draft v0.19
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.18** (2026-10-16, issue #57): §3.5 says which atom `eliminated` names as `by_atom` under each rule; §3.7 says how the corpus projects `verdict_basis` and `eliminated` to authored IRIs, and that a role's atoms collapse when they share a source. **v0.17** (2026-10-16, `decisions/0010`): the new §3.7 makes the trace the explanation; the new law L10 (explicability) is in §8; §3.5 names the rule values `eliminated` records; §3.6 points to stage 1's lineage. **History:** v0.4–v0.16 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`. v0.16 recorded an evaluation once, in `evaluation`, sharing the case's `seq` with `event` (§7.1).
+**Changes in v0.19** (2026-10-17, `decisions/0011`): §6.4 says what "the `U` atoms whose completion changes the outcome" are, the atoms with a pivotal literal; §3.5 adds `verdict_range`, the least and greatest completion verdict of an `Indeterminate`; §3.7 names remedies as open (#61). **v0.18** (2026-10-16, issue #57): §3.5 says which atom `eliminated` names as `by_atom` under each rule; §3.7 says how the corpus projects `verdict_basis` and `eliminated` to authored IRIs, and that a role's atoms collapse when they share a source. **v0.17** (2026-10-16, `decisions/0010`): the new §3.7 makes the trace the explanation; the new law L10 (explicability) is in §8; §3.5 names the rule values `eliminated` records; §3.6 points to stage 1's lineage. **History:** v0.4–v0.16 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`. v0.16 recorded an evaluation once, in `evaluation`, sharing the case's `seq` with `event` (§7.1).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -193,6 +193,7 @@ alt_duty       (alt_id, duty_id)
 dominated      (alt_id | by_alt)
 verdict        (| value, frontier_complete, exact)
 verdict_basis  (atom_id | role)
+verdict_range  (| low, high)
 diagnostic     (policy_id, code, ref)
 ```
 
@@ -208,6 +209,7 @@ diagnostic     (policy_id, code, ref)
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
 | `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). |
 | `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
+| `verdict_range` | W3 | For an `Indeterminate` only: the least and the greatest completion verdict in the order `Deny < NotApplicable < Pending < Permit` (§6.4). Sound, and possibly wider, when `verdict.exact` is false. **[D]** (`decisions/0011`) |
 | `diagnostic` | shell | The corpus `diagnostic` tuples of every policy with an atom in `finding`, copied unchanged, so that a verdict that rests on a contested reading says so (`due2-diagnostics.md` §1). |
 
 ### 3.6 Lineage
@@ -222,7 +224,7 @@ A verdict alone does not explain a decision; the trace does. Every evaluation th
 
 | From | To | Through |
 |---|---|---|
-| `verdict` | the determining atoms, by role | `verdict_basis`; for `Pending`, also `alternative`, `alt_duty`, `dominated` |
+| `verdict` | the determining atoms, by role | `verdict_basis`; for `Pending`, also `alternative`, `alt_duty`, `dominated`; for `Indeterminate`, also `verdict_range` |
 | an atom | its findings | `finding` |
 | a finding | the parts that determined it (§5.2) | `basis`; for a duty, also `instance` |
 | a `fact` part | the value and status read | `read`, and the SOTW's `fact`, `fact_value`, `attribution` |
@@ -246,7 +248,9 @@ Reading it needs the trace, the evaluation's four input collections, and the lin
 
 **What the corpus asserts.** A case names atoms by their authored IRI: the projection through `source_rule`, or `source_duty` for a duty, as `frontier` and `obligations` already do (`conformance/README.md`). `expected.verdict_basis` is the set of `(source, role)` pairs of the trace's `verdict_basis`, and `expected.eliminated` the set of `(source, source of by_atom, rule)` triples of its `eliminated`, so the disjuncts of one rule (§4) are one entry. Full traces, with atom ids, are pinned by L1 and replay, not by authored cases.
 
-**[O] A witness for `Indeterminate`.** The `unknown` atoms and their `U` basis say which facts decide, not how. Whether the trace also records a pair of completions with different verdicts is open (issue #58).
+**[O] A witness for `Indeterminate`.** The `unknown` atoms and their `U` basis say which facts decide, not how. Whether the trace also records a pair of completions with different verdicts is open (issue #58). Each pivotal literal (§6.4) gives such a pair, differing in that literal alone (`decisions/0011`).
+
+**[O] Remedies.** What would change the verdict: for `Indeterminate`, the values of the unknowns that force each verdict in `verdict_range`; for `Deny` and `NotApplicable`, the least change to the request, facts, or evidence that would permit. These are the abductive and contrastive explanations of formal XAI (`references.md` §2). The `Pending` frontier is already one. Whether the trace records them is open (issue #61).
 
 ---
 
@@ -464,6 +468,8 @@ This matters wherever one fact is read in both directions. `xone` expands into d
 *Computing it* **[D]** (`decisions/0004`). For a definite `Pending`, the *relevant unknowns* are the variables of the `U` parts of uncertain candidates (permission, `owed`, `fulfilled`) and of prohibitions whose finding is `U`. Ready and pending candidates have none, and no other unknown can move the frontier while the verdict stands. With `r` relevant unknowns, at most `max_frontier_vars` (a W3 limit; default 8), W3 enumerates all `2^r` assignments. `frontier_complete` is true iff each yields the listed frontier. The two-extremes shortcut does not apply, because a frontier is a set, not a point on the verdict chain. Beyond the bound, `frontier_complete` is false and `verdict.exact` is false. A randomised check (`tools/check_completion.py`, fifth phase) found the bounded enumeration equal to the definition in all 942 definite `Pending` instances of 50,000. The cheaper rule "complete iff no candidate is uncertain" is sound, but it said false in 133 of them where the definition says true.
 
 `verdict_basis` names the determining atoms: the surviving prohibition for `Deny`; the ready alternative's permissions for `Permit`; the frontier's permissions and outstanding duties for `Pending`; the `U` atoms whose completion changes the outcome for `Indeterminate`; and, for a `NotApplicable` where candidates were removed by violated preconditions, those candidates with role `closed` (§3.5).
+
+**Which `U` atoms [D]** (2026-10-17, `decisions/0011`). A variable is **pivotal** when flipping it alone changes some completion's verdict. The `unknown` atoms are those whose finding is `U` and that have a pivotal variable among their `U` parts. A `U` atom that differs between two disagreeing completions, but could not have moved the verdict, is not named. The pivotal variables are the relevant variables of the verdict as a function of the completions, and the Halpern–Pearl causes of it under some contingency (`references.md` §2). They are read per literal, not per atom, because atoms share literals. With them, `verdict_range` gives the least and the greatest completion verdict: the two extremes, or the extremes of the mixed enumeration. *Computing it* **[O]**: by enumeration within a bound, as for `frontier_complete`. Past the bound, every `U` atom is named, and `verdict.exact` is false. The bound is set with W3 (#38, #42).
 
 ---
 

@@ -63,6 +63,25 @@ Each translated scenario keeps the origin's own result (`force_expected`, `oval_
 - OVAL: at `f0839f6`, 74 of its 105 policy files were Offers without an assigner (IM 2.1.2), rules were untargeted, and 85 of 105 failed ODRL 2.2 validation; both are fixed. At `40b8ac6`, 52 of 110 still fail: 47 use left operands that neither the ODRL vocabulary nor a declared profile defines (`ex:page`, `ex:age`, `ex:publicationDate`, and `odrl:adminLevel`, which is not an ODRL term; IM 2.1), and 5 write `odrl:unit` as a string literal (IM 2.5.1: an IRI). 17 write dateTime right operands untyped.
 - W3C CG: C1/C2 requests name `party/billie1` against assignee `party/billie` while the expected reports permit; B11/B12 request values written `{"@id": "1000"}` with `describesFeature` the unit IRI rather than the operand; C12 `paymentDate` untyped.
 
+## Traces compared (#60)
+
+What each evaluator says beyond its decision, read 2026-10-17. Sources: FORCE's Compliance Report Model (`https://w3id.org/force/compliance-report#`) and the 68 expected reports in `force/data/test_cases/`; OVAL's `evaluate_ODRL_access_request_on_dataframe` at `40b8ac6` (read, never run); the W3C CG compliance reports in `w3c-fs/`. due2's side is workflows §3.5–§3.7 and `decisions/0010`–`0011`.
+
+| Question | FORCE | OVAL (access control) | W3C CG examples | due2 |
+|---|---|---|---|---|
+| Per rule | A `PermissionReport`, `ProhibitionReport` or `DutyReport`: `activationState` Active/Inactive, `attemptState`; for monitoring, `performanceState` and `deonticState` | The matched permissions and prohibitions, each with the rule's parsed form | A `ruleReport`: `activationState` Active/Inactive, `controlState` Permit/Deny | `finding` per atom and predicate, `T`/`F`/`U` |
+| Per premise | `premiseReport`s for party, action, target and each constraint, with operands, operator, and `satisfactionState` Satisfied/Unsatisfied; nested for logical constraints | `conditions`: only the conditions that matched on an unspecified feature | `ConstraintReport` with `satisfactionState` Satisfied/Not-Satisfied | `basis`: the determining parts and their truth; fact values through `read` and the SOTW |
+| Unknown | Not representable: "missing information" is Unsatisfied. `PerformanceState:Unknown` and `DeonticState:NonSet` are about monitoring, not data | A *conditional match*: listed with its null conditions and a warning, but the decision uses full matches only (finding 7) | Not representable | `U` survives to the verdict; `Indeterminate` names its pivotal `unknown` atoms and its `verdict_range` |
+| Duties | `conditionReport` links a duty's report to its permission's; a Violated duty keeps the permission inactive | `duties`: the unfulfilled ones, per matched permission | A `ConditionReport` per duty, with an `ActionReport`: `performanceState`, `deonticState` (Fulfilled, Not-set) | `instance` per duty instance; `Pending` frontier with bearers; `obligation` and `closed` roles |
+| Decision | None at policy level: rule reports only | accept, reject, or `None` | Per rule only | One of five verdicts, with `verdict_basis` |
+| Conflict: remover and rule | Not modelled | An English sentence naming the strategy applied; the overridden rules are dropped from the lists, so the output no longer names them | Not modelled | `eliminated (atom | by_atom, rule)`, one tuple per remover |
+| Composition | One policy and one request per report; `dct:created` only | One policy per call | One policy per report | Across policies by `policy_id` and the combination rule; across a case's evaluations by `seq` and a per-relation diff |
+| Machine-readable | Yes (RDF) | Partly: lists of rules, explanations in English | Yes (JSON-LD) | Yes: typed relations under the canonical encoding (`decisions/0007`) |
+
+**Can due2's trace be rendered as a compliance report?** For `T` and `F` findings, yes: an atom's `applies` maps to `activationState`, its basis parts to `premiseReport`s, its duty instances to `DutyReport`s. Three things are lost: `U` (no satisfaction state for it), the verdict, and `eliminated`. A third satisfaction state would remove the first loss. That is a possible friendly suggestion to the FORCE authors, not yet made.
+
+**Gaps in due2's trace.** None found. Everything the three record is in the trace or derivable from it with the inputs (§3.7). The question all three leave open, and due2 too, is *what would change the decision*. OVAL comes closest, with its conditional matches and its advice under `invalid` ("Either set a different conflict strategy…"). It is filed as #61 (remedies).
+
 ## Validator fixes the external data forced
 
 - `tools/check_odrl22.py` ran with no inference, so an untyped rule (`odrl:permission [ … ]`, the IM's own example style) failed `sh:class odrl:Permission` **and** escaped `PermissionShape` — a missing target went unreported. It now adds the types the ODRL vocabulary entails (rdfs:range of the rule, action, target, and party properties; rdfs:domain of `odrl:leftOperand`; the connective of a Logical Constraint). The corpus still passes; external policies now fail for real reasons only.

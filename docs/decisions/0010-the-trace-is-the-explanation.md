@@ -32,7 +32,8 @@ Workflows §3.7:
 
 ## Open
 
-- A witness for `Indeterminate`: the completions whose verdicts differ (#58).
+- A witness for `Indeterminate`: the completions whose verdicts differ (#58). A pivotal literal gives the smallest such pair (`decisions/0011`).
+- Remedies: what would change the verdict (#61).
 
 ## Revisit when
 
