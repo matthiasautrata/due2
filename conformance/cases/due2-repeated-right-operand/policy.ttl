@@ -1,0 +1,38 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: one set right operand written in both forms (decisions/0013,
+# due2-profiles.md §4). ex:readListed writes it as an RDF list, as ODRL IM
+# §2.5.1 does; ex:readRepeated writes it as repeated values, the form the ODRL
+# JSON-LD context gives a JSON array. The two permissions differ only in the
+# form and the target, so each scenario pair asks the same question of both.
+
+ex:regionPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readListed, ex:readRepeated .
+
+ex:readListed a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:ListedReport ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:region ;
+        odrl:operator odrl:isAnyOf ;
+        odrl:rightOperand ( ex:EU ex:EEA )
+    ] .
+
+ex:readRepeated a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:RepeatedReport ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:region ;
+        odrl:operator odrl:isAnyOf ;
+        odrl:rightOperand ex:EU, ex:EEA
+    ] .
+
+ex:region a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterRegion .

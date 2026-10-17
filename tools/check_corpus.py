@@ -74,6 +74,14 @@ OPERATORS = {
         "isA",
     )
 }
+SET_BASED = {
+    ODRL.isA,
+    ODRL.hasPart,
+    ODRL.isPartOf,
+    ODRL.isAllOf,
+    ODRL.isAnyOf,
+    ODRL.isNoneOf,
+}  # Vocab §3.16.7-3.16.12: a list, or repeated values, as the right operand (decisions/0013)
 CONTESTED = {
     ODRL.isPartOf,
     ODRL.hasPart,
@@ -301,6 +309,19 @@ def check_constraint(
         )
     if not rights:
         r.diag("MalformedConstraint", f"{q(g, c)}: no rightOperand")
+    lists = [ro for ro in rights if (ro, RDF.first, None) in g]
+    if len(rights) > 1 and operator not in SET_BASED:
+        r.diag(
+            "MalformedConstraint",
+            f"{q(g, c)}: {len(rights)} rightOperand values on {q(g, operator)}, "
+            f"which is not set-based (due2-profiles.md 4, decisions/0013)",
+        )
+    elif lists and len(rights) > 1:
+        r.diag(
+            "MalformedConstraint",
+            f"{q(g, c)}: a list rightOperand together with other values; write one list "
+            f"or repeated values (due2-profiles.md 4, decisions/0013)",
+        )
     if operator in CONTESTED and sum(len(members(g, ro)) for ro in rights) > 1:
         r.diag(
             "ContestedOperatorReading",

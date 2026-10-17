@@ -40,6 +40,8 @@ The IM ties list-valued right operands to "set-based operators"; the Vocabulary 
 
 **Erratum (2026-10-11).** Until then this section called the set-based operators unenumerated and the shape admitted lists only for `isAnyOf`, `isNoneOf`, and `isAllOf`, `due2-profiles.md` §4's reading at the time. That was wrong: the Vocabulary enumerates them, and the shape rejected valid ODRL 2.2. Shape and §4 are fixed. What a list *means* for `isPartOf`, `hasPart`, and `isA` is a separate question that ODRL does not answer and the published semantics answer differently; due2 adopts Salas and Pareti et al.'s reading and warns (`ContestedOperatorReading`) wherever it applies (`decisions/0005`). `isPartOf` with a list is tested by `oval-list-right-operand`.
 
+**Repeated values (2026-10-17).** Many authors write a set right operand as repeated values, `odrl:rightOperand ex:a, ex:b`, not as one list. IM §2.5.1 gives a Constraint "one rightOperand property value", but Vocabulary §5.1 makes the list a SHOULD ("the rdf:List predicate SHOULD be used"), and the ODRL JSON-LD context maps `rightOperand` without `@container: @list`, so a JSON array expands to repeated values. The shape accepts them on the six set-based operators, and rejects repeated values on any other operator and a list together with any other value (`decisions/0013`). Until then it accepted every repeated form silently, `eq ex:a, ex:b` included. `due2-repeated-right-operand` tests the accepted form and `due2-malformed-right-operand` the rejected ones.
+
 ## 3. Results (2026-10-10)
 
 ```text

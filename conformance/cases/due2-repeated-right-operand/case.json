@@ -1,0 +1,272 @@
+{
+  "case": "due2-repeated-right-operand",
+  "source": "due2-native: a set right operand written as an RDF list and as repeated values (decisions/0013)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. ex:readListed and ex:readRepeated have the same constraint, written as odrl:rightOperand ( ex:EU ex:EEA ) and as odrl:rightOperand ex:EU, ex:EEA. Each scenario of one form has a twin in the other form, with the same expected answer: both forms give the right operand {ex:EU, ex:EEA} (due2-profiles.md §4). The repeated form is what the ODRL JSON-LD context makes of \"rightOperand\": [\"ex:EU\", \"ex:EEA\"]; rl2-multi-certification uses it with isAllOf. No warning is expected: isAnyOf is not one of the contested operators of decisions/0005.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "list: region in the set",
+      "request": {
+        "reference": "req-1a",
+        "action": "odrl:read",
+        "target": "ex:ListedReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRegion": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:EU"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readListed",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "The region ex:EU is one of {ex:EU, ex:EEA}, so isAnyOf is T and ex:readListed applies; nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "list: region outside the set",
+      "request": {
+        "reference": "req-1b",
+        "action": "odrl:read",
+        "target": "ex:ListedReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRegion": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:US"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "The region ex:US is not one of {ex:EU, ex:EEA}, so isAnyOf is F and ex:readListed does not apply; no other rule targets ex:ListedReport."
+      }
+    },
+    {
+      "name": "list: region unknown",
+      "request": {
+        "reference": "req-1c",
+        "action": "odrl:read",
+        "target": "ex:ListedReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRegion": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readListed",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "why": "The region is unresolved, so isAnyOf is U and ex:readListed is U. Completing it T gives Permit and F gives NotApplicable, so Indeterminate."
+      }
+    },
+    {
+      "name": "repeated values: region in the set",
+      "request": {
+        "reference": "req-2a",
+        "action": "odrl:read",
+        "target": "ex:RepeatedReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRegion": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:EU"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readRepeated",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "The region ex:EU is one of {ex:EU, ex:EEA}, so isAnyOf is T and ex:readRepeated applies; nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "repeated values: region outside the set",
+      "request": {
+        "reference": "req-2b",
+        "action": "odrl:read",
+        "target": "ex:RepeatedReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRegion": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:US"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "The region ex:US is not one of {ex:EU, ex:EEA}, so isAnyOf is F and ex:readRepeated does not apply; no other rule targets ex:RepeatedReport."
+      }
+    },
+    {
+      "name": "repeated values: region unknown",
+      "request": {
+        "reference": "req-2c",
+        "action": "odrl:read",
+        "target": "ex:RepeatedReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRegion": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readRepeated",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "why": "The region is unresolved, so isAnyOf is U and ex:readRepeated is U. Completing it T gives Permit and F gives NotApplicable, so Indeterminate."
+      }
+    }
+  ]
+}

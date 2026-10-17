@@ -265,6 +265,30 @@ odrl22:ConstraintShape a sh:NodeShape ;
              && ?op != <http://www.w3.org/ns/odrl/2/isA>)
       }
     """
+  ] ;
+  sh:sparql [
+    # IM §2.5.1 gives a Constraint one rightOperand value. Vocab §5.1 makes the
+    # rdf:List of a set-based operator a SHOULD, and the ODRL JSON-LD context
+    # does not declare rightOperand an @list, so a JSON array expands to
+    # repeated values: those are accepted on the six set-based operators.
+    # Repeated values on any other operator, and a list together with any other
+    # value, have no meaning in the IM (decisions/0013).
+    sh:message "IM 2.5.1, Vocab 5.1: repeated odrl:rightOperand values are allowed only for set-based operators (isA, hasPart, isPartOf, isAllOf, isAnyOf, isNoneOf), and never together with a list" ;
+    sh:select """
+      SELECT ?this ?value WHERE {
+        ?this <http://www.w3.org/ns/odrl/2/rightOperand> ?value, ?other .
+        FILTER (?value != ?other)
+        ?this <http://www.w3.org/ns/odrl/2/operator> ?op .
+        FILTER (
+          EXISTS { ?value <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?f }
+          || (?op != <http://www.w3.org/ns/odrl/2/isAnyOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/isNoneOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/isAllOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/isPartOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/hasPart>
+              && ?op != <http://www.w3.org/ns/odrl/2/isA>))
+      }
+    """
   ] .
 
 odrl22:LogicalConstraintShape a sh:NodeShape ;

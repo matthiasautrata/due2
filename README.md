@@ -7,6 +7,8 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | Path | Covers |
 |---|---|
 | `CLAUDE.md` | Working notes for Claude Code: the rules that are easy to break, where the semantics live, what's next |
+| `.claude/skills/technical-writing/` | The procedure, templates, and review checklist for writing any prose, docstring, or ASP doc block (`ways-of-working.md` §15) |
+| `.github/` | CI (`workflows/verify.yml` runs § Verify), issue forms (`corpus`, `open-decision`, `work-item`, and a disagreement between an implementation and a hand-derived verdict, `correctness-strategy.md` §6), the pull-request template, and Dependabot |
 | **`docs/spec/`** | **Normative semantics** |
 | `docs/spec/due2-workflows.md` | The three workflows and the reference data model, language-independent; laws L1–L10; the trace as explanation (§3.7) |
 | `docs/spec/due2-profiles.md` | Profiles and the operand registry: how ODRL extensions are declared and evaluated, and DPROD Contracts compatibility |
@@ -22,7 +24,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded |
 | `docs/correctness/formalisation-review.md` | Review input, not adopted (2026-10-17): which obligations are provable, which theorems (monotonicity, the completion key, frontier relevance), which vehicles, in what order; deficits found in clingo-i |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
-| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti · 0006 W2/W3 backend bakeoff · 0007 collections are JCS JSON · 0008 the ledger: one case per request · 0009 the semantics live in a clingo program (the L9 oracle and generator) · 0010 the trace is the explanation · 0011 an `Indeterminate` is explained by its pivotal literals and its range · 0012 the same read is one completion variable |
+| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti · 0006 W2/W3 backend bakeoff · 0007 collections are JCS JSON · 0008 the ledger: one case per request · 0009 the semantics live in a clingo program (the L9 oracle and generator) · 0010 the trace is the explanation · 0011 an `Indeterminate` is explained by its pivotal literals and its range · 0012 the same read is one completion variable · 0013 repeated right-operand values on a set-based operator are the same set as a list |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus — RL2 use cases, DPROD examples, translations of other evaluators' suites (`force-`, `oval-`, `w3c-fs-`), and due2-native cases (`due2-`) — with scenarios and hand-derived expected verdicts; coverage gaps in its `README.md` |
 | `conformance/odrl22-shape.ttl` | due2's SHACL encoding of the ODRL Information Model 2.2 — validates authored policies (compact and compound forms included), every constraint cited to its IM section |

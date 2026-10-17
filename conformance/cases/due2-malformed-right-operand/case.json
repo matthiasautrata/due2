@@ -1,0 +1,17 @@
+{
+  "case": "due2-malformed-right-operand",
+  "source": "due2-native: right operands with no reading (decisions/0013)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: IM §2.5.1 gives a Constraint one rightOperand value, and allows a set of values only for a set-based operator; odrl22-shape.ttl fails both constraints. Contrast due2-repeated-right-operand, where repeated values on isAnyOf are admitted.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "ex:readOne gives eq, which is not set-based, two right-operand values; ex:readMixed gives isAnyOf a list together with a further value. Neither has a reading (due2-profiles.md §4), so W1 rejects the policy in stage 2."
+  }
+}

@@ -1,0 +1,36 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: two right operands with no reading (decisions/0013,
+# due2-profiles.md §4). ex:readOne puts two values on eq, which is not
+# set-based; ex:readMixed puts a list and a further value on isAnyOf.
+
+ex:malformedPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readOne, ex:readMixed .
+
+ex:readOne a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:region ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:EU, ex:EEA
+    ] .
+
+ex:readMixed a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:region ;
+        odrl:operator odrl:isAnyOf ;
+        odrl:rightOperand ( ex:EU ex:EEA ), ex:CH
+    ] .
+
+ex:region a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterRegion .
