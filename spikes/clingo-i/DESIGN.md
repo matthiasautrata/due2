@@ -519,14 +519,14 @@ A predicate is on the annotation allowlist when it is:
 - `rdfs:label` or `rdfs:comment`;
 - any `dct:` or `prov:` term;
 - `skos:prefLabel`, `skos:altLabel`, `skos:hiddenLabel`, `skos:definition`, or `skos:note`;
-- `dprod:offerLifecycleStatus` or `dprod:contractLifecycleStatus`, which are metadata (`due2-profiles.md` §8.1).
+- `dprod:offerLifecycleStatus`, `dprod:contractLifecycleStatus`, `dprod:effectiveDate`, `dprod:expirationDate`, or `dprod:acceptsOffer`, which are metadata (`due2-profiles.md` §8.1).
 
 `unsupported(P)` holds for a predicate that is neither consumed nor allowlisted, when either:
 
 - it is in a vocabulary namespace: `odrl:`, `due2:`, or a selected profile's IRI. Such a predicate means something, so ignoring it could change the verdict. Examples are `odrl:duty`, `odrl:remedy`, and `odrl:constraint` on a node that is not a rule; or
 - it sits on a structure node (the policy or one of its rules), whatever its namespace. An unknown predicate there may be a semantic extension (`odrl-compound-to-atomic-normalization.md` §3: "MUST NOT introduce additional … semantics").
 
-Elsewhere, on asset, party, and action nodes, a predicate from another vocabulary is data the spike never reads, and it is ignored. Issue #53 adds a W1 warning for an unevaluated predicate on a structure node. The allowlist is the spike's version of that line. DPROD's `dprod:effectiveDate`, `dprod:expirationDate`, and `dprod:acceptsOffer` are not on it, because `due2-profiles.md` §8.1 does not list them, so a policy that states them declines (#66).
+Elsewhere, on asset, party, and action nodes, a predicate from another vocabulary is data the spike never reads, and it is ignored. Issue #53 adds a W1 warning for an unevaluated predicate on a structure node. The allowlist is the spike's version of that line.
 
 **The other policy declines**, each a fixed reason:
 

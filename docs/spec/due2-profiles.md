@@ -202,6 +202,7 @@ With `profiles/dprod.ttl` selected:
 | typed `odrl:partOf`, `odrl:includedIn` | closure modules (§6) |
 | `dprod:dutyState` | output, not input: due2 derives it (§7) |
 | lifecycle statuses (`offerLifecycleStatus`, `contractLifecycleStatus`) | metadata; usable in constraints once flattened onto the request or state node |
+| validity dates (`effectiveDate`, `expirationDate`), `acceptsOffer` | metadata, never evaluated — DPROD's policy grammar has no place for them either (`formal-semantics.md` §3.4). A validity window meant to gate a decision is written as a constraint on `dprod:clock` |
 | Policy-level target and parties | shared defaults that a rule's own value overrides — DPROD's "inherited from policy if absent" (normalisation spec §6.2) |
 | Anonymous rules | admitted, with content-derived identity (normalisation spec §3) |
 | ODRL action hierarchy (`odrl:read` ⊑ `odrl:use`) | `profiles/odrl-actions.ttl`, which DPROD's examples assume |

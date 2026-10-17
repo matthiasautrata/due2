@@ -143,6 +143,9 @@ annotation("http://www.w3.org/2004/02/skos/core#definition").
 annotation("http://www.w3.org/2004/02/skos/core#note").
 annotation("https://ekgf.org/dprod/spec/develop/offerLifecycleStatus").
 annotation("https://ekgf.org/dprod/spec/develop/contractLifecycleStatus").
+annotation("https://ekgf.org/dprod/spec/develop/effectiveDate").
+annotation("https://ekgf.org/dprod/spec/develop/expirationDate").
+annotation("https://ekgf.org/dprod/spec/develop/acceptsOffer").
 
 %*! annotation_ns(NS)
 
