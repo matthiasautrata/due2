@@ -44,3 +44,5 @@
 {"at": "2026-10-17T13:10:08Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 992, "name": "basedpyright"}
 {"at": "2026-10-17T13:10:08Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff"}
 {"at": "2026-10-17T13:10:08Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 19, "name": "ruff format"}
+{"at": "2026-10-17T15:23:28Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 13.16, "p50_ms": 6.73, "p95_ms": 12.5, "p99_ms": 12.93, "pass": 38, "revision": "42e21b4", "task": "interpret", "total_ms": 301.8, "unsupported": 368, "vectors": 406}
+{"at": "2026-10-17T15:24:33Z", "by": "hermes-editorial", "kind": "note", "summary": "editorial pass (Hermes): scorecard refreshed at 42e21b4 (406 vectors, 38 pass, 368 unsupported — #64's six new scenarios decline); stale corpus counts corrected in correctness-strategy §2/§3/§4.1, CLAUDE.md, decisions/0009 §7–§8, implementation-alternatives-ii §29; DESIGN.md, lp/, clingo_i/ and tests/ untouched for #47"}
