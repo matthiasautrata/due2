@@ -54,9 +54,9 @@ A diagnostic is `(code, severity, ref, message)`:
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | profiles §3 |
 | `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in; or a `due2:conceptScheme` on an operand whose range is a datatype. | profiles §3, §4 |
 | `ConflictingProfileDeclaration` | error | 2 | Two selected profile modules declare the same term differently. | profiles §2 |
-| `RetypedOperand` | error | 2 | A layer above the one that owns an operand's type states a range, cardinality, or allowed operators different from the owner's, an omitted attribute counting as its default. | profiles §2 (`decisions/0014`) |
+| `RetypedOperand` | error | 2 | A layer above the one that owns an operand's type states a range, cardinality, or allowed operators different from the owner's. An attribute the owner omits counts as its default. | profiles §2 (`decisions/0014`) |
 | `OperandRangeMismatch` | error | 2 | A binding whose range is of a different kind from the `rdfs:range` of the property it reads. | profiles §3 (`decisions/0014`) |
-| `OperatorTypeMismatch` | error | 2 | An operator not allowed for the operand, a right operand not of its range's kind, or `isA` over a set-valued operand. On an operand with a concept scheme: an operator other than `eq`, `neq`, `isAnyOf`, `isNoneOf`, or an IRI right operand in none of its schemes. | profiles §3, §4 (`decisions/0015`) |
+| `OperatorTypeMismatch` | error | 2 | An operator not allowed for the operand, a right operand not of its range's kind, or `isA` over a set-valued operand. On an operand with a concept scheme: an operator other than `eq`, `neq`, `isAnyOf`, `isNoneOf`, or an IRI right operand in none of its schemes by the memberships the policy and its profile modules declare. | profiles §3, §4 (`decisions/0015`) |
 | `FloatingPointOperand` | error | 2 | An `xsd:float` or `xsd:double` right operand. | profiles §4 |
 | `MixedDuration` | error | 2 | A duration mixing year-month and day-time components. | profiles §4 |
 | `WitnessOutsideDuty` | error | 2 | A witness-source operand in a constraint that is not a duty's. | profiles §3 |

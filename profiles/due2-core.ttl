@@ -27,7 +27,7 @@ due2:allowedOperator a owl:ObjectProperty ;
 # --- Operand bindings: concept schemes (§4, decisions/0015) ---
 due2:conceptScheme a owl:ObjectProperty ;
     rdfs:domain odrl:LeftOperand ; rdfs:range skos:ConceptScheme ;
-    rdfs:comment "A SKOS concept scheme whose concepts the operand's IRI values are; they compare under skos:broader. An operand's schemes are the union over all layers." .
+    rdfs:comment "A SKOS concept scheme the operand's IRI values come from. Such values compare under skos:broader (due2-profiles.md §4). An operand's schemes are the union over all layers." .
 
 # --- Context built-in (§3) ---
 due2:actionTime a owl:DatatypeProperty ;
