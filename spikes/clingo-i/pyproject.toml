@@ -14,6 +14,7 @@ package = false
 [dependency-groups]
 dev = [
     "basedpyright>=1.40.2",
+    "hypothesis>=6.170.1",
     "pytest>=9.1.1",
     "ruff>=0.17.0",
 ]
@@ -22,6 +23,7 @@ dev = [
 include = ["main.py", "clingo_i", "tests"]
 pythonVersion = "3.14"
 typeCheckingMode = "strict"
+extraPaths = ["../../tools"]  # the shared harness and check_corpus, for the acceptance tests
 
 [tool.ruff]
 line-length = 100
@@ -35,5 +37,5 @@ extend-select = ["ANN", "B", "S", "RUF", "C4", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "../../tools"]
 addopts = ["-p", "no:cacheprovider"]

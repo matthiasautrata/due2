@@ -5,10 +5,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from clingo import Control, MessageCode, Model, String, Symbol, SymbolType
+from clingo import Control, Function, MessageCode, Model, String, Symbol, SymbolType
 
-from clingo_i import flatten
-from clingo_i.json_types import Json, Obj, as_list, as_obj, as_str
+from clingo_i import flatten, values
+from clingo_i.json_types import Obj, as_list, as_obj, as_str
 
 LP = Path(__file__).resolve().parents[1] / "lp"
 PROGRAM_FILES = (
@@ -21,8 +21,7 @@ PROGRAM_FILES = (
 )
 SOLVE_1 = ("lift.lp", "structure.lp")
 VARIABLE_CAP = 16  # correctness-strategy.md §3
-SOTW_FIELDS = ("facts", "evidence", "activation", "closure")
-CONFIG = {"combination": "prohibit-overrides"}
+DECLINES = ("unsupported_input", "unsupported_value")  # read after the rejections, in order
 
 
 def load_programs() -> dict[str, str]:
@@ -38,7 +37,7 @@ class Declined(Exception):
 
 
 def _log(code: MessageCode, message: str) -> None:
-    # An undefined atom is a relation with no facts in this vector (req_absent, say).
+    # An undefined atom is a relation with no facts in this vector (request_absent, say).
     if code != MessageCode.AtomUndefined:
         print(message, file=sys.stderr)
 
@@ -68,29 +67,27 @@ class Interpreter:
 
     def interpret(self, vector: Obj) -> Obj:
         prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
-        request = as_obj(vector["request"], "request")
         graph = flatten.parse(as_str(vector["policy"], "policy"))
 
-        lines = flatten.policy_facts(graph) + flatten.request_facts(request, prefixes)
+        facts = flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
         paths = set(self._core)
         for iri in flatten.profiles(graph):
             if iri not in self._profiles:
                 raise ValueError(f"unknown profile {iri}")
             paths.update(self._profiles[iri])
-            lines.append(flatten.fact("selected_profile", String(iri)))
+            facts.append(Function("selected_profile", [String(iri)]))
         for path in sorted(paths):
-            lines.extend(self._modules[path])
-        facts = "\n".join(lines)
+            facts.extend(self._modules[path])
+        text = flatten.render(facts + values.value_facts(values.literals(facts)))
 
-        self._structure(facts)
-        _input_declines(vector)
-        return {"verdict": self._verdict(facts), "frontier": [], "obligations": [], "exact": True}
+        self._structure(text)
+        return {"verdict": self._verdict(text), "frontier": [], "obligations": [], "exact": True}
 
     def _program(self, files: tuple[str, ...]) -> str:
         return "\n".join(self._programs[f] for f in files)
 
     def _structure(self, facts: str) -> None:
-        """Solve 1: decline on the smallest unsupported predicate; error on a rejection."""
+        """Solve 1 (DESIGN.md § Data flow): the declines and rejections, first hit decides."""
         ctl = Control([], logger=_log)
         ctl.add("base", [], facts + "\n" + self._program(SOLVE_1))
         ctl.ground([("base", [])])
@@ -111,6 +108,10 @@ class Interpreter:
         )
         if rejects:
             raise ValueError("not admissible: " + "; ".join(rejects))
+        for name in DECLINES:
+            found = sorted(_text(a.arguments[0]) for a in atoms if a.match(name, 1))
+            if found:
+                raise Declined(found[0])
 
     def _verdict(self, facts: str) -> str:
         """Solve 2: the verdict true in every completion, else Indeterminate."""
@@ -129,21 +130,3 @@ class Interpreter:
             raise RuntimeError("no completion satisfies the integrity constraints")
         verdicts = [_text(s.arguments[0]) for s in last if s.match("verdict", 1)]
         return verdicts[0] if len(verdicts) == 1 else "Indeterminate"
-
-
-def _input_declines(vector: Obj) -> None:
-    """The input fields this increment does not read (DESIGN.md § Declines)."""
-    sotw = as_obj(vector["sotw"], "sotw")
-    for key in SOTW_FIELDS:
-        if _non_empty(sotw.get(key)):
-            raise Declined(f"sotw.{key}")
-    if _non_empty(as_obj(vector["request"], "request").get("params")):
-        raise Declined("request.params")
-    config = as_obj(vector["config"], "config")
-    for key in sorted(config):
-        if CONFIG.get(key) != config[key]:
-            raise Declined(f"config.{key}")
-
-
-def _non_empty(value: Json) -> bool:
-    return value is not None and value not in ({}, [], "")

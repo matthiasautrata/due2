@@ -100,3 +100,28 @@ unsupported(P) :- triple(S, P, _), not consumed(S, P), not annotated(P), pred_ns
 unsupported(P) :- triple(S, P, _), not consumed(S, P), not annotated(P), structure_node(S).
 % An action or target given as a node with rdf:value (IM 2.2 §2.5) is a refinement shape.
 unsupported(P) :- triple(_, P, _), voc(value, P).
+
+% --- the input fields this increment does not read (DESIGN.md § Declines) ---
+
+unsupported_input("request.params") :- request_param(_, _).
+unsupported_input("request.params") :- request_param_set(_).
+unsupported_input("sotw.facts") :- fact(_, _).
+unsupported_input("sotw.evidence") :- evidence(_, _, _, _).
+unsupported_input("sotw.activation") :- activation(_, _).
+unsupported_input("sotw.closure") :- sotw_closure(_, _, _).
+unsupported_input("config.combination") :- config_combination(C), C != "prohibit-overrides".
+unsupported_input("config.violations") :- config_violations(_).
+unsupported_input("config.signers") :- signer(_, _).
+unsupported_input(F) :- unread(F).
+
+% --- the values the program compares (DESIGN.md § Values) ---
+
+compared(I) :- request_at(I).
+compared(I) :- sotw_effective_at(I).
+compared(I) :- activation(_, I).
+compared(I) :- evidence(_, I, _, _).
+compared(V) :- request_param(_, V).
+compared(V) :- fact_value(_, V).
+compared(V) :- evidence_param(_, _, V).
+
+unsupported_value(R) :- unplaceable(L, R), compared(L).

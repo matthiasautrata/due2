@@ -140,20 +140,65 @@ ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a .
 """
 
 
+EVIDENCE: Obj = {
+    "id": "ex:e1",
+    "occurred_at": "2026-05-01T00:00:00Z",
+    "actor": "ex:alice",
+    "action": "odrl:compensate",
+}
+
+
 @pytest.mark.parametrize(
-    ("section", "changes", "field"),
+    ("changes", "reason"),
     [
-        ("sotw", {"facts": {"ex:x": "1"}}, "sotw.facts"),
-        ("sotw", {"evidence": [{"duty": "ex:d"}]}, "sotw.evidence"),
-        ("sotw", {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}, "sotw.activation"),
-        ("sotw", {"closure": [["odrl:partOf", "ex:a", "ex:coll"]]}, "sotw.closure"),
-        ("request", {"params": {"ex:purpose": "ex:research"}}, "request.params"),
-        ("config", {"violations": "deny"}, "config.violations"),
-        ("config", {"combination": "permit-overrides"}, "config.combination"),
+        ({"sotw": {"facts": {"ex:x": {"status": "missing"}}}}, "sotw.facts"),
+        ({"sotw": {"evidence": [EVIDENCE]}}, "sotw.evidence"),
+        ({"sotw": {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}}, "sotw.activation"),
+        ({"sotw": {"closure": [["odrl:partOf", "ex:a", "ex:coll"]]}}, "sotw.closure"),
+        ({"request": {"params": {"ex:purpose": {"@id": "ex:research"}}}}, "request.params"),
+        ({"request": {"params": {"ex:purpose": []}}}, "request.params"),  # an empty set is a value
+        ({"config": {"violations": "deny"}}, "config.violations"),
+        ({"config": {"combination": "permit-overrides"}}, "config.combination"),
+        ({"config": {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}}, "config.signers"),
+        ({"config": {"preference": "ex:p"}}, "config.preference"),
+        # The smallest field wins, whatever the section order.
+        (
+            {
+                "sotw": {"closure": [["odrl:partOf", "ex:a", "ex:c"]]},
+                "config": {"violations": "deny"},
+            },
+            "config.violations",
+        ),
+        # A value the program compares, and cannot place (DESIGN.md § Values).
+        ({"request": {"at": "2026-06-01T00:00:00"}}, "value: dateTime without timezone"),
+        ({"sotw": {"effective_at": "2026-13-01T00:00:00Z"}}, "value: ill-typed xsd:dateTime"),
+        # The input declines come first.
+        (
+            {"request": {"at": "2026-06-01T00:00:00", "params": {"ex:n": {"@value": "1"}}}},
+            "request.params",
+        ),
     ],
 )
-def test_input_declines(interpreter: Interpreter, section: str, changes: Obj, field: str) -> None:
-    assert interpreter.reply(vector(**{section: changes})) == {"unsupported": field}
+def test_input_declines(interpreter: Interpreter, changes: dict[str, Obj], reason: str) -> None:
+    assert interpreter.reply(vector(**changes)) == {"unsupported": reason}
+
+
+def test_empty_fields_are_not_declined(interpreter: Interpreter) -> None:
+    v = vector(request={"params": {}}, sotw={"facts": {}, "evidence": [], "closure": []})
+    assert verdict(interpreter.reply(v)) == "Permit"
+
+
+def test_policy_declines_come_first(interpreter: Interpreter) -> None:
+    policy = PREFIXES + POLICY_BODY + "ex:perm odrl:duty [ odrl:action odrl:compensate ] .\n"
+    v = vector(policy, sotw={"evidence": [EVIDENCE]})
+    assert interpreter.reply(v) == {"unsupported": ODRL + "duty"}
+
+
+def test_uncompared_unplaceable_literal(interpreter: Interpreter) -> None:
+    # An annotation is never compared, so a value it cannot place does not decline.
+    tzless = '"2026-01-01T00:00:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+    policy = PREFIXES + POLICY_BODY + f"ex:p dct:issued {tzless} .\n"
+    assert verdict(interpreter.reply(vector(policy))) == "Permit"
 
 
 # --- errors ---
@@ -162,6 +207,11 @@ def test_input_declines(interpreter: Interpreter, section: str, changes: Obj, fi
 def test_unknown_profile_is_an_error(interpreter: Interpreter) -> None:
     policy = PREFIXES + POLICY_BODY + "ex:p odrl:profile <https://example.org/unknown/> .\n"
     assert "error" in interpreter.reply(vector(policy))
+
+
+def test_malformed_input_is_an_error(interpreter: Interpreter) -> None:
+    reply = interpreter.reply(vector(request={"params": {"ex:purpose": "ex:research"}}))
+    assert reply == {"error": "TypeError: request.params.ex:purpose: expected an object, got str"}
 
 
 def test_no_policy_is_an_error(interpreter: Interpreter) -> None:
