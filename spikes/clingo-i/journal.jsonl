@@ -52,3 +52,4 @@
 {"at": "2026-10-17T16:53:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff"}
 {"at": "2026-10-17T16:53:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}
 {"at": "2026-10-17T16:56:23Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 435.59, "p50_ms": 25.16, "p95_ms": 30.63, "p99_ms": 424.47, "pass": 160, "revision": "6b67c98", "task": "interpret", "total_ms": 4769.4, "unsupported": 246, "vectors": 406}
+{"at": "2026-10-17T18:23:40Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 433.72, "p50_ms": 25.53, "p95_ms": 31.0, "p99_ms": 424.89, "pass": 172, "revision": "6b4e522", "task": "interpret", "total_ms": 5170.1, "unsupported": 234, "vectors": 406}
