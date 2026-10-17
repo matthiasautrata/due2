@@ -10,9 +10,13 @@ two_valued(f; t).
 :- item(I), #count { V : holds(I, V) } != 1.
 :- holds(_, V), not rank(V, _).
 
-% Every completed item has exactly one value, f or t.
-:- item(I), #count { V : cval(I, V) } != 1.
-:- cval(_, V), not two_valued(V).
+% Every u part reads exactly one literal (completion.lp).
+:- part_item(_, I), holds(I, u), #count { L : lit_of(I, L) } != 1.
 
-% Every completion has exactly one verdict.
-:- #count { V : verdict(V) } != 1.
+% In every world, every literal and every item has exactly one value, f or t.
+:- world(W), var(L), #count { V : lval(W, L, V) } != 1.
+:- world(W), item(I), #count { V : cval(W, I, V) } != 1.
+:- cval(_, _, V), not two_valued(V).
+
+% Every world has exactly one verdict.
+:- world(W), #count { V : verdict(W, V) } != 1.

@@ -94,6 +94,7 @@
         "frontier": [],
         "obligations": [],
         "verdict_basis": [ { "ref": "ex:readLab", "role": "unknown" } ],
+        "verdict_range": { "low": "NotApplicable", "high": "Permit" },
         "eliminated": [],
         "why": "The clearance atom is F; the membership atom is U. Completing it T gives Permit, F gives NotApplicable: the completions disagree, so Indeterminate, with the membership atom in verdict_basis as unknown."
       }
@@ -184,6 +185,7 @@
         "frontier": [],
         "obligations": [],
         "verdict_basis": [ { "ref": "ex:readLab", "role": "unknown" } ],
+        "verdict_range": { "low": "NotApplicable", "high": "Permit" },
         "eliminated": [],
         "why": "missing makes each constraint U, never F (due2-profiles.md §3): both atoms are U, completions range from Permit to NotApplicable, so Indeterminate."
       }

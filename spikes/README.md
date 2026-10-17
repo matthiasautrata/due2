@@ -70,10 +70,11 @@ One vector per positive scenario in `conformance/cases/` (negative cases wait fo
  "obligations": [{"duty": "<IRI>", "status": "outstanding", "instance": "<dateTime>"}],
  "exact": true,
  "verdict_basis": [{"ref": "<rule or duty IRI>", "role": "permission"}],
- "eliminated": [{"ref": "<IRI>", "by": "<IRI>", "rule": "prohibit"}]}
+ "eliminated": [{"ref": "<IRI>", "by": "<IRI>", "rule": "prohibit"}],
+ "verdict_range": {"low": "NotApplicable", "high": "Permit"}}
 ```
 
-The verdict is one of the five. The frontier is a set of alternatives, each a set of duty IRIs. Obligations are a set; `status` is `fulfilled`, `outstanding`, `violated`, or `unknown`, and `instance` is present only for an instance of a recurring duty. `exact` is compared only for scenarios that state it. `verdict_basis` and `eliminated` are the explanation at the authored level (`conformance/README.md`, workflows §3.7), each a set, and both optional. Each is compared when the scenario states it and the output has it. A vector whose output matches but lacks a field the scenario states is reported unsupported (`not emitted: verdict_basis`), never as a pass. A spike that emits neither yet still runs green, and grows into them by increment. Names may be full IRIs or use the vector's prefixes.
+The verdict is one of the five. The frontier is a set of alternatives, each a set of duty IRIs. Obligations are a set; `status` is `fulfilled`, `outstanding`, `violated`, or `unknown`, and `instance` is present only for an instance of a recurring duty. `exact` is compared only for scenarios that state it. `verdict_basis` and `eliminated` are the explanation at the authored level (`conformance/README.md`, workflows §3.7), each a set, and both optional. `verdict_range` is an `Indeterminate`'s least and greatest completion verdict (`decisions/0011`), also optional. Each is compared when the scenario states it and the output has it. A vector whose output matches but lacks a field the scenario states is reported unsupported (`not emitted: verdict_basis`), never as a pass. A spike that emits none of them yet still runs green, and grows into them by increment. Names may be full IRIs or use the vector's prefixes.
 
 ### `w2`, `w3`
 

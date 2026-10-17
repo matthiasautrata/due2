@@ -28,3 +28,12 @@
 {"at": "2026-10-17T01:05:14Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff"}
 {"at": "2026-10-17T01:05:14Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
 {"at": "2026-10-17T01:05:40Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 10.72, "p50_ms": 5.33, "p95_ms": 10.64, "p99_ms": 10.71, "pass": 29, "revision": "f5dc357", "task": "interpret", "total_ms": 185.8, "unsupported": 368, "vectors": 397}
+{"at": "2026-10-17T11:40:46Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 12.04, "p50_ms": 6.13, "p95_ms": 11.7, "p99_ms": 11.96, "pass": 35, "revision": "1744adf+dirty", "task": "interpret", "total_ms": 259.6, "unsupported": 362, "vectors": 397}
+{"at": "2026-10-17T11:41:07Z", "by": "claude-opus-5-5", "kind": "session", "summary": "#59: explanation. Literal-keyed completions, world-indexed resolution, explain.lp (eliminations over findings), pivot.lp (one-literal flip, brave union gives unknown atoms and range); verdict_basis, eliminated, verdict_range emitted"}
+{"at": "2026-10-17T11:41:07Z", "by": "claude-opus-5-5", "kind": "attempt", "summary": "Three solves: cautious verdict, cautious basis and eliminations, brave flip for an Indeterminate's unknown atoms and range; the connected hypercube makes the brave verdicts exactly the reachable ones"}
+{"at": "2026-10-17T11:41:07Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "Brute-force oracle (not the program): under invalid it emptied the candidates before testing them for the forbid side; fixed with a precomputed void"}
+{"at": "2026-10-17T11:41:07Z", "by": "claude-opus-5-5", "kind": "note", "summary": "Mutant check of the differential: u-removes caught; dropping the flip constraint and per-part literal keys survived most random runs (an irrelevant u atom beside a t candidate is ~1% of Indeterminates unplanted). Planted t candidate in half the draws plus three @example cases now kill both deterministically; 'brave basis' is equivalent within one policy"}
+{"at": "2026-10-17T11:41:07Z", "by": "claude-opus-5-5", "kind": "note", "summary": "Residual: a definite verdict whose completions share no one atom gets an empty basis; unreachable without constraints, re-check at #47"}
+{"at": "2026-10-17T11:41:08Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1297, "name": "basedpyright"}
+{"at": "2026-10-17T11:41:08Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 56, "name": "ruff"}
+{"at": "2026-10-17T11:41:09Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff format"}

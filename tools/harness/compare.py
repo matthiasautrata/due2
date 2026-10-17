@@ -3,7 +3,8 @@
 Output shape (spikes/README.md):
   {"verdict": str, "frontier": [[duty IRI, ...], ...],
    "obligations": [{"duty": IRI, "status": str, "instance"?: dateTime}], "exact"?: bool,
-   "verdict_basis"?: [{"ref": IRI, "role": str}], "eliminated"?: [{"ref": IRI, "by": IRI, "rule": str}]}
+   "verdict_basis"?: [{"ref": IRI, "role": str}], "eliminated"?: [{"ref": IRI, "by": IRI, "rule": str}],
+   "verdict_range"?: {"low": str, "high": str}}
 
 The frontier is a set of sets; obligations, the basis, and the eliminations are sets. `exact`
 is compared only where the scenario states it (conformance/README.md). The explanation fields
@@ -18,7 +19,7 @@ from harness.json_types import Json, Obj, as_list, as_obj, as_str
 VERDICTS = frozenset({"Permit", "Deny", "Pending", "NotApplicable", "Indeterminate"})
 STATUSES = frozenset({"fulfilled", "outstanding", "violated", "unknown"})
 ROLES = frozenset({"prohibition", "permission", "duty", "unknown", "obligation", "closed"})
-EXPLANATION = ("verdict_basis", "eliminated")
+EXPLANATION = ("verdict_basis", "eliminated", "verdict_range")
 
 type Obligation = tuple[str, str, str | None]
 
@@ -77,6 +78,11 @@ def _eliminated(value: Json, prefixes: dict[str, str]) -> frozenset[tuple[str, s
     )
 
 
+def _range(value: Json) -> tuple[str, str]:
+    r = as_obj(value, "verdict_range")
+    return (as_str(r["low"], "low"), as_str(r["high"], "high"))
+
+
 def unemitted(expected: Obj, actual: Json) -> list[str]:
     """The explanation fields the scenario states and the output lacks."""
     got = actual if isinstance(actual, dict) else {}
@@ -113,6 +119,11 @@ def mismatches(expected: Obj, actual: Json, prefixes: dict[str, str]) -> list[st
                     out.append(
                         f"{key}: missing {sorted(want - have)}, unexpected {sorted(have - want)}"
                     )
+        if "verdict_range" in expected and "verdict_range" in got:
+            want_r = _range(expected["verdict_range"])
+            got_r = _range(got["verdict_range"])
+            if want_r != got_r:
+                out.append(f"verdict_range: expected {want_r}, got {got_r}")
     except (TypeError, ValueError, KeyError) as e:
         return [f"malformed output: {e}"]
     return out

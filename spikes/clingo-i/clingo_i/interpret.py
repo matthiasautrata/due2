@@ -1,4 +1,4 @@
-"""The interpret task (DESIGN.md § Data flow): two solves, the declines, and the reply."""
+"""The interpret task (DESIGN.md § Data flow): three solves, the declines, and the reply."""
 
 from __future__ import annotations
 
@@ -18,8 +18,12 @@ PROGRAM_FILES = (
     "applies.lp",
     "completion.lp",
     "resolve.lp",
+    "explain.lp",
+    "pivot.lp",
 )
 SOLVE_1 = ("lift.lp", "structure.lp")
+SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
+CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # workflows §6.4
 VARIABLE_CAP = 16  # correctness-strategy.md §3
 DECLINES = ("unsupported_input", "unsupported_value")  # read after the rejections, in order
 
@@ -44,6 +48,11 @@ def _log(code: MessageCode, message: str) -> None:
 
 def _text(sym: Symbol) -> str:
     return sym.string if sym.type == SymbolType.String else str(sym)
+
+
+def _rule(atom: Symbol) -> str:
+    """An atom a(R, A, T, Y), projected to its source rule R (workflows §3.7)."""
+    return _text(atom.arguments[0])
 
 
 class Interpreter:
@@ -81,7 +90,40 @@ class Interpreter:
         text = flatten.render(facts + values.value_facts(values.literals(facts)))
 
         self._structure(text)
-        return {"verdict": self._verdict(text), "frontier": [], "obligations": [], "exact": True}
+        shown = self._solve(text, SOLVE_2, "cautious")
+        verdicts = [_text(s.arguments[1]) for s in shown if s.match("verdict", 2)]
+        verdict = verdicts[0] if len(verdicts) == 1 else "Indeterminate"
+        basis = {
+            (_rule(s.arguments[1]), _text(s.arguments[2])) for s in shown if s.match("basis", 3)
+        }
+        out: Obj = {"verdict": verdict, "frontier": [], "obligations": [], "exact": True}
+        reached: set[str] = set()
+        if verdict == "Indeterminate":
+            pivots = self._solve(text, PROGRAM_FILES, "brave")
+            basis = {(_rule(s.arguments[0]), "unknown") for s in pivots if s.match("unknown", 1)}
+            reached = {
+                _text(s.arguments[1])
+                for s in pivots
+                if s.match("verdict", 2) and _text(s.arguments[0]) == "c"
+            }
+        out["verdict_basis"] = [{"ref": r, "role": role} for r, role in sorted(basis)]
+        out["eliminated"] = [
+            {"ref": ref, "by": by, "rule": rule}
+            for ref, by, rule in sorted(
+                {
+                    (_rule(s.arguments[0]), _rule(s.arguments[1]), _text(s.arguments[2]))
+                    for s in shown
+                    if s.match("elim", 3)
+                }
+            )
+            if ref != by  # the authored level: "other than itself" (DESIGN.md § Output)
+        ]
+        if reached:
+            out["verdict_range"] = {
+                "low": min(reached, key=CHAIN.index),
+                "high": max(reached, key=CHAIN.index),
+            }
+        return out
 
     def _program(self, files: tuple[str, ...]) -> str:
         return "\n".join(self._programs[f] for f in files)
@@ -113,10 +155,10 @@ class Interpreter:
             if found:
                 raise Declined(found[0])
 
-    def _verdict(self, facts: str) -> str:
-        """Solve 2: the verdict true in every completion, else Indeterminate."""
-        ctl = Control(["0", "--enum-mode=cautious"], logger=_log)
-        ctl.add("base", [], facts + "\n" + self._program(PROGRAM_FILES))
+    def _solve(self, facts: str, files: tuple[str, ...], mode: str) -> list[Symbol]:
+        """Solves 2 and 3: the shown atoms true in every model (cautious) or in some (brave)."""
+        ctl = Control(["0", f"--enum-mode={mode}"], logger=_log)
+        ctl.add("base", [], facts + "\n" + self._program(files))
         ctl.ground([("base", [])])
         variables = sum(1 for _ in ctl.symbolic_atoms.by_signature("var", 1))
         if variables > VARIABLE_CAP:
@@ -127,6 +169,5 @@ class Interpreter:
             last[:] = model.symbols(shown=True)
 
         if not ctl.solve(on_model=on_model).satisfiable:
-            raise RuntimeError("no completion satisfies the integrity constraints")
-        verdicts = [_text(s.arguments[0]) for s in last if s.match("verdict", 1)]
-        return verdicts[0] if len(verdicts) == 1 else "Indeterminate"
+            raise RuntimeError(f"no model satisfies the integrity constraints ({mode})")
+        return last

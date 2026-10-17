@@ -1,12 +1,13 @@
-"""What the corpus cannot see (DESIGN.md § Tests): integrity, declines, and a few verdicts
-that the declines and integrity tests rely on."""
+"""What the corpus cannot see (DESIGN.md § Tests): integrity, declines, the explanation, and
+a few verdicts that the other tests rely on."""
 
 from __future__ import annotations
 
 import pytest
+from clingo import Control
 
 from clingo_i.interpret import PROGRAM_FILES, Interpreter, load_programs
-from clingo_i.json_types import Obj
+from clingo_i.json_types import Json, Obj, as_obj
 from tests.conftest import INIT, PREFIXES, PROF, vector
 
 ODRL = "http://www.w3.org/ns/odrl/2/"
@@ -73,7 +74,11 @@ def test_anonymous_rule(interpreter: Interpreter) -> None:
 DELETIONS = [
     ("kleene.lp", "rank(u, 1)."),
     ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
-    ("resolve.lp", 'verdict("NotApplicable") :- not deny, not ready.'),
+    (
+        "completion.lp",
+        "lit_of(part(X, party(F)), party(F, P)) :- atom_party(X, F, P), holds(part(X, party(F)), u).",
+    ),
+    ("resolve.lp", 'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W).'),
 ]
 
 
@@ -83,19 +88,211 @@ def test_deleted_rule_fails_loudly(file: str, line: str) -> None:
     assert line in programs[file].splitlines(), f"{file} no longer has {line!r}"
     programs[file] = programs[file].replace(line, "")
     broken = Interpreter(INIT, programs)
-    # Each vector exercises the deleted rule: an absent target gives a u part (kleene.lp),
-    # a foreign action an f part (applies.lp), and NotApplicable its rule (resolve.lp).
+    # Each vector exercises the deleted rule: an absent assignee gives a u part (kleene.lp)
+    # that reads a party literal (completion.lp), a foreign action an f part (applies.lp),
+    # and NotApplicable its rule (resolve.lp).
     requests: dict[str, Obj] = {
         "kleene.lp": {"parties": {}},
         "applies.lp": {"action": "ex:other"},
+        "completion.lp": {"parties": {}},
         "resolve.lp": {"action": "ex:other"},
     }
     reply = broken.reply(vector(request=requests[file]))
     assert "error" in reply, reply
 
 
+def test_two_effects_fail_loudly() -> None:
+    programs = load_programs()
+    programs["explain.lp"] += "\natom_effect(X, forbid) :- atom(X).\n"
+    assert "error" in Interpreter(INIT, programs).reply(vector())
+
+
 def test_program_files_are_all_loaded() -> None:
     assert sorted(load_programs()) == sorted(PROGRAM_FILES)
+
+
+# --- the explanation (workflows §3.5, §3.7, §6.4; decisions/0011) ---
+
+
+def explained(reply: Obj) -> Obj:
+    """The output, with ex: names for refs and the shape of each explanation field checked."""
+    assert "output" in reply, reply
+    out = reply["output"]
+    assert isinstance(out, dict)
+    short = {k: v for k, v in out.items() if k not in ("frontier", "obligations", "exact")}
+    return as_obj(_shorten(short), "output")
+
+
+def _shorten(x: Json) -> Json:
+    if isinstance(x, dict):
+        return {k: _shorten(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_shorten(v) for v in x]
+    return x.replace(EX, "ex:") if isinstance(x, str) else x
+
+
+def policy(conflict: str, *rules: str) -> str:
+    """A policy ex:p with the given conflict and rules, each `kind name target [assignee]`."""
+    lines: list[str] = []
+    refs: list[str] = []
+    for spec in rules:
+        kind, name, target, *who = spec.split()
+        cls, link = (
+            ("Permission", "permission") if kind == "perm" else ("Prohibition", "prohibition")
+        )
+        party = f" ; odrl:assignee ex:{who[0]}" if who else ""
+        lines.append(
+            f"ex:{name} a odrl:{cls} ; odrl:action odrl:use ; odrl:target ex:{target}{party} ."
+        )
+        refs.append(f"odrl:{link} ex:{name}")
+    head = f"ex:p a odrl:Set ; odrl:conflict odrl:{conflict} ; " + " ; ".join(refs) + " .\n"
+    return PREFIXES + head + "\n".join(lines) + "\n"
+
+
+def basis(*rows: str) -> list[Obj]:
+    return [{"ref": r, "role": role} for r, role in (row.split() for row in rows)]
+
+
+def elims(*rows: str) -> list[Obj]:
+    return [{"ref": r, "by": b, "rule": rule} for r, b, rule in (row.split() for row in rows)]
+
+
+@pytest.mark.parametrize(
+    ("request_changes", "expected"),
+    [
+        ({}, {"verdict": "Permit", "verdict_basis": basis("ex:perm permission"), "eliminated": []}),
+        (
+            {"action": "odrl:use", "target": "ex:b"},
+            {"verdict": "Deny", "verdict_basis": basis("ex:forbid prohibition"), "eliminated": []},
+        ),
+        (
+            {"action": "ex:other"},
+            {"verdict": "NotApplicable", "verdict_basis": [], "eliminated": []},
+        ),
+    ],
+)
+def test_definite_basis(interpreter: Interpreter, request_changes: Obj, expected: Obj) -> None:
+    assert explained(interpreter.reply(vector(request=request_changes))) == expected
+
+
+NO_PARTY: Obj = {"target": "ex:a", "parties": {}}
+
+
+@pytest.mark.parametrize(
+    ("pol", "expected"),
+    [
+        # A u candidate is removed by a t prohibition under prohibit (0011 #4).
+        (
+            policy("prohibit", "perm perm a alice", "forbid forbid a"),
+            {
+                "verdict": "Deny",
+                "verdict_basis": basis("ex:forbid prohibition"),
+                "eliminated": elims("ex:perm ex:forbid prohibit"),
+            },
+        ),
+        # A u prohibition beside a t candidate removes nothing, and leaves the verdict open.
+        (
+            policy("prohibit", "perm perm a", "forbid forbid a alice"),
+            {
+                "verdict": "Indeterminate",
+                "verdict_basis": basis("ex:forbid unknown"),
+                "eliminated": [],
+                "verdict_range": {"low": "Deny", "high": "Permit"},
+            },
+        ),
+        # An irrelevant u atom is not named: ex:other moves no verdict, ex:perm being t.
+        (
+            policy("prohibit", "perm perm a", "perm other a alice", "forbid forbid a bob"),
+            {
+                "verdict": "Indeterminate",
+                "verdict_basis": basis("ex:forbid unknown"),
+                "eliminated": [],
+                "verdict_range": {"low": "Deny", "high": "Permit"},
+            },
+        ),
+        (
+            policy("prohibit", "forbid forbid a alice"),
+            {
+                "verdict": "Indeterminate",
+                "verdict_basis": basis("ex:forbid unknown"),
+                "eliminated": [],
+                "verdict_range": {"low": "Deny", "high": "NotApplicable"},
+            },
+        ),
+        # A void policy removes its u atoms too, by each t atom; a u atom removes nothing.
+        (
+            policy("invalid", "perm perm a", "forbid forbid a", "perm other a alice"),
+            {
+                "verdict": "NotApplicable",
+                "verdict_basis": [],
+                "eliminated": elims(
+                    "ex:forbid ex:perm invalid",
+                    "ex:other ex:forbid invalid",
+                    "ex:other ex:perm invalid",
+                    "ex:perm ex:forbid invalid",
+                ),
+            },
+        ),
+    ],
+)
+def test_explanation(interpreter: Interpreter, pol: str, expected: Obj) -> None:
+    assert explained(interpreter.reply(vector(pol, request=NO_PARTY))) == expected
+
+
+@pytest.mark.parametrize(
+    ("pol", "request_changes"),
+    [
+        # Both rules read the absent target ex:a: one literal.
+        (policy("perm", "perm perm a", "forbid forbid a"), {"target": None}),
+        # Both rules read the unnamed assignee ex:alice: one literal.
+        (policy("perm", "perm perm a alice", "forbid forbid a alice"), NO_PARTY),
+    ],
+)
+def test_atoms_share_a_literal(interpreter: Interpreter, pol: str, request_changes: Obj) -> None:
+    # Independent parts would admit the forbid alone (Deny). One literal: both or neither,
+    # and under perm both is Permit.
+    v = vector(pol, request={k: x for k, x in request_changes.items() if x is not None})
+    request = v["request"]
+    assert isinstance(request, dict)
+    if request_changes.get("target", "") is None:
+        del request["target"]
+    out = explained(interpreter.reply(v))
+    assert out["verdict_range"] == {"low": "NotApplicable", "high": "Permit"}
+    assert out["verdict_basis"] == basis("ex:forbid unknown", "ex:perm unknown")
+
+
+def test_same_rule_eliminations_are_dropped(interpreter: Interpreter) -> None:
+    # Two actions give ex:perm two atoms; under invalid each removes the other, which the
+    # authored level drops ("other than itself").
+    pol = policy("invalid", "perm perm a", "forbid forbid a").replace(
+        "odrl:action odrl:use ; odrl:target ex:a .\nex:forbid",
+        "odrl:action odrl:use, odrl:play ; odrl:target ex:a .\nex:forbid",
+    )
+    assert "odrl:play" in pol
+    out = explained(interpreter.reply(vector(pol)))
+    assert out["eliminated"] == elims("ex:forbid ex:perm invalid", "ex:perm ex:forbid invalid")
+
+
+def test_combination_rows_on_facts() -> None:
+    # One policy per vector for now (structure.lp), so the cross-policy row is tested on facts:
+    # q's t forbid removes p's u candidate; r's forbid, removed in r under perm, removes nothing.
+    facts = """
+atom(x). atom_effect(x, permit). atom_policy(x, p). atom_rule(x, "x"). holds(applies(x), u).
+atom(y). atom_effect(y, forbid). atom_policy(y, q). atom_rule(y, "y"). holds(applies(y), t).
+atom(z). atom_effect(z, forbid). atom_policy(z, r). atom_rule(z, "z"). holds(applies(z), t).
+atom(w). atom_effect(w, permit). atom_policy(w, r). atom_rule(w, "w"). holds(applies(w), t).
+conflict(p, prohibit). conflict(q, prohibit). conflict(r, perm).
+"""
+    ctl = Control([])
+    ctl.add("base", [], facts + load_programs()["explain.lp"])
+    ctl.ground([("base", [])])
+    rows: set[str] = set()
+    ctl.solve(on_model=lambda m: rows.update(str(s) for s in m.symbols(shown=True)))
+    assert rows == {
+        'elim(x,y,"prohibit-overrides")',
+        'elim(w,y,"prohibit-overrides")',
+        "elim(z,w,perm)",
+    }
 
 
 # --- declines ---

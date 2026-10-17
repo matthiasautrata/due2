@@ -738,6 +738,7 @@ def check_case(case_dir: Path) -> list[Report]:
         if exp.get("verdict") == "Pending" and not exp.get("frontier"):
             r.err(f"{tag}: Pending needs a frontier")
         check_explanation(tag, exp, sc.get("config", {}), g, prefixes, r)
+        check_range(tag, exp, r)
     return reports
 
 
@@ -750,6 +751,23 @@ BASIS_ROLES = {
     "NotApplicable": {"closed", "obligation"},
 }
 STRATEGIES = {"prohibit", "perm", "invalid"}
+CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")
+
+
+def check_range(tag: str, exp: dict[str, Any], r: Report) -> None:
+    """expected.verdict_range (conformance/README.md, workflows 3.5, decisions/0011): an
+    Indeterminate's least and greatest completion verdict, low below high in the chain."""
+    if "verdict_range" not in exp:
+        return
+    rng = entry(exp["verdict_range"], {"low", "high"})
+    if rng is None:
+        r.err(f"{tag}: verdict_range must be {{low, high}}: {exp['verdict_range']!r}")
+    elif exp.get("verdict") != "Indeterminate":
+        r.err(f"{tag}: verdict_range is recorded for an Indeterminate only (workflows 3.5)")
+    elif rng["low"] not in CHAIN or rng["high"] not in CHAIN:
+        r.err(f"{tag}: verdict_range ends must be one of {list(CHAIN)}")
+    elif CHAIN.index(rng["low"]) >= CHAIN.index(rng["high"]):
+        r.err(f"{tag}: verdict_range low {rng['low']} is not below high {rng['high']}")
 
 
 def entry(x: object, keys: set[str]) -> dict[str, Any] | None:

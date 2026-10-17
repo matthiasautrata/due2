@@ -6,20 +6,24 @@ Increment 1 (#45) handles policies with permissions and prohibitions over action
 
 Increment 2 (#46) completes the driver. Every field of the input becomes facts, every literal is placed in its value space, and the fact schema below is final. The program still reads only what increment 1 read, so the inputs it does not read yet are declined by rules in `lift.lp`, not by the driver.
 
+Increment 3 (#59) adds the explanation: `verdict_basis` and `eliminated` at the authored level (workflows §3.5, §3.7), and, for an `Indeterminate`, the `unknown` atoms and `verdict_range` of `decisions/0011`. Completions become literal-keyed (workflows §6.4), and the completion and resolution are indexed by a world, so that a third solve can hold a completion and its one-literal flip side by side.
+
 ## Layout
 
 ```text
 main.py               the protocol loop (spikes/README.md § Protocol)
 clingo_i/flatten.py   the driver: Turtle and JSON to facts; no semantics
 clingo_i/values.py    the driver's value table: value spaces, ranks, and instant-plus-duration sums
-clingo_i/interpret.py the two solves, the declines, and the reply
+clingo_i/interpret.py the three solves, the declines, and the reply
 clingo_i/json_types.py the JSON value type
 lp/lift.lp            triples to vocabulary-free relations; detects the unsupported
 lp/structure.lp       policy class, conflict default, interiorisation, expansion   normalisation §3, §6.2–§6.3
 lp/kleene.lp          truth values and the one-value integrity constraints          workflows §5.1
 lp/applies.lp         the parts of an atom and its finding                          workflows §5.2
-lp/completion.lp      one choice per unknown part                                   workflows §6.4
-lp/resolve.lp         candidates, conflict, and the verdict of one completion       workflows §6.1–§6.4
+lp/completion.lp      the literal of each unknown part; one choice per literal        workflows §6.4
+lp/resolve.lp         candidates, conflict, verdict, and basis of one completion      workflows §6.1–§6.4
+lp/explain.lp         eliminations over the findings                                workflows §3.5, §6.2
+lp/pivot.lp           solve 3 only: a completion, its flip, and the pivotal literals decisions/0011
 tests/                the spike's own tests (§ Tests)
 ```
 
@@ -34,7 +38,12 @@ tests/                the spike's own tests (§ Tests)
    2. any `reject(Code, Node)`: an `error` reply, because `interpret` receives only admissible policies;
    3. any `unsupported_input(F)`: declined, naming the smallest input field `F`;
    4. any `unsupported_value(R)`: declined, naming the smallest reason `R` (§ Values).
-4. **Solve 2:** all six files, in cautious enumeration mode. More than 16 `var/1` atoms declines the vector (strategy §3). No model at all is an `error`: an integrity constraint failed, and the program is wrong. Otherwise the verdict is the one `verdict/1` atom true in every model, or `Indeterminate` if there is none.
+4. **Solve 2:** every file but `pivot.lp`, in cautious enumeration mode, over the one world `c`. More than 16 `var/1` atoms (literals) declines the vector (strategy §3). No model at all is an `error`: an integrity constraint failed, and the program is wrong. Otherwise, from the atoms true in every model:
+   - the verdict is the one `verdict(c, V)`, or `Indeterminate` if there is none;
+   - `basis(c, X, Role)` gives a definite verdict's basis;
+   - `elim(X, Y, Rule)` gives `eliminated`. It does not depend on the completion, so it is in every model.
+5. **Solve 3**, for an `Indeterminate` only: every file, in brave enumeration mode. Each model is a completion `c`, one literal `pivot(L)`, and the world `flip`, which is `c` with `L` flipped, such that `c` and `flip` have different verdicts. The atoms true in some model give the pivotal literals, the `unknown(X)` atoms, and every `verdict(c, V)` that occurs (§ `pivot.lp`).
+6. **Reply** (§ Output).
 
 ## Fact schema
 
@@ -163,7 +172,7 @@ Every truth value is a `holds(I, V)` with `V` in `f`, `u`, `t`, over the items:
 - `part(X, party(F))` for a match key `F`;
 - `applies(X)`.
 
-`item(I)` declares each item that must have a value. A completion gives every item `I` exactly one `cval(I, V)`, with `V` either `f` or `t`.
+`item(I)` declares each item that must have a value. A `u` part reads a literal, `lit_of(I, L)`, and each literal is a variable, `var(L)`. A world `W` gives every variable exactly one `lval(W, L, V)`, and every item exactly one `cval(W, I, V)`, with `V` either `f` or `t`. Solve 2 has the one world `c`; solve 3 adds `flip`.
 
 ## Semantics, by file
 
@@ -188,12 +197,13 @@ Every truth value is a `holds(I, V)` with `V` in `f`, `u`, `t`, over the items:
 
 ### `completion.lp` (workflows §6.4)
 
-- Each part with value `u` is a variable `var(I)`. A choice gives it `t` or `f`. Every other item completes to its own value, and `applies` is re-derived from the completed parts.
-- **Literal key.** §6.4 says "each `U` part is a variable", with one exception: correlated constraint parts share one. That key lands with constraints. Until then, two relation or party parts on the same value are separate variables, exactly as the spec defines.
+- **Literal key** (§6.4, `decisions/0011` #2). A `u` target part reads the literal `target(T)`, its atom's target, and a `u` party part reads `party(F, P)`, its function and party. Parts with the same key are one variable: the atoms that expansion copies from one rule share their target literal, and two rules for the same assignee share their party literal. Different values of one field, `target(a)` and `target(b)`, stay separate variables: that is §6.4's domain-unaware approximation, so both `T` is a completion. The constraint key lands with constraints (#47).
+- A choice gives each variable `t` or `f` in world `c`. A `u` part takes its literal's value, every other item completes to its own value, and `applies` is re-derived from the completed parts, per world.
+- Integrity: every `u` part has exactly one literal (`kleene.lp`), so a part the key forgets fails loudly.
 
 ### `resolve.lp` (workflows §6.1–§6.4)
 
-Within one completion, every value is `t` or `f`:
+Every relation carries the world `W`. Within one world, every value is `t` or `f`:
 
 - A candidate is a `permit` atom that applies. There are no duties yet, so every candidate is ready.
 - **Conflict within the policy** (§6.2.1):
@@ -207,8 +217,40 @@ Within one completion, every value is `t` or `f`:
   - otherwise `NotApplicable`.
 
   `Pending` needs duties (#49).
+- **Basis of one completion** (§6.4): `basis(W, X, prohibition)` for each surviving applying `forbid` of a `Deny`, and `basis(W, X, permission)` for each surviving candidate of a `Permit`. Solve 2 reports a row only if it holds in every completion. So a definite verdict's basis is what determines it whatever the unknowns are, and an `Indeterminate` has no cautious basis: its basis is the `unknown` rows of solve 3. When no one atom determines a definite verdict in every completion, the basis is empty. Without constraints, no vector can reach that case (mixed variables need a fact read both ways); it is re-checked when constraints land (#47).
 
-The output is `verdict`, `frontier: []`, `obligations: []`, and `exact: true`. Enumerating every completion is the definition itself, so it is exact.
+### `explain.lp` (workflows §3.5, §6.2, `decisions/0011` #4)
+
+Elimination is over the findings, not over a completion, so `elim(X, Y, Rule)` reads `holds/2` and carries no world. A remover `Y` has finding `t`. A removed atom `X` has finding `t` or `u`, because `U` atoms eliminate nothing (§6.2), but can be removed. There is one row per remover (§3.5):
+
+- `prohibit`: each `t` `forbid` of the policy removes each of its candidates;
+- `perm`: each `t` candidate removes each of the policy's `forbid` atoms;
+- `invalid`: a policy with a `t` candidate and a `t` `forbid` is void. Each of its `t` or `u` atoms is removed by each `t` atom of the policy other than itself;
+- the combination (`prohibit-overrides`, the only one read): each `t` `forbid` that its own policy did not remove removes each candidate of every other policy. `structure.lp` admits one policy only, so no vector reaches this row yet. It is there because §3.5 records cross-policy eliminations as rows (formalisation review §3 #3), and a unit test exercises it on facts.
+
+The same file holds the structure's one-value constraints: every atom has exactly one `atom_effect`, `atom_policy`, and `atom_rule` (formalisation review §3 #2).
+
+### `pivot.lp` (`decisions/0011` #1–#3)
+
+Solve 3 only, after solve 2 has found an `Indeterminate`:
+
+- `world(flip)`, and a choice of exactly one `pivot(L)` among the variables;
+- `flip` copies `c`'s value of every literal, except the pivot, whose value it negates;
+- an integrity constraint keeps only models where `c` and `flip` have different verdicts;
+- `unknown(X)` holds for an atom whose finding is `u` and which has a `u` part whose literal is the pivot.
+
+Brave enumeration gives the union over all models. The `unknown` atoms are those with a pivotal literal (0011 #1). The range is the least and greatest `verdict(c, V)` that occurs, in the chain `Deny < NotApplicable < Pending < Permit` (0011 #3). Every verdict some completion takes occurs: the completions form a hypercube in which neighbours differ in one literal, and it is connected, so a verdict `V` that occurs, with some other verdict also occurring, has a completion with `V` next to one without. So the brave verdicts are exactly the verdicts the completions take.
+
+### Output
+
+`interpret` replies with:
+
+- `verdict`, `frontier: []`, `obligations: []`, and `exact: true`. Enumerating every completion is the definition itself, so it is exact;
+- `verdict_basis`: the rows of solve 2 for a definite verdict, or role `unknown` for each `unknown(X)` of solve 3;
+- `eliminated`: each `elim(X, Y, Rule)`, with `Rule` the conflict value or the combination;
+- `verdict_range` `{"low", "high"}`, for an `Indeterminate` only.
+
+Atoms are projected to their source rule, the `R` of `a(R, A, T, Y)` (workflows §3.7). So the atoms of one rule are one entry, and an elimination whose `ref` and `by` come from the same rule (`invalid`, two atoms of one rule) is dropped, because the authored level says "other than itself".
 
 ## Negation as failure
 
@@ -216,7 +258,8 @@ The output is `verdict`, `frontier: []`, `obligations: []`, and `exact: true`. E
 
 - over the closure, which is closed-world over declared edges (`due2-profiles.md` §6);
 - over input syntax and what `lift.lp` and `structure.lp` derive from it: whether a family is stated, whether a predicate is consumed, whether the request names a function;
-- inside one completion in `resolve.lp`, where every value is already `t` or `f`.
+- inside one world in `resolve.lp`, where every value is already `t` or `f`;
+- in `explain.lp`, over `elim` rows derived from findings (a `forbid` its own policy did not remove). A `u` finding gives no row, and the rows are only ever read as "no remover", never as a truth value.
 
 It never turns a `u` into an `f`. A missing value has no `holds` fact, so the integrity constraint fails, instead of the value defaulting.
 
@@ -274,7 +317,9 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
 
 **The program** (`test_interpret.py`), on inline Turtle and a small inline module set, not the repo's profiles:
 
-- **Integrity.** Deleting one rule from `kleene.lp`, `applies.lp`, or `resolve.lp` turns the reply into an error, not a verdict.
+- **Integrity.** Deleting one rule from `kleene.lp`, `applies.lp`, `completion.lp`, or `resolve.lp` turns the reply into an error, not a verdict. So does an atom with two effects.
+- **Explanation.** Each basis role and elimination rule on a small policy. A `u` candidate removed by a `t` prohibition under `prohibit`. A `u` prohibition beside a `t` candidate under `prohibit`, which removes nothing. Two atoms of one rule share their target literal. An irrelevant `u` atom is not named `unknown`. Each range. The combination row, on facts.
+- **Brute force** (`test_brute_force.py`, Hypothesis, `correctness-strategy.md` §4.1). Over generated policies of permissions and prohibitions with absent targets and unnamed assignees, under each of the three conflict strategies, a Python oracle enumerates the completions of the literals, flips each literal alone, and derives the verdict, the basis, the eliminations, the `unknown` atoms, and the range. They must equal the reply. The oracle reads the generated rules, not the driver's facts, and shares only the spec's literal key (workflows §6.4) with the program. Half the draws plant a `t` candidate beside the unknowns, and three explicit examples fix the shapes random draws rarely reach: a `u` atom whose literal moves nothing (under prohibit and invalid) and two atoms reading one absent target. Without them, deleting the flip constraint in `pivot.lp` or keying literals per part survived most runs.
 - **Declines.** A policy with both `odrl:constraint` and `odrl:duty` declines naming `odrl:constraint`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
 - **Protocol.** `main.py` answers `init` with `ready`, declaring `interpret`, and echoes the request `id`.
 
