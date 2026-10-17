@@ -1,0 +1,113 @@
+{
+  "case": "due2-shared-reads",
+  "source": "due2-native (pins workflows §6.4's literal key for relation and party parts, decisions/0012, issue #56)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Both rules test the same target and the same assignee, so a field the request leaves out is one completion variable that both rules read (workflows §6.4, decisions/0012): they apply together, voiding the policy, or neither applies. Either way nothing remains. Under the per-part reading that #56 replaced, each rule's part is completed alone, and the mixed completions (one rule applies, the other does not) give Permit and Deny: scenarios 1 and 2 would be Indeterminate, Deny..Permit, from combinations no request produces. Scenario 3 is the same policy with every field named.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "no target",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "The request names no target, so both rules read the one variable 'target is ex:a' (§6.4): T applies both and invalid voids the policy, F applies neither. Every completion gives NotApplicable."
+      }
+    },
+    {
+      "name": "no assignee",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {},
+        "target": "ex:a"
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "The request names no assignee, so both rules read the one variable 'assignee is ex:alice' (§6.4): T voids the policy under invalid, F applies neither. Every completion gives NotApplicable."
+      }
+    },
+    {
+      "name": "both named",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {},
+        "target": "ex:a"
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [
+          {
+            "ref": "ex:p-use",
+            "by": "ex:p-forbid",
+            "rule": "invalid"
+          },
+          {
+            "ref": "ex:p-forbid",
+            "by": "ex:p-use",
+            "rule": "invalid"
+          }
+        ],
+        "why": "Both rules apply; under invalid a T candidate and a T prohibition void the policy, each eliminated by the other with rule invalid (§6.2), and nothing remains."
+      }
+    }
+  ]
+}

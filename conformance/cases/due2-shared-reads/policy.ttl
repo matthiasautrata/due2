@@ -1,0 +1,22 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# due2-native: a permission and a prohibition that ask the same questions of the
+# request (target ex:a, assignee ex:alice) under conflict invalid. When the
+# request leaves one out, both rules read one completion variable (workflows
+# §6.4, decisions/0012), so the rules apply together or not at all.
+
+ex:p a odrl:Set ;
+    odrl:conflict odrl:invalid ;
+    odrl:permission ex:p-use ;
+    odrl:prohibition ex:p-forbid .
+
+ex:p-use a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:a ;
+    odrl:assignee ex:alice .
+
+ex:p-forbid a odrl:Prohibition ;
+    odrl:action odrl:use ;
+    odrl:target ex:a ;
+    odrl:assignee ex:alice .
