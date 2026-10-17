@@ -74,7 +74,7 @@ def test_anonymous_rule(interpreter: Interpreter) -> None:
 DELETIONS = [
     ("kleene.lp", "rank(u, 1)."),
     ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
-    ("completion.lp", "completed(W, I, V) :- world(W), lit_of(I, L), assigned(W, L, V)."),
+    ("completion.lp", "completed(W, applies(X), V) :- pre_in(W, X, 1), assigned(W, fin(X), V)."),
     ("resolve.lp", 'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W).'),
 ]
 
@@ -85,9 +85,10 @@ def test_deleted_rule_fails_loudly(file: str, line: str) -> None:
     assert line in programs[file].splitlines(), f"{file} no longer has {line!r}"
     programs[file] = programs[file].replace(line, "")
     broken = Interpreter(INIT, programs)
-    # Each vector exercises the deleted rule: an absent assignee gives a u part (kleene.lp)
-    # whose literal's value it takes (completion.lp), a foreign action an f part (applies.lp),
-    # and NotApplicable its rule (resolve.lp).
+    # Each vector exercises the deleted rule: an absent assignee gives a u part (kleene.lp),
+    # which is opaque, so its atom's finding takes the value of the atom's own variable
+    # (completion.lp); a foreign action gives an f part (applies.lp), and NotApplicable its rule
+    # (resolve.lp).
     requests: dict[str, Obj] = {
         "kleene.lp": {"parties": {}},
         "applies.lp": {"action": "ex:other"},
@@ -112,11 +113,16 @@ def test_program_files_are_all_loaded() -> None:
 
 
 def explained(reply: Obj) -> Obj:
-    """The output, with ex: names for refs and the shape of each explanation field checked."""
+    """The output, with ex: names for refs, and without `unknown_parts`.
+
+    `unknown_parts` has tests of its own (`test_unknown_parts`, `test_opaque_is_not_paired`), so
+    the explanation tests here state only the verdict, its basis, eliminations, and range.
+    """
     assert "output" in reply, reply
     out = reply["output"]
     assert isinstance(out, dict)
-    short = {k: v for k, v in out.items() if k not in ("frontier", "obligations", "exact")}
+    hidden = ("frontier", "obligations", "exact", "unknown_parts")
+    short = {k: v for k, v in out.items() if k not in hidden}
     return as_obj(_shorten(short), "output")
 
 
@@ -173,17 +179,22 @@ def test_definite_basis(interpreter: Interpreter, request_changes: Obj, expected
 
 
 def test_worked_example(interpreter: Interpreter) -> None:
-    # DESIGN.md § Worked example: with no target, each atom reads its own target variable, and
-    # four completions give three verdicts.
+    # DESIGN.md § Worked example: with no target, each atom's target part is opaque, so each
+    # atom has a variable of its own, and four completions give three verdicts.
     v = vector()
     request = as_obj(v["request"], "request")
     del request["target"]
-    assert explained(interpreter.reply(v)) == {
+    reply = interpreter.reply(v)
+    assert explained(reply) == {
         "verdict": "Indeterminate",
         "verdict_basis": basis("ex:forbid unknown", "ex:perm unknown"),
         "eliminated": [],
         "verdict_range": {"low": "Deny", "high": "Permit"},
     }
+    assert unknown_parts(reply) == [
+        ("ex:forbid", "odrl:target", "missing"),
+        ("ex:perm", "odrl:target", "missing"),
+    ]
 
 
 NO_PARTY: Obj = {"target": "ex:a", "parties": {}}
@@ -253,22 +264,25 @@ def test_explanation(interpreter: Interpreter, pol: str, expected: Obj) -> None:
 @pytest.mark.parametrize(
     ("pol", "request_changes"),
     [
-        # Both rules read the absent target ex:a: one literal.
+        # Both rules read the absent target ex:a.
         (policy("perm", "perm perm a", "forbid forbid a"), {"target": None}),
-        # Both rules read the unnamed assignee ex:alice: one literal.
+        # Both rules read the unnamed assignee ex:alice.
         (policy("perm", "perm perm a alice", "forbid forbid a alice"), NO_PARTY),
     ],
 )
-def test_atoms_share_a_literal(interpreter: Interpreter, pol: str, request_changes: Obj) -> None:
-    # Independent parts would admit the forbid alone (Deny). One literal: both or neither,
-    # and under perm both is Permit.
+def test_absent_fields_are_not_shared(
+    interpreter: Interpreter, pol: str, request_changes: Obj
+) -> None:
+    # An absent field is missing, so opaque, and its parts share no variable (decisions/0016
+    # #2). One shared variable would give both or neither, so NotApplicable..Permit under perm;
+    # independent variables admit the forbid alone, so the range reaches Deny.
     v = vector(pol, request={k: x for k, x in request_changes.items() if x is not None})
     request = v["request"]
     assert isinstance(request, dict)
     if request_changes.get("target", "") is None:
         del request["target"]
     out = explained(interpreter.reply(v))
-    assert out["verdict_range"] == {"low": "NotApplicable", "high": "Permit"}
+    assert out["verdict_range"] == {"low": "Deny", "high": "Permit"}
     assert out["verdict_basis"] == basis("ex:forbid unknown", "ex:perm unknown")
 
 
@@ -772,7 +786,10 @@ RDF_PREFIX = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
 
 
 def two_rules(c1: str, c2: str, kind: str = "Permission", refine: bool = False) -> str:
-    """Rules ex:r1 under `c1` and ex:r2 under `c2`, both of `kind`, with ex:x unbound.
+    """Rules ex:r1 under `c1` and ex:r2 under `c2`, both of `kind`, reading ex:x and ex:y.
+
+    Both operands read the state, and a vector with no fact for them leaves them
+    `unresolved`, so their leaves are paired (completion.lp).
 
     With `refine`, `c2` refines ex:r2's action instead of constraining the rule.
     """
@@ -789,8 +806,8 @@ def two_rules(c1: str, c2: str, kind: str = "Permission", refine: bool = False) 
         + f"ex:r1 a odrl:{kind} ; odrl:action odrl:use ; odrl:target ex:a ;"
         + f" odrl:constraint {c1} .\n"
         + r2
-        + bound("x")
-        + bound("y")
+        + bound("x", "stateSource")
+        + bound("y", "stateSource")
     )
 
 
@@ -798,8 +815,9 @@ def unit(operator: str, right: str, iri: str) -> str:
     return leaf(operator, right)[:-1] + f"; odrl:unit {iri} ]"
 
 
-# With ex:x absent, every leaf is u. Two leaves are one variable when every part of the key
-# matches; a complement reads it negatively, so r1 or r2 applies in every completion: Permit.
+# With no fact for ex:x, every leaf is u and unresolved. Two leaves are one variable when every
+# part of the key matches; a complement reads it negatively, so r1 or r2 applies in every
+# completion: Permit.
 # Any other difference makes two variables, and the completion where both are f gives
 # NotApplicable. Without the rows that differ, a key that merged too much would pass; without
 # the rows that agree, one variable per leaf would.
@@ -835,8 +853,8 @@ def test_completion_key(
 def test_binding_not_operand_iri(interpreter: Interpreter) -> None:
     # ex:y bound to ex:x's property reads the same value, so the leaves share a variable.
     pol = two_rules(leaf("eq", "5"), leaf("neq", "5").replace("ex:x", "ex:y")).replace(
-        "ex:y dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:y",
-        "ex:y dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:x",
+        "ex:y dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:y",
+        "ex:y dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:x",
     )
     assert outcome(interpreter.reply(vector(pol))) == "Permit"
 
@@ -889,11 +907,119 @@ def test_node_in_two_scopes(interpreter: Interpreter) -> None:
     ("n", "expected"), [(VARIABLE_CAP, "Indeterminate"), (VARIABLE_CAP + 1, "variable-cap")]
 )
 def test_variable_cap(interpreter: Interpreter, n: int, expected: str) -> None:
-    # An or of n leaves with n right operands, each leaf twice: n variables. The repeats leave
-    # ground `var/1` atoms no model makes true, so a cap on the ground atoms would decline both.
+    # An or of n leaves with n right operands, each leaf twice, on an unresolved operand: n
+    # variables. The repeats leave ground `var/1` atoms no model makes true, so a cap on the
+    # ground atoms would decline both.
     leaves = " ".join(leaf("eq", str(i)) for i in range(n) for _ in range(2))
-    pol = constrained(f"[ odrl:or ( {leaves} ) ]", bound("x"))
+    pol = constrained(f"[ odrl:or ( {leaves} ) ]", bound("x", "stateSource"))
     assert outcome(interpreter.reply(vector(pol))) == expected
+
+
+def unknown_parts(reply: Obj) -> list[tuple[str, str, str]]:
+    """The reply's `unknown_parts` as `(ref, input, status)` rows with short names, sorted.
+
+    The reply sorts its rows by their full IRIs, which this checks before shortening them.
+    """
+    out = as_obj(reply["output"], "output")
+    rows = out["unknown_parts"]
+    assert isinstance(rows, list)
+    triples: list[tuple[str, str, str]] = []
+    for row in rows:
+        r = as_obj(row, "unknown part")
+        ref, i, status = r["ref"], r["input"], r["status"]
+        assert isinstance(ref, str) and isinstance(i, str) and isinstance(status, str)
+        triples.append((ref, i, status))
+    assert triples == sorted(triples)
+    short = {"ex:": EX, "odrl:": ODRL}
+    for name, ns in short.items():
+        triples = [(r.replace(ns, name), i.replace(ns, name), st) for r, i, st in triples]
+    return sorted(triples)
+
+
+def lt_or_gteq(source: str) -> str:
+    """decisions/0016's example: permissions ex:r1 `x lt 5` and ex:r2 `x gteq 5`, x on `source`."""
+    pol = two_rules(leaf("lt", "5"), leaf("gteq", "5"))
+    return pol.replace(
+        "ex:x dprod:operandSource dprod:stateSource", f"ex:x dprod:operandSource dprod:{source}"
+    )
+
+
+# decisions/0016's example. Only an unresolved value is paired: then exactly one of lt and gteq
+# holds, so Permit. A missing value or a misfit (a string, an IRI) fits neither, so each rule's
+# leaf is opaque, each atom completes on its own, and the completion where neither applies gives
+# NotApplicable. Before decisions/0016 the last three rows were a definite Permit with nothing
+# reported. Every u part is named, under a definite verdict too.
+@pytest.mark.parametrize(
+    ("source", "value", "expected", "status"),
+    [
+        ("requestSource", typed("3", "integer"), "Permit", None),
+        ("requestSource", None, "Indeterminate", "missing"),
+        ("requestSource", {"@value": "abc"}, "Indeterminate", "misfit"),
+        ("requestSource", iri("ex:v"), "Indeterminate", "misfit"),
+        ("stateSource", None, "Permit", "unresolved"),
+    ],
+)  # fmt: skip
+def test_opaque_is_not_paired(
+    interpreter: Interpreter, source: str, value: Obj | None, expected: str, status: str | None
+) -> None:
+    params: Obj = {} if value is None else {"ex:x": value}
+    reply = interpreter.reply(vector(lt_or_gteq(source), request={"params": params}))
+    assert outcome(reply) == expected
+    if expected == "Indeterminate":
+        out = explained(reply)
+        assert out["verdict_range"] == {"low": "NotApplicable", "high": "Permit"}
+    rows = [] if status is None else [("ex:r1", "ex:x", status), ("ex:r2", "ex:x", status)]
+    assert unknown_parts(reply) == rows
+
+
+# Each status of due2-profiles.md §3 is reported as the operand's read gives it, and an absent
+# target or party names the field it reads. The last rows are atoms that are f (a foreign
+# action): their u parts are reported too (decisions/0016 #3). Without these rows a status
+# could be reported as another, or a u part of an f atom dropped.
+@pytest.mark.parametrize(
+    ("changes", "fact", "expected"),
+    [
+        ({}, {"status": "missing"}, [("ex:r", "ex:x", "missing")]),
+        ({}, {"status": "invalid"}, [("ex:r", "ex:x", "invalid")]),
+        ({}, {"status": "conflict", "values": [iri("ex:v"), iri("ex:w")]},
+         [("ex:r", "ex:x", "conflict")]),
+        ({}, {"status": "unresolved"}, [("ex:r", "ex:x", "unresolved")]),
+        ({}, None, [("ex:r", "ex:x", "unresolved")]),
+        ({}, {"status": "resolved", "values": []}, [("ex:r", "ex:x", "missing")]),
+        ({}, {"status": "resolved", "values": [iri("ex:v"), iri("ex:w")]},
+         [("ex:r", "ex:x", "conflict")]),
+        ({}, {"status": "resolved", "values": [typed("5", "integer")]},
+         [("ex:r", "ex:x", "misfit")]),
+        ({}, {"status": "resolved", "values": [iri("ex:v")]}, []),
+        ({"target": None}, {"status": "resolved", "values": [iri("ex:v")]},
+         [("ex:r", "odrl:target", "missing")]),
+        ({"parties": {}}, {"status": "resolved", "values": [iri("ex:v")]},
+         [("ex:r", "odrl:assignee", "missing")]),
+        ({"action": "ex:other", "parties": {}}, None,
+         [("ex:r", "ex:x", "unresolved"), ("ex:r", "odrl:assignee", "missing")]),
+    ],
+)  # fmt: skip
+def test_unknown_parts(
+    interpreter: Interpreter, changes: Obj, fact: Obj | None, expected: list[tuple[str, str, str]]
+) -> None:
+    pol = constrained(leaf("eq", "ex:v"), bound("x", "stateSource")).replace(
+        "odrl:target ex:a ;", "odrl:target ex:a ; odrl:assignee ex:alice ;"
+    )
+    facts: Obj = {} if fact is None else {"ex:x": fact}
+    v = vector(pol, request={k: x for k, x in changes.items() if x is not None},
+               sotw={"facts": facts})  # fmt: skip
+    request = as_obj(v["request"], "request")
+    for k, x in changes.items():
+        if x is None:
+            del request[k]
+    assert unknown_parts(interpreter.reply(v)) == expected
+
+
+def test_invalid_read_is_reported(interpreter: Interpreter) -> None:
+    # A request value outside the operand's range is non-conforming (due2-profiles.md §3).
+    pol = constrained(leaf("eq", "5"), bound("x", extra=" ; rdfs:range xsd:integer"))
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": {"@value": "5"}}}))
+    assert unknown_parts(reply) == [("ex:r", "ex:x", "invalid")]
 
 
 def test_derived_strings_decline(interpreter: Interpreter) -> None:

@@ -904,6 +904,7 @@ def check_case(case_dir: Path) -> list[Report]:
             r.err(f"{tag}: Pending needs a frontier")
         check_explanation(tag, exp, sc.get("config", {}), g, prefixes, r)
         check_range(tag, exp, r)
+        check_unknown_parts(tag, exp, g, prefixes, r)
     return reports
 
 
@@ -933,6 +934,37 @@ def check_range(tag: str, exp: dict[str, Any], r: Report) -> None:
         r.err(f"{tag}: verdict_range ends must be one of {list(CHAIN)}")
     elif CHAIN.index(rng["low"]) >= CHAIN.index(rng["high"]):
         r.err(f"{tag}: verdict_range low {rng['low']} is not below high {rng['high']}")
+
+
+PART_STATUSES = {"missing", "invalid", "conflict", "unresolved", "misfit"}
+
+
+def check_unknown_parts(
+    tag: str, exp: dict[str, Any], g: Graph, pfx: dict[str, str], r: Report
+) -> None:
+    """expected.unknown_parts (conformance/README.md, workflows 3.5, decisions/0016): shape,
+    that each ref is a rule or duty of policy.ttl, and that a target or party input is missing.
+
+    A request field is never unresolved (due2-profiles.md 3), and the case format carries an
+    absent target or party as absent, so its status can only be `missing`.
+    """
+    if "unknown_parts" not in exp:
+        return
+    rules = {str(x) for c in (ODRL.Permission, ODRL.Prohibition) for x in g.subjects(RDF.type, c)}
+    duties = {str(x) for p in (ODRL.duty, ODRL.obligation) for x in g.objects(None, p)}
+    for raw in exp["unknown_parts"]:
+        u = entry(raw, {"ref", "input", "status"})
+        if u is None:
+            r.err(f"{tag}: unknown_parts entry must be {{ref, input, status}}: {raw!r}")
+            continue
+        if u["status"] not in PART_STATUSES:
+            r.err(
+                f"{tag}: unknown part status {u['status']!r} is not one of {sorted(PART_STATUSES)}"
+            )
+        if expand(u["ref"], pfx) not in rules | duties:
+            r.err(f"{tag}: unknown part {u['ref']} is no rule or duty of policy.ttl")
+        if expand(u["input"], pfx).startswith(str(ODRL)) and u["status"] != "missing":
+            r.err(f"{tag}: the request field {u['input']} can only be missing (profiles 3)")
 
 
 def entry(x: object, keys: set[str]) -> dict[str, Any] | None:
@@ -990,8 +1022,17 @@ def check_explanation(
                 and bool(by_role.get("obligation", set()) & violated)
             ),
         }
-        if not need.get(str(verdict), True):
-            r.err(f"{tag}: verdict_basis lacks the atoms that determine {verdict} (workflows 6.4)")
+        # A definite verdict that holds by cases has no atom in every completion, so its basis
+        # can lack the role (workflows 6.4, decisions/0016 #4). Holding by cases needs two
+        # atoms that read one variable, and only unresolved parts are shared, so the waiver
+        # asks the scenario to list one.
+        parts = (entry(u, {"ref", "input", "status"}) for u in exp.get("unknown_parts", []))
+        by_cases = any(u is not None and u["status"] == "unresolved" for u in parts)
+        if not need.get(str(verdict), True) and not (verdict != "Indeterminate" and by_cases):
+            r.err(
+                f"{tag}: verdict_basis lacks the atoms that determine {verdict} (workflows 6.4);"
+                " a verdict that holds by cases states its unresolved unknown_parts"
+            )
         frontier = {expand(d, pfx) for alt in exp.get("frontier", []) for d in alt}
         if verdict == "Pending" and by_role.get("duty", set()) != frontier:
             r.err(f"{tag}: the basis's duties must be the frontier's duties")

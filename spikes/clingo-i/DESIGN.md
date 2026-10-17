@@ -13,9 +13,12 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 - **Action term.** The value of `odrl:action`: an action IRI, or a node whose `rdf:value` is the action and which carries the refinements (IM 2.2 §2.5).
 - **Layer.** Where a binding is declared: the policy graph, a selected profile module, or a core module (`due2-profiles.md` §2).
 - **Misfit.** A comparison whose two values do not fit the operator: an IRI against a literal, or literals of two value spaces. A misfit is `u`, never `f`.
-- **Completion variable.** What a `u` part reads, keyed by what the part tests (`due2-workflows.md` §6.4, `decisions/0012` #1): `target(T)` for a target part, `party(F, Party)` for a party part, and `cons(D)` for an open leaf of a constraint part, `D` a leaf that names its key. Two parts or leaves with the same key read one variable. The spec calls the variable with a polarity a *literal*. "Literal" alone, in this note, means an RDF literal, `lit(Lex, Datatype)`.
-- **Polarity.** How a leaf reads its variable: `pos`, or `neg` for a complement operator such as `neq`, which reads the variable of `eq` negated (§ `completion.lp`). Target and party parts read theirs `pos`.
+- **Status.** Why a `u` part is `u` (`due2-profiles.md` §3, `decisions/0016`): `missing` (no value: an absent target, party, request parameter, or context value, a state fact `missing`, or `resolved` with no value for a single-valued operand), `invalid` (a value outside the range), `conflict` (several values for a single-valued operand), `unresolved` (a state fact `unresolved`, or no fact), or `misfit`.
+- **Paired and opaque.** A `u` leaf whose status is `unresolved` is *paired*: its value exists and fits, so it shares a completion variable with every leaf that makes the same comparison, its complement included. Every other `u` part is *opaque*: a `u` target or party part, and a `u` leaf of any other status. An opaque part stays `u` in every completion (`decisions/0016` #1, #2).
+- **Completion variable.** What a `u` atom reads (`due2-workflows.md` §6.4): `cons(D)` for a class of paired leaves with one key, `D` a leaf that names the class, and `fin(X)` for an atom `X` with an opaque part, which completes the finding the opaque part leaves `u`. The spec calls the variable with a polarity a *literal*. "Literal" alone, in this note, means an RDF literal, `lit(Lex, Datatype)`.
+- **Polarity.** How a paired leaf reads its variable: `pos`, or `neg` for a complement operator such as `neq`, which reads the variable of `eq` negated (§ `completion.lp`). `fin(X)` is read `pos`.
 - **Open node.** A constraint node that is `u` and lies on a path of `u` nodes from a `u` root of an atom whose finding is `u`. Completion re-evaluates exactly the open nodes (§ `completion.lp`).
+- **Unknown part.** A row of `unknown_part(X, Input, S)`: atom `X` has a `u` part that reads `Input` with status `S` (§ `explain.lp`).
 - **Scope.** What a constraint node refines: `rule`, under a rule's `odrl:constraint`, or `action`, under an action term's `odrl:refinement` (`due2-workflows.md` §3.1). It is part of the completion key.
 - **Completion.** One assignment of `t` or `f` to every variable. With `n` variables there are `2^n`.
 - **World.** An index that lets one answer set hold more than one completion. World `c` is the completion the answer set chose, and world `flip` (solve 3 only) is `c` with one variable negated.
@@ -41,6 +44,7 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `V` | a truth value |
 | `N`, `M`, `M2` | a rank of a truth value, or a position in a value space |
 | `L` | a completion variable |
+| `S` | a status, such as `missing` or `unresolved` |
 | `Pol` | a polarity, `pos` or `neg` |
 | `Base` | the positive operator a leaf asserts: the operator itself, or the one its complement negates |
 | `Scope` | a scope, `rule` or `action` |
@@ -58,7 +62,7 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `Rg` | a range |
 | `Rel` | an order relation: `lt`, `eq`, `gt`, or `u` |
 
-Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Prof`, and `Vp` (the truth value of a part inside an aggregate).
+Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, and `Vp` (the truth value of a part inside an aggregate).
 
 ## Layout
 
@@ -130,12 +134,12 @@ The core module declares `odrl:play odrl:includedIn odrl:use`. The request asks 
 
 | Atom | action | target | party | finding | variable |
 |---|---|---|---|---|---|
-| perm | `t` (play ⊑ use) | `u` (no target) | `t` (alice) | `u` | `target(ex:a)` |
-| forbid | `t` | `u` | — (no assignee) | `u` | `target(ex:b)` |
+| perm | `t` (play ⊑ use) | `u` (no target) | `t` (alice) | `u` | `fin(perm)` |
+| forbid | `t` | `u` | — (no assignee) | `u` | `fin(forbid)` |
 
-The targets differ, so the two `u` parts are two variables, and there are four completions. In each, `resolve.lp` applies the atoms whose variable is `t`, and `prohibit` removes the permission when the prohibition applies:
+The absent target is `missing`, so each atom's target part is opaque (`opaque_atom/1`). It stays `u` in every completion, so each atom's parts have conjunction `u` (`pre_in(c, X, 1)`), and each atom's own variable decides it. The run's atom ids are the full `a(R, A, T, Party)` terms, shortened here to the rule. Two variables give four completions. In each, `resolve.lp` applies the atoms whose variable is `t`, and `prohibit` removes the permission when the prohibition applies:
 
-| `target(ex:a)` | `target(ex:b)` | applies | verdict |
+| `fin(perm)` | `fin(forbid)` | applies | verdict |
 |---|---|---|---|
 | `t` | `t` | perm, forbid | `Deny` (perm eliminated) |
 | `t` | `f` | perm | `Permit` |
@@ -146,21 +150,25 @@ The targets differ, so the two `u` parts are two variables, and there are four c
 
 **Solve 3** keeps a completion and a pivot only when the flip changes the verdict. Six such pairs exist:
 
-- pivot `target(ex:b)`, from each of the four completions. Each pair changes the verdict, for example (`t`, `t`) `Deny` to (`t`, `f`) `Permit`. Its `u` part is the forbid's, so `unknown(forbid)` holds.
-- pivot `target(ex:a)`, from (`t`, `f`) and (`f`, `f`), which swap `Permit` and `NotApplicable`. From (`t`, `t`) and (`f`, `t`) the flip leaves `Deny`, so those pairs are dropped. `unknown(perm)` holds.
+- pivot `fin(forbid)`, from each of the four completions. Each pair changes the verdict, for example (`t`, `t`) `Deny` to (`t`, `f`) `Permit`. The forbid reads it, so `unknown(forbid)` holds.
+- pivot `fin(perm)`, from (`t`, `f`) and (`f`, `f`), which swap `Permit` and `NotApplicable`. From (`t`, `t`) and (`f`, `t`) the flip leaves `Deny`, so those pairs are dropped. `unknown(perm)` holds.
 
 The verdicts `c` takes are `Deny`, `Permit`, and `NotApplicable`, so the range is `Deny` to `Permit`.
 
-**Reply** (refs shortened to `ex:`):
+**Unknown parts** (`explain.lp`): `unknown_part(perm, target, missing)` and `unknown_part(forbid, target, missing)`.
+
+**Reply** (refs shortened to `ex:` and `odrl:`):
 
 ```json
 {"verdict": "Indeterminate", "frontier": [], "obligations": [], "exact": true,
  "verdict_basis": [{"ref": "ex:forbid", "role": "unknown"}, {"ref": "ex:perm", "role": "unknown"}],
  "eliminated": [],
+ "unknown_parts": [{"ref": "ex:forbid", "input": "odrl:target", "status": "missing"},
+                   {"ref": "ex:perm", "input": "odrl:target", "status": "missing"}],
  "verdict_range": {"low": "Deny", "high": "Permit"}}
 ```
 
-The first completion, both targets `t`, is one no request can realise: a request has one target, and `ex:a` and `ex:b` are different. § `completion.lp` explains why it is enumerated anyway.
+The first completion applies both atoms, a target that is both `ex:a` and `ex:b`, and no request realises it. It is enumerated anyway, because a missing target has no value to be one of the two: the reply says only what holds whatever the target is, and that the target is missing (`decisions/0016`, the rejected alternative of sharing). With one variable for both atoms, the completions would be both or neither, and the range would stop at `NotApplicable`.
 
 ## Interfaces
 
@@ -347,11 +355,12 @@ The binding gives:
 | `context`, `clock` | the SOTW has `effective_at` | that instant |
 | `context`, `actionTime` | the request has `at` | that instant |
 
-A fact with any other status (`missing`, `invalid`, `conflict`, `unresolved`), no fact at all, or an absent parameter or context value leaves the read unresolved. Then:
+A fact with any other status (`missing`, `invalid`, `conflict`, `unresolved`), no fact at all, or an absent parameter or context value leaves the read unanswered, so `read_resolved/1` fails. Then:
 
 - `card_ok(Op)`: a `set` operand takes any number of values, none included; a `one` operand takes exactly one. Two or more for `one` is `MultipleValues`, and none is no value (`due2-profiles.md` §3).
 - `nonconforming(Op)`: some read value is outside the range, `TypeMismatch` (`due2-profiles.md` §3).
 - `read_ok(Op)` when the read is resolved, its count fits, and every value conforms; `read_u(Op)` otherwise. A `u` read makes every leaf on it `u`, never `f` (`ways-of-working.md` §5.1). `integrity.lp` checks that every used operand is exactly one of the two.
+- `read_status(Op, S)`, for a `u` read, the status of `decisions/0016`: a state fact's own status; `unresolved` for no fact; `missing` for an unanswered request, witness, or context read, or a resolved `one` read with no value; `conflict` for a resolved `one` read with several; `invalid` when a value is outside the range. `integrity.lp` checks that each `u` read has exactly one.
 
 ### `compare.lp`
 
@@ -406,17 +415,19 @@ These are the values before completion. `completion.lp` gives each world's value
 
 ### `completion.lp`
 
-`due2-workflows.md` §6.4, `decisions/0012`. `u_atom(X)` holds for an atom whose finding is `u`. Each `u` part of a `u` atom reads completion variables, and `reads(X, L)` collects them per atom. A `u` part of an `f` atom reads none, because the atom is `f` in every completion. A choice gives each variable `t` or `f` in world `c`, so solve 2's answer sets are exactly the completions. In each world an atom that is not `u` keeps its finding. For a `u` atom, each `u` part is re-derived from its variables, every other part keeps its finding, and `applies` is the conjunction of the completed parts. `completed_item/1` lists what must have a value in every world: every finding, and every part of a `u` atom.
+`due2-workflows.md` §6.4, `decisions/0012`, `decisions/0016`. `u_atom(X)` holds for an atom whose finding is `u`. A `u` atom reads completion variables, and `reads(X, L)` collects them per atom. A `u` part of an `f` atom reads none, because the atom is `f` in every completion. A choice gives each variable `t` or `f` in world `c`, so solve 2's answer sets are exactly the completions. In each world an atom that is not `u` keeps its finding. For a `u` atom, its parts are re-derived in the world (`part_in/3`), their Kleene conjunction is taken (`pre_in/3`), and `applies` is that conjunction when it is `t` or `f`, and the value of `fin(X)` when it is `u`. `completed_item/1` lists what must have a value in every world: every finding.
 
-**Target and party variables.** A `u` target part reads `target(T)`, and a `u` party part reads `party(F, Party)` (`lit_of/2`), both `pos`. Two parts that test the same request field against the same value read one variable (`decisions/0012` #1). The atoms that expansion copies from one rule share their target variable, and two rules for the same assignee share their party variable. Completing them separately would allow a completion in which the same question has two answers.
+**Statuses.** Each `u` leaf has one status (`leaf_status/2`): its operand's read status from `operand.lp` (`read_status/2`), or `misfit` when the read is `ok` and the leaf is still `u`, which only a misfit comparison makes it. A leaf whose status is not `unresolved` is opaque (`opaque_leaf/1`). An unresolved value exists and fits its operator, so of a leaf and its complement exactly one holds, and pairing them is sound. A missing, invalid, conflicting, or misfit value gives no such guarantee: for `"abc"`, neither `lt 5` nor `gteq 5` holds (`decisions/0016`, § Question).
 
-**Constraint variables.** A `u` constraint part is completed node by node, but only on its open nodes (`opened/2`, `open/1`): those that are `u` and lie on a path of `u` nodes from the part's root. A node that is `t` or `f` keeps its value in every completion, because strong Kleene logic is monotone: replacing a `u` by `t` or `f` never turns a `t` into `f`, or an `f` into `t`. So:
+**Opaque parts.** A `u` target part, a `u` party part, and an opaque leaf in an opened tree make the atom opaque (`opaque_atom/1`), and the atom gets the variable `fin(X)`. In each world an opaque target or party part keeps rank 1, and so does an opaque leaf. A connective above it is re-evaluated under strong Kleene logic, so the tree, and the atom's conjunction, can stay `u` in the world. Then `fin(X)` decides the atom. When the paired leaves settle the tree anyway, `fin(X)` is read but moves nothing: a `t` member of an `or` makes it `t`, and an `f` conjunct makes the atom `f`. An opaque part therefore shares a variable with no other part, its complement included, as `decisions/0016` #2 asks. Two atoms on one absent target are completed separately, and so are a leaf on a missing operand and its complement.
 
-- each open leaf reads one variable with a polarity (`leaf_lit(C, L, Pol)`);
-- in each world, each open node gets a rank, 0 or 2 (`crank_in/3`). An open leaf takes its variable's value, negated for `neg`. An open connective is re-evaluated from its members with the two-valued connectives. A member that is not open keeps its rank;
+**Paired variables.** A `u` constraint part is completed node by node, but only on its open nodes (`opened/2`, `open/1`): those that are `u` and lie on a path of `u` nodes from the part's root. A node that is `t` or `f` keeps its value in every completion, because strong Kleene logic is monotone: replacing a `u` by `t` or `f` never turns a `t` into `f`, or an `f` into `t`. So:
+
+- each open paired leaf reads one variable with a polarity (`leaf_lit(C, L, Pol)`);
+- in each world, each open node gets a rank (`crank_in/3`). A paired leaf takes its variable's value, 0 or 2, negated for `neg`. An opaque leaf keeps 1. An open connective is re-evaluated from its members with the connectives of `compare.lp`. A member that is not open keeps its rank;
 - the constraint part takes its root's rank in the world.
 
-**The key.** Two open leaves read one variable when they make the same comparison (`due2-workflows.md` §6.4). The key has five components:
+**The key.** Two open paired leaves read one variable when they make the same comparison (`due2-workflows.md` §6.4). The key has five components:
 
 | Component | Relation | Note |
 |---|---|---|
@@ -430,16 +441,16 @@ The complements are `neq` of `eq`, `gteq` of `lt`, `gt` of `lteq`, and `isNoneOf
 
 Right operands compare as terms, not values, so `5` and `5.0` are two variables. A node reached from both a rule's constraint and an action's refinement has two scopes, and so two keys for one value. It declines as `constraint: node in two scopes`.
 
-**Example.** This is the first row of `test_completion_key`, copied from a run. Under `perm`, permission `ex:r1` has the leaf `c1`, `ex:x eq 5`, and permission `ex:r2` the leaf `c2`, `ex:x neq 5`. The request gives no `ex:x`. Both leaves are `u`, so both findings are `u`, and both leaves are open. They share a key: scope `rule`, the request parameter `ex:x`, base `eq`, right operand `{5}`, no unit. In the run, `c1` is the lesser label, so `leaf_lit(c1, cons(c1), pos)` and `leaf_lit(c2, cons(c1), neg)` hold: one variable, two completions.
+**Example.** This is the first row of `test_completion_key`, copied from a run. Under `perm`, permission `ex:r1` has the leaf `c1`, `ex:x eq 5`, and permission `ex:r2` the leaf `c2`, `ex:x neq 5`. `ex:x` reads the state, which has no fact for it, so it is `unresolved`. Both leaves are `u` and paired, so both findings are `u`, and both leaves are open. They share a key: scope `rule`, the state property `ex:x`, base `eq`, right operand `{5}`, no unit. In the run, `c1` is the lesser label, so `leaf_lit(c1, cons(c1), pos)` and `leaf_lit(c2, cons(c1), neg)` hold: one variable, two completions.
 
 | `cons(c1)` | `c1` | `c2` | applies | verdict |
 |---|---|---|---|---|
 | `t` | 2 | 0 | `ex:r1` | `Permit` |
 | `f` | 0 | 2 | `ex:r2` | `Permit` |
 
-The verdict is `Permit` in both, so the reply is a definite `Permit`, although both findings are `u`. Its basis is empty, because neither permission applies in both completions (§ `resolve.lp`). With one variable per leaf, some completion would make both leaves rank 0 and give `NotApplicable`, and the reply would be `Indeterminate`: the precision the key buys.
+The verdict is `Permit` in both, so the reply is a definite `Permit`, although both findings are `u`. Its basis is empty, because neither permission applies in both completions (§ `resolve.lp`). With one variable per leaf, some completion would make both leaves rank 0 and give `NotApplicable`, and the reply would be `Indeterminate`: the precision the key buys. With `ex:x` missing instead, the leaves are opaque, each atom is decided by its own `fin` variable, and the reply is that `Indeterminate`, `NotApplicable` to `Permit`. `test_opaque_is_not_paired` pins the same contrast on `lt` and `gteq`.
 
-**Different values, different variables.** `target(ex:a)` and `target(ex:b)` are separate (`decisions/0012` #3), as in § Worked example, and so are `ex:x eq 5` and `ex:x eq 6`. A request has one target, so no request realises both `t`, yet that completion is enumerated. The completion is domain-unaware: it does not know which variables exclude each other. Domain-aware completion is `due2-workflows.md` §9 open decision 6. The consequences follow from the completions being a superset of the realisable ones:
+**Different values, different variables.** `ex:x eq 5` and `ex:x eq 6` are separate variables (`decisions/0012` #3). `ex:x` is single-valued, so no state realises both `t`, yet that completion is enumerated. The completion is domain-unaware: it does not know which variables exclude each other. Domain-aware completion is `due2-workflows.md` §9 open decision 6. The consequences follow from the completions being a superset of the realisable ones:
 
 - a definite verdict holds in every completion, so it holds in every realisable one, and it is sound;
 - an `Indeterminate` may be reported where every realisable completion agrees, so precision, not soundness, is what is lost;
@@ -447,10 +458,10 @@ The verdict is `Permit` in both, so the reply is a definite `Permit`, although b
 
 Two kinds of correlation are not seen by the key:
 
-- typed `partOf`: with `ex:a1 odrl:partOf ex:a`, a requested `ex:a1` would make both `target(ex:a1)` and `target(ex:a)` `t`;
+- hierarchies: with `ex:a1 odrl:partOf ex:a`, a value `ex:a1` would make both `ex:x isPartOf ex:a1` and `ex:x isPartOf ex:a` `t`;
 - comparisons on one value: `ex:x lt 5` and `ex:x lt 3`, or `5` and `5.0`, are separate variables, though `ex:x lt 3` implies `ex:x lt 5`, and `5` equals `5.0`.
 
-In both cases the variables stay independent, so the completions remain a superset of the realisable ones, and the three consequences above still hold.
+In both cases the variables stay independent, so the completions remain a superset of the realisable ones, and the three consequences above still hold. An opaque part's `fin` variable is independent of every other by construction, so it too only adds completions.
 
 ### `resolve.lp`
 
@@ -465,18 +476,18 @@ In both cases the variables stay independent, so the completions remain a supers
 - **Verdict**, per the table of `due2-workflows.md` §6.4: `Deny` if a `forbid` survives; otherwise `Permit` if a candidate survives; otherwise `NotApplicable`.
 - **Basis of one world**: `basis(W, X, prohibition)` for each surviving `forbid` of a `Deny`, and `basis(W, X, permission)` for each surviving candidate of a `Permit`.
 
-**The cautious basis.** Solve 2 reports a basis row only if it holds in every completion: an atom that carries a definite verdict whatever the unknowns are. An `Indeterminate` has no such row, and its basis comes from solve 3 instead. Which atoms the basis of a definite verdict should name, when no single atom carries the verdict in every completion, is open (#71). The program reports the cautious basis, and the brute-force oracle computes the same. Two shapes show where it differs from "the atoms with finding `t` that survive" (`test_completed_basis`):
+**The cautious basis.** Solve 2 reports a basis row only if it holds in every completion: an atom that carries a definite verdict whatever the unknowns are. An `Indeterminate` has no such row, and its basis comes from solve 3 instead. When no single atom carries a definite verdict in every completion, the basis is empty, and `unknown_parts` names what was unknown (`decisions/0016` #4). The brute-force oracle computes the same basis. Two shapes show where it differs from "the atoms with finding `t` that survive" (`test_completed_basis`):
 
-- **An empty basis.** Prohibitions `ex:x eq 5` and `ex:x neq 5`, with `ex:x` absent, read one variable with opposite polarities. Each completion applies one of them, so the verdict is `Deny` in both, and no prohibition survives in both. The basis is empty.
+- **An empty basis.** Prohibitions `ex:x eq 5` and `ex:x neq 5`, with `ex:x` unresolved, read one variable with opposite polarities. Each completion applies one of them, so the verdict is `Deny` in both, and no prohibition survives in both. The basis is empty.
 - **A `u` atom in the basis.** A permission under `ex:x eq 5 or ex:x neq 5` has finding `u`, but its tree is `t` in every completion, so it carries the `Permit` in every completion and is in the basis.
 
-**When the basis is not empty.** The cautious basis of a definite verdict is not empty when the completion that makes every variable `f`, the all-`f` completion, applies only the atoms whose finding is `t`. That holds when every open node is a `pos` leaf, an `and`, or an `or`, and so with target and party variables alone. The argument has three steps:
+**When the basis is not empty.** The cautious basis of a definite verdict is not empty when the completion that makes every variable `f`, the all-`f` completion, applies only the atoms whose finding is `t`. That holds when every open paired leaf is `pos` and every open connective is an `and` or an `or`, and so whenever no leaf is paired, whatever the connectives. The argument has three steps:
 
-1. Under the premise, the all-`f` completion gives every open node rank 0. A leaf is 0 by its variable. An open `and` has an open member, which is 0. An open `or` has no `t` member, since it would be `t`, so its members are `f` or open, and all are 0. So every `u` part of a `u` atom is `f`, and the atoms that apply are exactly those with finding `t`. These apply in every completion.
+1. Under the premise, the all-`f` completion gives every open node rank 0 or 1. A paired leaf is 0 by its variable, and an opaque leaf is 1. An open `and` has an open member, which is at most 1. An open `or` has no `t` member, since it would be `t`, so its members are `f` or open, and all are at most 1. With no paired leaf, every open node keeps rank 1 whatever its connective, since nothing it reads has changed. So the conjunction of a `u` atom's parts is at most 1, and the atom is `f`: by that conjunction, or by `fin(X)`, which is `f`. The atoms that apply are exactly those with finding `t`, and these apply in every completion.
 2. Take a `Deny`. In the all-`f` completion some `forbid` `Y` with finding `t` survives. Within one policy, only a candidate removes `Y` (`perm`, or `invalid` together with a forbid). But then no forbid of the policy survives under `perm`, and the policy is void under `invalid`, so the verdict would not be `Deny`. So `Y` survives in every completion, and it is in the cautious basis.
 3. Take a `Permit`. In the all-`f` completion some candidate `X` with finding `t` survives. Only a surviving `forbid` (under `prohibit`, or across policies) or a void policy (under `invalid`) removes `X`, and each of these also removes every other candidate, so the verdict would not be `Permit`. So `X` survives in every completion.
 
-A `neg` leaf, a `dprod:not`, or an `xone` breaks step 1: the all-`f` completion can make an atom apply whose finding is `u`, as `ex:x neq 5` does in the first shape above, and as `t xone u` does.
+A paired `neg` leaf, or a `dprod:not` or an `xone` over a paired leaf, breaks step 1: the all-`f` completion can make an atom apply whose finding is `u`, as `ex:x neq 5` does in the first shape above, and as `t xone u` does. So an empty basis under a definite verdict needs an `unresolved` unknown part, which `tools/check_corpus.py` asks a scenario to list.
 
 ### `integrity.lp`
 
@@ -484,11 +495,12 @@ The integrity constraints over every earlier file, in solves 2 and 3:
 
 - every item has exactly one truth value, and only a ranked one;
 - every used left operand is exactly one of `read_ok` and `read_u`, and every compared pair has exactly one equality rank;
-- every `u` target or party part of a `u` atom, and every open leaf, reads exactly one variable;
+- every `u` read, and every `u` leaf, has exactly one status;
+- every open leaf that is not opaque reads exactly one variable;
 - in every world, every variable, every open node, and every completed item has exactly one value, `f` or `t` (a rank, 0 or 2, for a node);
 - every world has exactly one verdict.
 
-They are why a rule deleted from the program fails loudly. Without its rule, some item has no value, some read no outcome, or some world no verdict, so the solve has no model and the reply is an `error`, never a verdict standing on the missing part (§ Tests).
+They are why a rule deleted from the program fails loudly. Without its rule, some item has no value, some read no outcome or status, or some world no verdict, so the solve has no model and the reply is an `error`, never a verdict standing on the missing part (§ Tests).
 
 ### `explain.lp`
 
@@ -500,6 +512,8 @@ They are why a rule deleted from the program fails loudly. Without its rule, som
 - the combination (`prohibit-overrides`, the only one read): each `t` `forbid` that its own policy did not remove removes each candidate of every other policy. `structure.lp` admits one policy, so no vector reaches this rule. It is there because `due2-workflows.md` §3.5 records cross-policy eliminations as rows (`formalisation-review.md` §3 #3), and `test_combination_rows_on_facts` runs it on hand-written facts.
 
 **One row per remover.** An atom removed by two `forbid` atoms has two rows (`due2-workflows.md` §3.5, #57). Each row is a complete reason: whenever `X` applies, `Y` applies too, because `Y` is `t`, and `Y` removes it. A reader can check each row against the policy alone. A single row naming the first remover would hide the others, and which one is "first" would depend on the order of the facts. A `u` remover gives no row, because it removes `X` only in some completions, and that is not a reason that holds whatever the unknowns are.
+
+**Unknown parts** (`decisions/0016` #3). `unknown_part(X, Input, S)` holds for every `u` part of every atom: `target` and `party(F)` when the request field is absent, status `missing`, and `prop(Prop)` for each `u` leaf anywhere in the atom's trees (`in_tree/2`), with its `leaf_status/2`. The rows do not depend on the finding or on a world. An `f` atom whose action does not match still reports its absent target, and a `u` leaf under a node that another member decides is still reported. The reply then names everything that was unknown, whether or not it mattered, and a renderer may show less. Under a status the same for every rule, as an absent target is, every atom carries the row, so `interpret.py` projects them to the rule, and the reply has one row per rule, input, and status.
 
 The same file holds the structure's one-value constraints: every atom has exactly one `atom_effect`, `atom_policy`, and `atom_rule`, so a row names exactly one of each (`formalisation-review.md` §3 #2).
 
@@ -530,6 +544,7 @@ Conversely, `c` in every model is a completion. So the brave `verdict(c, _)` ato
 - `verdict`, `frontier: []`, `obligations: []`, and `exact: true`. The reply enumerates every completion, which is the definition itself, so it is exact. A vector it cannot enumerate within the variable cap is declined instead;
 - `verdict_basis`: the rows of solve 2 for a definite verdict, or role `unknown` for each `unknown(X)` of solve 3;
 - `eliminated`: each `elim(X, Y, Strat)`, with `Strat` the conflict strategy or the combination;
+- `unknown_parts`: each `unknown_part(X, Input, S)` as `{"ref", "input", "status"}`, under any verdict. `input` is `odrl:target`, the party function's IRI, or the property's IRI. The rows are sorted by their full IRIs;
 - `verdict_range` `{"low", "high"}`, for an `Indeterminate` only.
 
 Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)` (`due2-workflows.md` §3.7). So the atoms of one rule are one entry. An elimination whose `ref` and `by` come from the same rule (under `invalid`, two atoms of one rule) is dropped, because at the authored level the rule would remove itself, and `invalid` says "other than itself".
@@ -621,27 +636,29 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
 **The program** (`test_interpret.py`), on inline Turtle and a small inline module set, not the repo's profiles:
 
 - **Integrity.** A rule deleted from the program must not leave a verdict standing on the missing part. Deleting one rule from `kleene.lp`, `applies.lp`, `completion.lp`, or `resolve.lp` (`DELETIONS`), or the `eq` rule of `compare.lp` or the unresolved-read rule of `operand.lp` (`CONSTRAINT_DELETIONS`), turns the reply into an error, where the intact program answers. So does an atom with two effects. Each deletion's vector is one the intact program answers with a definite verdict: the constraint vector puts a `t` member, which the deletion does not touch, under an `or`.
-- **Explanation.** Each basis role and elimination rule on a small policy, so a wrong row cannot hide behind a right verdict. A `u` candidate removed by a `t` prohibition under `prohibit`. A `u` prohibition beside a `t` candidate under `prohibit`, which removes nothing. Two atoms of one rule share their target variable. An irrelevant `u` atom is not named `unknown`. Each range. The combination rule, on facts.
-- **Worked examples** (`test_worked_example`, `test_constraint_worked_example`). The replies of § Worked example and of the example in § `compare.lp`, so this note cannot drift from the program.
+- **Explanation.** Each basis role and elimination rule on a small policy, so a wrong row cannot hide behind a right verdict. A `u` candidate removed by a `t` prohibition under `prohibit`. A `u` prohibition beside a `t` candidate under `prohibit`, which removes nothing. Two rules on one absent target, and two on one absent assignee, are completed separately (`test_absent_fields_are_not_shared`): one shared variable would give `NotApplicable` to `Permit` under `perm`, and separate ones give `Deny` to `Permit`. An irrelevant `u` atom is not named `unknown`. Each range. The combination rule, on facts.
+- **Worked examples** (`test_worked_example`, `test_constraint_worked_example`). The replies of § Worked example, its unknown parts included, and of the example in § `compare.lp`, so this note cannot drift from the program.
 - **Operators** (`test_operators`, `test_hierarchy_operators`). Each operator on a value that makes it `t` and one that makes it `f`, so a rule that answers one way regardless is caught; and each misfit on a value that would be `f` under a two-valued reading: an IRI against a string, two language tags, an instant against a number. `isA` reads an `rdf:type` edge from the SOTW closure, so a closure the driver dropped would show. An empty read set is vacuously part of anything.
 - **Reads** (`test_state_read`, `test_reads`). Every SOTW status but `resolved`, and no fact at all, is `u`, never `f`; so are two values and no value for a `one` operand, and a read value outside the range. The context reads the assignee and the clock.
 - **Bindings** (`test_binding_layers`, `test_profile_module_spans_files`, `test_retyped_operand`, `test_operand_range_mismatch`). The highest layer that states the property gives it: with a profile binding, a request giving only the core property is `u`, not a match. Two profile modules that agree bind, and two that differ are rejected, so a rule that let one module win is caught. A profile split over two files is one module, so a rule that compared files is caught. A policy may restate where a baseline operand reads, or its type with the owner's values, and any other type is rejected; the `due2:set` row fails if the default does not count as stated. A range of another kind than the read property's is rejected, and `rdfs:Literal` matches any literal range but not a class range.
 - **Hierarchies** (`test_typed_part_of`). A requested asset in a target collection matches, and one that is not a member does not; a named party in an assignee collection matches; an untyped collection and a cross-kind edge decline.
 - **Rules, refinements, and units** (`test_prohibition_constraint`, `test_refinement`, `test_unit_labels_without_converting`). A constraint on a prohibition decides a `Deny`; a refinement is a conjunct of the atom; a unit does not change a comparison.
-- **The completion key** (`test_completion_key`, `test_binding_not_operand_iri`). Two rules under `perm`, each with one `u` leaf on an absent operand. When the two leaves share every component of the key, and one is the other's complement, one of the rules applies in every completion, and the verdict is `Permit`. Each other row changes one component: the property, the right operand, the operator, a unit, the unit's value, `5` against `5.0`, the right operand set, or the scope. Each of these gives two variables, and `Indeterminate`. Without the rows that share a key, one variable per leaf would pass. Without the rows that differ, a key that merged too much would pass. Two operand IRIs bound to one property share a variable, so a key on the operand IRI is caught.
-- **The completed basis** (`test_completed_basis`). The two shapes of § `resolve.lp`, a `Permit` whose basis names a `u` permission and a `Deny` with an empty basis, and the `Permit` with an empty basis of the example in § `completion.lp`. They pin what the program reports while #71 is open.
-- **The cap** (`test_variable_cap`). An `or` of `n` leaves on one absent operand, each with its own right operand, each leaf written twice: `n` variables. `n = 64` answers and `n = 65` declines as `variable-cap`. The repeated leaves leave ground `var/1` atoms that no model makes true, so a count of the ground atoms would decline both.
+- **The completion key** (`test_completion_key`, `test_binding_not_operand_iri`). Two rules under `perm`, each with one `u` leaf on an unresolved operand. When the two leaves share every component of the key, and one is the other's complement, one of the rules applies in every completion, and the verdict is `Permit`. Each other row changes one component: the property, the right operand, the operator, a unit, the unit's value, `5` against `5.0`, the right operand set, or the scope. Each of these gives two variables, and `Indeterminate`. Without the rows that share a key, one variable per leaf would pass. Without the rows that differ, a key that merged too much would pass. Two operand IRIs bound to one property share a variable, so a key on the operand IRI is caught.
+- **Opaque parts** (`test_opaque_is_not_paired`). `decisions/0016`'s example: permissions `x lt 5` and `x gteq 5`. With `x = 3`, `Permit` and no unknown part. With `x` absent, `"abc"`, or `ex:v`, the leaves are opaque, and the reply is `Indeterminate`, `NotApplicable` to `Permit`, naming the status. With `x` unresolved, one variable gives a definite `Permit`. Before `decisions/0016` the three opaque rows were a definite `Permit`, so a program that paired every `u` leaf is caught.
+- **Unknown parts** (`test_unknown_parts`, `test_invalid_read_is_reported`). One leaf on a state property, under every status the SOTW can give: `missing`, `invalid`, `conflict`, `unresolved`, no fact, `resolved` with no value, with two values, and with a misfit value. An absent target and an absent assignee are `missing`. An atom whose action does not match, so `f`, still reports its unresolved leaf and its absent assignee. A read value outside the declared range is `invalid`. A status mapped to the wrong name, or a part reported only for `u` atoms, fails a row.
+- **The completed basis** (`test_completed_basis`). The two shapes of § `resolve.lp`, a `Permit` whose basis names a `u` permission and a `Deny` with an empty basis, and the `Permit` with an empty basis of the example in § `completion.lp`. They pin the basis `decisions/0016` #4 settled.
+- **The cap** (`test_variable_cap`). An `or` of `n` leaves on one unresolved operand, each with its own right operand, each leaf written twice: `n` variables. `n = 64` answers and `n = 65` declines as `variable-cap`. The repeated leaves leave ground `var/1` atoms that no model makes true, so a count of the ground atoms would decline both.
 - **Rejections and declines** (`test_constraint_rejections`, `test_constraint_declines`, `test_datatypes_differ_without_a_range`, `test_derived_strings_decline`, `test_node_in_two_scopes`). Each code and reason of § Declines and § Errors that a constraint or a binding produces, on a minimal policy, so a check that is deleted or never fires is caught.
 - **Declines.** A feature the spike does not read must decline, never be ignored. A policy with both `odrl:duty` and `odrl:remedy` declines naming `odrl:duty`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
 - **Protocol.** `main.py` answers `init` with `ready`, declaring `interpret`, and echoes the request `id`.
 
 **The brute-force differential** (`test_brute_force.py`, Hypothesis, `correctness-strategy.md` §4.1):
 
-- **What it compares.** Over generated policies of permissions and prohibitions under each of the three conflict strategies, with absent targets and unnamed assignees, a Python oracle enumerates the completions, flips each variable alone, and derives the verdict, the basis, the eliminations, the `unknown` atoms, and the range. They must equal the reply. A rule may carry constraint trees: depth two over request parameters `ex:o0` to `ex:o2` (`ex:o2` sometimes absent), with `eq`, `neq`, and the order operators against `1`, under `and`, `or`, `xone`, and `dprod:not`, with members as a list or as repeated values. The oracle values a tree by supervaluation: it tries `t` and `f` for each leaf on an absent parameter, each leaf on its own, and the tree is `u` when the tries disagree. That is strong Kleene logic for independent leaves, computed without the program's ranks. Under a completion, the oracle completes each `u` tree of a `u` atom from the root down: a node that is `t` or `f` keeps its value, a `u` leaf reads its variable, negated for a complement operator, and a `u` connective is re-evaluated two-valued. A leaf's variable is its operand and positive operator, so `neq` reads `eq`'s variable negated, `gteq` reads `lt`'s, and `gt` reads `lteq`'s; every generated leaf is in rule scope against `1` with no unit, so these are the only key components that vary. The basis is the rows that hold in every completion (§ `resolve.lp`). The oracle reads the generated rules, not the driver's facts, and shares only the spec's variable key (`due2-workflows.md` §6.4) with the program.
-- **Examples.** Fourteen explicit cases fix the shapes random draws rarely reach: a `u` atom whose variable changes no verdict (under `prohibit` and `invalid`); two atoms reading one absent target; one tree per connective that changes value if the connective is misread (`and` as `or`, `or` as `and`, `dprod:not` as the identity, `xone` as `or`); a `u` leaf under an `and` and an `or` that decide anyway; a lone `u` leaf; an `or` of a leaf and its complement, which is `u` under Kleene logic but `t` in every completion; two rules whose leaves are complements (`lt` and `gteq`), so one of them applies in every completion; and a `u` leaf under a `t` node, beside an open leaf with the same variable, where only the open leaf is read.
-- **Mutants** (`test_differential_kills_mutant`). The differential must fail against each of eight programs with one rule changed: the flip constraint of `pivot.lp` deleted; one target or party variable per part instead of per field and value; one constraint variable per leaf instead of per key; a complement read as its base; `u` atoms as removers; `and` and `or` swapped; `dprod:not` as the identity; `xone` without its negations. Each runs with 100 generated draws after the examples. In one derandomized measurement, generation alone first killed them after 248, 24, 77, 1030, 7, 99, 72, and 142 draws. So without the examples, the flip-constraint, polarity, and `xone` mutants survive 100 draws.
+- **What it compares.** Over generated policies of permissions and prohibitions under each of the three conflict strategies, with absent targets and unnamed assignees, a Python oracle enumerates the completions, flips each variable alone, and derives the verdict, the basis, the eliminations, the `unknown` atoms, the range, and the unknown parts. They must equal the reply. A rule may carry constraint trees: depth two over operands `ex:o0` to `ex:o2`, each read from the request or from the state, with `eq`, `neq`, and the order operators against `1`, under `and`, `or`, `xone`, and `dprod:not`, with members as a list or as repeated values. An operand may have no value: an absent request parameter is `missing`, and a state property with no fact is `unresolved`. The oracle values a tree by supervaluation: it tries `t` and `f` for each `u` leaf occurrence, each on its own, and the tree is `u` when the tries disagree. That is strong Kleene logic for independent leaves, computed without the program's ranks. Under a completion, the oracle sets each unresolved leaf from its variable, negated for a complement operator, and takes the supervaluation again, so a missing leaf stays `u`. An atom whose parts are still `u` takes the value of its own variable, as `fin(X)` does; an absent target or party is such a part. An unresolved leaf's variable is its operand and positive operator, so `neq` reads `eq`'s variable negated, `gteq` reads `lt`'s, and `gt` reads `lteq`'s; every generated leaf is in rule scope against `1` with no unit, so these are the only key components that vary. The basis is the rows that hold in every completion (§ `resolve.lp`), and the unknown parts are every absent field and every leaf without a value, of every rule. The oracle reads the generated rules, not the driver's facts, and shares only the spec's variable key (`due2-workflows.md` §6.4) and the statuses of `decisions/0016` with the program.
+- **Examples.** Eighteen explicit cases fix the shapes random draws rarely reach: a `u` atom whose variable changes no verdict (under `prohibit` and `invalid`); two atoms on one absent target, each with a variable of its own; one tree per connective that changes value if the connective is misread (`and` as `or`, `or` as `and`, `dprod:not` as the identity, `xone` as `or`); a `u` leaf under an `and` and an `or` that decide anyway; a lone `u` leaf; an `or` of a leaf and its complement, which is `u` under Kleene logic but `t` in every completion when unresolved, and stays `u` when missing; two rules whose leaves are complements (`lt` and `gteq`), so one of them applies in every completion when unresolved, and neither need when missing; a tree with a missing and an unresolved leaf, where the world leaves it `u` and the atom's own variable decides; an `f` atom with an absent target and a missing leaf, whose unknown parts are reported; and a `u` leaf under a `t` node, beside an open leaf with the same variable, where only the open leaf is read.
+- **Mutants** (`test_differential_kills_mutant`). The differential must fail against each of eleven programs with one rule changed: the flip constraint of `pivot.lp` deleted; a missing leaf paired as if unresolved; one `fin` variable shared by every opaque atom; an opaque leaf read as `f`; unknown parts reported only for `u` atoms; one constraint variable per leaf instead of per key; a complement read as its base; `u` atoms as removers; `and` and `or` swapped; `dprod:not` as the identity; `xone` without its negations. Each runs with 100 generated draws after the examples. In one derandomized measurement, generation alone first killed them after 34, 161, 7, 66, 11, 325, 759, 7, 66, 41, and 276 draws. So without the examples, the missing-paired, variable-per-leaf, polarity, and `xone` mutants survive 100 draws.
 - **Enumeration** (`test_enumeration_matches_fixed_solves`). The differential trusts that solve 2's answer sets are exactly the completions, and an oracle with the same mistake would hide a choice rule that admits a model that is not a completion, or misses one. Over 150 generated cases with at most six variables, the test solves solve 2's program once per assignment, with each variable's value a fact and the choice rule deleted. Each fixed solve has one model. The enumeration has `2^n` models, and their shown atoms are those of the fixed solves. The reply is `Indeterminate` exactly when the fixed solves reach more than one verdict. clingo's cautious consequences are the intersection of the fixed solves, so a misreading of the cautious enumeration is caught too. The test found that grounding leaves `var/1` atoms that no model makes true, which is why `interpret.py` counts the variables in the first model.
-- **Shapes** (`test_generator_reaches_each_shape`). Over 400 derandomized draws, the generator must reach every conflict strategy, an `Indeterminate` with a non-pivotal `u` atom, two `u` atoms sharing a variable, open leaves reading one variable with both polarities, two constraint roots that are the same leaf (which the key must merge), and a `u` leaf under a deciding connective. A generator change that stops producing one of them would leave the differential passing on nothing; the test fails on a zero count instead.
+- **Shapes** (`test_generator_reaches_each_shape`). Over 400 derandomized draws, the generator must reach every conflict strategy, an `Indeterminate` with a non-pivotal `u` atom, two `u` atoms sharing a variable, an atom with a variable of its own, an open tree with an opaque and a paired leaf, an `f` atom beside unknown parts, open leaves reading one variable with both polarities, two constraint roots that are the same leaf (which the key must merge), and a `u` leaf under a deciding connective. A generator change that stops producing one of them would leave the differential passing on nothing; the test fails on a zero count instead.
 
 **The driver** (`test_flatten.py`), over the repo's own files:
 

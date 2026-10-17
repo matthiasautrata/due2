@@ -5,7 +5,7 @@ output is a mismatch, and so is an answer that changes between repeats). `error`
 reported an error, crashed, or broke the protocol. `unsupported`: the task was not declared in
 `ready`, or the backend declined the vector and named the feature (`{"unsupported": "recurrence"}`,
 the same on every repeat), or every repeat matches but lacks an explanation field the scenario
-states (`verdict_basis`, `eliminated`); never a pass.
+states (`verdict_basis`, `eliminated`, `verdict_range`, `unknown_parts`); never a pass.
 """
 
 from __future__ import annotations

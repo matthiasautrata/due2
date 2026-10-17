@@ -101,6 +101,7 @@ EXPLAINED: Obj = {
         {"ref": "ex:pay", "role": "duty"},
     ],
     "eliminated": [{"ref": "ex:read", "by": "ex:forbid", "rule": "prohibit"}],
+    "unknown_parts": [{"ref": "ex:read", "input": "ex:purpose", "status": "missing"}],
 }
 
 
@@ -115,7 +116,7 @@ def test_explanation_is_compared_as_sets_when_stated_and_emitted() -> None:
     assert mismatches(EXPLAINED, reordered, PFX) == []
     assert mismatches(GOOD, EXPLAINED, PFX) == []  # not stated: not compared
     assert mismatches(EXPLAINED, GOOD, PFX) == []  # not emitted: unemitted's business
-    assert unemitted(EXPLAINED, GOOD) == ["verdict_basis", "eliminated"]
+    assert unemitted(EXPLAINED, GOOD) == ["verdict_basis", "eliminated", "unknown_parts"]
     assert unemitted(EXPLAINED, EXPLAINED) == []
     assert unemitted(GOOD, GOOD) == []
 
@@ -127,6 +128,11 @@ def test_explanation_is_compared_as_sets_when_stated_and_emitted() -> None:
         ({"verdict_basis": [{"ref": "ex:read", "role": "ready"}]}, "malformed output"),
         ({"eliminated": []}, "eliminated: missing"),
         ({"eliminated": [{"ref": "ex:read", "rule": "prohibit"}]}, "malformed output"),
+        ({"unknown_parts": []}, "unknown_parts: missing"),
+        (
+            {"unknown_parts": [{"ref": "ex:read", "input": "ex:purpose", "status": "absent"}]},
+            "malformed output",
+        ),
     ],
 )
 def test_explanation_differences_are_reported(change: Obj, fragment: str) -> None:

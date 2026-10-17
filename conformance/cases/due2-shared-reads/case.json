@@ -1,9 +1,9 @@
 {
   "case": "due2-shared-reads",
-  "source": "due2-native (pins workflows §6.4's literal key for relation and party parts, decisions/0012, issue #56)",
+  "source": "due2-native (pins decisions/0016: an absent request field is missing, so each rule's part is opaque and completed alone; issues #56, #72)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Authored for due2; no origin result. Both rules test the same target and the same assignee, so a field the request leaves out is one completion variable that both rules read (workflows §6.4, decisions/0012): they apply together, voiding the policy, or neither applies. Either way nothing remains. Under the per-part reading that #56 replaced, each rule's part is completed alone, and the mixed completions (one rule applies, the other does not) give Permit and Deny: scenarios 1 and 2 would be Indeterminate, Deny..Permit, from combinations no request produces. Scenario 3 is the same policy with every field named.",
+  "notes": "Authored for due2; no origin result. Both rules test the same target and the same assignee. When the request leaves one out, that field is missing (due2-profiles.md §3), so each rule's part is opaque: it shares no completion variable, and each rule is completed alone (decisions/0016 #2). The completions where one rule applies and the other does not give Permit and Deny, so scenarios 1 and 2 are Indeterminate, Deny..Permit, and unknown_parts names the missing field for both rules. Under decisions/0012 #1, which 0016 restricts to unresolved values, both rules read one variable, applied together or not at all, and scenarios 1 and 2 were NotApplicable: a verdict decided by cases over a value the request does not have. Scenario 3 is the same policy with every field named.",
   "prefixes": {
     "ex": "https://example.org/"
   },
@@ -30,12 +30,37 @@
         "combination": "prohibit-overrides"
       },
       "expected": {
-        "verdict": "NotApplicable",
+        "verdict": "Indeterminate",
         "frontier": [],
         "obligations": [],
-        "verdict_basis": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:p-forbid",
+            "role": "unknown"
+          },
+          {
+            "ref": "ex:p-use",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "Deny",
+          "high": "Permit"
+        },
         "eliminated": [],
-        "why": "The request names no target, so both rules read the one variable 'target is ex:a' (§6.4): T applies both and invalid voids the policy, F applies neither. Every completion gives NotApplicable."
+        "unknown_parts": [
+          {
+            "ref": "ex:p-forbid",
+            "input": "odrl:target",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:p-use",
+            "input": "odrl:target",
+            "status": "missing"
+          }
+        ],
+        "why": "The request names no target, so each rule's target part is missing and opaque, and each rule is completed alone (decisions/0016 #2): only the permission applying gives Permit, only the prohibition Deny, so Indeterminate, Deny..Permit."
       }
     },
     {
@@ -59,12 +84,37 @@
         "combination": "prohibit-overrides"
       },
       "expected": {
-        "verdict": "NotApplicable",
+        "verdict": "Indeterminate",
         "frontier": [],
         "obligations": [],
-        "verdict_basis": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:p-forbid",
+            "role": "unknown"
+          },
+          {
+            "ref": "ex:p-use",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "Deny",
+          "high": "Permit"
+        },
         "eliminated": [],
-        "why": "The request names no assignee, so both rules read the one variable 'assignee is ex:alice' (§6.4): T voids the policy under invalid, F applies neither. Every completion gives NotApplicable."
+        "unknown_parts": [
+          {
+            "ref": "ex:p-forbid",
+            "input": "odrl:assignee",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:p-use",
+            "input": "odrl:assignee",
+            "status": "missing"
+          }
+        ],
+        "why": "The request names no assignee, so each rule's assignee part is missing and opaque, and each rule is completed alone (decisions/0016 #2): only the permission applying gives Permit, only the prohibition Deny, so Indeterminate, Deny..Permit."
       }
     },
     {
@@ -106,6 +156,7 @@
             "rule": "invalid"
           }
         ],
+        "unknown_parts": [],
         "why": "Both rules apply; under invalid a T candidate and a T prohibition void the policy, each eliminated by the other with rule invalid (§6.2), and nothing remains."
       }
     }

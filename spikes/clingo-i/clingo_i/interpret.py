@@ -6,8 +6,8 @@ vector to facts (`clingo_i.flatten`, `clingo_i.values`), and the program in `lp/
 everything else, in three solves (DESIGN.md § Data flow):
 
 1. the declines and rejections, over `lift.lp` to `applies.lp`;
-2. every completion of the unknown variables, cautious: the verdict, the basis, and the
-   eliminations;
+2. every completion of the unknown variables, cautious: the verdict, the basis, the
+   eliminations, and the unknown parts;
 3. for an `Indeterminate` only, every completion and one flipped variable, brave: the
    `unknown` atoms and the range.
 
@@ -44,6 +44,7 @@ SOLVE_1 = PROGRAM_FILES[:7]  # lift.lp to applies.lp: no choice, so one model
 SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
 CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
 VARIABLE_CAP = 64  # correctness-strategy.md §3, set by measurement (journal, #48)
+ODRL_TARGET = "http://www.w3.org/ns/odrl/2/target"
 # Read after the rejections, in order.
 DECLINES = ("unsupported_input", "unsupported_value")
 
@@ -76,6 +77,11 @@ def _log(code: MessageCode, message: str) -> None:
 def _text(sym: Symbol) -> str:
     """A symbol as reply text: a string's contents unquoted, anything else as clingo prints it."""
     return sym.string if sym.type == SymbolType.String else str(sym)
+
+
+def _input(sym: Symbol) -> str:
+    """An `unknown_part` input as the IRI it reads: `odrl:target`, a party function, or a property."""
+    return ODRL_TARGET if sym.match("target", 0) else _text(sym.arguments[0])
 
 
 def _rule(atom: Symbol) -> str:
@@ -124,8 +130,9 @@ class Interpreter:
                 `config`.
 
         Returns:
-            `verdict`, `frontier`, `obligations`, `exact`, `verdict_basis`, `eliminated`, and,
-            for an `Indeterminate`, `verdict_range`. Refs are source rule IRIs.
+            `verdict`, `frontier`, `obligations`, `exact`, `verdict_basis`, `eliminated`,
+            `unknown_parts`, and, for an `Indeterminate`, `verdict_range`. Refs are source rule
+            IRIs.
 
         Raises:
             Declined: The vector uses something the spike does not read.
@@ -162,6 +169,16 @@ class Interpreter:
                 }
             )
             if ref != by  # the authored level: "other than itself" (DESIGN.md § Output)
+        ]
+        out["unknown_parts"] = [
+            {"ref": ref, "input": i, "status": status}
+            for ref, i, status in sorted(
+                {
+                    (_rule(s.arguments[0]), _input(s.arguments[1]), _text(s.arguments[2]))
+                    for s in shown
+                    if s.match("unknown_part", 3)
+                }
+            )
         ]
         if reached:
             out["verdict_range"] = {

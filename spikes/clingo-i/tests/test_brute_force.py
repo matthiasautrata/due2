@@ -1,20 +1,26 @@
 """The brute-force differential (DESIGN.md § Tests, correctness-strategy.md §4.1).
 
 Over generated policies of permissions and prohibitions, with an absent target or an unnamed
-assignee, a Python oracle enumerates every completion of the literals, flips each literal
-alone, and derives the verdict, the basis, the eliminations, the `unknown` atoms, and the
-range (due2-workflows.md §5.2, §6.1 to §6.4; decisions/0011). It reads the generated rules, not the
-program's facts, and shares only the spec's literal key with it.
+assignee, a Python oracle enumerates every completion of the variables, flips each variable
+alone, and derives the verdict, the basis, the eliminations, the `unknown` atoms, the range,
+and the unknown parts (due2-workflows.md §5.2, §6.1 to §6.4; decisions/0011, decisions/0016).
+It reads the generated rules, not the program's facts, and shares only the spec's completion
+key with it.
 
-A rule may carry constraint trees over request parameters, some of them absent. The oracle
-gives a tree its finding value by supervaluation: it tries `t` and `f` for each leaf whose
-parameter is absent, each leaf on its own, and the tree is `u` when the tries disagree. That is
-strong Kleene logic for a tree whose leaves are independent (due2-workflows.md §5.2), computed
-without the program's ranks. Completion is different: every leaf of a generated tree compares
-its operand with the right operand 1, so two leaves with one operand and one operator, or with
-complementary operators, read one literal (due2-workflows.md §6.4). Under a completion, a tree
-takes its finding value where that is `t` or `f`, and is re-evaluated two-valued from its
-members where it is `u`.
+A rule may carry constraint trees over operands, each read from a request parameter or from a
+state property. A request parameter may be absent, so its read is `missing`; a state property
+may have no fact, so its read is `unresolved` (due2-profiles.md §3). The oracle gives a tree
+its value by supervaluation: it tries `t` and `f` for each leaf occurrence that is `u`, each on
+its own, and the tree is `u` when the tries disagree. That is strong Kleene logic for a tree
+whose leaf occurrences are independent (due2-workflows.md §5.2), computed without the
+program's ranks.
+
+Completion follows decisions/0016. Every leaf compares its operand with the right operand 1, so
+two `unresolved` leaves with one operand and one operator, or with complementary operators,
+read one variable (due2-workflows.md §6.4). A `missing` leaf, and an absent target or party, is
+opaque: it stays `u` in every completion. Under a completion, a tree takes its supervaluation
+with its paired leaves set, and an atom whose parts still leave it `u` takes the value of a
+variable of its own.
 
 The mutation test runs the same differential against programs with one rule changed, and
 asserts that it fails (#47). The measurement test asserts that the generator reaches each
@@ -42,7 +48,8 @@ EX = "https://example.org/"
 XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer"
 ACTIONS = ("use", "play")  # play ⊑ use in the test core (conftest.INIT)
 PARTIES = ("alice", "bob")
-OPERANDS = 3  # ex:o0 to ex:o2, each read from the request parameter of the same name
+OPERANDS = 3  # ex:o0 to ex:o2, each read from the request parameter or state property ex:oK
+ODRL = "http://www.w3.org/ns/odrl/2/"
 # Every leaf compares its operand with the right operand 1.
 OPERATORS: dict[str, Callable[[int, int], bool]] = {
     "eq": operator.eq,
@@ -87,7 +94,8 @@ class Case:
     action: str
     target: str | None  # None: absent
     assignee: str | None  # None: the request names no assignee
-    params: tuple[int | None, ...] = (None,) * OPERANDS  # None: absent
+    params: tuple[int | None, ...] = (None,) * OPERANDS  # None: no parameter, or no fact
+    state: tuple[bool, ...] = (False,) * OPERANDS  # True: read from the state, not the request
 
 
 def trees(depth: int) -> st.SearchStrategy[Tree]:
@@ -136,7 +144,13 @@ def cases(draw: st.DrawFn) -> Case:
         draw(st.sampled_from(ACTIONS)),
         target,
         assignee,
-        tuple(draw(st.sampled_from((None, 0, 1, 2))) for _ in range(OPERANDS)),
+        # None twice: an unknown operand is paired only when it also reads the state.
+        tuple(draw(st.sampled_from((None, None, 0, 1, 2))) for _ in range(OPERANDS)),
+        # Every operand from the state in half the cases: a variable two rules share needs two
+        # paired leaves, and sharing is otherwise a few cases in a thousand.
+        (True,) * OPERANDS
+        if draw(st.booleans())
+        else tuple(draw(st.booleans()) for _ in range(OPERANDS)),
     )
 
 
@@ -168,20 +182,28 @@ def render(case: Case) -> Obj:
             f"ex:{r.name} a odrl:{cls} ; odrl:action odrl:{r.action} ; odrl:target ex:{r.target}"
             f"{party}{cons} ."
         )
-    # Each operand is bound in the policy to the request parameter of its own name.
+    # Each operand is bound in the policy to the parameter or property of its own name.
     lines.extend(
-        f"ex:o{k} dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:o{k} ."
-        for k in range(OPERANDS)
+        f"ex:o{k} dprod:operandSource dprod:{'stateSource' if state else 'requestSource'} ;"
+        f" dprod:operandProperty ex:o{k} ."
+        for k, state in enumerate(case.state)
     )
     parties: Obj = {"odrl:assignee": f"ex:{case.assignee}"} if case.assignee else {}
-    params: Obj = {
+    values: Obj = {
         f"ex:o{k}": {"@value": str(p), "@type": XSD_INTEGER}
         for k, p in enumerate(case.params)
         if p is not None
     }
+    params: Obj = {k: x for k, x in values.items() if not case.state[int(k[4:])]}
+    facts: Obj = {
+        k: {"status": "resolved", "values": [x]}
+        for k, x in values.items()
+        if case.state[int(k[4:])]
+    }
     v = vector(
         PREFIXES + "\n".join(lines) + "\n",
         request={"action": f"odrl:{case.action}", "parties": parties, "params": params},
+        sotw={"facts": facts},
     )
     request = v["request"]
     assert isinstance(request, dict)
@@ -224,24 +246,8 @@ def classical(tree: Tree, values: Iterator[bool]) -> bool:
             return not vs[0]
 
 
-def tree_value(case: Case, tree: Tree) -> Truth:
-    """The tree's value by supervaluation over its leaf occurrences whose parameter is absent."""
-    known: list[Truth] = []
-    for leaf in leaves(tree):
-        p = case.params[leaf.operand]
-        known.append(None if p is None else OPERATORS[leaf.op](p, 1))
-    gaps = [i for i, k in enumerate(known) if k is None]
-    results: set[bool] = set()
-    for fill in itertools.product((False, True), repeat=len(gaps)):
-        values = list(known)
-        for i, b in zip(gaps, fill, strict=True):
-            values[i] = b
-        results.add(classical(tree, iter(bool(v) for v in values)))
-    return results.pop() if len(results) == 1 else None
-
-
-# The positive operator and the polarity of each operator: a complement reads its base's literal
-# negated (due2-workflows.md §6.4).
+# The positive operator and the polarity of each operator: a complement reads its base's
+# variable negated (due2-workflows.md §6.4).
 POLARITY: dict[str, tuple[str, bool]] = {
     "eq": ("eq", True),
     "neq": ("eq", False),
@@ -253,23 +259,57 @@ POLARITY: dict[str, tuple[str, bool]] = {
 
 
 def leaf_literal(leaf: Leaf) -> Literal:
-    """The literal of a leaf: its operand and positive operator. Scope and right operand agree."""
+    """A paired leaf's variable: its operand and positive operator. Scope and right operand
+    agree for every generated leaf."""
     return (f"o{leaf.operand}", POLARITY[leaf.op][0])
+
+
+def paired(case: Case, leaf: Leaf) -> bool:
+    """The leaf reads a state property with no fact: `unresolved`, so it is paired."""
+    return case.params[leaf.operand] is None and case.state[leaf.operand]
+
+
+def tree_value(case: Case, tree: Tree, world: dict[Literal, bool] | None = None) -> Truth:
+    """The tree's value by supervaluation over its leaf occurrences that are `u`.
+
+    With `world`, a paired leaf whose variable the world has takes that value first, so only
+    the opaque leaves, and the paired leaves no atom reads, are tried.
+    """
+    known: list[Truth] = []
+    for leaf in leaves(tree):
+        p = case.params[leaf.operand]
+        v = None if p is None else OPERATORS[leaf.op](p, 1)
+        if v is None and world is not None and paired(case, leaf):
+            lit = world.get(leaf_literal(leaf))
+            v = None if lit is None else lit == POLARITY[leaf.op][1]
+        known.append(v)
+    gaps = [i for i, k in enumerate(known) if k is None]
+    results: set[bool] = set()
+    for fill in itertools.product((False, True), repeat=len(gaps)):
+        values = list(known)
+        for i, b in zip(gaps, fill, strict=True):
+            values[i] = b
+        results.add(classical(tree, iter(bool(v) for v in values)))
+    return results.pop() if len(results) == 1 else None
 
 
 @dataclass(frozen=True)
 class Open:
-    """A `u` constraint part of a `u` atom, completed under each world."""
+    """A `u` constraint part of a rule."""
 
     case: Case
     tree: Tree
 
     def literals(self) -> Iterator[Literal]:
-        """The literals of the open leaves."""
-        return (leaf_literal(leaf) for leaf in open_leaves(self.case, self.tree))
+        """The variables of the paired open leaves."""
+        return (leaf_literal(x) for x in open_leaves(self.case, self.tree) if paired(self.case, x))
 
-    def value(self, world: dict[Literal, bool]) -> bool:
-        return _completed(self.case, self.tree, world)
+    def opaque(self) -> bool:
+        """Some open leaf is opaque, so the tree can stay `u` in a completion."""
+        return any(not paired(self.case, x) for x in open_leaves(self.case, self.tree))
+
+    def value(self, world: dict[Literal, bool]) -> Truth:
+        return tree_value(self.case, self.tree, world)
 
 
 def open_leaves(case: Case, tree: Tree) -> Iterator[Leaf]:
@@ -284,71 +324,59 @@ def open_leaves(case: Case, tree: Tree) -> Iterator[Leaf]:
                 yield from open_leaves(case, m)
 
 
-def _completed(case: Case, tree: Tree, world: dict[Literal, bool]) -> bool:
-    """A `t` or `f` node keeps its value; a `u` leaf reads its literal; a `u` connective is
-    re-evaluated two-valued."""
-    known = tree_value(case, tree)
-    if known is not None:
-        return known
-    match tree:
-        case Leaf(_, op):
-            return world[leaf_literal(tree)] == POLARITY[op][1]
-        case Node(conn, members, _):
-            vs = [_completed(case, m, world) for m in members]
-            if conn == "and":
-                return all(vs)
-            if conn == "or":
-                return any(vs)
-            if conn == "xone":
-                return sum(vs) == 1
-            return not vs[0]
-
-
-type Part = Truth | Literal | Open
+type Part = Truth | Open
 
 
 def parts(case: Case, r: Rule) -> list[Part]:
-    """A rule's parts: a known truth, the literal a u target or party part reads, or a u tree."""
+    """A rule's parts: a known truth, `None` for an absent target or party, or a `u` tree."""
     out: list[Part] = [case.action == r.action or r.action == "use"]
-    out.append(("target", r.target) if case.target is None else case.target == r.target)
+    out.append(None if case.target is None else case.target == r.target)
     if r.assignee is not None:
-        out.append(("party", r.assignee) if case.assignee is None else case.assignee == r.assignee)
+        out.append(None if case.assignee is None else case.assignee == r.assignee)
     out.extend(Open(case, t) if (v := tree_value(case, t)) is None else v for t in r.constraints)
     return out
 
 
-def finding(ps: list[Part]) -> Truth:
-    """Kleene conjunction: a literal or an open tree is u."""
-    if any(p is False for p in ps):
+def kleene_and(vs: list[Truth]) -> Truth:
+    if any(v is False for v in vs):
         return False
-    return None if any(p is not True for p in ps) else True
+    return None if any(v is None for v in vs) else True
 
 
-def reads(ps: list[Part]) -> set[Literal]:
-    """The literals a u atom reads in its u parts; an f atom reads none."""
-    if finding(ps) is False:
+def finding(ps: list[Part]) -> Truth:
+    """Kleene conjunction: an absent field or an open tree is u."""
+    return kleene_and([None if isinstance(p, Open) else p for p in ps])
+
+
+def fin(name: str) -> Literal:
+    """The variable of rule `name`'s finding, for when an opaque part leaves it `u`."""
+    return ("fin", name)
+
+
+def reads(name: str, ps: list[Part]) -> set[Literal]:
+    """The variables a `u` atom reads: its paired open leaves, and its own when it has an
+    opaque part. An `f` atom reads none."""
+    if finding(ps) is not None:
         return set()
     out: set[Literal] = set()
     for p in ps:
-        if isinstance(p, tuple):
-            out.add(p)
-        elif isinstance(p, Open):
+        if isinstance(p, Open):
             out.update(p.literals())
+    if any(p is None or (isinstance(p, Open) and p.opaque()) for p in ps):
+        out.add(fin(name))
     return out
 
 
-def applies(ps: list[Part], world: dict[Literal, bool]) -> bool:
-    if finding(ps) is not None:
-        return bool(finding(ps))
-    return all(
-        world[p] if isinstance(p, tuple) else p.value(world) if isinstance(p, Open) else p
-        for p in ps
-    )
+def applies(name: str, ps: list[Part], world: dict[Literal, bool]) -> bool:
+    if (f := finding(ps)) is not None:
+        return f
+    v = kleene_and([p.value(world) if isinstance(p, Open) else p for p in ps])
+    return world[fin(name)] if v is None else v
 
 
 def worlds(ps: dict[str, list[Part]]) -> tuple[list[Literal], list[dict[Literal, bool]]]:
-    """The literals the u atoms read, and every completion of them."""
-    lits = sorted(set[Literal]().union(*(reads(p) for p in ps.values())))
+    """The variables the u atoms read, and every completion of them."""
+    lits = sorted(set[Literal]().union(*(reads(n, p) for n, p in ps.items())))
     return lits, [
         dict(zip(lits, vals, strict=True))
         for vals in itertools.product((False, True), repeat=len(lits))
@@ -375,7 +403,7 @@ def oracle(case: Case) -> Obj:
     ps = {r.name: parts(case, r) for r in case.rules}
 
     def run(world: dict[Literal, bool]) -> tuple[str, set[tuple[str, str]]]:
-        return resolve(case, {n: applies(p, world) for n, p in ps.items()})
+        return resolve(case, {n: applies(n, p, world) for n, p in ps.items()})
 
     results = [run(w) for w in worlds(ps)[1]]
     verdicts = {v for v, _ in results}
@@ -393,19 +421,40 @@ def oracle(case: Case) -> Obj:
             "high": max(verdicts, key=CHAIN.index),
         }
     out["eliminated"] = eliminations(case, find)
+    out["unknown_parts"] = unknown_parts(case)
     return {"output": out}
 
 
 def unknown(case: Case) -> list[str]:
-    """The `u` rules that read a pivotal literal: one whose flip alone moves the verdict."""
+    """The `u` rules that read a pivotal variable: one whose flip alone moves the verdict."""
     ps = {r.name: parts(case, r) for r in case.rules}
 
     def verdict(world: dict[Literal, bool]) -> str:
-        return resolve(case, {n: applies(p, world) for n, p in ps.items()})[0]
+        return resolve(case, {n: applies(n, p, world) for n, p in ps.items()})[0]
 
     lits, ws = worlds(ps)
     pivotal = {lit for w in ws for lit in lits if verdict(w) != verdict({**w, lit: not w[lit]})}
-    return sorted(n for n, p in ps.items() if finding(p) is None and reads(p) & pivotal)
+    return sorted(n for n, p in ps.items() if reads(n, p) & pivotal)
+
+
+def unknown_parts(case: Case) -> list[Json]:
+    """Every `u` part of every rule, `f` rules included (decisions/0016 #3).
+
+    An absent target or party is `missing`, and so is a leaf whose parameter is absent; a leaf
+    whose property has no fact is `unresolved`. The rows are sorted by full IRI, as the reply's
+    are.
+    """
+    rows: set[tuple[str, str, str]] = set()
+    for r in case.rules:
+        if case.target is None:
+            rows.add((EX + r.name, ODRL + "target", "missing"))
+        if r.assignee is not None and case.assignee is None:
+            rows.add((EX + r.name, ODRL + "assignee", "missing"))
+        for leaf in (x for t in r.constraints for x in leaves(t)):
+            if case.params[leaf.operand] is None:
+                status = "unresolved" if case.state[leaf.operand] else "missing"
+                rows.add((EX + r.name, f"{EX}o{leaf.operand}", status))
+    return [{"ref": ref, "input": i, "status": st} for ref, i, st in sorted(rows)]
 
 
 def eliminations(case: Case, find: dict[str, Truth]) -> list[Json]:
@@ -430,7 +479,7 @@ def eliminations(case: Case, find: dict[str, Truth]) -> list[Json]:
 
 # --- the differential ---
 
-# A t candidate, a u candidate whose literal moves nothing, and a u forbid whose literal does:
+# A t candidate, a u candidate whose variable moves nothing, and a u forbid whose variable does:
 # only the forbid is `unknown` (0011 #1). Random draws reach this shape in a few percent.
 T, ALICE, BOB = (
     Rule("r0", True, "use", "a", None),
@@ -443,17 +492,46 @@ def eq(k: int) -> Leaf:
     return Leaf(k, "eq")
 
 
-def constrained(tree: Tree) -> Case:
-    """One permission under `tree`, with ex:o0 = 1 and ex:o1 = 2."""
+# Operands for `constrained`: ex:o2 from the state, so `unresolved`, or from the request, so
+# `missing`.
+PAIRED = (False, False, True)
+OPAQUE = (False, False, False)
+
+
+def constrained(tree: Tree, state: tuple[bool, ...] = PAIRED) -> Case:
+    """One permission under `tree`, with ex:o0 = 1, ex:o1 = 2, and ex:o2 unknown."""
     return Case(
-        "perm", (Rule("r0", True, "use", "a", None, (tree,)),), "use", "a", None, (1, 2, None)
+        "perm",
+        (Rule("r0", True, "use", "a", None, (tree,)),),
+        "use",
+        "a",
+        None,
+        (1, 2, None),
+        state,
+    )
+
+
+def lt_or_gteq(state: tuple[bool, ...]) -> Case:
+    """decisions/0016's example: two permissions, ex:o2 lt 1 and ex:o2 gteq 1."""
+    return Case(
+        "perm",
+        (
+            Rule("r0", True, "use", "a", None, (Leaf(2, "lt"),)),
+            Rule("r1", True, "use", "a", None, (Leaf(2, "gteq"),)),
+        ),
+        "use",
+        "a",
+        None,
+        (None,) * OPERANDS,
+        state,
     )
 
 
 EXAMPLES = [
     Case("prohibit", (T, ALICE, BOB), "use", "a", None),
     Case("invalid", (T, ALICE, BOB), "use", "a", None),
-    # Two atoms read one literal, target(a): their completions are correlated (0012 #1).
+    # Two atoms on one absent target: the target is missing, so opaque, and each atom has a
+    # variable of its own (decisions/0016 #2). Shared, the range would stop at NotApplicable.
     Case(
         "perm",
         (Rule("r0", True, "use", "a", None), Rule("r1", False, "use", "a", None)),
@@ -470,22 +548,41 @@ EXAMPLES = [
     # A u leaf under a connective that decides anyway: f and u is f, t or u is t.
     constrained(Node("and", (eq(1), eq(2)), True)),
     constrained(Node("or", (eq(0), eq(2)), False)),
-    # A u leaf, and two leaves that read one literal, positively and negatively: the tree is u
-    # (Kleene), but t in every completion.
+    # A u leaf, and two leaves that read one variable, positively and negatively: the tree is u
+    # (Kleene), but t in every completion. Opaque, the two leaves are independent and the tree
+    # stays u, so the atom's own variable decides it (decisions/0016 § L9).
     constrained(eq(2)),
     constrained(Node("or", (eq(2), Leaf(2, "neq")), False)),
-    # Two rules that read one literal with opposite polarity: one or the other applies.
+    constrained(eq(2), OPAQUE),
+    constrained(Node("or", (eq(2), Leaf(2, "neq")), False), OPAQUE),
+    # Two rules that read one variable with opposite polarity: one or the other applies. With
+    # the operand missing, neither need apply (decisions/0016's example).
+    lt_or_gteq(PAIRED),
+    lt_or_gteq(OPAQUE),
+    # An opaque leaf and a paired one in one tree: where the paired leaf is f, the tree is u
+    # in the world, and the atom's own variable decides it.
     Case(
         "perm",
         (
-            Rule("r0", True, "use", "a", None, (Leaf(2, "lt"),)),
-            Rule("r1", True, "use", "a", None, (Leaf(2, "gteq"),)),
+            Rule("r0", True, "use", "a", None, (Node("or", (eq(1), eq(2)), False),)),
+            Rule("r1", True, "use", "a", None, (Leaf(2, "neq"),)),
         ),
         "use",
         "a",
         None,
+        (None,) * OPERANDS,
+        PAIRED,
     ),
-    # A u leaf under a t node, beside an open leaf with the same literal: only the open leaf
+    # An f atom (a foreign action) with an absent target and a missing leaf: its u parts are
+    # reported, though it reads no variable.
+    Case(
+        "prohibit",
+        (Rule("r0", True, "play", "a", None, (eq(0),)), Rule("r1", False, "use", "b", None)),
+        "use",
+        None,
+        None,
+    ),
+    # A u leaf under a t node, beside an open leaf with the same variable: only the open leaf
     # is read.
     Case(
         "prohibit",
@@ -497,6 +594,7 @@ EXAMPLES = [
         "a",
         None,
         (1, None, None),
+        PAIRED,
     ),
 ]
 
@@ -599,20 +697,49 @@ def test_enumeration_matches_fixed_solves(interpreter: Interpreter) -> None:
 # --- mutation (#47) ---
 
 MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
-    # Every literal pivotal: a u atom whose literal moves nothing is `unknown` too.
+    # Every variable pivotal: a u atom whose variable moves nothing is `unknown` too.
     "flip-constraint-deleted": (
         "pivot.lp",
         [(":- verdict(c, Verdict), verdict(flip, Verdict).", "")],
     ),
-    # A literal per part, not per field and value: shared literals become independent.
-    "literal-per-part": (
+    # A missing leaf paired as if unresolved: the pairing decisions/0016 removed.
+    "missing-paired": (
         "completion.lp",
         [
-            ("lit_of(part(X, target), target(T))", "lit_of(part(X, target), target(X, T))"),
             (
-                "lit_of(part(X, party(F)), party(F, Party))",
-                "lit_of(part(X, party(F)), party(X, F, Party))",
+                "opaque_leaf(C) :- leaf_status(C, S), S != unresolved.",
+                "opaque_leaf(C) :- leaf_status(C, S), S != unresolved, S != missing.",
             ),
+            ("open(C), leaf_status(C, unresolved), scope", "open(C), not opaque_leaf(C), scope"),
+        ],
+    ),
+    # One variable for every opaque atom: their completions become correlated.
+    "opaque-atoms-share-a-variable": (
+        "completion.lp",
+        [
+            ("var(fin(X)) :- opaque_atom(X).", "var(fin(0)) :- opaque_atom(X)."),
+            ("reads(X, fin(X)) :- opaque_atom(X).", "reads(X, fin(0)) :- opaque_atom(X)."),
+            ("assigned(W, fin(X), V).", "assigned(W, fin(0), V)."),
+        ],
+    ),
+    # An opaque leaf read as f in each world: unknown as false.
+    "opaque-leaf-as-f": (
+        "completion.lp",
+        [
+            (
+                "crank_in(W, C, 1) :- world(W), open(C), opaque_leaf(C).",
+                "crank_in(W, C, 0) :- world(W), open(C), opaque_leaf(C).",
+            )
+        ],
+    ),
+    # The unknown target of an f atom dropped: only u atoms report their parts.
+    "unknown-parts-of-u-atoms-only": (
+        "explain.lp",
+        [
+            (
+                "unknown_part(X, target, missing) :- atom(X),",
+                "unknown_part(X, target, missing) :- holds(applies(X), u),",
+            )
         ],
     ),
     # One variable per leaf: leaves with the same key become independent.
@@ -691,18 +818,29 @@ def shapes(case: Case) -> Iterator[str]:
     u_rules = [r.name for r in case.rules if finding(parts(case, r)) is None]
     if out["verdict"] == "Indeterminate" and len(unknown(case)) < len(u_rules):
         yield "Indeterminate with a non-pivotal u atom"
-    shared = Counter(lit for r in case.rules for lit in reads(parts(case, r)))
+    shared = Counter(lit for r in case.rules for lit in reads(r.name, parts(case, r)))
     if any(n > 1 for n in shared.values()):
-        yield "two u atoms sharing a literal"
+        yield "two u atoms sharing a variable"
+    if any(lit[0] == "fin" for lit in shared):
+        yield "an atom with a variable of its own"
+    if any(
+        isinstance(p, Open) and p.opaque() and any(True for _ in p.literals())
+        for r in case.rules
+        for p in parts(case, r)
+    ):
+        yield "an open tree with an opaque and a paired leaf"
+    if any(finding(parts(case, r)) is False for r in case.rules) and out["unknown_parts"]:
+        yield "an f atom beside unknown parts"
     polarities: dict[Literal, set[bool]] = {}
     for r in case.rules:
         if finding(parts(case, r)) is not None:
             continue
         for t in r.constraints:
             for leaf in open_leaves(case, t):
-                polarities.setdefault(leaf_literal(leaf), set()).add(POLARITY[leaf.op][1])
+                if paired(case, leaf):
+                    polarities.setdefault(leaf_literal(leaf), set()).add(POLARITY[leaf.op][1])
     if any(len(p) == 2 for p in polarities.values()):
-        yield "open leaves reading one literal with both polarities"
+        yield "open leaves reading one variable with both polarities"
     tops = [t for r in case.rules for t in r.constraints if isinstance(t, Leaf)]
     if len(tops) > len(set(tops)):
         yield "constraint parts sharing a key"
@@ -724,9 +862,12 @@ def test_generator_reaches_each_shape() -> None:
 
     tally()
     wanted = {f"conflict {c}" for c in ("prohibit", "perm", "invalid")} | {
-        "open leaves reading one literal with both polarities",
+        "open leaves reading one variable with both polarities",
         "Indeterminate with a non-pivotal u atom",
-        "two u atoms sharing a literal",
+        "two u atoms sharing a variable",
+        "an atom with a variable of its own",
+        "an open tree with an opaque and a paired leaf",
+        "an f atom beside unknown parts",
         "constraint parts sharing a key",
         "u leaf under a deciding connective",
     }

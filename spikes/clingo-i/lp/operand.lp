@@ -2,10 +2,10 @@
 %
 % Binds each left operand a constraint uses, through the layers of due2-profiles.md §2
 % (decisions/0014), and reads its values from the request, the SOTW, or the context
-% (due2-profiles.md §3). A read is `ok`, with its values, or `u`: its source could not answer,
-% gave the wrong number of values, or gave a value outside the range. A `u` read makes its constraint `u`, never `f`
-% (ways-of-working.md §5.1). A binding that is not admissible gets a `reject`. Variable
-% letters: DESIGN.md § Vocabulary.
+% (due2-profiles.md §3). A read is `ok`, with its values, or `u`: its source could not answer, gave
+% the wrong number of values, or gave a value outside the range. A `u` read makes its constraint
+% `u`, never `f` (ways-of-working.md §5.1). A binding that is not admissible gets a `reject`.
+% Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `decl/4`, `layer_rank/2`, `source_kind/2`, `context_property/2`,
 %   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2` (lift.lp);
@@ -17,7 +17,8 @@
 %   `card/2`, `has_range/1`, `range_kind/2`, `has_range_kind/1`, `prop_range_kind/2`,
 %   `allowed/2`, `has_allowed/1`,
 %   `single_left/1`, `candidate_value/2`, `conforms/2`, `read_value/2`, `read_resolved/1`,
-%   `nonconforming/1`, `card_ok/1`, `read_ok/1`, `read_u/1`; extends `reject/2` (structure.lp)
+%   `nonconforming/1`, `card_ok/1`, `read_ok/1`, `read_u/1`, `read_status/2`; extends
+%   `reject/2` (structure.lp)
 %   and `unsupported/1` (lift.lp).
 
 %## Binding
@@ -294,3 +295,21 @@ due2-profiles.md §3.
 read_u(Op) :- used(Op), not read_resolved(Op).
 read_u(Op) :- read_resolved(Op), not card_ok(Op).
 read_u(Op) :- nonconforming(Op).
+
+%*! read_status(Op, S)
+
+`Op`'s read is `u` with status `S`: `missing`, `invalid`, `conflict`, or `unresolved`. The
+statuses are those of due2-profiles.md §3. A request, witness, or context source that has no
+value is `missing`. A state property keeps the status of its fact, and is `unresolved` when it
+has none. A resolved read with no value on cardinality `one` is `missing`, and with several
+`conflict`. A read of the right number of values with one outside the range is `invalid`. Only
+`unresolved` is completed by pairing (completion.lp, decisions/0016).
+*%
+read_status(Op, missing) :- used(Op), src(Op, Src), Src != state, not read_resolved(Op).
+read_status(Op, S) :- used(Op), src(Op, state), prop(Op, Prop), fact(Prop, S), S != resolved.
+read_status(Op, unresolved) :- used(Op), src(Op, state), prop(Op, Prop), not fact(Prop, _).
+read_status(Op, missing) :- read_resolved(Op), card(Op, one),
+    #count { Term : read_value(Op, Term) } = 0.
+read_status(Op, conflict) :- read_resolved(Op), card(Op, one),
+    #count { Term : read_value(Op, Term) } > 1.
+read_status(Op, invalid) :- card_ok(Op), nonconforming(Op).

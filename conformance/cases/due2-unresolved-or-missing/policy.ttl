@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: decisions/0016's example. Two permissions read one state
+# property, ex:x, with complementary operators, so exactly one applies when x
+# has a value that fits. Only an unresolved x is completed as one variable that
+# both rules read; a missing, misfit, or conflicting x is opaque, and each rule
+# is completed alone.
+
+ex:p a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:low, ex:high .
+
+ex:low a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:a ;
+    odrl:constraint [ a odrl:Constraint ; odrl:leftOperand ex:x ;
+                      odrl:operator odrl:lt ; odrl:rightOperand 5 ] .
+
+ex:high a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:a ;
+    odrl:constraint [ a odrl:Constraint ; odrl:leftOperand ex:x ;
+                      odrl:operator odrl:gteq ; odrl:rightOperand 5 ] .
+
+ex:x a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:x .

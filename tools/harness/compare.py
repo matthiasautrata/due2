@@ -4,9 +4,11 @@ Output shape (spikes/README.md):
   {"verdict": str, "frontier": [[duty IRI, ...], ...],
    "obligations": [{"duty": IRI, "status": str, "instance"?: dateTime}], "exact"?: bool,
    "verdict_basis"?: [{"ref": IRI, "role": str}], "eliminated"?: [{"ref": IRI, "by": IRI, "rule": str}],
-   "verdict_range"?: {"low": str, "high": str}}
+   "verdict_range"?: {"low": str, "high": str},
+   "unknown_parts"?: [{"ref": IRI, "input": IRI, "status": str}]}
 
-The frontier is a set of sets; obligations, the basis, and the eliminations are sets. `exact`
+The frontier is a set of sets; obligations, the basis, the eliminations, and the unknown parts
+are sets. `exact`
 is compared only where the scenario states it (conformance/README.md). The explanation fields
 are compared only where the scenario states them and the output has them; `unemitted` names
 the ones a scenario states and the output lacks. Prefixed names are expanded on both sides.
@@ -19,7 +21,8 @@ from harness.json_types import Json, Obj, as_list, as_obj, as_str
 VERDICTS = frozenset({"Permit", "Deny", "Pending", "NotApplicable", "Indeterminate"})
 STATUSES = frozenset({"fulfilled", "outstanding", "violated", "unknown"})
 ROLES = frozenset({"prohibition", "permission", "duty", "unknown", "obligation", "closed"})
-EXPLANATION = ("verdict_basis", "eliminated", "verdict_range")
+PART_STATUSES = frozenset({"missing", "invalid", "conflict", "unresolved", "misfit"})
+EXPLANATION = ("verdict_basis", "eliminated", "verdict_range", "unknown_parts")
 
 type Obligation = tuple[str, str, str | None]
 
@@ -78,6 +81,23 @@ def _eliminated(value: Json, prefixes: dict[str, str]) -> frozenset[tuple[str, s
     )
 
 
+def _unknown_parts(value: Json, prefixes: dict[str, str]) -> frozenset[tuple[str, str, str]]:
+    out: set[tuple[str, str, str]] = set()
+    for raw in as_list(value, "unknown_parts"):
+        p = as_obj(raw, "unknown part")
+        status = as_str(p["status"], "status")
+        if status not in PART_STATUSES:
+            raise ValueError(f"unknown part status {status!r}")
+        out.add(
+            (
+                expand(as_str(p["ref"], "ref"), prefixes),
+                expand(as_str(p["input"], "input"), prefixes),
+                status,
+            )
+        )
+    return frozenset(out)
+
+
 def _range(value: Json) -> tuple[str, str]:
     r = as_obj(value, "verdict_range")
     return (as_str(r["low"], "low"), as_str(r["high"], "high"))
@@ -112,9 +132,15 @@ def mismatches(expected: Obj, actual: Json, prefixes: dict[str, str]) -> list[st
             )
         if "exact" in expected and got.get("exact") != expected["exact"]:
             out.append(f"exact: expected {expected['exact']}, got {got.get('exact')}")
-        for key, read in (("verdict_basis", _basis), ("eliminated", _eliminated)):
+        sets = (
+            ("verdict_basis", _basis),
+            ("eliminated", _eliminated),
+            ("unknown_parts", _unknown_parts),
+        )
+        for key, read in sets:
             if key in expected and key in got:
-                want, have = read(expected[key], prefixes), read(got[key], prefixes)
+                want: frozenset[tuple[str, ...]] = read(expected[key], prefixes)
+                have: frozenset[tuple[str, ...]] = read(got[key], prefixes)
                 if want != have:
                     out.append(
                         f"{key}: missing {sorted(want - have)}, unexpected {sorted(have - want)}"

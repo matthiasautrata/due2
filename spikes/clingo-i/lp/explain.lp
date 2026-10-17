@@ -1,17 +1,19 @@
-%# explain.lp: the eliminations, read from the findings
+%# explain.lp: the eliminations and the unknown parts, read from the findings
 %
-% The reply's `eliminated` rows (due2-workflows.md §3.5, §6.2; decisions/0011 #4). They are read
-% from the findings before completion, not from a world, so they do not depend on the
-% completion. A remover has finding `t`. A removed atom has finding `t` or `u`: a `u` atom
-% removes nothing (due2-workflows.md §6.2), but it can be removed. Each row names one removed
-% atom, one remover, and the strategy; an atom removed by two forbids has two rows
-% (due2-workflows.md §3.5 **[D]**, #57). Variable letters: DESIGN.md § Vocabulary; in an `elim`
-% row `X` is removed and `Y` removes it.
+% The reply's `eliminated` and `unknown_parts` rows. The `eliminated` rows
+% (due2-workflows.md §3.5, §6.2; decisions/0011 #4) are read from the findings before completion,
+% not from a world, so they do not depend on the completion. A remover has finding `t`. A removed atom has finding `t` or `u`:
+% a `u` atom removes nothing (due2-workflows.md §6.2), but it can be removed. Each row names one
+% removed atom, one remover, and the strategy; an atom removed by two forbids has two rows
+% (due2-workflows.md §3.5 **[D]**, #57). Variable letters: DESIGN.md § Vocabulary; in an `elim` row
+% `X` is removed and `Y` removes it. The `unknown_part` rows name every `u` part of every atom, with
+% what it reads and why it is `u` (decisions/0016 #3).
 %
-% - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `conflict/2`
-%   (structure.lp); `holds/2` (applies.lp).
+% - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
+%   `conflict/2` (structure.lp); `holds/2`, `atom_constraint/2` (applies.lp); `member/2`,
+%   `left/2` (constraint.lp); `prop/2` (operand.lp); `leaf_status/2` (completion.lp).
 % - **Provides:** `may_apply/1`, `surely_applies/1`, `same_policy/3`, `elim_within/3`, `void/1`,
-%   `removed_within/1`, `elim/3`.
+%   `removed_within/1`, `elim/3`, `in_tree/2`, `unknown_part/3`.
 
 %## Integrity
 
@@ -89,3 +91,28 @@ elim(X, Y, "prohibit-overrides") :- may_apply(X), atom_effect(X, permit), surely
     atom_effect(Y, forbid), not removed_within(Y), atom_policy(X, P), atom_policy(Y, Q), P != Q.
 
 #show elim/3.
+
+%## Unknown parts
+
+%*! in_tree(X, C)
+
+Constraint node `C` is in a tree of atom `X`: one of its roots, or a member of a node in one.
+*%
+in_tree(X, C) :- atom_constraint(X, C).
+in_tree(X, D) :- in_tree(X, C), member(C, D).
+
+%*! unknown_part(X, Input, S)
+
+Atom `X` has a `u` part that reads `Input` with status `S`. The relation is the
+`unknown_part` of due2-workflows.md §3.5 and decisions/0016 #3. `Input` is `target` for the
+request's target, `party(F)` for its party under function `F`, and `prop(Prop)` for a `u` leaf
+whose left operand reads the property `Prop`. An absent target or party is `missing`, and a
+leaf has its `leaf_status/2`. Every atom is reported, whatever its finding, and every `u` leaf
+of its trees, whether or not it decides its node: the reply names what was missing even where
+it did not matter.
+*%
+unknown_part(X, target, missing) :- atom(X), holds(part(X, target), u).
+unknown_part(X, party(F), missing) :- atom_party(X, F, _), holds(part(X, party(F)), u).
+unknown_part(X, prop(Prop), S) :- in_tree(X, C), leaf_status(C, S), left(C, Op), prop(Op, Prop).
+
+#show unknown_part/3.

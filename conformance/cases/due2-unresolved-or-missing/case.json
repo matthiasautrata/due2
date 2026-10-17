@@ -1,0 +1,398 @@
+{
+  "case": "due2-unresolved-or-missing",
+  "source": "due2-native (pins decisions/0016's example: only an unresolved value is completed, and every U part is reported; issue #72)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. decisions/0016 states its example with a request parameter; a state property gives every status, and an absent request parameter is missing like the state fact of scenario 4. Scenarios 2 and 3 are the one place a definite verdict holds by cases with an empty verdict_basis; tools/check_corpus.py waives its basis-role check only when an unresolved unknown part is listed. Before decisions/0016 (clingo-i at 47929af), scenarios 4 to 7 were Permit with an empty basis: the pairing read a value that does not exist, or does not fit, as some value on one side of 5.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "x is 3",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {
+          "ex:x": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "3",
+                "@type": "xsd:integer"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:low",
+            "role": "permission"
+          }
+        ],
+        "unknown_parts": [],
+        "why": "3 lt 5 is T, so ex:low applies, and 3 gteq 5 is F. A permission and no prohibition give Permit, and every part was known."
+      }
+    },
+    {
+      "name": "x unresolved",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {
+          "ex:x": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:high",
+            "input": "ex:x",
+            "status": "unresolved"
+          },
+          {
+            "ref": "ex:low",
+            "input": "ex:x",
+            "status": "unresolved"
+          }
+        ],
+        "why": "The source has not answered, so x has a value that exists and fits, so both constraints read one completion variable with opposite polarities (decisions/0016 #1): ex:low applies when it is T and ex:high when it is F, so Permit in every completion. No one rule applies in every completion, so the basis is empty, and unknown_parts says x was unresolved (decisions/0016 #4)."
+      }
+    },
+    {
+      "name": "x has no fact",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:high",
+            "input": "ex:x",
+            "status": "unresolved"
+          },
+          {
+            "ref": "ex:low",
+            "input": "ex:x",
+            "status": "unresolved"
+          }
+        ],
+        "why": "A state property with no fact is unresolved (due2-profiles.md §3), so x has a value that exists and fits, so both constraints read one completion variable with opposite polarities (decisions/0016 #1): ex:low applies when it is T and ex:high when it is F, so Permit in every completion. No one rule applies in every completion, so the basis is empty, and unknown_parts says x was unresolved (decisions/0016 #4)."
+      }
+    },
+    {
+      "name": "x missing",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {
+          "ex:x": {
+            "status": "missing",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:high",
+            "role": "unknown"
+          },
+          {
+            "ref": "ex:low",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:high",
+            "input": "ex:x",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:low",
+            "input": "ex:x",
+            "status": "missing"
+          }
+        ],
+        "why": "The source answers that x has no value, so neither lt 5 nor gteq 5 need hold, so each constraint is opaque and each rule is completed alone (decisions/0016 #2): neither rule applying gives NotApplicable, either gives Permit, so Indeterminate."
+      }
+    },
+    {
+      "name": "x is a string",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {
+          "ex:x": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "abc",
+                "@type": "xsd:string"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:high",
+            "role": "unknown"
+          },
+          {
+            "ref": "ex:low",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:high",
+            "input": "ex:x",
+            "status": "misfit"
+          },
+          {
+            "ref": "ex:low",
+            "input": "ex:x",
+            "status": "misfit"
+          }
+        ],
+        "why": "\"abc\" is resolved but cannot be compared with 5, a misfit (due2-workflows.md §5.4), so each constraint is opaque and each rule is completed alone (decisions/0016 #2): neither rule applying gives NotApplicable, either gives Permit, so Indeterminate."
+      }
+    },
+    {
+      "name": "x is an IRI",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {
+          "ex:x": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:v"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:high",
+            "role": "unknown"
+          },
+          {
+            "ref": "ex:low",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:high",
+            "input": "ex:x",
+            "status": "misfit"
+          },
+          {
+            "ref": "ex:low",
+            "input": "ex:x",
+            "status": "misfit"
+          }
+        ],
+        "why": "An IRI is resolved but cannot be compared with 5, a misfit (due2-workflows.md §5.4), so each constraint is opaque and each rule is completed alone (decisions/0016 #2): neither rule applying gives NotApplicable, either gives Permit, so Indeterminate."
+      }
+    },
+    {
+      "name": "x has two values",
+      "request": {
+        "reference": "req",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {
+          "ex:x": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "3",
+                "@type": "xsd:integer"
+              },
+              {
+                "@value": "7",
+                "@type": "xsd:integer"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "eliminated": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:high",
+            "role": "unknown"
+          },
+          {
+            "ref": "ex:low",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:high",
+            "input": "ex:x",
+            "status": "conflict"
+          },
+          {
+            "ref": "ex:low",
+            "input": "ex:x",
+            "status": "conflict"
+          }
+        ],
+        "why": "x is single-valued and has two values, a conflict (due2-profiles.md §3), so each constraint is opaque and each rule is completed alone (decisions/0016 #2): neither rule applying gives NotApplicable, either gives Permit, so Indeterminate."
+      }
+    }
+  ]
+}

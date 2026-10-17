@@ -3,8 +3,8 @@
 
 # due2-native: a permission and a prohibition that ask the same questions of the
 # request (target ex:a, assignee ex:alice) under conflict invalid. When the
-# request leaves one out, both rules read one completion variable (workflows
-# §6.4, decisions/0012), so the rules apply together or not at all.
+# request leaves one out, that field is missing, so each rule's part is opaque
+# and completed alone (decisions/0016): the rules need not apply together.
 
 ex:p a odrl:Set ;
     odrl:conflict odrl:invalid ;
