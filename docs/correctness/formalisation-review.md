@@ -55,6 +55,8 @@ Each theorem is a literal sentence of the spec:
 2. Alloy and other small-scope falsification of L1–L10.
 3. The external suites' own answers (already in place).
 
+**The external formal semantics are inputs, not authorities** (the user, 2026-10-17). RL2's (`~/src/RL2`), DPROD Contracts' (`formal-semantics.md`), and OVAL's (the Southampton papers, arXiv 2509.05139, 2603.12926 and 2607.15987, `references.md` §1) are each well-intended. That does not make them correct. Before due2 relies on any of them for adequacy, each gets a careful review of its own, issue #63. DPROD's points in the right direction but is not trusted: expect suggestions and fixes to send upstream. due2 already adopts some of its rules unchanged (`due2-profiles.md` §8, for example one binding per left operand, its §6.2), and those adoptions are subject to the same review.
+
 **An uncomfortable finding.** The proof obligation has already bent the semantics. Two choices are each justified in §6.4 by "otherwise … breaks monotonicity": `invalid` voids the policy rather than making it `Indeterminate`, and `violations = deny` treats a violated obligation as a prohibition. A formal spec should record these as chosen for provability, not as readings of ODRL or DPROD.
 
 ## 3. Deficits found reading the code
@@ -104,4 +106,5 @@ Revisit all of it when the program clears about 100 vectors. The object to forma
 - **§3 #2 and #3** are spike defects. #3 is already #59's work; #2 is a small integrity constraint.
 - **§4 #1** amends `correctness-strategy.md` §4.5 ("Abstract model extended").
 - **Vendoring `formal-semantics.md`** goes with issue #35 (the DPROD re-sync).
+- **Reviewing the external semantics** (RL2, DPROD, OVAL) is issue #63, before the DPROD delta is used as evidence for A.
 - **The provability framing** for `violations = deny` and `invalid` would be a spec note in workflows §6.4 and in `due2-profiles.md` §8.2.
