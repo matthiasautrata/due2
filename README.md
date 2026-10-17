@@ -20,6 +20,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `docs/design/mds-vendor-contracts.md` | Turning MDS vendor contracts into internal policies: approach and decisions (parked, issue #24) |
 | **`docs/correctness/`** | **How we know it is right** |
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded |
+| `docs/correctness/formalisation-review.md` | Review input, not adopted (2026-10-17): which obligations are provable, which theorems (monotonicity, the completion key, frontier relevance), which vehicles, in what order; deficits found in clingo-i |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
 | `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti · 0006 W2/W3 backend bakeoff · 0007 collections are JCS JSON · 0008 the ledger: one case per request · 0009 the semantics live in a clingo program (the L9 oracle and generator) · 0010 the trace is the explanation · 0011 an `Indeterminate` is explained by its pivotal literals and its range |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |

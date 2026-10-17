@@ -78,3 +78,4 @@ Surveyed 2026-10-17 for #59 (the `unknown` role and `verdict_range`), #58 (a wit
 - arXiv:2601.14764 in full (§2), before #47.
 - OPA's decision explanations (`--explain`, partial evaluation), for #61.
 - Cedar's partial evaluation (the residuals' format), for #61.
+- From `formalisation-review.md` (not yet read by us): Isabelle/HOL and Sledgehammer; Alloy 6; cedar-spec's Lean proofs, and why Cedar moved from Dafny; K-relations over the Kleene lattice (with Green–Karvounarakis–Tannen, §2). Read when the review's trigger is reached (about 100 passing vectors).

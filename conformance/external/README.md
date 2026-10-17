@@ -78,7 +78,7 @@ What each evaluator says beyond its decision, read 2026-10-17. Sources: FORCE's 
 | Composition | One policy and one request per report; `dct:created` only | One policy per call | One policy per report | Across policies by `policy_id` and the combination rule; across a case's evaluations by `seq` and a per-relation diff |
 | Machine-readable | Yes (RDF) | Partly: lists of rules, explanations in English | Yes (JSON-LD) | Yes: typed relations under the canonical encoding (`decisions/0007`) |
 
-**Can due2's trace be rendered as a compliance report?** For `T` and `F` findings, yes: an atom's `applies` maps to `activationState`, its basis parts to `premiseReport`s, its duty instances to `DutyReport`s. Three things are lost: `U` (no satisfaction state for it), the verdict, and `eliminated`. A third satisfaction state would remove the first loss. That is a possible friendly suggestion to the FORCE authors, not yet made.
+**Can due2's trace be rendered as a compliance report?** For `T` and `F` findings, yes: an atom's `applies` maps to `activationState`, its basis parts to `premiseReport`s, its duty instances to `DutyReport`s. Three things are lost: `U` (no satisfaction state for it), the verdict, and `eliminated`. A third satisfaction state would remove the first loss. That is a possible friendly suggestion to the FORCE authors, parked until we have examples to show them (#62).
 
 **Gaps in due2's trace.** None found. Everything the three record is in the trace or derivable from it with the inputs (§3.7). The question all three leave open, and due2 too, is *what would change the decision*. OVAL comes closest, with its conditional matches and its advice under `invalid` ("Either set a different conflict strategy…"). It is filed as #61 (remedies).
 
