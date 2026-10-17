@@ -59,6 +59,8 @@ jobs:
         run: uv run basedpyright
       - name: lint and format
         run: uv run ruff check . && uv run ruff format --check .
+      - name: generated reference (ways-of-working.md §15)
+        run: uv run --locked --group docs mkdocs build --strict
       - name: corpus through clingo-i
         working-directory: .
         run: uv sync --locked && uv run pytest --backend=clingo-i

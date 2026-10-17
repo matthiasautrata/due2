@@ -18,6 +18,13 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.0",
 ]
+docs = [
+    "clindocs>=1.5.2",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings[python]>=1.0.7",
+    "tree-sitter>=0.25,<0.26",
+]
 
 [tool.basedpyright]
 include = ["main.py", "clingo_i", "tests"]

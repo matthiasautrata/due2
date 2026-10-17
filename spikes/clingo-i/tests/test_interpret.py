@@ -76,7 +76,10 @@ DELETIONS = [
     ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
     (
         "completion.lp",
-        "lit_of(part(X, party(F)), party(F, P)) :- atom_party(X, F, P), holds(part(X, party(F)), u).",
+        (
+            "lit_of(part(X, party(F)), party(F, Party)) :- atom_party(X, F, Party), "
+            "holds(part(X, party(F)), u)."
+        ),
     ),
     ("resolve.lp", 'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W).'),
 ]
@@ -111,7 +114,7 @@ def test_program_files_are_all_loaded() -> None:
     assert sorted(load_programs()) == sorted(PROGRAM_FILES)
 
 
-# --- the explanation (workflows §3.5, §3.7, §6.4; decisions/0011) ---
+# --- the explanation (due2-workflows.md §3.5, §3.7, §6.4; decisions/0011) ---
 
 
 def explained(reply: Obj) -> Obj:
@@ -173,6 +176,20 @@ def elims(*rows: str) -> list[Obj]:
 )
 def test_definite_basis(interpreter: Interpreter, request_changes: Obj, expected: Obj) -> None:
     assert explained(interpreter.reply(vector(request=request_changes))) == expected
+
+
+def test_worked_example(interpreter: Interpreter) -> None:
+    # DESIGN.md § Worked example: with no target, each atom reads its own target variable, and
+    # four completions give three verdicts.
+    v = vector()
+    request = as_obj(v["request"], "request")
+    del request["target"]
+    assert explained(interpreter.reply(v)) == {
+        "verdict": "Indeterminate",
+        "verdict_basis": basis("ex:forbid unknown", "ex:perm unknown"),
+        "eliminated": [],
+        "verdict_range": {"low": "Deny", "high": "Permit"},
+    }
 
 
 NO_PARTY: Obj = {"target": "ex:a", "parties": {}}

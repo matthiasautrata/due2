@@ -73,6 +73,25 @@ Surveyed 2026-10-17 for #59 (the `unknown` role and `verdict_range`), #58 (a wit
 
 - **Kleene, *Introduction to Metamathematics*,** North-Holland 1952. The strong three-valued connectives due2 evaluates with (workflows §2).
 
+## 5. Documentation practice
+
+- **Procida, *Diátaxis*,** <https://diataxis.fr/>.
+  **Read:** 2026-10-17, the overview and the four kinds. **Learned:** tutorials, how-to guides, reference, and explanation serve different needs and fail when mixed. A design note that is reference in form but explanatory in purpose loses both readers. **Used in:** `ways-of-working.md` §15.2, the `technical-writing` skill.
+- **Goodger and van Rossum, *PEP 257 – Docstring Conventions*,** 2001. <https://peps.python.org/pep-0257/>.
+  **Read:** 2026-10-17, in full. **Learned:** a one-line imperative summary, then behaviour, arguments, return values, side effects, and exceptions. A docstring does not repeat the signature. **Used in:** `ways-of-working.md` §15.8.
+- **Google, *Python Style Guide*, §3.8 Comments and Docstrings.** <https://google.github.io/styleguide/pyguide.html>.
+  **Read:** 2026-10-17, §3.8. **Learned:** `Args:`, `Returns:`, and `Raises:` sections; comment the tricky parts; never describe the code. **Used in:** `ways-of-working.md` §15.8, the skill's Python template.
+- **Google, *Developer Documentation Style Guide*, highlights.** <https://developers.google.com/style/highlights>.
+  **Read:** 2026-10-17, the highlights page. **Learned:** second person, active voice, present tense, sentence-case headings, and code font for names; consistent terminology. **Used in:** the skill's house-style item.
+- **Ousterhout, *A Philosophy of Software Design*,** Yaknyam Press 2018 *(complete for the .bib)*. Read through a summary: <https://danlebrero.com/2021/02/24/philosophy-of-software-design-summary/>.
+  **Read:** 2026-10-17, the summary's chapters on comments, not the book. **Learned:** comments describe what the code cannot say; interface comments (what and why) are separate from implementation comments (how, and the tricks); write the comments first. **Used in:** `ways-of-working.md` §15.4, §15.8.
+- **Knuth, *Literate Programming*,** The Computer Journal 27(2), 1984 *(complete for the .bib)*. Read through <https://en.wikipedia.org/wiki/Literate_programming>.
+  **Read:** 2026-10-17, the secondary summary, not the paper. **Learned:** a program is written to be read by people, with the argument in the order a reader needs it. due2 takes the aim, not the tangle-and-weave tooling. **Used in:** `ways-of-working.md` §15.1.
+- **Potassco, *clindocs*** (formerly `mkdoclingo`), version 1.5.2, MIT. <https://github.com/potassco/clindocs>, <https://docs.potassco.org/clindocs/>.
+  **Read:** 2026-10-17, the README, the predicate-documentation page, and the 1.5.2 sdist's handler and templates (as data, not run); then installed and built over clingo-i. **Learned:** a mkdocstrings handler (`asp`) that documents an ASP encoding from `%*! pred(Args) … *%` blocks, which clingo reads as block comments. `%#` and `%##` lines become headings. It marks input predicates (used, not defined) and output predicates (`#show`), and generates a glossary and a dependency graph. Tuple arguments are not supported. Its predicate table shows a block only up to the first full stop, so a dotted name in the first sentence cuts the summary. It parses through tree-sitter-clingo, and under tree-sitter 0.26 on Python 3.14 the build segfaults; 0.25 works. **Used in:** `ways-of-working.md` §15.8, §15.10 (the doc-block format; the generated reference, provisional); `spikes/clingo-i/docs/`, `tests/test_docs.py`.
+- **mkdocstrings, pdoc, and Sphinx autodoc,** compared in UCL ARC's *Python tooling: documentation*. <https://github-pages.arc.ucl.ac.uk/python-tooling/pages/docs.html>.
+  **Read:** 2026-10-17, the comparison page. **Learned:** all three generate reference documentation from docstrings: Sphinx autodoc is the most mature, pdoc the simplest, and mkdocstrings is Markdown-native under MkDocs, where clindocs also runs. **Used in:** `ways-of-working.md` §15.10: mkdocstrings, picked provisionally because clindocs runs under the same MkDocs build; `spikes/clingo-i/docs/python.md`.
+
 ## To read
 
 - arXiv:2601.14764 in full (§2), before #47.

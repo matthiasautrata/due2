@@ -52,7 +52,8 @@ uv run basedpyright                                                        # str
 uv run ruff check . && uv run ruff format --check .                        # Python lint and format (§11)
 uv run rumdl check .                                                       # Markdown lint (§11)
 (cd spikes/clingo-i && uv run pytest && uv run basedpyright \
-  && uv run ruff check . && uv run ruff format --check .)                  # spike clingo-i's own tests and checks
+  && uv run ruff check . && uv run ruff format --check . \
+  && uv run --group docs mkdocs build --strict)                            # spike clingo-i's own tests, checks, and generated reference
 uv run pytest --backend=clingo-i                                           # the corpus through clingo-i (#9)
 ```
 

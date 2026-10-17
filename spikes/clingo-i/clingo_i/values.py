@@ -3,6 +3,10 @@
 The program compares but never computes, and clingo's integers are 32-bit, so every
 ordered literal reaches it as a position within its value space (decisions/0009 #4).
 Nothing is truncated or rounded: a literal that cannot be placed exactly is reported.
+
+In: the `lit(Lex, Datatype)` terms of one vector's facts (`literals`). Out (`value_facts`):
+`value(Lit, Space, N)`, `plus(I, D, N)` for each instant and duration, and
+`unplaceable(Lit, Reason)`. A position means something only within its space and its vector.
 """
 
 from __future__ import annotations
@@ -62,6 +66,7 @@ class Instant:
 
     @property
     def key(self) -> Fraction:
+        """Seconds on the UTC timeline since 1970-01-01T00:00:00Z, exact."""
         return (
             days_from_civil(self.year, self.month, self.day) * DAY + self.second - self.offset * 60
         )
@@ -69,12 +74,23 @@ class Instant:
 
 @dataclass(frozen=True)
 class Duration:
+    """A duration's two components, signed: months, and seconds (exact)."""
+
     months: int
     seconds: Fraction
 
 
 @dataclass(frozen=True)
 class Placed:
+    """A literal placed in a value space.
+
+    Attributes:
+        space: `numeric`, `instant`, `date`, `daytime`, `yearmonth`, or `boolean`.
+        key: The value, as a number that orders exactly as the values do within `space`.
+        instant: The instant itself, for a sum; set in the `instant` space only.
+        duration: The duration itself, for a sum; set in the duration spaces only.
+    """
+
     space: str
     key: Fraction
     instant: Instant | None = None
@@ -85,10 +101,12 @@ class Placed:
 
 
 def leap(year: int) -> bool:
+    """Whether `year` is a Gregorian leap year."""
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
 
 def days_in_month(year: int, month: int) -> int:
+    """The number of days in `month` (1 to 12) of `year`."""
     if month == 2:
         return 29 if leap(year) else 28
     return 30 if month in (4, 6, 9, 11) else 31
@@ -105,6 +123,8 @@ def days_from_civil(year: int, month: int, day: int) -> int:
 
 
 def civil_from_days(days: int) -> tuple[int, int, int]:
+    """The date `(year, month, day)` that is `days` after 1970-01-01; the inverse of
+    `days_from_civil`."""
     z = days + 719468
     era = z // 146097
     doe = z - era * 146097
@@ -120,6 +140,7 @@ def civil_from_days(days: int) -> tuple[int, int, int]:
 
 
 def decimal(lex: str) -> Fraction | None:
+    """The exact value of an `xsd:decimal` lexical form, or None when it is not one."""
     m = DECIMAL.fullmatch(lex)
     if m is None or not (m[2] or m[3]):
         return None
@@ -129,6 +150,7 @@ def decimal(lex: str) -> Fraction | None:
 
 
 def _date(year: str, month: str, day: str) -> tuple[int, int, int] | None:
+    """The date from its matched digits, or None when the month or the day is out of range."""
     y, mo, d = int(year), int(month), int(day)
     if not 1 <= mo <= 12 or not 1 <= d <= days_in_month(y, mo):
         return None
@@ -183,6 +205,7 @@ def duration(lex: str) -> tuple[Duration, bool, bool] | None:
 
 
 def _short(datatype: str) -> str:
+    """An XSD datatype IRI as `xsd:local`, for a reason; any other IRI as given."""
     return "xsd:" + datatype.removeprefix(XSD) if datatype.startswith(XSD) else datatype
 
 

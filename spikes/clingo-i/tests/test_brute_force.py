@@ -3,7 +3,7 @@
 Over generated policies of permissions and prohibitions, with an absent target or an unnamed
 assignee, a Python oracle enumerates every completion of the literals, flips each literal
 alone, and derives the verdict, the basis, the eliminations, the `unknown` atoms, and the
-range (workflows §5.2, §6.1-§6.4; decisions/0011). It reads the generated rules, not the
+range (due2-workflows.md §5.2, §6.1 to §6.4; decisions/0011). It reads the generated rules, not the
 program's facts, and shares only the spec's literal key with it.
 """
 
@@ -103,7 +103,7 @@ type Literal = tuple[str, str]
 
 
 def parts(case: Case, r: Rule) -> list[Truth | Literal]:
-    """A rule's parts: a known truth, or the literal a u part reads (§6.4's key)."""
+    """A rule's parts: a known truth, or the literal a u part reads (due2-workflows.md §6.4)."""
     out: list[Truth | Literal] = [case.action == r.action or r.action == "use"]
     out.append(("target", r.target) if case.target is None else case.target == r.target)
     if r.assignee is not None:
@@ -123,7 +123,7 @@ def applies(ps: list[Truth | Literal], world: dict[Literal, bool]) -> bool:
 
 
 def resolve(case: Case, on: dict[str, bool]) -> tuple[str, set[tuple[str, str]]]:
-    """One completion's verdict and basis (§6.1-§6.4)."""
+    """One completion's verdict and basis (due2-workflows.md §6.1 to §6.4)."""
     cands = {r.name for r in case.rules if r.permit and on[r.name]}
     forbids = {r.name for r in case.rules if not r.permit and on[r.name]}
     void = case.conflict == "invalid" and bool(cands) and bool(forbids)
@@ -177,17 +177,22 @@ def oracle(case: Case) -> Obj:
 
 
 def eliminations(case: Case, find: dict[str, Truth]) -> list[Json]:
-    """Over the findings (§3.5, §6.2; 0011 #4): t removes, t or u is removed."""
+    """Over the findings (due2-workflows.md §3.5, §6.2; decisions/0011 #4): t removes, t or u is removed."""
     rules = {r.name: r for r in case.rules}
-    live = {n for n, f in find.items() if f is not False}
-    sure = {n for n, f in find.items() if f is True}
+    # explain.lp's may_apply and surely_applies: t or u can be removed, only t removes.
+    removable = {n for n, f in find.items() if f is not False}
+    removers = {n for n, f in find.items() if f is True}
     rows: set[tuple[str, str]] = set()
     if case.conflict == "prohibit":
-        rows = {(x, y) for x in live if rules[x].permit for y in sure if not rules[y].permit}
+        rows = {
+            (x, y) for x in removable if rules[x].permit for y in removers if not rules[y].permit
+        }
     elif case.conflict == "perm":
-        rows = {(x, y) for x in live if not rules[x].permit for y in sure if rules[y].permit}
-    elif any(rules[y].permit for y in sure) and any(not rules[y].permit for y in sure):
-        rows = {(x, y) for x in live for y in sure if x != y}
+        rows = {
+            (x, y) for x in removable if not rules[x].permit for y in removers if rules[y].permit
+        }
+    elif any(rules[y].permit for y in removers) and any(not rules[y].permit for y in removers):
+        rows = {(x, y) for x in removable for y in removers if x != y}
     return [{"ref": EX + x, "by": EX + y, "rule": case.conflict} for x, y in sorted(rows)]
 
 

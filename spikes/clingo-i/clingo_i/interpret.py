@@ -1,4 +1,18 @@
-"""The interpret task (DESIGN.md § Data flow): three solves, the declines, and the reply."""
+"""The interpret task: three solves, the declines, and the reply.
+
+`Interpreter.reply` takes one vector (`conformance/README.md`) and returns the reply of
+`spikes/README.md` § `interpret`: an output, a decline, or an error. The driver flattens the
+vector to facts (`clingo_i.flatten`, `clingo_i.values`), and the program in `lp/` decides
+everything else, in three solves (DESIGN.md § Data flow):
+
+1. the declines and rejections, over `lift.lp` and `structure.lp`;
+2. every completion of the unknown variables, cautious: the verdict, the basis, and the
+   eliminations;
+3. for an `Indeterminate` only, every completion and one flipped variable, brave: the
+   `unknown` atoms and the range.
+
+A definite verdict is one that holds in every completion, so the reply is exact.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +25,7 @@ from clingo_i import flatten, values
 from clingo_i.json_types import Obj, as_list, as_obj, as_str
 
 LP = Path(__file__).resolve().parents[1] / "lp"
+# The program, in load order. Each file reads only relations of the files before it.
 PROGRAM_FILES = (
     "lift.lp",
     "structure.lp",
@@ -23,17 +38,23 @@ PROGRAM_FILES = (
 )
 SOLVE_1 = ("lift.lp", "structure.lp")
 SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
-CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # workflows §6.4
+CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
 VARIABLE_CAP = 16  # correctness-strategy.md §3
 DECLINES = ("unsupported_input", "unsupported_value")  # read after the rejections, in order
 
 
 def load_programs() -> dict[str, str]:
+    """The text of each program file, keyed by file name."""
     return {f: (LP / f).read_text() for f in PROGRAM_FILES}
 
 
 class Declined(Exception):
-    """A reply kind, not an error: the vector uses a feature this increment does not read."""
+    """A reply kind, not an error: the vector uses something the spike does not read.
+
+    Attributes:
+        feature: The decline reason the reply names, such as `odrl:constraint`,
+            `sotw.facts`, or `variable-cap` (DESIGN.md § Declines).
+    """
 
     def __init__(self, feature: str) -> None:
         super().__init__(feature)
@@ -41,21 +62,33 @@ class Declined(Exception):
 
 
 def _log(code: MessageCode, message: str) -> None:
+    """clingo's logger: every message but an undefined atom goes to stderr."""
     # An undefined atom is a relation with no facts in this vector (request_absent, say).
     if code != MessageCode.AtomUndefined:
         print(message, file=sys.stderr)
 
 
 def _text(sym: Symbol) -> str:
+    """A symbol as reply text: a string's contents unquoted, anything else as clingo prints it."""
     return sym.string if sym.type == SymbolType.String else str(sym)
 
 
 def _rule(atom: Symbol) -> str:
-    """An atom a(R, A, T, Y), projected to its source rule R (workflows §3.7)."""
+    """An atom id `a(R, A, T, Party)` as its source rule `R` (due2-workflows.md §3.7)."""
     return _text(atom.arguments[0])
 
 
 class Interpreter:
+    """One harness session: the modules, parsed once, and the program.
+
+    Args:
+        init: The harness's `init` message body (`spikes/README.md` § Protocol): `modules`
+            maps each module path to its Turtle, `core` lists the paths every vector loads, and
+            `profiles` maps each profile IRI to the paths it adds.
+        programs: The program text by file name, in place of `lp/`. The integrity tests pass a
+            program with one rule deleted.
+    """
+
     def __init__(self, init: Obj, programs: dict[str, str] | None = None) -> None:
         modules = as_obj(init["modules"], "init.modules")
         self._modules = {p: flatten.module_facts(p, as_str(t, p)) for p, t in modules.items()}
@@ -67,6 +100,10 @@ class Interpreter:
         self._programs = programs if programs is not None else load_programs()
 
     def reply(self, vector: Obj) -> Obj:
+        """The reply to one vector: `{"output": …}`, `{"unsupported": …}`, or `{"error": …}`.
+
+        Any exception is an error reply, so a defect never becomes a verdict.
+        """
         try:
             return {"output": self.interpret(vector)}
         except Declined as d:
@@ -75,6 +112,22 @@ class Interpreter:
             return {"error": f"{type(e).__name__}: {e}"}
 
     def interpret(self, vector: Obj) -> Obj:
+        """The output for one vector (DESIGN.md § Output).
+
+        Args:
+            vector: A corpus vector: `prefixes`, `policy` (Turtle), `request`, `sotw`, and
+                `config`.
+
+        Returns:
+            `verdict`, `frontier`, `obligations`, `exact`, `verdict_basis`, `eliminated`, and,
+            for an `Indeterminate`, `verdict_range`. Refs are source rule IRIs.
+
+        Raises:
+            Declined: The vector uses something the spike does not read.
+            ValueError: The vector is malformed, names an unknown profile, or the policy is
+                not admissible.
+            RuntimeError: The program has no model, so it is wrong.
+        """
         prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
         graph = flatten.parse(as_str(vector["policy"], "policy"))
 
@@ -126,10 +179,15 @@ class Interpreter:
         return out
 
     def _program(self, files: tuple[str, ...]) -> str:
+        """The text of `files`, joined in the given order."""
         return "\n".join(self._programs[f] for f in files)
 
     def _structure(self, facts: str) -> None:
-        """Solve 1 (DESIGN.md § Data flow): the declines and rejections, first hit decides."""
+        """Solve 1: raise on the first decline or rejection, in the order of DESIGN.md § Data flow.
+
+        The program is stratified, so it has one model. Within each kind the smallest name wins,
+        so the same vector always gives the same reason.
+        """
         ctl = Control([], logger=_log)
         ctl.add("base", [], facts + "\n" + self._program(SOLVE_1))
         ctl.ground([("base", [])])
@@ -156,7 +214,15 @@ class Interpreter:
                 raise Declined(found[0])
 
     def _solve(self, facts: str, files: tuple[str, ...], mode: str) -> list[Symbol]:
-        """Solves 2 and 3: the shown atoms true in every model (cautious) or in some (brave)."""
+        """Solves 2 and 3: the shown atoms true in every model (cautious) or in some (brave).
+
+        clingo reports the consequences of the enumeration so far with each model, so the last
+        model's atoms are the final answer.
+
+        Raises:
+            Declined: More than `VARIABLE_CAP` completion variables after grounding.
+            RuntimeError: No model: an integrity constraint failed.
+        """
         ctl = Control(["0", f"--enum-mode={mode}"], logger=_log)
         ctl.add("base", [], facts + "\n" + self._program(files))
         ctl.ground([("base", [])])

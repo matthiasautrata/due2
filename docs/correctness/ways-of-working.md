@@ -1,7 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.3
+**Status:** Draft v0.4
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
+
+**Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it.
 
 **Changes, 2026-10-16:** new §14 — the development cycle (design, docs, test, code, verify), the backlog's structure (sub-issues, milestones), branches, and CI; §12 step 9 is done. §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11. New §7.4: one shared suite for every spike (`spikes/README.md`); §11's basedpyright scope extended to `tests/`.
 
@@ -360,7 +362,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 Every change to a component is an increment, and every increment takes five steps in order: design, docs, test, code, verify. Each step leaves something in the repository. A step with nothing to leave is skipped, and the commit says so.
 
 1. **Design.** Name the spec sections the increment renders and the decisions it rests on. Anything the spec leaves open stops here and becomes an `open-decision` issue (spec before code). The increment's issue states its scope, the vectors it turns green, what it declines, and its done-gate. For a component without a `correctness-strategy.md` §4 entry, writing that entry is this step.
-2. **Docs.** The design lands as text before code: a spec edit (with a decision record if it is load-bearing), or the component's own design notes. For a spike these are in `spikes/<name>/DESIGN.md`: its structure, its internal interfaces (for clingo-i, the fact schema), and what it declines and why.
+2. **Docs.** The design lands as text before code: a spec edit (with a decision record if it is load-bearing), or the component's own design notes. For a spike these are in `spikes/<name>/DESIGN.md`: its structure, its internal interfaces (for clingo-i, the fact schema), and what it declines and why. The text and the code's comments meet §15, and the skill's checklist is run before the commit.
 3. **Test.** The tests exist, and fail or are declined, before the code. The corpus vectors are already written (§7.4). The increment adds what the corpus cannot see — unit tests, Hypothesis properties, tables checked exhaustively — to the component's own suite. The implementer never adds or changes a shared vector (`spikes/README.md`, Rules); a missing vector becomes a `corpus` issue.
 4. **Code.** The smallest change that turns the targeted tests green. A vector the code cannot yet meet is declined by feature (`spikes/README.md`, Protocol), not left to fail.
 5. **Verify.** README § Verify and the component's own checks pass: for a spike, its `backend.toml` checks and `uv run pytest --backend=<name>`. A disagreement with a hand-derived verdict is triaged under `correctness-strategy.md` §6 before the increment closes, and never edited to pass. A spike journals its session, attempts, and bugs, and runs `spike_journal.py check`. The commit cites the issue and is pushed, and the issue closes citing the commit.
@@ -381,3 +383,69 @@ Every change to a component is an increment, and every increment takes five step
 - **Other contributors use pull requests.** A change written by another model or agent (Hermes, Agy, a delegated worker) arrives as a pull request and is reviewed before it merges; it is never pushed to `main` directly. The first version of `decisions/0009`, pushed directly, is why. The pull-request template carries the checklist of §14.1.
 - **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic and well under five minutes (34 s locally, 2026-10-16). A spike's checks and corpus run join it as a job of their own when the spike's toolchain lands. The slow tier's trigger remains §13 #8.
 - **Supply chain.** Actions are pinned by commit SHA. Dependabot proposes updates to the actions and the uv lock monthly, grouped, and each update passes CI like any other change.
+
+---
+
+## 15. Documentation **[D]** (2026-10-17, at the owner's request)
+
+Documentation here was written as reminders by a writer who held the whole context, so a later reader had to piece the story together from scattered fragments. This section sets the standard that replaces that. The procedure and the review checklist are the project skill `.claude/skills/technical-writing/SKILL.md`. The sources behind each rule are in `references.md` §5.
+
+### 15.1 The reader
+
+Write for a cold reader: a person, or a model, with the repository and nothing else. They have not seen the conversation, the issue thread, or the session that produced the text. A passage is done when that reader can re-derive every claim in it from the text and the sections it cites. It is not done when the writer can recognise it.
+
+### 15.2 Kinds of text
+
+Each passage does one job (Diátaxis): **reference** (what is: interfaces, schemas, rules), **explanation** (why: arguments, alternatives rejected), **how-to** (the steps of a task, such as README § Verify), or a **worked example** (one input followed through the mechanism). A document may hold several kinds, each in its own section.
+
+**Status** (what is done, what is next, what an increment changed) is a fifth kind. It lives only in README § Status, `CLAUDE.md` § Next, the issues, a spike's `journal.jsonl` and `scorecard.json`, and a document's **Changes** lines. Reference text describes what the code or spec is now, in the present tense. A limit is stated as a decline or an open item ("constraints are declined, #47"), not as a history ("increment 2 added …").
+
+### 15.3 Vocabulary
+
+- **One word, one sense.** Where the domain gives a word two senses, one of them is always qualified. In clingo-i, "RDF literal" is `lit(Lex, Datatype)` and "literal" is a completion literal.
+- **Define what you coin.** Any term the spec does not define is defined at first use or in the document's vocabulary, and every coined term the document uses appears there. A name that explains itself (`may_apply`) is better than a short one that needs a definition (`live`).
+- **One letter, one kind.** In a program, a variable letter keeps one kind throughout: `W` is always a world, never a truth value. Each program states its letters in a table.
+
+### 15.4 Interfaces
+
+Every file, module, and public function states what it consumes, what it provides, and why it exists. That includes the invariants and sentinels a caller has to know, such as "`none` when the rule has no assignee". The interface can be read without the implementation. A design note lists each file's interface, so a reader can find a relation by name without grepping.
+
+### 15.5 Worked examples
+
+A document that describes a mechanism follows one real input through it, step by step: what each stage reads and what it derives. The example comes from a run, not from memory. A test pins it (its input and its result), so it cannot silently go stale.
+
+### 15.6 Arguments
+
+A claim that something is sound, exact, complete, or impossible ("no vector reaches it") carries its steps: the premises, the inference, and the conclusion. If a step needs the spec, cite the section. A test or check states the risk it guards and the counterfactual: what got through without it. The model is clingo-i's brute-force bullet, "Without them, deleting the flip constraint … survived most runs".
+
+### 15.7 Cross-references
+
+A `§` reference names its document, unless it points into the document it appears in: write `due2-workflows.md §6.4`, not `§6.4`. Where the number alone would send the reader off to look, add the subject: "`due2-workflows.md` §6.4, the literal key".
+
+### 15.8 Code comments
+
+- **Interface comments** state what goes in, what comes out, and why: a file header, a module docstring, a function docstring, and, in ASP, a block for each predicate. They do not describe the implementation.
+- **Implementation comments** mark only what a fluent reader would miss: an idiom, a trick, a sentinel, an ordering constraint, or why the obvious approach was not taken. They never paraphrase the line below them.
+- **Python.** Docstrings follow PEP 257: a one-line summary, a blank line, then the detail. The summary names what the function returns, as a noun phrase ("The facts of the vector's request"), or what it does, when it returns nothing. A module docstring says what goes in and what comes out. Add Google-style `Args:`, `Returns:`, `Raises:`, and `Attributes:` sections only when the signature and the summary do not already say it; every exception a caller should expect is under `Raises:`. Types live in annotations, not in prose (§3).
+- **ASP.** A file header (`%#` title line, which clindocs renders as the page heading) names the purpose and the spec sections, then lists, as Markdown bullets, `% - **Consumes:**` and `% - **Provides:**` each relation as `` `name/arity` ``. `%##` lines make sections. Each predicate the file defines has one doc block in clindocs' format, `%*! name(Args)`, a blank line, the text, and `*%`, which clingo reads as a block comment. Its first sentence is the summary clindocs shows in its predicate table, cut at the first full stop, so it holds no dotted name (a file name, "e.g."). A comment marks each idiom whose behaviour is not local: an aggregate used as a function, the case where an empty set makes a rule inapplicable, a sentinel term.
+
+### 15.9 Where compression is right
+
+Tables, enumerations of codes, and lists of declines stay compact, because they are looked up, not read through. Spend the extra words on arguments and on mechanisms.
+
+### 15.10 Checks
+
+What can be measured is checked, so that the rules hold without a reviewer.
+
+**The generated reference.** The docstrings and doc blocks are built into reference pages by MkDocs: mkdocstrings (Google style) for Python, and clindocs for ASP, one page per relation with its block, a predicate table, and a dependency graph. The pick is provisional: it is made for clingo-i, where both run under one MkDocs build, and is revisited when the production evaluator is written. The build, `uv run --group docs mkdocs build --strict`, is in README § Verify and CI, so a broken reference, or a docstring mkdocstrings cannot parse, fails the commit. The pages are not committed. clindocs reads ASP through tree-sitter-clingo, and tree-sitter 0.26 crashes it, so the docs group pins `tree-sitter<0.26`.
+
+**The doc tests.** clingo-i's `tests/test_docs.py` reads the program with `clingo.ast` and checks:
+
+- every relation the program defines has exactly one doc block, in the file that defines it;
+- each block's summary sentence is whole (§15.8);
+- each file header's **Consumes** and **Provides** lists match its rules;
+- every relation the program reads but does not define is an input fact named in `DESIGN.md`;
+- the docs entry point includes the program files in the order the interpreter loads them;
+- `DESIGN.md`, the docs pages, and every Python and ASP file carry no bare `§` references.
+
+The rest is the skill's review checklist (`.claude/skills/technical-writing/`).
