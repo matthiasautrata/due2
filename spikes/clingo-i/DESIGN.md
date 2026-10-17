@@ -356,7 +356,7 @@ Gives every constraint node its rank, `crank(C, N)`, and every node item its tru
 
 **Connectives.** `and` is the least rank of its members, `or` the greatest, `dprod:not` maps rank `N` to `2 − N`, and `xone` is the disjunction of its terms `xone_term(C, D, N)`: member `D` and the negation of every other member, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ). Strong Kleene logic gives the tree the same value as its NNF and its DNF, because De Morgan's laws, double negation, and distributivity hold in it, so these rules realise the structural rules of normalisation stage 2 without rewriting. `xone` uses its expansion, not "exactly one is `t`", so that `t xone u` is `u`, as the expansion gives, and not `t`.
 
-**Units.** `odrl:unit` labels a right operand, and the completion key will include it (#48). It converts nothing, so a leaf compares the values alone: `5` with unit `ex:EUR` equals a read `5` (`test_unit_labels_without_converting`).
+**Units.** `odrl:unit` labels a right operand, and the completion key will include it (#48). It converts nothing, and what a unit means for a comparison is open (#67), so a leaf compares the values alone: `5` with unit `ex:EUR` equals a read `5` (`test_unit_labels_without_converting`).
 
 **Two datatypes, no range.** When a pair's literals lie in one space with different datatypes and the operand has no range, `due2-profiles.md` §3 does not say whether they compare by value or by identity, so the vector declines as `value: datatypes differ without a range` (#65).
 
