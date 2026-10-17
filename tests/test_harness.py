@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 from harness.backend import Session, Spike, discover, load_spike
-from harness.compare import mismatches
+from harness.compare import mismatches, unemitted
 from harness.corpus import CASES, Vector, init_message, interpret_vectors
 from harness.json_types import Obj, as_obj, loads
 from harness.record import Result, journal, source_lines, summarise, write_scorecard
@@ -92,6 +92,45 @@ def test_obligation_instances_are_distinct() -> None:
         "obligations": [{"duty": "ex:pay", "status": "outstanding", "instance": "2026-01-01"}],
     }
     assert mismatches(a, GOOD, PFX) != []
+
+
+EXPLAINED: Obj = {
+    **GOOD,
+    "verdict_basis": [
+        {"ref": "ex:read", "role": "permission"},
+        {"ref": "ex:pay", "role": "duty"},
+    ],
+    "eliminated": [{"ref": "ex:read", "by": "ex:forbid", "rule": "prohibit"}],
+}
+
+
+def test_explanation_is_compared_as_sets_when_stated_and_emitted() -> None:
+    reordered: Obj = {
+        **EXPLAINED,
+        "verdict_basis": [
+            {"ref": "http://example.com/pay", "role": "duty"},
+            {"ref": "ex:read", "role": "permission"},
+        ],
+    }
+    assert mismatches(EXPLAINED, reordered, PFX) == []
+    assert mismatches(GOOD, EXPLAINED, PFX) == []  # not stated: not compared
+    assert mismatches(EXPLAINED, GOOD, PFX) == []  # not emitted: unemitted's business
+    assert unemitted(EXPLAINED, GOOD) == ["verdict_basis", "eliminated"]
+    assert unemitted(EXPLAINED, EXPLAINED) == []
+    assert unemitted(GOOD, GOOD) == []
+
+
+@pytest.mark.parametrize(
+    ("change", "fragment"),
+    [
+        ({"verdict_basis": [{"ref": "ex:read", "role": "permission"}]}, "verdict_basis: missing"),
+        ({"verdict_basis": [{"ref": "ex:read", "role": "ready"}]}, "malformed output"),
+        ({"eliminated": []}, "eliminated: missing"),
+        ({"eliminated": [{"ref": "ex:read", "rule": "prohibit"}]}, "malformed output"),
+    ],
+)
+def test_explanation_differences_are_reported(change: Obj, fragment: str) -> None:
+    assert any(fragment in m for m in mismatches(EXPLAINED, EXPLAINED | change, PFX))
 
 
 # --- corpus -------------------------------------------------------------------------------
@@ -173,6 +212,23 @@ def test_empty_backend_fails_every_vector(tmp_path: Path, vectors: list[Vector],
     finally:
         session.close()
     assert {r.status for r in results} == {"fail"}
+
+
+def test_unemitted_explanation_is_unsupported_never_a_pass(
+    tmp_path: Path, vectors: list[Vector], init: Obj
+) -> None:
+    session = Session(fake(tmp_path, "verdict-only"), init)
+    try:
+        results = {r.vector: r for r in (run_interpret(session, v) for v in vectors)}
+    finally:
+        session.close()
+    explained = {v.id for v in vectors if set(v.expected) & {"verdict_basis", "eliminated"}}
+    assert explained
+    for vid, r in results.items():
+        if vid in explained:
+            assert (r.status, r.detail.startswith("not emitted: ")) == ("unsupported", True)
+        else:
+            assert r.status == "pass"
 
 
 @pytest.mark.parametrize(

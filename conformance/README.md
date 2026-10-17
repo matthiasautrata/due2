@@ -96,6 +96,8 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 | `expected.frontier` | For `Pending`: a list of alternatives, each a list of outstanding duty IRIs. |
 | `expected.exact` | Optional, and only meaningful when unknowns could affect the verdict: `false` asserts that it comes from the beyond-`max_mixed` fallback (`due2-workflows.md` §6.4), `true` that the completion was exact (`due2-max-mixed`). |
 | `expected.obligations` | Obligations in force for the request (`due2-workflows.md` §5.2, §6.1): `{"duty": IRI, "status": "fulfilled" \| "outstanding" \| "violated" \| "unknown"}`, plus `"instance": <occurrence instant>` for an instance of a recurring duty. Statuses follow §5.3's table — W2 computes them from the witness finding and the deadline; include `unknown` ones too, and remember that a recurring obligation with no instance owed yet is not reported. |
+| `expected.verdict_basis` | Optional: the atoms that determined the verdict, by role, at the authored level (`due2-workflows.md` §3.7, §6.4) — a set of `{"ref": IRI, "role": R}`. `ref` is the rule IRI, or the duty IRI for roles `duty` and `obligation`; the disjuncts of one rule are one entry. Roles: `prohibition` (the surviving `T` prohibitions of a `Deny`), `permission` (a `Permit`'s ready permissions, a `Pending`'s frontier permissions), `duty` (a `Pending`'s outstanding duties — exactly the frontier's), `unknown` (an `Indeterminate`'s deciding `U` atoms), `closed` (a `NotApplicable`'s candidates removed by a violated precondition), and `obligation` (every obligation in force under any verdict — exactly `expected.obligations`' duties). A `Deny` with no `prohibition` needs `config.violations = deny` and a violated `obligation`. Absent means not asserted; `[]` asserts that nothing determined it. |
+| `expected.eliminated` | Optional: the atoms removed, the atom that removed each, and the rule — a set of `{"ref": IRI, "by": IRI, "rule": X}` (`due2-workflows.md` §3.5, §6.1–§6.2). `X` is the policy's `conflict` (`prohibit`: a permission by a `T` prohibition; `perm`: a prohibition by a `T` permission; `invalid`: every rule of the void policy, by each `T` permission and prohibition other than itself), `violated_precondition` (a permission by its violated duty; with `verdict_basis`, the `closed` entries of a `NotApplicable` are exactly these), or the cross-policy `combination`. Absent means not asserted. |
 | `expected.why` | The derivation in one or two sentences — which atoms applied, which were unknown, why the verdict follows. |
 | `rl2_expected`, `dprod_expected`, `force_expected`, `oval_expected`, `w3c_expected` | The origin's own expected result, where it states one, in the origin's vocabulary (FORCE: rule kind and activation state; OVAL: accept decision under its semantics switches; W3C CG: activation and control state). A difference from `expected.verdict` is explained in `notes`. |
 
@@ -134,7 +136,7 @@ Expected results are hand-derived until an evaluator exists. The derivation in `
 
 Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus. **Tracked as GitHub issues** (label `corpus`); this section remains the specification record.
 
-Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed since 2026-10-10:
+Re-derived 2026-10-16, after the explanation fields (#57). Closed since 2026-10-10:
 
 - ~~`due2:witnessSource` and `evidence_param`~~ — `oval-duty-payment`, `w3c-fs-c1`, `w3c-fs-c2` (as duty-action refinements, `due2-profiles.md` §9 #6).
 - ~~Grant scope and `discharges`~~, ~~`signers`~~ — `due2-grant-signers`.
@@ -146,6 +148,7 @@ Re-derived 2026-10-11, after the external suites and the `due2-` cases. Closed s
 - ~~Canonical literals deciding a verdict~~ — `due2-xone-unknown` (an `xone` operand read both ways; workflows v0.6, §6.4).
 - ~~Unknown duty guards; many conditional duties on one permission~~ — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
 - ~~`isPartOf` with a list right operand~~ — `oval-list-right-operand` (`decisions/0005`).
+- ~~`verdict_basis` and `eliminated`~~ — `expected.verdict_basis` and `expected.eliminated` in the case format (#57), asserted by 22 scenarios: `due2-or-unknown`, `oval-conflict-invalid`, `oval-conflict-perm`, `oval-conflict-prohibit`, `rl2-pay-to-play`, `rl2-attestation-gating`. Every verdict and role is asserted, and the eliminations `prohibit`, `perm`, `invalid`, and `violated_precondition`.
 - ~~Negative cases~~ — `expected_rejection` in the case format; `force-01` … `force-07` (`MissingAction`, `MissingTarget`) and `due2-witness-outside-duty` (`WitnessOutsideDuty`).
 
 Still open:
@@ -155,6 +158,6 @@ Still open:
 - **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
 - **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).
 - **`frontier_complete`** — no case asserts it, neither an incomplete frontier under a definite `Pending` nor the beyond-`max_frontier_vars` fallback (workflows §6.4, `decisions/0004`); needs `expected.frontier_complete` in the case format (#30).
-- **`verdict_basis` and `eliminated`** — no case asserts the explanation (workflows §3.7, `decisions/0010`). Two scenarios state it in `why` only (`due2-or-unknown`, `oval-conflict-invalid`), and the W3 done-gate names `verdict_basis` (`correctness-strategy.md` §4.5). It needs `expected.verdict_basis` and `expected.eliminated` in the case format, at the authored level (#57).
+- **The explanation in the rest of the corpus** — 22 of 397 scenarios assert `verdict_basis` and `eliminated` (workflows §3.7). The W3 done-gate names `verdict_basis` (`correctness-strategy.md` §4.5), so the rest are backfilled as cases are touched. An elimination by the cross-policy `combination` waits for several policies per case. The `Indeterminate` witness is open (#58).
 - **`hasPart` and `isA` with a list**, and a non-trivial `partOf` closure under a list — `due2-profiles.md` §4, `decisions/0005` (#32).
 - **Remedies and consequences** — carried by stage 1, not evaluated for access; no case until the monitoring question (§9 #4) is specified. OVAL's monitoring cases are the external material.

@@ -34,6 +34,8 @@
         "verdict": "NotApplicable",
         "frontier": [],
         "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [ { "ref": "ex:policy:1010#permission", "by": "ex:policy:1010#prohibition", "rule": "invalid" }, { "ref": "ex:policy:1010#prohibition", "by": "ex:policy:1010#permission", "rule": "invalid" } ],
         "why": "Both rules apply; under invalid a T candidate and a T prohibition together void the policy, all its atoms are eliminated with rule invalid, and nothing remains (workflows §6.2)."
       },
       "oval_expected": "not evaluated (None)"
@@ -64,6 +66,8 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
+        "verdict_basis": [ { "ref": "ex:policy:1010#permission", "role": "permission" } ],
+        "eliminated": [],
         "why": "The prohibition names Bob, so for Alice its party part is F and it does not apply; the permission applies and is ready."
       }
     }

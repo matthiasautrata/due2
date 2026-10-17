@@ -737,7 +737,118 @@ def check_case(case_dir: Path) -> list[Report]:
                 )
         if exp.get("verdict") == "Pending" and not exp.get("frontier"):
             r.err(f"{tag}: Pending needs a frontier")
+        check_explanation(tag, exp, sc.get("config", {}), g, prefixes, r)
     return reports
+
+
+# workflows 3.5, 6.4: the roles a verdict's basis may hold, and the elimination rules.
+BASIS_ROLES = {
+    "Deny": {"prohibition", "obligation"},
+    "Permit": {"permission", "obligation"},
+    "Pending": {"permission", "duty", "obligation"},
+    "Indeterminate": {"unknown", "obligation"},
+    "NotApplicable": {"closed", "obligation"},
+}
+STRATEGIES = {"prohibit", "perm", "invalid"}
+
+
+def entry(x: object, keys: set[str]) -> dict[str, Any] | None:
+    """x as an object with exactly these keys, or None."""
+    return dict(x) if isinstance(x, dict) and set(x) == keys else None  # pyright: ignore[reportUnknownArgumentType]
+
+
+def check_explanation(
+    tag: str, exp: dict[str, Any], config: dict[str, Any], g: Graph, pfx: dict[str, str], r: Report
+) -> None:
+    """expected.verdict_basis and expected.eliminated (conformance/README.md, workflows 3.7):
+    shape, that each IRI is a rule or duty of the right kind, and that roles fit the verdict."""
+    perms = {str(x) for x in g.subjects(RDF.type, ODRL.Permission)}
+    prohibs = {str(x) for x in g.subjects(RDF.type, ODRL.Prohibition)}
+    preconds = {str(x) for x in g.objects(None, ODRL.duty)}
+    obligs = {str(x) for x in g.objects(None, ODRL.obligation)}
+    conflict = {str(x).removeprefix(str(ODRL)) for x in g.objects(None, ODRL.conflict)}
+    verdict = exp.get("verdict")
+    by_role: dict[str, set[str]] = {}
+    if "verdict_basis" in exp:
+        kinds = {
+            "permission": perms,
+            "closed": perms,
+            "prohibition": prohibs,
+            "duty": preconds,
+            "obligation": obligs,
+            "unknown": perms | prohibs | preconds | obligs,
+        }
+        for raw in exp["verdict_basis"]:
+            b = entry(raw, {"ref", "role"})
+            if b is None:
+                r.err(f"{tag}: verdict_basis entry must be {{ref, role}}: {raw!r}")
+                continue
+            role, ref = b["role"], expand(b["ref"], pfx)
+            if role not in kinds:
+                r.err(f"{tag}: verdict_basis role {role!r} is not one of {sorted(kinds)}")
+                continue
+            if ref not in kinds[role]:
+                r.err(f"{tag}: verdict_basis {b['ref']} is no {role} of policy.ttl")
+            if verdict in BASIS_ROLES and role not in BASIS_ROLES[verdict]:
+                r.err(f"{tag}: role {role} does not fit {verdict} (workflows 6.4)")
+            by_role.setdefault(role, set()).add(ref)
+        violated = {
+            expand(o.get("duty", ""), pfx)
+            for o in exp.get("obligations", [])
+            if o.get("status") == "violated"
+        }
+        need = {
+            "Permit": "permission" in by_role,
+            "Pending": "permission" in by_role and "duty" in by_role,
+            "Indeterminate": "unknown" in by_role,
+            "Deny": "prohibition" in by_role
+            or (
+                config.get("violations") == "deny"
+                and bool(by_role.get("obligation", set()) & violated)
+            ),
+        }
+        if not need.get(str(verdict), True):
+            r.err(f"{tag}: verdict_basis lacks the atoms that determine {verdict} (workflows 6.4)")
+        frontier = {expand(d, pfx) for alt in exp.get("frontier", []) for d in alt}
+        if verdict == "Pending" and by_role.get("duty", set()) != frontier:
+            r.err(f"{tag}: the basis's duties must be the frontier's duties")
+        in_force = {expand(o.get("duty", ""), pfx) for o in exp.get("obligations", [])}
+        if by_role.get("obligation", set()) != in_force:
+            r.err(f"{tag}: the basis's obligations must be expected.obligations' duties")
+    if "eliminated" in exp:
+        combination = config.get("combination", "prohibit-overrides")
+        removers = {
+            "prohibit": (perms, prohibs),
+            "perm": (prohibs, perms),
+            "invalid": (perms | prohibs | obligs, perms | prohibs),
+            "violated_precondition": (perms, preconds),
+            combination: (perms, prohibs),
+        }
+        closed_by: set[str] = set()
+        for raw in exp["eliminated"]:
+            e = entry(raw, {"ref", "by", "rule"})
+            if e is None:
+                r.err(f"{tag}: eliminated entry must be {{ref, by, rule}}: {raw!r}")
+                continue
+            rule, ref, by = e["rule"], expand(e["ref"], pfx), expand(e["by"], pfx)
+            if rule not in removers:
+                r.err(f"{tag}: elimination rule {rule!r} is not one of {sorted(removers)}")
+                continue
+            if rule in STRATEGIES and conflict and rule not in conflict:
+                r.err(
+                    f"{tag}: elimination rule {rule} is not the policy's conflict {sorted(conflict)}"
+                )
+            kinds_ref, kinds_by = removers[rule]
+            if ref not in kinds_ref or by not in kinds_by or ref == by:
+                r.err(f"{tag}: {e['by']} cannot eliminate {e['ref']} under {rule} (workflows 3.5)")
+            if rule == "violated_precondition":
+                closed_by.add(ref)
+        if (
+            "verdict_basis" in exp
+            and verdict == "NotApplicable"
+            and by_role.get("closed", set()) != closed_by
+        ):
+            r.err(f"{tag}: the closed candidates must be the violated_precondition eliminations")
 
 
 def main() -> int:

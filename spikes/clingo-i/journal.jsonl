@@ -18,3 +18,4 @@
 {"at": "2026-10-16T23:52:09Z", "by": "claude-opus-5-5", "kind": "note", "summary": "the #45 session's 180 minutes are an estimate, not clocked: the work spanned a context compaction"}
 {"at": "2026-10-16T23:52:09Z", "by": "claude-opus-5-5", "kind": "note", "summary": "§6.4 per-part reading raised as open decision #56; #48 amended to what #45 already delivered"}
 {"at": "2026-10-17T00:08:49Z", "by": "claude-opus-5-5", "kind": "note", "summary": "Scope: decisions/0010 (trace is the explanation) adds #59, after #46: the authored-level verdict_basis and eliminated, blocked on the case format (#57). #49 and #50 amended. Spec work, not spike effort: no session minutes."}
+{"at": "2026-10-17T00:21:31Z", "by": "claude-opus-5-5", "kind": "note", "summary": "harness (#57): six vectors that clingo-i passed (oval-conflict-invalid, -perm, -prohibit) now assert verdict_basis and eliminated; their verdicts still match, and they are reported unsupported ('not emitted') until #59"}

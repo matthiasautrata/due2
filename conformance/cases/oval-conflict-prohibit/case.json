@@ -34,6 +34,8 @@
         "verdict": "Deny",
         "frontier": [],
         "obligations": [],
+        "verdict_basis": [ { "ref": "ex:policy:1010#prohibition", "role": "prohibition" } ],
+        "eliminated": [ { "ref": "ex:policy:1010#permission", "by": "ex:policy:1010#prohibition", "rule": "prohibit" } ],
         "why": "Both rules apply; under prohibit the T prohibition eliminates the candidate and survives, so Deny."
       },
       "oval_expected": "reject (False)"
@@ -64,6 +66,8 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
+        "verdict_basis": [ { "ref": "ex:policy:1010#permission", "role": "permission" } ],
+        "eliminated": [],
         "why": "The prohibition names Bob, so for Alice its party part is F and it does not apply; the permission applies and is ready."
       }
     }

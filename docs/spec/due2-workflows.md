@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.17
+**Status:** Draft v0.18
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.17** (2026-10-16, `decisions/0010`): the new §3.7 makes the trace the explanation; the new law L10 (explicability) is in §8; §3.5 names the rule values `eliminated` records; §3.6 points to stage 1's lineage. **History:** v0.4–v0.16 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`. v0.16 recorded an evaluation once, in `evaluation`, sharing the case's `seq` with `event` (§7.1).
+**Changes in v0.18** (2026-10-16, issue #57): §3.5 says which atom `eliminated` names as `by_atom` under each rule; §3.7 says how the corpus projects `verdict_basis` and `eliminated` to authored IRIs, and that a role's atoms collapse when they share a source. **v0.17** (2026-10-16, `decisions/0010`): the new §3.7 makes the trace the explanation; the new law L10 (explicability) is in §8; §3.5 names the rule values `eliminated` records; §3.6 points to stage 1's lineage. **History:** v0.4–v0.16 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`. v0.16 recorded an evaluation once, in `evaluation`, sharing the case's `seq` with `event` (§7.1).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -203,7 +203,7 @@ diagnostic     (policy_id, code, ref)
 | `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
 | `read` | W2 | Every state property consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
 | `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), and its status `Enum {fulfilled, outstanding, violated, unknown}`. The instance key is the key under which a case records what is owed and evidence is submitted. |
-| `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied: the policy's `conflict` value within a policy, the `combination` across policies (§6.2), or `violated_precondition`. |
+| `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied: the policy's `conflict` value within a policy, the `combination` across policies (§6.2), or `violated_precondition`. **[D]** (#57) `by_atom` is one tuple per remover: under `prohibit` and a prohibit-overrides combination, each `T` `Forbid` that eliminates the candidate; under `perm`, each `T` candidate that eliminates the `Forbid`; under `invalid`, each `T` candidate and `T` `Forbid` of the void policy other than the atom itself; under `violated_precondition`, the violated duty. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
 | `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). |
@@ -244,7 +244,7 @@ Reading it needs the trace, the evaluation's four input collections, and the lin
 
 **Rendering is later.** Prose, a page, or a screen is a presentation step over the derivation. It may select and order, and it never adds a reason. A rendering that needs what the derivation lacks reveals a trace defect, fixed by a trace relation under L1 and L10, never by the renderer.
 
-**What the corpus asserts.** A case names atoms by their authored IRI: the projection through `source_rule`, or `source_duty` for a duty, as `frontier` and `obligations` already do (`conformance/README.md`; `verdict_basis` and `eliminated`, issue #57). Full traces, with atom ids, are pinned by L1 and replay, not by authored cases.
+**What the corpus asserts.** A case names atoms by their authored IRI: the projection through `source_rule`, or `source_duty` for a duty, as `frontier` and `obligations` already do (`conformance/README.md`). `expected.verdict_basis` is the set of `(source, role)` pairs of the trace's `verdict_basis`, and `expected.eliminated` the set of `(source, source of by_atom, rule)` triples of its `eliminated`, so the disjuncts of one rule (§4) are one entry. Full traces, with atom ids, are pinned by L1 and replay, not by authored cases.
 
 **[O] A witness for `Indeterminate`.** The `unknown` atoms and their `U` basis say which facts decide, not how. Whether the trace also records a pair of completions with different verdicts is open (issue #58).
 

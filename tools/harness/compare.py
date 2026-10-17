@@ -2,10 +2,13 @@
 
 Output shape (spikes/README.md):
   {"verdict": str, "frontier": [[duty IRI, ...], ...],
-   "obligations": [{"duty": IRI, "status": str, "instance"?: dateTime}], "exact"?: bool}
+   "obligations": [{"duty": IRI, "status": str, "instance"?: dateTime}], "exact"?: bool,
+   "verdict_basis"?: [{"ref": IRI, "role": str}], "eliminated"?: [{"ref": IRI, "by": IRI, "rule": str}]}
 
-The frontier is a set of sets, obligations a set. `exact` is compared only where the
-scenario states it (conformance/README.md). Prefixed names are expanded on both sides.
+The frontier is a set of sets; obligations, the basis, and the eliminations are sets. `exact`
+is compared only where the scenario states it (conformance/README.md). The explanation fields
+are compared only where the scenario states them and the output has them; `unemitted` names
+the ones a scenario states and the output lacks. Prefixed names are expanded on both sides.
 """
 
 from __future__ import annotations
@@ -14,6 +17,8 @@ from harness.json_types import Json, Obj, as_list, as_obj, as_str
 
 VERDICTS = frozenset({"Permit", "Deny", "Pending", "NotApplicable", "Indeterminate"})
 STATUSES = frozenset({"fulfilled", "outstanding", "violated", "unknown"})
+ROLES = frozenset({"prohibition", "permission", "duty", "unknown", "obligation", "closed"})
+EXPLANATION = ("verdict_basis", "eliminated")
 
 type Obligation = tuple[str, str, str | None]
 
@@ -50,6 +55,34 @@ def _obligations(value: Json, prefixes: dict[str, str]) -> frozenset[Obligation]
     return frozenset(out)
 
 
+def _basis(value: Json, prefixes: dict[str, str]) -> frozenset[tuple[str, str]]:
+    out: set[tuple[str, str]] = set()
+    for raw in as_list(value, "verdict_basis"):
+        b = as_obj(raw, "basis entry")
+        role = as_str(b["role"], "role")
+        if role not in ROLES:
+            raise ValueError(f"unknown basis role {role!r}")
+        out.add((expand(as_str(b["ref"], "ref"), prefixes), role))
+    return frozenset(out)
+
+
+def _eliminated(value: Json, prefixes: dict[str, str]) -> frozenset[tuple[str, str, str]]:
+    return frozenset(
+        (
+            expand(as_str(e["ref"], "ref"), prefixes),
+            expand(as_str(e["by"], "by"), prefixes),
+            as_str(e["rule"], "rule"),
+        )
+        for e in (as_obj(raw, "elimination") for raw in as_list(value, "eliminated"))
+    )
+
+
+def unemitted(expected: Obj, actual: Json) -> list[str]:
+    """The explanation fields the scenario states and the output lacks."""
+    got = actual if isinstance(actual, dict) else {}
+    return [k for k in EXPLANATION if k in expected and k not in got]
+
+
 def mismatches(expected: Obj, actual: Json, prefixes: dict[str, str]) -> list[str]:
     """Every difference, one line each; empty means pass. A malformed output is a mismatch."""
     try:
@@ -73,6 +106,13 @@ def mismatches(expected: Obj, actual: Json, prefixes: dict[str, str]) -> list[st
             )
         if "exact" in expected and got.get("exact") != expected["exact"]:
             out.append(f"exact: expected {expected['exact']}, got {got.get('exact')}")
+        for key, read in (("verdict_basis", _basis), ("eliminated", _eliminated)):
+            if key in expected and key in got:
+                want, have = read(expected[key], prefixes), read(got[key], prefixes)
+                if want != have:
+                    out.append(
+                        f"{key}: missing {sorted(want - have)}, unexpected {sorted(have - want)}"
+                    )
     except (TypeError, ValueError, KeyError) as e:
         return [f"malformed output: {e}"]
     return out

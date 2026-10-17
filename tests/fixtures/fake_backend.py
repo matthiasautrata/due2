@@ -4,6 +4,8 @@
 
 - `echo`: answers every `interpret` call with the scenario's expected result, read straight
   from the case file — every vector must pass, which shows the protocol and the comparator agree.
+- `verdict-only`: as `echo`, without `verdict_basis` and `eliminated` — a vector that asserts
+  them is unsupported, never a pass; every other vector passes.
 - `empty`: answers `{}` — every vector must fail, which shows a wrong answer is caught.
 - `none`: declares no tasks — every vector is unsupported, never a pass.
 - `decline`: declines every call, naming a feature — every vector is unsupported, never a pass.
@@ -21,7 +23,7 @@ from pathlib import Path
 CASES = Path(__file__).resolve().parents[2] / "conformance" / "cases"
 
 
-def expected(case: str, scenario: str) -> object:
+def expected(case: str, scenario: str) -> dict[str, object]:
     data = json.loads((CASES / case / "case.json").read_text())
     return next(s["expected"] for s in data["scenarios"] if s["name"] == scenario)
 
@@ -37,6 +39,11 @@ def main(mode: str) -> None:
             vid, inp = msg["id"], msg["input"]
             if mode == "echo":
                 reply = {"id": vid, "output": expected(inp["case"], inp["scenario"])}
+            elif mode == "verdict-only":
+                out = expected(inp["case"], inp["scenario"])
+                for k in ("verdict_basis", "eliminated"):
+                    out.pop(k, None)
+                reply = {"id": vid, "output": out}
             elif mode == "empty":
                 reply = {"id": vid, "output": {}}
             elif mode == "decline":

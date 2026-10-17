@@ -18,7 +18,7 @@
         "activation": {}, "closure": []
       },
       "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:paymentDuty", "status": "fulfilled" } ], "why": "ex:viewPrivilege is T. ex:ev1 is a witness for ex:paymentDuty: before effective_at, action ex:pay, object ex:PhotoLicence, actor ex:Alice, no signer restriction; the duty has no constraints, so it is T and the candidate is ready. ex:viewPrivilege matches, so the same duty is in force as a root obligation, with the same witness: fulfilled." },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:paymentDuty", "status": "fulfilled" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:viewPrivilege is T. ex:ev1 is a witness for ex:paymentDuty: before effective_at, action ex:pay, object ex:PhotoLicence, actor ex:Alice, no signer restriction; the duty has no constraints, so it is T and the candidate is ready. ex:viewPrivilege matches, so the same duty is in force as a root obligation, with the same witness: fulfilled." },
       "rl2_expected": "Permit"
     },
     {
@@ -33,7 +33,7 @@
         "activation": {}, "closure": []
       },
       "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:Bob ⊑ ex:Alice is F, so ex:viewPrivilege is F and is no candidate; its duty is not evaluated (§5.5). No rule of the policy matches, so the obligation is not in force either." },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "verdict_basis": [], "eliminated": [], "why": "ex:Bob ⊑ ex:Alice is F, so ex:viewPrivilege is F and is no candidate; its duty is not evaluated (§5.5). No rule of the policy matches, so the obligation is not in force either." },
       "rl2_expected": "NotApplicable"
     },
     {
@@ -44,7 +44,7 @@
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
       "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Pending", "frontier": [ [ "ex:paymentDuty" ] ], "obligations": [ { "duty": "ex:paymentDuty", "status": "outstanding" } ], "why": "ex:viewPrivilege is T; ex:paymentDuty has no witness, so it is F (outstanding) and has no deadline. The one alternative is pending. As a root obligation the duty is in force and outstanding." }
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:paymentDuty" ] ], "obligations": [ { "duty": "ex:paymentDuty", "status": "outstanding" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "duty" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:viewPrivilege is T; ex:paymentDuty has no witness, so it is F (outstanding) and has no deadline. The one alternative is pending. As a root obligation the duty is in force and outstanding." }
     },
     {
       "name": "only another customer has paid",
@@ -58,7 +58,7 @@
         "activation": {}, "closure": []
       },
       "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Pending", "frontier": [ [ "ex:paymentDuty" ] ], "obligations": [ { "duty": "ex:paymentDuty", "status": "outstanding" } ], "why": "ex:ev2's actor ex:Bob is not the duty's assignee ex:Alice, so it is no witness; with no witness the duty is outstanding and the permission's only route is pending; the in-force obligation is outstanding for the same reason." }
+      "expected": { "verdict": "Pending", "frontier": [ [ "ex:paymentDuty" ] ], "obligations": [ { "duty": "ex:paymentDuty", "status": "outstanding" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "duty" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:ev2's actor ex:Bob is not the duty's assignee ex:Alice, so it is no witness; with no witness the duty is outstanding and the permission's only route is pending; the in-force obligation is outstanding for the same reason." }
     }
   ]
 }

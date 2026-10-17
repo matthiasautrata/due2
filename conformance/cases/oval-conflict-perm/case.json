@@ -34,6 +34,8 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
+        "verdict_basis": [ { "ref": "ex:policy:1010#permission", "role": "permission" } ],
+        "eliminated": [ { "ref": "ex:policy:1010#prohibition", "by": "ex:policy:1010#permission", "rule": "perm" } ],
         "why": "Both rules apply to Bob's request; under perm the T permission eliminates the policy's prohibition (workflows \u00a76.2), leaving a ready candidate."
       },
       "oval_expected": "accept (True)"
@@ -64,6 +66,8 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
+        "verdict_basis": [ { "ref": "ex:policy:1010#permission", "role": "permission" } ],
+        "eliminated": [],
         "why": "The prohibition names Bob, so for Alice its party part is F and it does not apply; the permission applies and is ready."
       }
     }
