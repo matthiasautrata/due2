@@ -88,24 +88,23 @@ def render(facts: Iterable[Symbol]) -> str:
     return "\n".join(f"{f}." for f in facts)
 
 
-def graph_facts(graph: ReadOnlyGraphAggregate, name: str, scope: str) -> list[Symbol]:
-    """One `name(S, P, O)` fact per triple; for the policy (`triple`), each `pred_ns` too."""
+def policy_facts(graph: ReadOnlyGraphAggregate) -> list[Symbol]:
+    """The policy graph: one `triple(S, P, O)` and one `pred_ns` per triple, blank nodes scoped
+    `"policy"`."""
     out: list[Symbol] = []
     for s, p, o in graph:
-        out.append(Function(name, [term(s, scope), term(p, scope), term(o, scope)]))
-        if name == "triple":
-            out.append(Function("pred_ns", [term(p, scope), String(namespace(str(p)))]))
+        out.append(Function("triple", [term(s, "policy"), term(p, "policy"), term(o, "policy")]))
+        out.append(Function("pred_ns", [term(p, "policy"), String(namespace(str(p)))]))
     return out
 
 
-def policy_facts(graph: ReadOnlyGraphAggregate) -> list[Symbol]:
-    """The policy graph as `triple/3` and `pred_ns/2`, blank nodes scoped `"policy"`."""
-    return graph_facts(graph, "triple", "policy")
-
-
 def module_facts(path: str, text: str) -> list[Symbol]:
-    """The module at `path` as `module/3`, blank nodes scoped by the path."""
-    return graph_facts(parse(text), "module", path)
+    """The module at `path`: one `module(Path, S, P, O)` per triple, blank nodes scoped by the
+    path. The path names the module's layer (DESIGN.md § Input facts)."""
+    return [
+        Function("module", [String(path), term(s, path), term(p, path), term(o, path)])
+        for s, p, o in parse(text)
+    ]
 
 
 def profiles(graph: ReadOnlyGraphAggregate) -> list[str]:

@@ -5,7 +5,7 @@
 vector to facts (`clingo_i.flatten`, `clingo_i.values`), and the program in `lp/` decides
 everything else, in three solves (DESIGN.md § Data flow):
 
-1. the declines and rejections, over `lift.lp` and `structure.lp`;
+1. the declines and rejections, over `lift.lp` to `applies.lp`;
 2. every completion of the unknown variables, cautious: the verdict, the basis, and the
    eliminations;
 3. for an `Indeterminate` only, every completion and one flipped variable, brave: the
@@ -25,22 +25,27 @@ from clingo_i import flatten, values
 from clingo_i.json_types import Obj, as_list, as_obj, as_str
 
 LP = Path(__file__).resolve().parents[1] / "lp"
-# The program, in load order. Each file reads only relations of the files before it.
+# The program, in load order. Each file's header names the files whose relations it reads.
 PROGRAM_FILES = (
     "lift.lp",
     "structure.lp",
     "kleene.lp",
+    "constraint.lp",
+    "operand.lp",
+    "compare.lp",
     "applies.lp",
     "completion.lp",
     "resolve.lp",
+    "integrity.lp",
     "explain.lp",
     "pivot.lp",
 )
-SOLVE_1 = ("lift.lp", "structure.lp")
+SOLVE_1 = PROGRAM_FILES[:7]  # lift.lp to applies.lp: no choice, so one model
 SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
 CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
 VARIABLE_CAP = 16  # correctness-strategy.md §3
-DECLINES = ("unsupported_input", "unsupported_value")  # read after the rejections, in order
+# Read after the rejections, in order.
+DECLINES = ("unsupported_input", "unsupported_value", "unsupported_part")
 
 
 def load_programs() -> dict[str, str]:
@@ -52,8 +57,8 @@ class Declined(Exception):
     """A reply kind, not an error: the vector uses something the spike does not read.
 
     Attributes:
-        feature: The decline reason the reply names, such as `odrl:constraint`,
-            `sotw.facts`, or `variable-cap` (DESIGN.md § Declines).
+        feature: The decline reason the reply names, such as `odrl:duty`, `completion`,
+            or `variable-cap` (DESIGN.md § Declines).
     """
 
     def __init__(self, feature: str) -> None:
@@ -140,6 +145,8 @@ class Interpreter:
             facts.append(Function("selected_profile", [String(iri)]))
         for path in sorted(paths):
             facts.extend(self._modules[path])
+            layer = "core" if path in self._core else "profile"
+            facts.append(Function("layer", [String(path), Function(layer)]))
         text = flatten.render(facts + values.value_facts(values.literals(facts)))
 
         self._structure(text)

@@ -74,13 +74,7 @@ def test_anonymous_rule(interpreter: Interpreter) -> None:
 DELETIONS = [
     ("kleene.lp", "rank(u, 1)."),
     ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
-    (
-        "completion.lp",
-        (
-            "lit_of(part(X, party(F)), party(F, Party)) :- atom_party(X, F, Party), "
-            "holds(part(X, party(F)), u)."
-        ),
-    ),
+    ("completion.lp", "completed(W, I, V) :- world(W), lit_of(I, L), assigned(W, L, V)."),
     ("resolve.lp", 'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W).'),
 ]
 
@@ -92,7 +86,7 @@ def test_deleted_rule_fails_loudly(file: str, line: str) -> None:
     programs[file] = programs[file].replace(line, "")
     broken = Interpreter(INIT, programs)
     # Each vector exercises the deleted rule: an absent assignee gives a u part (kleene.lp)
-    # that reads a party literal (completion.lp), a foreign action an f part (applies.lp),
+    # whose literal's value it takes (completion.lp), a foreign action an f part (applies.lp),
     # and NotApplicable its rule (resolve.lp).
     requests: dict[str, Obj] = {
         "kleene.lp": {"parties": {}},
@@ -312,6 +306,381 @@ conflict(p, prohibit). conflict(q, prohibit). conflict(r, perm).
     }
 
 
+# --- constraints (due2-profiles.md §3 to §6) ---
+
+XSD = "http://www.w3.org/2001/XMLSchema#"
+DPROD = "https://ekgf.org/dprod/spec/develop/"
+RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+CONSTRAINT_PREFIXES = (
+    PREFIXES
+    + f"@prefix dprod: <{DPROD}> .\n@prefix xsd: <{XSD}> .\n"
+    + "@prefix due2: <https://w3id.org/due2/profile#> .\n"
+)
+
+
+def bound(op: str, source: str = "requestSource", extra: str = "") -> str:
+    """The policy-layer binding of `ex:<op>`, reading property `ex:<op>` of `source`."""
+    return f"ex:{op} dprod:operandSource dprod:{source} ; dprod:operandProperty ex:{op}{extra} .\n"
+
+
+def constrained(constraint: str, *bindings: str, rule: str = "Permission") -> str:
+    """A policy whose one rule, `ex:r`, has the constraint `constraint` and the bindings."""
+    link = "permission" if rule == "Permission" else "prohibition"
+    return (
+        CONSTRAINT_PREFIXES
+        + f"ex:p a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:{link} ex:r .\n"
+        + f"ex:r a odrl:{rule} ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + f" odrl:constraint {constraint} .\n"
+        + "".join(bindings)
+    )
+
+
+def iri(name: str) -> Obj:
+    return {"@id": name}
+
+
+def typed(lex: str, datatype: str) -> Obj:
+    return {"@value": lex, "@type": XSD + datatype}
+
+
+def outcome(reply: Obj) -> object:
+    """The verdict, the decline, or `"error"`: one value to compare in a table."""
+    if "unsupported" in reply:
+        return reply["unsupported"]
+    if "error" in reply:
+        return "error"
+    return verdict(reply)
+
+
+# DESIGN.md § `compare.lp`, the worked example: `and` is the least of its members, so an f
+# member decides it whatever the u one is, and a u that decides the finding declines (#48).
+WORKED_CONSTRAINT = """ex:c .
+ex:c odrl:and ( ex:c1 ex:c2 ) .
+ex:c1 odrl:leftOperand ex:purpose ; odrl:operator odrl:isAnyOf ;
+    odrl:rightOperand ex:research, ex:teaching .
+ex:c2 odrl:leftOperand ex:count ; odrl:operator odrl:lteq ; odrl:rightOperand 5"""
+
+
+@pytest.mark.parametrize(
+    ("params", "expected"),
+    [
+        ({"ex:purpose": iri("ex:marketing")}, "NotApplicable"),  # f and u is f
+        ({"ex:purpose": iri("ex:research")}, "completion"),  # t and u is u: declined
+        ({"ex:purpose": iri("ex:research"), "ex:count": typed("3", "integer")}, "Permit"),
+        ({"ex:purpose": iri("ex:research"), "ex:count": typed("7", "integer")}, "NotApplicable"),
+    ],
+)
+def test_constraint_worked_example(interpreter: Interpreter, params: Obj, expected: str) -> None:
+    pol = constrained(WORKED_CONSTRAINT, bound("purpose"), bound("count"))
+    assert outcome(interpreter.reply(vector(pol, request={"params": params}))) == expected
+
+
+def leaf(operator: str, right: str) -> str:
+    return f"[ odrl:leftOperand ex:x ; odrl:operator odrl:{operator} ; odrl:rightOperand {right} ]"
+
+
+@pytest.mark.parametrize(
+    ("constraint", "binding", "params", "expected"),
+    [
+        # Equality: IRIs by identity; an IRI against a literal is a misfit, so u.
+        (leaf("eq", "ex:v"), "", {"ex:x": iri("ex:v")}, "Permit"),
+        (leaf("eq", "ex:v"), "", {"ex:x": iri("ex:w")}, "NotApplicable"),
+        (leaf("eq", "ex:v"), "", {"ex:x": typed("v", "string")}, "completion"),
+        (leaf("neq", "ex:v"), "", {"ex:x": iri("ex:w")}, "Permit"),
+        # Strings by code point; a language tag is part of the type.
+        (leaf("eq", '"v"'), "", {"ex:x": {"@value": "v"}}, "Permit"),
+        (leaf("eq", '"v"@en'), "", {"ex:x": {"@value": "v", "@language": "de"}}, "completion"),
+        # Order within a space: by value, so 5 and 5.00 are equal under a numeric range.
+        (leaf("lt", "5"), "", {"ex:x": typed("3", "integer")}, "Permit"),
+        (leaf("gteq", "5"), "", {"ex:x": typed("3", "integer")}, "NotApplicable"),
+        (leaf("eq", "5"), " ; rdfs:range xsd:decimal", {"ex:x": typed("5.00", "decimal")}, "Permit"),
+        # Two spaces have no order: u.
+        (leaf("lt", "5"), "", {"ex:x": typed("2026-01-01T00:00:00Z", "dateTime")}, "completion"),
+        # The set operators, over a set-valued operand.
+        (leaf("isAnyOf", "ex:v, ex:w"), "", {"ex:x": iri("ex:w")}, "Permit"),
+        (leaf("isNoneOf", "ex:v, ex:w"), "", {"ex:x": iri("ex:w")}, "NotApplicable"),
+        (leaf("isAllOf", "ex:v, ex:w"), " ; due2:cardinality due2:set",
+         {"ex:x": [iri("ex:w"), iri("ex:v"), iri("ex:z")]}, "Permit"),
+        (leaf("isAllOf", "ex:v, ex:w"), " ; due2:cardinality due2:set",
+         {"ex:x": [iri("ex:w")]}, "NotApplicable"),
+    ],
+)  # fmt: skip
+def test_operators(
+    interpreter: Interpreter, constraint: str, binding: str, params: Obj, expected: str
+) -> None:
+    pol = constrained(constraint, bound("x", extra=binding))
+    assert outcome(interpreter.reply(vector(pol, request={"params": params}))) == expected
+
+
+HIERARCHY = """ex:docs a odrl:AssetCollection . ex:a1 odrl:partOf ex:docs .
+ex:Report rdfs:subClassOf ex:Document .
+"""
+
+
+@pytest.mark.parametrize(
+    ("constraint", "params", "sotw", "expected"),
+    [
+        # isPartOf and hasPart read the typed partOf closure, identity included.
+        (leaf("isPartOf", "ex:docs"), {"ex:x": iri("ex:a1")}, {}, "Permit"),
+        (leaf("isPartOf", "ex:docs"), {"ex:x": iri("ex:docs")}, {}, "Permit"),
+        (leaf("isPartOf", "ex:docs"), {"ex:x": iri("ex:a2")}, {}, "NotApplicable"),
+        (leaf("hasPart", "ex:a1"), {"ex:x": iri("ex:docs")}, {}, "Permit"),
+        # An empty set is part of anything: the least over no values is t.
+        (leaf("isPartOf", "ex:docs"), {"ex:x": []}, {}, "Permit"),
+        # isA: an rdf:type edge, here from the SOTW closure, then rdfs:subClassOf edges.
+        (leaf("isA", "ex:Document"), {"ex:x": iri("ex:r1")},
+         {"closure": [[RDF_TYPE, "ex:r1", "ex:Report"]]}, "Permit"),
+        (leaf("isA", "ex:Document"), {"ex:x": iri("ex:r1")}, {}, "NotApplicable"),
+    ],
+)  # fmt: skip
+def test_hierarchy_operators(
+    interpreter: Interpreter, constraint: str, params: Obj, sotw: Obj, expected: str
+) -> None:
+    card = " ; due2:cardinality due2:set" if isinstance(params["ex:x"], list) else ""
+    pol = constrained(constraint, bound("x", extra=card)) + HIERARCHY
+    reply = interpreter.reply(vector(pol, request={"params": params}, sotw=sotw))
+    assert outcome(reply) == expected
+
+
+@pytest.mark.parametrize(
+    ("fact", "expected"),
+    [
+        ({"status": "resolved", "values": [iri("ex:v")]}, "Permit"),
+        ({"status": "resolved", "values": [iri("ex:w")]}, "NotApplicable"),
+        # Every other status, and no fact at all, is u: never f.
+        ({"status": "missing"}, "completion"),
+        ({"status": "invalid"}, "completion"),
+        ({"status": "conflict", "values": [iri("ex:v"), iri("ex:w")]}, "completion"),
+        ({"status": "unresolved"}, "completion"),
+        (None, "completion"),
+        # Two values for a one-valued operand (MultipleValues), and none.
+        ({"status": "resolved", "values": [iri("ex:v"), iri("ex:w")]}, "completion"),
+        ({"status": "resolved", "values": []}, "completion"),
+    ],
+)
+def test_state_read(interpreter: Interpreter, fact: Obj | None, expected: str) -> None:
+    pol = constrained(leaf("eq", "ex:v"), bound("x", "stateSource"))
+    facts: Obj = {} if fact is None else {"ex:x": fact}
+    assert outcome(interpreter.reply(vector(pol, sotw={"facts": facts}))) == expected
+
+
+@pytest.mark.parametrize(
+    ("constraint", "binding", "params", "expected"),
+    [
+        # A value outside the range is TypeMismatch: the read is u.
+        (leaf("eq", "5"), " ; rdfs:range xsd:integer", {"ex:x": {"@value": "5"}}, "completion"),
+        (leaf("eq", "ex:v"), " ; rdfs:range ex:Thing", {"ex:x": typed("5", "integer")},
+         "completion"),
+        # The context: the request's assignee, and the SOTW's clock.
+        (leaf("eq", "ex:alice"), "", {}, "Permit"),
+        (leaf("lt", '"2027-01-01T00:00:00Z"^^xsd:dateTime'), "", {}, "Permit"),
+    ],
+)  # fmt: skip
+def test_reads(
+    interpreter: Interpreter, constraint: str, binding: str, params: Obj, expected: str
+) -> None:
+    if params:
+        b = bound("x", extra=binding)
+    else:
+        prop = "agent" if "alice" in constraint else "clock"
+        b = f"ex:x dprod:operandSource dprod:contextSource ; dprod:operandProperty dprod:{prop} .\n"
+    pol = constrained(constraint, b)
+    assert outcome(interpreter.reply(vector(pol, request={"params": params}))) == expected
+
+
+def test_prohibition_constraint(interpreter: Interpreter) -> None:
+    pol = constrained(leaf("eq", "ex:v"), bound("x"), rule="Prohibition")
+    assert outcome(interpreter.reply(vector(pol, request={"params": {"ex:x": iri("ex:v")}}))) == (
+        "Deny"
+    )
+
+
+def test_refinement(interpreter: Interpreter) -> None:
+    # A refinement is one conjunct of every atom with that action term (IM 2.2 §2.5).
+    pol = (
+        CONSTRAINT_PREFIXES
+        + "ex:p a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:r .\n"
+        + "ex:r a odrl:Permission ; odrl:target ex:a ;"
+        + f" odrl:action [ rdf:value odrl:use ; odrl:refinement {leaf('eq', 'ex:v')} ] .\n"
+        + bound("x")
+    ).replace("@prefix rdfs:", "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
+              "@prefix rdfs:")  # fmt: skip
+    for value, expected in (("ex:v", "Permit"), ("ex:w", "NotApplicable")):
+        v = vector(pol, request={"action": "odrl:use", "params": {"ex:x": iri(value)}})
+        assert outcome(interpreter.reply(v)) == expected
+
+
+def test_unit_labels_without_converting(interpreter: Interpreter) -> None:
+    # odrl:unit joins the completion key only; the comparison reads the values alone.
+    c = "[ odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand 5 ; odrl:unit ex:EUR ]"
+    v = vector(constrained(c, bound("x")), request={"params": {"ex:x": typed("5", "integer")}})
+    assert outcome(interpreter.reply(v)) == "Permit"
+
+
+# Each layer declares ex:x's property: the policy reads ex:fromPolicy, a profile ex:fromProfile,
+# and the core ex:fromCore. The request gives only the property the winning layer names.
+def layered_init(profile_modules: int) -> Obj:
+    def decl(prop: str) -> str:
+        return (
+            CONSTRAINT_PREFIXES
+            + f"ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:{prop} .\n"
+        )
+
+    modules: Obj = {"core.ttl": decl("fromCore")}
+    names: list[Json] = [f"prof{i}.ttl" for i in range(profile_modules)]
+    for n in names:
+        modules[str(n)] = decl("fromProfile" if n == "prof0.ttl" else "fromOther")
+    return {"modules": modules, "core": ["core.ttl"], "profiles": {PROF: names}}
+
+
+@pytest.mark.parametrize(
+    ("in_policy", "profile_modules", "param", "expected"),
+    [
+        (False, 0, "fromCore", "Permit"),
+        (False, 1, "fromProfile", "Permit"),
+        (False, 1, "fromCore", "completion"),  # the profile's whole declaration wins
+        (True, 1, "fromPolicy", "Permit"),
+        (False, 2, "fromProfile", "binding: two profile modules"),
+    ],
+)
+def test_binding_layers(in_policy: bool, profile_modules: int, param: str, expected: str) -> None:
+    profile = f"ex:p odrl:profile <{PROF}> .\n" if profile_modules else ""
+    own = (
+        "ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:fromPolicy .\n"
+        if in_policy
+        else ""
+    )
+    pol = constrained(leaf("eq", "ex:v"), own) + profile
+    v = vector(pol, request={"action": "odrl:use", "params": {f"ex:{param}": iri("ex:v")}})
+    assert outcome(Interpreter(layered_init(profile_modules)).reply(v)) == expected
+
+
+@pytest.mark.parametrize(
+    ("extra", "request_changes", "expected"),
+    [
+        # The requested asset is part of the target collection.
+        ("ex:a a odrl:AssetCollection . ex:a1 odrl:partOf ex:a .", {"target": "ex:a1"}, "Permit"),
+        ("ex:a a odrl:AssetCollection .", {"target": "ex:a1"}, "NotApplicable"),
+        ("ex:a1 odrl:partOf ex:a .", {"target": "ex:a1"}, "odrl:partOf: untyped collection"),
+        (
+            "ex:a a odrl:AssetCollection . ex:bob a odrl:Party ; odrl:partOf ex:a .",
+            {},
+            "odrl:partOf: cross-kind edge",
+        ),
+        # The named party is part of the assignee collection.
+        (
+            (
+                "ex:r odrl:assignee ex:team . ex:team a odrl:PartyCollection ."
+                " ex:alice odrl:partOf ex:team ."
+            ),
+            {"target": "ex:a"},
+            "Permit",
+        ),
+    ],
+)
+def test_typed_part_of(
+    interpreter: Interpreter, extra: str, request_changes: Obj, expected: str
+) -> None:
+    pol = (
+        CONSTRAINT_PREFIXES
+        + "ex:p a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:r .\n"
+        + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a .\n"
+        + extra
+        + "\n"
+    )
+    assert outcome(interpreter.reply(vector(pol, request=request_changes))) == expected
+
+
+@pytest.mark.parametrize(
+    ("constraint", "binding", "code"),
+    [
+        ("[ odrl:operator odrl:eq ; odrl:rightOperand ex:v ]", None, "MalformedConstraint"),
+        ("[ odrl:leftOperand ex:x ; odrl:operator odrl:eq ]", "", "MalformedConstraint"),
+        (leaf("eq", "ex:v, ex:w"), "", "MalformedConstraint"),
+        (leaf("isAnyOf", "( ex:v ), ex:w"), "", "MalformedConstraint"),
+        ("[ odrl:leftOperand ex:x ; odrl:operator ex:near ; odrl:rightOperand 5 ]", "",
+         "UnsupportedOperator"),
+        (f"[ odrl:andSequence ( {leaf('eq', 'ex:v')} ) ]", "", "UnsupportedConnective"),
+        (leaf("eq", '"1.5"^^xsd:double'), "", "FloatingPointOperand"),
+        (leaf("lt", '"P1M1D"^^xsd:duration'), "", "MixedDuration"),
+        (leaf("eq", "ex:v"), None, "UnboundLeftOperand"),
+        (leaf("eq", "ex:v"), "ex:x dprod:operandSource ex:elsewhere ; dprod:operandProperty ex:x .\n",
+         "InvalidBinding"),
+        (leaf("eq", "ex:v"),
+         "ex:x dprod:operandSource due2:witnessSource ; dprod:operandProperty ex:x .\n",
+         "WitnessOutsideDuty"),
+        (leaf("eq", "ex:v"), bound("x", extra=" ; due2:allowedOperator odrl:neq"),
+         "OperatorTypeMismatch"),
+        (leaf("eq", "5"), bound("x", extra=" ; rdfs:range ex:Thing"), "OperatorTypeMismatch"),
+    ],
+)  # fmt: skip
+def test_constraint_rejections(
+    interpreter: Interpreter, constraint: str, binding: str | None, code: str
+) -> None:
+    b = bound("x") if binding == "" else (binding or "")
+    reply = interpreter.reply(vector(constrained(constraint, b)))
+    assert "error" in reply and code in str(reply["error"]), reply
+
+
+@pytest.mark.parametrize(
+    ("constraint", "binding", "reason"),
+    [
+        ("[ odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand ex:v ;"
+         + f" odrl:and ( {leaf('eq', 'ex:v')} ) ]", "", "constraint: leaf with a connective"),
+        (f"[ odrl:and ( {leaf('eq', 'ex:v')} ) ; odrl:or ( {leaf('eq', 'ex:w')} ) ]", "",
+         "constraint: two connectives"),
+        (f"[ dprod:not ( {leaf('eq', 'ex:v')} {leaf('eq', 'ex:w')} ) ]", "",
+         "constraint: dprod:not without one member"),
+        ("ex:c . ex:c odrl:or ( ex:c ex:d ) . ex:d " + leaf("eq", "ex:v")[1:-1], "",
+         "constraint: cycle"),
+        (leaf("isAnyOf", "()"), "", "constraint: empty list"),
+        (leaf("eq", "( ex:v )"), "", "constraint: list on a scalar operator"),
+        (leaf("eq", "ex:v"), " ; due2:cardinality due2:set",
+         "constraint: set-valued operand on a single-value operator"),
+        (leaf("eq", "ex:v"), " ; due2:cardinality due2:many", "binding: cardinality"),
+        (leaf("eq", "ex:v"), " ; rdfs:range xsd:integer, xsd:string", "binding: range"),
+    ],
+)  # fmt: skip
+def test_constraint_declines(
+    interpreter: Interpreter, constraint: str, binding: str, reason: str
+) -> None:
+    v = vector(constrained(constraint, bound("x", extra=binding)))
+    assert interpreter.reply(v) == {"unsupported": reason}
+
+
+CONSTRAINT_DELETIONS = [
+    ("compare.lp", "crank(C, N) :- op(C, eq), cpair(C, Lv, Rv), eqr(Lv, Rv, N)."),
+    ("operand.lp", "read_u(Op) :- used(Op), not read_resolved(Op)."),
+]
+
+
+@pytest.mark.parametrize(("file", "line"), CONSTRAINT_DELETIONS)
+def test_deleted_constraint_rule_fails_loudly(file: str, line: str) -> None:
+    # A leaf without a rank, or a read neither ok nor u, fails integrity.lp in solve 2. The
+    # `or` has a t member that the deleted rule does not touch (ex:y neq for compare.lp, ex:x eq
+    # for operand.lp, ex:y unread), so solve 1 sees a t root and declines nothing first.
+    programs = load_programs()
+    assert line in programs[file].splitlines(), f"{file} no longer has {line!r}"
+    programs[file] = programs[file].replace(line, "")
+    c = f"[ odrl:or ( {leaf('eq', 'ex:v')} {leaf('neq', 'ex:w').replace('ex:x', 'ex:y')} ) ]"
+    params: Obj = {"ex:x": iri("ex:v")}
+    if file == "compare.lp":
+        params["ex:y"] = iri("ex:v")
+    v = vector(constrained(c, bound("x"), bound("y")), request={"params": params})
+    assert "output" in Interpreter(INIT).reply(v)
+    assert "error" in Interpreter(INIT, programs).reply(v)
+
+
+def test_datatypes_differ_without_a_range(interpreter: Interpreter) -> None:
+    # 5 and 5.00 are one number, but with no range due2-profiles.md §3 does not say whether
+    # integer and decimal compare by value or by identity (#65).
+    v = vector(
+        constrained(leaf("eq", "5"), bound("x")),
+        request={"params": {"ex:x": typed("5.0", "decimal")}},
+    )
+    assert interpreter.reply(v) == {"unsupported": "value: datatypes differ without a range"}
+
+
 # --- declines ---
 
 
@@ -321,13 +690,13 @@ def test_decline_names_smallest_unsupported_iri(interpreter: Interpreter) -> Non
         + """
 ex:p a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:perm .
 ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;
-    odrl:duty [ odrl:action odrl:compensate ] ;
-    odrl:constraint [ odrl:leftOperand odrl:count ; odrl:operator odrl:lt ; odrl:rightOperand 5 ] .
+    odrl:remedy [ odrl:action odrl:compensate ] ;
+    odrl:duty [ odrl:action odrl:compensate ] .
 """
     )
-    # odrl:constraint < odrl:duty < odrl:leftOperand in code-point order.
+    # odrl:duty < odrl:remedy in code-point order.
     first = interpreter.reply(vector(policy))
-    assert first == {"unsupported": ODRL + "constraint"}
+    assert first == {"unsupported": ODRL + "duty"}
     assert interpreter.reply(vector(policy)) == first
 
 
@@ -335,7 +704,7 @@ ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;
     ("extra", "expected"),
     [
         ("ex:perm ex:weird ex:x .", {"unsupported": EX + "weird"}),  # unknown, on a rule
-        ("ex:a odrl:partOf ex:coll .", {"unsupported": ODRL + "partOf"}),  # vocabulary, anywhere
+        ("ex:a odrl:hasPolicy ex:p .", {"unsupported": ODRL + "hasPolicy"}),  # vocabulary, anywhere
         ('ex:p rdfs:label "p" ; dct:title "t" .', None),  # annotations on the policy
         ('ex:a ex:colour "red" .', None),  # data on an asset node: never read
     ],
@@ -365,12 +734,9 @@ EVIDENCE: Obj = {
 @pytest.mark.parametrize(
     ("changes", "reason"),
     [
-        ({"sotw": {"facts": {"ex:x": {"status": "missing"}}}}, "sotw.facts"),
         ({"sotw": {"evidence": [EVIDENCE]}}, "sotw.evidence"),
         ({"sotw": {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}}, "sotw.activation"),
-        ({"sotw": {"closure": [["odrl:partOf", "ex:a", "ex:coll"]]}}, "sotw.closure"),
-        ({"request": {"params": {"ex:purpose": {"@id": "ex:research"}}}}, "request.params"),
-        ({"request": {"params": {"ex:purpose": []}}}, "request.params"),  # an empty set is a value
+        ({"sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]}}, "sotw.closure"),  # not a hierarchy
         ({"config": {"violations": "deny"}}, "config.violations"),
         ({"config": {"combination": "permit-overrides"}}, "config.combination"),
         ({"config": {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}}, "config.signers"),
@@ -378,7 +744,7 @@ EVIDENCE: Obj = {
         # The smallest field wins, whatever the section order.
         (
             {
-                "sotw": {"closure": [["odrl:partOf", "ex:a", "ex:c"]]},
+                "sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]},
                 "config": {"violations": "deny"},
             },
             "config.violations",
@@ -388,8 +754,8 @@ EVIDENCE: Obj = {
         ({"sotw": {"effective_at": "2026-13-01T00:00:00Z"}}, "value: ill-typed xsd:dateTime"),
         # The input declines come first.
         (
-            {"request": {"at": "2026-06-01T00:00:00", "params": {"ex:n": {"@value": "1"}}}},
-            "request.params",
+            {"request": {"at": "2026-06-01T00:00:00"}, "config": {"violations": "deny"}},
+            "config.violations",
         ),
     ],
 )

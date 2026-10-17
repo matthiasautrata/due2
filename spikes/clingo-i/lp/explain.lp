@@ -36,19 +36,19 @@ Atom `X` has finding `t`: it applies in every completion, so it can remove.
 *%
 surely_applies(X) :- holds(applies(X), t).
 
-%*! same_policy(X, Y, C)
+%*! same_policy(X, Y, Strat)
 
-Atoms `X` and `Y` belong to the same policy, whose conflict strategy is `C`.
+Atoms `X` and `Y` belong to the same policy, whose conflict strategy is `Strat`.
 *%
-same_policy(X, Y, C) :- atom_policy(X, P), atom_policy(Y, P), conflict(P, C).
+same_policy(X, Y, Strat) :- atom_policy(X, P), atom_policy(Y, P), conflict(P, Strat).
 
 %## Within the policy
 
 % By the policy's conflict strategy (due2-workflows.md §6.2 #1), one row per remover.
 
-%*! elim_within(X, Y, C)
+%*! elim_within(X, Y, Strat)
 
-Atom `Y` removes atom `X` within their policy, under its strategy `C`: under `prohibit` a `t`
+Atom `Y` removes atom `X` within their policy, under its strategy `Strat`: under `prohibit` a `t`
 forbid removes each permission, under `perm` a `t` permission removes each forbid, and under
 `invalid` every atom of a void policy is removed by each other `t` atom of it.
 *%
@@ -75,16 +75,16 @@ Atom `Y` is removed within its own policy, so it removes nothing across policies
 *%
 removed_within(Y) :- elim_within(Y, _, _).
 
-%*! elim(X, Y, C)
+%*! elim(X, Y, Strat)
 
-Atom `Y` removes atom `X` under strategy `C`: a strategy of their policy, or
+Atom `Y` removes atom `X` under strategy `Strat`: a strategy of their policy, or
 `"prohibit-overrides"` across policies. Across policies, each `t` forbid its own policy did not
 remove removes each permission of every other policy (due2-workflows.md §6.2 #2). structure.lp
 admits one policy, so no vector reaches the cross-policy rule. It is there because
 due2-workflows.md §3.5 records cross-policy rows (formalisation-review.md §3 #3), and
 `test_combination_rows_on_facts` runs it on hand-written facts.
 *%
-elim(X, Y, C) :- elim_within(X, Y, C).
+elim(X, Y, Strat) :- elim_within(X, Y, Strat).
 elim(X, Y, "prohibit-overrides") :- may_apply(X), atom_effect(X, permit), surely_applies(Y),
     atom_effect(Y, forbid), not removed_within(Y), atom_policy(X, P), atom_policy(Y, Q), P != Q.
 

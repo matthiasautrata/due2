@@ -8,12 +8,13 @@
 %
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
-%   `function/1`, `match_key/1` (lift.lp).
+%   `function/1`, `match_key/1`, `voc/2`, `kind/2` (lift.lp); `triple/3` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
 %   `structure_node/1`, `states_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
 %   `family/1`, `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
-%   `assignee/2`, `atom/1`, `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`,
-%   `atom_effect/2`, `atom_party/3`; extends `unsupported/1` (lift.lp).
+%   `assignee/2`, `action_term/1`, `action_of/2`, `has_action_value/1`, `atom/1`,
+%   `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`, `atom_effect/2`,
+%   `atom_party/3`; extends `unsupported/1` (lift.lp).
 
 %## The policy
 
@@ -72,10 +73,12 @@ Policy `P` states an `odrl:conflict`, valid or not.
 states_conflict(P) :- stated_conflict_iri(P, _).
 % A policy that states an invalid value gets no conflict/2 below, and is rejected here.
 reject("InvalidConflict", P) :- stated_conflict_iri(P, Iri), policy(P), not conflict_value(Iri, _).
-reject("InvalidConflict", P) :- stated_conflict(P, C), stated_conflict(P, C2), policy(P), C != C2.
+reject("InvalidConflict", P) :- stated_conflict(P, Strat), stated_conflict(P, Strat2), policy(P),
+    Strat != Strat2.
 % odrl-compound-to-atomic-normalization.md §3 does not say which of two profile defaults wins, so
 % the vector is declined rather than guessed.
-unsupported("profile-conflict-defaults") :- profile_conflict(C), profile_conflict(C2), C != C2.
+unsupported("profile-conflict-defaults") :- profile_conflict(Strat), profile_conflict(Strat2),
+    Strat != Strat2.
 
 %*! some_profile_conflict
 
@@ -83,14 +86,14 @@ Some selected profile sets a default conflict strategy.
 *%
 some_profile_conflict :- profile_conflict(_).
 
-%*! conflict(P, C)
+%*! conflict(P, Strat)
 
-Policy `P` resolves its conflicts with strategy `C`: `prohibit`, `perm`, or `invalid`. That is
+Policy `P` resolves its conflicts with strategy `Strat`: `prohibit`, `perm`, or `invalid`. That is
 its own `odrl:conflict` if it states one, otherwise the selected profile's default, otherwise
 `invalid` (odrl-compound-to-atomic-normalization.md §3).
 *%
-conflict(P, C) :- policy(P), stated_conflict(P, C).
-conflict(P, C) :- policy(P), not states_conflict(P), profile_conflict(C).
+conflict(P, Strat) :- policy(P), stated_conflict(P, Strat).
+conflict(P, Strat) :- policy(P), not states_conflict(P), profile_conflict(Strat).
 conflict(P, invalid) :- policy(P), not states_conflict(P), not some_profile_conflict.
 
 %## Interiorisation
@@ -149,11 +152,42 @@ without an assignee still expands to atoms.
 assignee(R, Party) :- rule_value(R, F, Party), match_key(F).
 assignee(R, none) :- rule(R), not has_match_value(R).
 
+%## Action nodes
+
+% An action may be given as a node: `odrl:action [ rdf:value odrl:use ; odrl:refinement … ]`
+% (IM 2.2 §2.5). The node is the action term, which carries the refinements; its `rdf:value`
+% is the action that is matched.
+
+%*! action_term(Term)
+
+`Term` is stated as an action of the policy or of a rule.
+*%
+action_term(Term) :- structure_node(Node), stated(Node, action, Term).
+
+%*! has_action_value(Term)
+
+The action term `Term` states an `rdf:value`.
+*%
+has_action_value(Term) :- action_term(Term), triple(Term, Pred, _), voc(value, Pred).
+
+%*! action_of(Term, A)
+
+The action term `Term` is for action `A`: its `rdf:value` if it states one, else the term
+itself.
+*%
+action_of(Term, A) :- action_term(Term), triple(Term, Pred, A), voc(value, Pred).
+action_of(Term, Term) :- action_term(Term), not has_action_value(Term), kind(Term, iri).
+unsupported("action: several rdf:value") :- action_term(Term), action_of(Term, A),
+    action_of(Term, A2), A != A2.
+unsupported("action: blank node without rdf:value") :- action_term(Term),
+    not has_action_value(Term), kind(Term, blank).
+
 %*! atom(X)
 
-`X = a(R, A, T, Party)` is an atom: rule `R` expanded to one action `A`, one target `T`, and one
-assignee `Party` (or `none`). The id is its content, so it is distinct and stable; digests stay
-host-side (decisions/0007). The reply projects an atom to its rule `R` (due2-workflows.md §3.7).
+`X = a(R, A, T, Party)` is an atom: rule `R` expanded to one action term `A`, one target `T`,
+and one assignee `Party` (or `none`). The id is its content, so it is distinct and stable;
+digests stay host-side (decisions/0007). The reply projects an atom to its rule `R`
+(due2-workflows.md §3.7).
 *%
 atom(a(R, A, T, Party)) :- rule(R), rule_value(R, action, A), rule_value(R, target, T),
     assignee(R, Party).
@@ -166,9 +200,9 @@ atom_rule(a(R, A, T, Party), R) :- atom(a(R, A, T, Party)).
 
 %*! atom_action(X, A)
 
-Atom `X` is for action `A`.
+Atom `X` is for action `A`: the action of its action term.
 *%
-atom_action(a(R, A, T, Party), A) :- atom(a(R, A, T, Party)).
+atom_action(a(R, Term, T, Party), A) :- atom(a(R, Term, T, Party)), action_of(Term, A).
 
 %*! atom_target(X, T)
 
