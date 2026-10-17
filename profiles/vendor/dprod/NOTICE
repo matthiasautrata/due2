@@ -1,7 +1,12 @@
-dprod-contracts.ttl, dprod-contracts-prof.ttl, and the files under examples/
-(baseline.ttl, data-contract.ttl, data-use-policy.ttl, odcs.ttl) are copied
-unmodified from https://github.com/EKGF/dprod, branch develop, commit 50db943
-(2026-10-01), directory dprod-contracts/ and dprod-contracts/examples/.
+dprod-contracts.ttl, dprod-contracts-prof.ttl, the files under examples/
+(baseline.ttl, data-contract.ttl, data-use-policy.ttl, odcs.ttl), and
+shapes/dprod-contracts-shapes.ttl are copied unmodified from
+https://github.com/EKGF/dprod, branch develop, commit 50db943 (2026-10-01),
+directory dprod-contracts/ and dprod-contracts/examples/.
+
+The shapes file is kept in its own directory so that the tools that load
+profiles/vendor/dprod/*.ttl as profile modules do not load it. due2 does not
+validate against it; due2-profiles.md §3 and decisions/0014 cite it.
 
 Copyright (c) 2024-2026 Enterprise Knowledge Graph Forum, EDM Council, Inc.
 Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).

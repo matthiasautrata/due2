@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.2 (2026-10-17)
+**Status:** Draft v0.3 (2026-10-17)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
+**Changes in v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -52,8 +52,11 @@ A diagnostic is `(code, severity, ref, message)`:
 | `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; or a set right operand that mixes a list with other values or gives two lists. | ODRL IM §2.5.1; profiles §4 (`decisions/0013`) |
 | `UnsupportedOperator` | error | 2 | An operator outside the core registry. | profiles §4 |
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | profiles §3 |
-| `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in. | profiles §3 |
-| `OperatorTypeMismatch` | error | 2 | An operator not allowed for the operand, a right operand outside its range, or `isA` over a set-valued operand. | profiles §3, §4 |
+| `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in; or a `due2:conceptScheme` on an operand whose range is a datatype. | profiles §3, §4 |
+| `ConflictingProfileDeclaration` | error | 2 | Two selected profile modules declare the same term differently. | profiles §2 |
+| `RetypedOperand` | error | 2 | A layer above the one that owns an operand's type states a range, cardinality, or allowed operators different from the owner's, an omitted attribute counting as its default. | profiles §2 (`decisions/0014`) |
+| `OperandRangeMismatch` | error | 2 | A binding whose range is of a different kind from the `rdfs:range` of the property it reads. | profiles §3 (`decisions/0014`) |
+| `OperatorTypeMismatch` | error | 2 | An operator not allowed for the operand, a right operand not of its range's kind, or `isA` over a set-valued operand. On an operand with a concept scheme: an operator other than `eq`, `neq`, `isAnyOf`, `isNoneOf`, or an IRI right operand in none of its schemes. | profiles §3, §4 (`decisions/0015`) |
 | `FloatingPointOperand` | error | 2 | An `xsd:float` or `xsd:double` right operand. | profiles §4 |
 | `MixedDuration` | error | 2 | A duration mixing year-month and day-time components. | profiles §4 |
 | `WitnessOutsideDuty` | error | 2 | A witness-source operand in a constraint that is not a duty's. | profiles §3 |

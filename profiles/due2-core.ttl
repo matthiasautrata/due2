@@ -7,6 +7,7 @@
 @prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
 due2: a owl:Ontology ;
@@ -22,6 +23,11 @@ due2:one a due2:Cardinality .
 due2:set a due2:Cardinality .
 due2:allowedOperator a owl:ObjectProperty ;
     rdfs:domain odrl:LeftOperand ; rdfs:range odrl:Operator .
+
+# --- Operand bindings: concept schemes (§4, decisions/0015) ---
+due2:conceptScheme a owl:ObjectProperty ;
+    rdfs:domain odrl:LeftOperand ; rdfs:range skos:ConceptScheme ;
+    rdfs:comment "A SKOS concept scheme whose concepts the operand's IRI values are; they compare under skos:broader. An operand's schemes are the union over all layers." .
 
 # --- Context built-in (§3) ---
 due2:actionTime a owl:DatatypeProperty ;
@@ -70,8 +76,9 @@ odrl:recipient
 # "pay at least x" as an odrl:payAmount refinement of the duty's odrl:compensate.
 # Bound to the witness source so it reads the payment, not the request
 # (due2-profiles.md §3, §9 #6 resolved 2026-10-11). Outside a duty it is
-# rejected (WitnessOutsideDuty); a policy that means the requested amount binds
-# its own operand, which takes precedence over this baseline (§2 layers).
+# rejected (WitnessOutsideDuty); a policy that means the requested amount
+# rebinds the source to dprod:requestSource and keeps this range, which this
+# layer owns (§2 Layers, decisions/0014).
 odrl:payAmount
     dprod:operandSource due2:witnessSource ;
     dprod:operandProperty odrl:payAmount ;

@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.7
+**Status:** Draft v0.8
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.7** (2026-10-17, `decisions/0013`, #64): §4 admits a set right operand written as repeated values as well as an RDF list, and rejects the forms with no reading. **v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context table names `dprod:agent`, the `dprod:EvaluationContext` property (`dprod-contracts.ttl`) that the left operand `dprod:currentAgent` reads through `dprod:operandProperty` — the table lists properties, as its `dprod:clock` row does; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
+**Changes in v0.8** (2026-10-17, `decisions/0014`, `decisions/0015`, #52, #65): §2 gives an operand's type to the lowest layer that declares it, lets higher layers rebind only its source and property, and drops the order of profile modules; §3 defines kinds, compares values by kind when there is no range, and checks a binding's range against the read property's; §4 and §6 compare concepts under a declared SKOS concept scheme. **v0.7** (2026-10-17, `decisions/0013`, #64): §4 admits a set right operand written as repeated values as well as an RDF list, and rejects the forms with no reading. **v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context table names `dprod:agent`, the `dprod:EvaluationContext` property (`dprod-contracts.ttl`) that the left operand `dprod:currentAgent` reads through `dprod:operandProperty` — the table lists properties, as its `dprod:clock` row does; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -26,27 +26,32 @@ A profile may extend ODRL at exactly these points. Anything else a profile defin
 
 | # | Extension point | Declared by | Used in |
 |---|---|---|---|
-| 1 | Left operand binding | `dprod:operandSource`, `dprod:operandProperty`, `rdfs:range`, `due2:cardinality`, `due2:allowedOperator` | W2 §5.4 |
+| 1 | Left operand binding | `dprod:operandSource`, `dprod:operandProperty`, `rdfs:range`, `due2:cardinality`, `due2:allowedOperator`, `due2:conceptScheme` | W2 §5.4 |
 | 2 | Operator | closed core registry; profile operators by reduction | W2 §5.4 |
 | 3 | Logical connective | `odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not` | W1 stage 2 |
 | 4 | Policy class | `rdfs:subClassOf` an ODRL policy class | W1 stage 1 |
 | 5 | Party role | `due2:playsRole` on a function property | W1 stage 2, W2 §5.3 |
 | 6 | Duty timing | `dprod:deadline`, `dprod:recurrence` | W1 stage 2 (corpus `duty`), W2 `due2-workflows.md` §5.3 |
-| 7 | Hierarchy | `odrl:includedIn` (actions), typed `odrl:partOf` (assets, parties) | SOTW closure |
+| 7 | Hierarchy | `odrl:includedIn` (actions), typed `odrl:partOf` (assets, parties), `skos:broader` (concepts, §4) | corpus and SOTW closure |
 | 8 | Conflict default | `odrl:conflict` on the profile resource | W1 stage 1 |
 | 9 | Duty instance scope | `due2:instanceScope` (default `due2:member`) | W1 stage 2, W2 §5.3 |
 
 **Where declarations come from.** A profile that uses this vocabulary declares itself, as DPROD does for operand bindings. For a profile that does not, due2 ships a *binding module*: a small Turtle file mapping that profile's terms onto the points above (`profiles/<name>.ttl`). A binding module adds declarations; it never changes a profile's own.
 
-**Layer precedence [D].** Bindings resolve through ordered layers: the policy graph first, then the selected profile modules in `odrl:profile` declaration order, then due2's baseline (`profiles/due2-core.ttl`) as the lowest layer. A selected profile rebinding a baseline operand is the intended override, not a conflict; `ConflictingProfileDeclaration` applies only among *selected* modules that declare the same term differently. Declaring `odrl:profile <https://w3id.org/due2/profile#>` selects no extra module — the baseline is always present underneath.
+**Layers [D].** Declarations come from three layers: the policy graph, the selected profile modules, and due2's baseline (`profiles/due2-core.ttl`), from highest to lowest. Declaring `odrl:profile <https://w3id.org/due2/profile#>` selects no extra module, because the baseline is always present underneath. The selected modules form one layer and have no order among themselves: two of them that declare the same term differently are rejected with `ConflictingProfileDeclaration`. A left operand's binding (§3) resolves through the layers in two parts (`decisions/0014`):
 
-The due2 vocabulary is `https://w3id.org/due2/profile#` (prefix `due2:`). It defines only what DPROD and ODRL do not: cardinality, allowed operators, roles, instance scope, and two context properties.
+- **The type belongs to the lowest declaring layer.** A layer *declares* an operand when it states any of `dprod:operandSource`, `dprod:operandProperty`, `rdfs:range`, `due2:cardinality`, or `due2:allowedOperator` for it. The lowest such layer owns the operand's range, cardinality, and allowed operators, and an attribute it omits takes the §3 default. A higher layer may restate a type attribute only with the owner's value; any other value is rejected with `RetypedOperand`.
+- **The source and property may be rebound.** They come from the highest layer that states them. A selected profile or a policy that rebinds a baseline operand is the intended override, not a conflict: DPROD binds `odrl:dateTime` to `dprod:clock`, and its range stays the baseline's `xsd:dateTime`.
+
+Concept schemes (`due2:conceptScheme`, §4) are neither: an operand's schemes are the union of every layer's (`decisions/0015`).
+
+The due2 vocabulary is `https://w3id.org/due2/profile#` (prefix `due2:`). It defines only what DPROD and ODRL do not: cardinality, allowed operators, concept schemes, roles, instance scope, the witness source, and one context property, `due2:actionTime`.
 
 ---
 
 ## 3. Left operands **[D]**
 
-Every left operand used in a constraint has exactly one binding: one source and one property. This is DPROD's rule (`formal-semantics.md` §6.2), adopted unchanged.
+Every left operand used in a constraint has exactly one binding once the layers of §2 are resolved: one source and one property. This is DPROD's rule (`formal-semantics.md` §6.2), adopted unchanged.
 
 ```turtle
 ex:purpose a odrl:LeftOperand ;
@@ -89,11 +94,17 @@ ex:purpose a odrl:LeftOperand ;
 
 `missing`, `invalid`, `conflict`, and `unresolved` make the constraint `U`. They never make it false (ways-of-working §5.1).
 
-**Defaults.** `rdfs:range` absent means any literal or IRI, compared by identity. A range that is an XSD datatype requires a literal of that datatype (any numeric type for a numeric range). A range that is a class requires an IRI; membership of the class is checked only by `isA`, against declared typing (§6), and otherwise the range documents intent. `due2:cardinality` absent means `one`. `due2:allowedOperator` absent means every core operator whose signature accepts the range (§4).
+**Kinds [D]** (`decisions/0014`). A value's *kind* says what it can be compared with. Every XSD numeric datatype is one kind, numeric. Every other XSD primitive datatype is a kind of its own, and a derived datatype has its primitive's kind (XSD 1.1 Part 2 §2.4.2, §3.3–3.4), so `xsd:dateTimeStamp` is a `dateTime` and `xsd:dayTimeDuration` a `duration`. A datatype outside XSD, `rdf:langString` included, is a kind of its own. Every IRI has one kind, IRI, whatever its classes. A range has the kind of the values it admits: a datatype range its datatype's kind, a class range the IRI kind.
 
-**Checks at normalisation.** A constraint whose left operand has no binding is rejected with `UnboundLeftOperand`. One whose operator is not allowed, or whose right operand does not conform to the range, is rejected with `OperatorTypeMismatch`. A missing binding is an authoring error, never a runtime unknown.
+**Defaults.** `rdfs:range` absent admits a value of any kind. Values are still compared by value within a kind (§4): `"1"^^xsd:integer` equals `"1.0"^^xsd:decimal`, and a left value whose kind differs from the right operand's, such as an IRI against a literal, does not fit the operator, so the constraint is `U` (#65). A range that is an XSD datatype requires a literal of its kind. A range that is a class requires an IRI; membership of the class is checked only by `isA`, against declared typing (§6), and otherwise the range documents intent. `due2:cardinality` absent means `one`. `due2:allowedOperator` absent means every core operator whose signature accepts the range (§4). A default fills what the layer that owns the operand's type omits (§2).
 
-**Baseline bindings.** `profiles/due2-core.ttl` binds the ODRL Common Vocabulary operands that need no profile: `odrl:dateTime` to `due2:actionTime`, `odrl:purpose` and `odrl:recipient` to the request, and `odrl:payAmount` to the witness source (resolved 2026-10-11, §9 #6). The last makes the idiom of the W3C CG examples and OVAL — "pay at least x" as an `odrl:payAmount` refinement of the duty's `odrl:compensate` — an ordinary witness condition with no per-policy binding. It is still an explicit binding, not a position-dependent reading: outside a duty `odrl:payAmount` is rejected (`WitnessOutsideDuty`), and a policy that means a requested amount binds its own operand, which overrides the baseline (§2 layers). Every other common-vocabulary operand needs a profile binding before use. A selected profile may rebind an operand; DPROD binds `odrl:dateTime` to `dprod:clock`, and under DPROD that binding wins — a selected profile overriding the baseline (§2 layer precedence), not a conflict. Selecting a profile adopts all of its declarations, not just the terms a policy happens to use: a policy that wants `dprod:deadline` but action-time semantics for its time constraints binds its own operand to `due2:actionTime` rather than using `odrl:dateTime`.
+**Checks at normalisation.** A constraint whose left operand has no binding is rejected with `UnboundLeftOperand`. One whose operator is not allowed, or whose right operand is not of the range's kind, is rejected with `OperatorTypeMismatch`. A binding whose range has a kind other than that of the read property's `rdfs:range`, declared in any loaded layer, is rejected with `OperandRangeMismatch`. In practice this applies to the context properties: an operand that reads `dprod:clock` or `due2:actionTime` has no range or a `dateTime` one, and an operand that reads `dprod:agent` has no range or a class. A missing binding is an authoring error, never a runtime unknown.
+
+These checks are coarse on purpose. They leave out class subsumption and disjointness, so any two class ranges agree; custom datatypes and their facets; coercion between kinds, so a `date` never meets a `dateTime`; unit conversion, which is the assembler's job (*One hop*, above); and the schemas of request and state producers, which due2 does not load. They only reject. Whatever they let through is still checked against the value at evaluation, where a misfit is a `TypeMismatch`, so `U`: a check left out costs a late `U`, never a wrong verdict.
+
+**Layered bindings and DPROD's shapes.** DPROD's `LeftOperandShape` (`profiles/vendor/dprod/shapes/dprod-contracts-shapes.ttl`) requires exactly one source and one property on each left operand of the graph it validates, and has no notion of layers. A policy that rebinds an operand (§2) passes the shape when the policy graph is validated alone, and fails it when the layers are merged into one graph first. As with the witness source, a policy that must pass DPROD's shapes over the merged graph cannot rebind.
+
+**Baseline bindings.** `profiles/due2-core.ttl` binds the ODRL Common Vocabulary operands that need no profile: `odrl:dateTime` to `due2:actionTime`, `odrl:purpose` and `odrl:recipient` to the request, and `odrl:payAmount` to the witness source (resolved 2026-10-11, §9 #6). The last makes the idiom of the W3C CG examples and OVAL — "pay at least x" as an `odrl:payAmount` refinement of the duty's `odrl:compensate` — an ordinary witness condition with no per-policy binding. It is still an explicit binding, not a position-dependent reading: outside a duty `odrl:payAmount` is rejected (`WitnessOutsideDuty`), and a policy that means a requested amount rebinds its source to `dprod:requestSource` (§2), keeping the baseline's range `xsd:decimal`. Every other common-vocabulary operand needs a profile binding before use. A selected profile may rebind an operand's source and property, never its type (§2): under DPROD, `odrl:dateTime` reads `dprod:clock`, decision time, and is still an `xsd:dateTime`. Selecting a profile adopts all of its declarations, not just the terms a policy happens to use: a policy that wants `dprod:deadline` but action-time semantics for its time constraints rebinds `odrl:dateTime` to `due2:actionTime` in its own graph, the highest layer, or binds an operand of its own.
 
 **Admissibility and freshness [D].** Configuration may restrict, per state property, the admitted sources and their age (`admit_source`, `admit_age`, `due2-workflows.md` §3.4), as RL2 Model §4.4 does. A value failing the filter is treated as absent: `missing`, never a separate outcome.
 
@@ -105,9 +116,9 @@ A closed, typed core registry. An operand that does not fit an operator's signat
 
 | Operator | Left | Right | Holds when |
 |---|---|---|---|
-| `eq`, `neq` | any | same type | equal or not, by value within the datatype; IRIs by identity; strings by code point |
-| `lt`, `lteq`, `gt`, `gteq` | number, `dateTime`, `date`, single-component duration | same type | order within the datatype |
-| `isAnyOf`, `isNoneOf` | one value | set | membership or its absence |
+| `eq`, `neq` | any | same kind (§3) | equal or not, by value within the kind: numbers by numeric value, strings by code point, IRIs by identity or under a concept scheme (below) |
+| `lt`, `lteq`, `gt`, `gteq` | number, `dateTime`, `date`, single-component duration | same kind | order within the kind |
+| `isAnyOf`, `isNoneOf` | one value | set | `eq` against some right value, or against none: the Kleene disjunction of the `eq`s, or its negation |
 | `isAllOf` | set | set | left ⊇ right: the left covers every listed value, and may hold more |
 | `isPartOf` | IRI, or set of IRIs | IRI, or list of IRIs | every left value ⊑ some right value, under the profile's declared `partOf` closure |
 | `hasPart` | IRI, or set of IRIs | IRI, or list of IRIs | every right value ⊑ some left value, under the same closure |
@@ -121,6 +132,16 @@ Because the reading is adopted, not given by ODRL, normalisation accepts a list 
 
 **A list or repeated values [D].** A set right operand may be written as one RDF list, `odrl:rightOperand ( ex:a ex:b )`, or as repeated values, `odrl:rightOperand ex:a, ex:b`. The repeated form is what the ODRL JSON-LD context makes of a JSON array, since it does not declare `rightOperand` an `@list`. On the six set-based operators both forms are one right operand, the set of the values, with no warning: no operator in the table above depends on order or repeats. Normalisation rejects three forms with `MalformedConstraint`: more than one value on an operator that is not set-based; a list together with any other value; and two or more lists (`decisions/0013`).
 
+**Concept operands [D]** (`decisions/0015`, #52). A binding may name the SKOS concept schemes its IRI values come from, with one or more `due2:conceptScheme` values, and an operand's schemes are the union of every layer's (§2). On such an operand IRIs compare under the concept hierarchy (§6): `c ⊑ d` holds when `c = d` or a chain of `skos:broader` edges leads from `c` to `d`. `eq` holds when the request value is ⊑ the right value, and `isAnyOf` when it is ⊑ some right value, so a permission for purpose `dpv:Marketing` covers a request for `dpv:DirectMarketing`. `neq` and `isNoneOf` are their complements, so "not for marketing" excludes direct marketing too. For a request concept `c` and a right concept `d`, `eq` gives:
+
+| `c` | `eq` |
+|---|---|
+| in one of the operand's schemes, and `c ⊑ d` | `T` |
+| in one of the operand's schemes, with no path to `d` | `F`: closed-world over the declared edges, as for actions |
+| in none of the operand's schemes | `U`: the value is `invalid`, so a prohibition never silently misses a concept whose edges were not supplied |
+
+Only IRIs are concepts. A string compares by code point whether or not the operand has a scheme, and a string against a concept does not fit, so `U`. The baseline's `odrl:purpose`, which has no range, therefore serves both ways of writing a purpose: as a string, or as a concept once a layer names its scheme. Normalisation rejects, with `OperatorTypeMismatch`, an IRI right operand that no scheme membership declared in the policy or its profile modules places in one of the operand's schemes, and any operator other than `eq`, `neq`, `isAnyOf`, and `isNoneOf` on an operand with a scheme. A `due2:conceptScheme` on an operand whose range is a datatype is rejected with `InvalidBinding`.
+
 Mixed-component durations (months with days) and floating-point values are rejected at normalisation, as RL2 does: they have no total order or no exact equality. Durations are ordered only within one kind — day-time durations (days, hours, minutes, seconds) with each other, year-month durations (years, months) with each other. `P1Y` against `P365D` is `invalid`, so `U`.
 
 **Deliberate difference from DPROD.** DPROD's `apply` returns `false` for incomparable operands. due2 returns `U`, because an incomparable value is a data problem, not an unsatisfied condition (§8.2).
@@ -133,7 +154,7 @@ Mixed-component durations (months with days) and floating-point values are rejec
 
 `odrl:and`, `odrl:or`, `odrl:xone`, and `dprod:not`. ODRL has no negation; DPROD adds it with one operand. `odrl:andSequence` is rejected at normalisation (`UnsupportedConnective`): it carries ordering semantics and is not flattened into `and`.
 
-Stage 2 of W1 pushes negation inward before DNF: De Morgan for `and` and `or`, and complement operators for atoms — `eq`↔`neq`, `lt`↔`gteq`, `lteq`↔`gt`, `isAnyOf`↔`isNoneOf`. Both rewrites are valid in Kleene logic because an operand that is missing or ill-typed gives `U` on both sides. `not` over `xone` expands `xone` first.
+Stage 2 of W1 pushes negation inward before DNF: De Morgan for `and` and `or`, and complement operators for atoms — `eq`↔`neq`, `lt`↔`gteq`, `lteq`↔`gt`, `isAnyOf`↔`isNoneOf`. Both rewrites are valid in Kleene logic because an operand that is missing, ill-typed, or a concept outside the operand's schemes (§4) gives `U` on both sides. `not` over `xone` expands `xone` first.
 
 ---
 
@@ -152,7 +173,7 @@ A function property takes a role through `due2:playsRole` in a profile or bindin
 
 A duty with both roles is one atom with one set of parties. As a root obligation it receives the policy-level values (normalisation spec §6.2), and those count as its own: it then declares function properties and inherits nothing from the permissions that reference it. Parties stated on the duty itself are the clearest form.
 
-**Hierarchies.** Actions follow the `odrl:includedIn` closure. Assets and parties follow the typed `odrl:partOf` closure: an asset path may pass only through `odrl:AssetCollection`, a party path only through `odrl:PartyCollection`, and a cross-kind path is invalid (`formal-semantics.md` §5.4). `isA` follows `rdf:type` and `rdfs:subClassOf`; the `rdf:type` edges of the individuals it compares travel in the closure like any other edge (`due2-workflows.md` §3.1).
+**Hierarchies.** Actions follow the `odrl:includedIn` closure. Assets and parties follow the typed `odrl:partOf` closure: an asset path may pass only through `odrl:AssetCollection`, a party path only through `odrl:PartyCollection`, and a cross-kind path is invalid (`formal-semantics.md` §5.4). `isA` follows `rdf:type` and `rdfs:subClassOf`; the `rdf:type` edges of the individuals it compares travel in the closure like any other edge (`due2-workflows.md` §3.1). Concepts follow `skos:broader`, within the concept schemes their operand names (§4; `decisions/0015`). A `skos:narrower` triple is read as the inverse `skos:broader` edge. A concept is in a scheme when it states `skos:inScheme` or `skos:topConceptOf` for it, or the scheme states `skos:hasTopConcept` for the concept (SKOS Reference S7, S8). Membership is not inherited along the hierarchy, as in SKOS, and cross-scheme mappings such as `skos:exactMatch` are not read.
 
 Edges declared in the policy and in its profile modules travel with the policy into the corpus `closure`. ODRL's own action hierarchy is shipped as one such module, `profiles/odrl-actions.ttl`, so `odrl:read ⊑ odrl:use` holds without each policy restating it. Edges about the world — who is in which team today — arrive in the SOTW `closure`; only the edges above the request's own entities are fetched and recorded (`due2-workflows.md` §3.3). W2 uses the transitive closure of both (`due2-workflows.md` §3.1, §3.3). The reading is closed-world over the declared edges: a membership that no edge establishes does not hold. A catch-all collection therefore needs its membership edges supplied, or nothing matches it.
 
