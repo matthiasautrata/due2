@@ -11,8 +11,9 @@
 %   `is_list/1`, `list_item/2`, `unplaceable/2` (lift.lp); `rule/1`, `action_term/1`
 %   (structure.lp).
 % - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
-%   `member/2`, `reach_c/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`, `right_value/2`,
-%   `right/2`; extends `reject/2` (structure.lp) and `unsupported/1` (lift.lp).
+%   `member/2`, `reach_c/2`, `scope/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`,
+%   `right_value/2`, `right/2`, `unit/2`; extends `reject/2` (structure.lp) and
+%   `unsupported/1` (lift.lp).
 
 %## The roots
 
@@ -72,6 +73,16 @@ member(C, D) :- conn(C, K), triple(C, Pred, List), voc(K, Pred), is_list(List), 
 reach_c(C, D) :- member(C, D).
 reach_c(C, D2) :- reach_c(C, D), member(D, D2).
 
+%*! scope(C, Scope)
+
+Node `C` refines what `Scope` names: `rule` under a rule's constraint root, `action` under an
+action term's refinement root. It is `constraint.scope` of due2-workflows.md §3.1, and part of
+the completion key (completion.lp).
+*%
+scope(C, rule) :- top_constraint(_, C).
+scope(C, action) :- top_refinement(_, C).
+scope(D, Scope) :- scope(C, Scope), member(C, D).
+
 %*! leaf(C)
 
 Node `C` compares a left operand: it has an `odrl:leftOperand`.
@@ -110,6 +121,13 @@ Repeated values and one list are the same set (decisions/0013).
 right(C, Term) :- right_value(C, Term), not is_list(Term).
 right(C, Term) :- right_value(C, List), is_list(List), list_item(List, Term).
 
+%*! unit(C, Iri)
+
+Leaf `C` labels its right operand with the unit `Iri` (`odrl:unit`). It converts nothing
+(compare.lp), and it is part of the completion key (completion.lp).
+*%
+unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
+
 %## Rejections
 
 % A node that is neither a leaf nor a connective; a leaf without one left operand, one
@@ -137,6 +155,9 @@ unsupported("constraint: two connectives") :- conn(C, K), conn(C, K2), K != K2.
 unsupported("constraint: dprod:not without one member") :- conn(C, negation),
     #count { D : member(C, D) } != 1.
 unsupported("constraint: cycle") :- reach_c(C, C).
+% A node shared by a rule's constraint and an action's refinement would need two completion
+% variables, one per scope, for one value (completion.lp).
+unsupported("constraint: node in two scopes") :- scope(C, rule), scope(C, action).
 unsupported("constraint: empty list") :- right_value(C, List), voc(nil, List).
 % A list on a scalar operator: one value that is a list, which no scalar comparison reads.
 unsupported("constraint: list on a scalar operator") :- op(C, O), not set_based(O),

@@ -1,6 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.7, 2026-10-17 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+**Status:** v0.8, 2026-10-17 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+
+**Changes in v0.8** (2026-10-17, #48): slow `I`'s variable cap is set by measurement, at 64 (§3).
 
 **Changes in v0.7** (2026-10-17, `decisions/0011`): an `Indeterminate`'s pivotal `unknown` atoms and its `verdict_range` are checked against brute force over the completions, in clingo-i (§4.1) and in W3 (§4.5).
 
@@ -104,7 +106,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 **Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
 - `I` is the clingo semantics program (`decisions/0009`); it has two modes over one program, differing only in how they complete unknowns.
-  - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals (for example 16) it declines rather than falling back. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
+  - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals it declines rather than falling back. The cap is 64, set by measurement in clingo-i (#48): at 64 variables the slowest measured shape, an `and` of tautologies (`x eq i or x neq i`), takes about 1.1 s, and at 128 about 7 s; the corpus needs at most 3. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
   - **Fast, later.** It uses §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on authored policies.
 - The `Den` oracle has no memoization or fan-out bookkeeping, as §8.1 already requires.
 - A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.

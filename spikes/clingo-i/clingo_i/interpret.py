@@ -43,9 +43,9 @@ PROGRAM_FILES = (
 SOLVE_1 = PROGRAM_FILES[:7]  # lift.lp to applies.lp: no choice, so one model
 SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
 CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
-VARIABLE_CAP = 16  # correctness-strategy.md §3
+VARIABLE_CAP = 64  # correctness-strategy.md §3, set by measurement (journal, #48)
 # Read after the rejections, in order.
-DECLINES = ("unsupported_input", "unsupported_value", "unsupported_part")
+DECLINES = ("unsupported_input", "unsupported_value")
 
 
 def load_programs() -> dict[str, str]:
@@ -57,8 +57,8 @@ class Declined(Exception):
     """A reply kind, not an error: the vector uses something the spike does not read.
 
     Attributes:
-        feature: The decline reason the reply names, such as `odrl:duty`, `completion`,
-            or `variable-cap` (DESIGN.md § Declines).
+        feature: The decline reason the reply names, such as `odrl:duty` or
+            `variable-cap` (DESIGN.md § Declines).
     """
 
     def __init__(self, feature: str) -> None:
@@ -133,24 +133,7 @@ class Interpreter:
                 not admissible.
             RuntimeError: The program has no model, so it is wrong.
         """
-        prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
-        graph = flatten.parse(as_str(vector["policy"], "policy"))
-
-        facts = flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
-        # A path's layer: `core`, or `module(Iri)` for the profile whose module it is part of
-        # (decisions/0014 #3). A file in both the core and a profile is core.
-        layers: dict[str, Symbol] = {path: Function("core") for path in self._core}
-        for iri in flatten.profiles(graph):
-            if iri not in self._profiles:
-                raise ValueError(f"unknown profile {iri}")
-            for path in self._profiles[iri]:
-                layers.setdefault(path, Function("module", [String(iri)]))
-            facts.append(Function("selected_profile", [String(iri)]))
-        for path in sorted(layers):
-            facts.extend(self._modules[path])
-            facts.append(Function("layer", [String(path), layers[path]]))
-        text = flatten.render(facts + values.value_facts(values.literals(facts)))
-
+        text = self.facts(vector)
         self._structure(text)
         shown = self._solve(text, SOLVE_2, "cautious")
         verdicts = [_text(s.arguments[1]) for s in shown if s.match("verdict", 2)]
@@ -186,6 +169,30 @@ class Interpreter:
                 "high": max(reached, key=CHAIN.index),
             }
         return out
+
+    def facts(self, vector: Obj) -> str:
+        """The vector as the program's input facts (DESIGN.md § Input facts), one per line.
+
+        Raises:
+            ValueError: The vector is malformed or names an unknown profile.
+        """
+        prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
+        graph = flatten.parse(as_str(vector["policy"], "policy"))
+
+        facts = flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
+        # A path's layer: `core`, or `module(Iri)` for the profile whose module it is part of
+        # (decisions/0014 #3). A file in both the core and a profile is core.
+        layers: dict[str, Symbol] = {path: Function("core") for path in self._core}
+        for iri in flatten.profiles(graph):
+            if iri not in self._profiles:
+                raise ValueError(f"unknown profile {iri}")
+            for path in self._profiles[iri]:
+                layers.setdefault(path, Function("module", [String(iri)]))
+            facts.append(Function("selected_profile", [String(iri)]))
+        for path in sorted(layers):
+            facts.extend(self._modules[path])
+            facts.append(Function("layer", [String(path), layers[path]]))
+        return flatten.render(facts + values.value_facts(values.literals(facts)))
 
     def _program(self, files: tuple[str, ...]) -> str:
         """The text of `files`, joined in the given order."""
@@ -226,23 +233,30 @@ class Interpreter:
         """Solves 2 and 3: the shown atoms true in every model (cautious) or in some (brave).
 
         clingo reports the consequences of the enumeration so far with each model, so the last
-        model's atoms are the final answer.
+        model's atoms are the final answer. The variables are counted in the first model:
+        `var/1` is the same in every model, but grounding keeps `var/1` atoms that no model
+        makes true, so counting the ground atoms would overcount (completion.lp).
 
         Raises:
-            Declined: More than `VARIABLE_CAP` completion variables after grounding.
+            Declined: More than `VARIABLE_CAP` completion variables.
             RuntimeError: No model: an integrity constraint failed.
         """
         ctl = Control(["0", f"--enum-mode={mode}"], logger=_log)
         ctl.add("base", [], facts + "\n" + self._program(files))
         ctl.ground([("base", [])])
-        variables = sum(1 for _ in ctl.symbolic_atoms.by_signature("var", 1))
-        if variables > VARIABLE_CAP:
-            raise Declined("variable-cap")
         last: list[Symbol] = []
+        over = False
 
-        def on_model(model: Model) -> None:
+        def on_model(model: Model) -> bool:
+            nonlocal over
+            if not last and not over:
+                variables = sum(1 for a in model.symbols(shown=True) if a.match("var", 1))
+                over = variables > VARIABLE_CAP
             last[:] = model.symbols(shown=True)
+            return not over  # False stops the enumeration
 
         if not ctl.solve(on_model=on_model).satisfiable:
             raise RuntimeError(f"no model satisfies the integrity constraints ({mode})")
+        if over:
+            raise Declined("variable-cap")
         return last

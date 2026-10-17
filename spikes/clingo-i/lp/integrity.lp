@@ -7,8 +7,9 @@
 % failed constraint would only say that something is. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `rank/2`, `two_valued/1` (kleene.lp); `used/1`, `read_ok/1`, `read_u/1`
-%   (operand.lp); `pair/2`, `eqr/3` (compare.lp); `item/1`, `holds/2`, `part_of/2`
-%   (applies.lp); `u_atom/1`, `lit_of/2`, `var/1`, `world/1`, `assigned/3`, `completed/3`,
+%   (operand.lp); `pair/2`, `eqr/3` (compare.lp); `item/1`, `holds/2` (applies.lp);
+%   `atom_party/3` (structure.lp); `leaf/1` (constraint.lp); `u_atom/1`, `lit_of/2`, `open/1`,
+%   `leaf_lit/3`, `var/1`, `world/1`, `assigned/3`, `crank_in/3`, `completed/3`,
 %   `completed_item/1` (completion.lp); `verdict/2` (resolve.lp).
 % - **Provides:** nothing: integrity constraints only.
 
@@ -20,12 +21,16 @@
 :- used(Op), #count { ok : read_ok(Op); u : read_u(Op) } != 1.
 :- pair(Lv, Rv), #count { N : eqr(Lv, Rv, N) } != 1.
 
-% Every u part of a u atom reads exactly one completion variable, so a part the variable key
-% forgets fails loudly.
-:- u_atom(X), part_of(X, I), holds(I, u), #count { L : lit_of(I, L) } != 1.
+% Every u target or party part of a u atom, and every open leaf, reads exactly one completion
+% variable, so a part or a leaf the variable key forgets fails loudly.
+:- u_atom(X), holds(part(X, target), u), #count { L : lit_of(part(X, target), L) } != 1.
+:- u_atom(X), atom_party(X, F, _), holds(part(X, party(F)), u),
+    #count { L : lit_of(part(X, party(F)), L) } != 1.
+:- open(C), leaf(C), #count { L, Pol : leaf_lit(C, L, Pol) } != 1.
 
-% In every world, every variable and every completed item has exactly one value, f or t.
+% In every world, every variable, open node, and completed item has exactly one value, f or t.
 :- world(W), var(L), #count { V : assigned(W, L, V) } != 1.
+:- world(W), open(C), #count { N : crank_in(W, C, N) } != 1.
 :- world(W), completed_item(I), #count { V : completed(W, I, V) } != 1.
 :- completed(_, _, V), not two_valued(V).
 

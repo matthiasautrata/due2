@@ -7,11 +7,14 @@ range (due2-workflows.md §5.2, §6.1 to §6.4; decisions/0011). It reads the ge
 program's facts, and shares only the spec's literal key with it.
 
 A rule may carry constraint trees over request parameters, some of them absent. The oracle
-gives a tree its value by supervaluation: it tries `t` and `f` for each leaf whose parameter is
-absent, each leaf on its own, and the tree is `u` when the tries disagree. That is strong Kleene
-logic for a tree whose leaves are independent (due2-workflows.md §5.2), computed without the
-program's ranks. A `u` constraint part of a `u` atom has a completion literal the spike does not
-build yet (#48), so the oracle predicts the `"completion"` decline.
+gives a tree its finding value by supervaluation: it tries `t` and `f` for each leaf whose
+parameter is absent, each leaf on its own, and the tree is `u` when the tries disagree. That is
+strong Kleene logic for a tree whose leaves are independent (due2-workflows.md §5.2), computed
+without the program's ranks. Completion is different: every leaf of a generated tree compares
+its operand with the right operand 1, so two leaves with one operand and one operator, or with
+complementary operators, read one literal (due2-workflows.md §6.4). Under a completion, a tree
+takes its finding value where that is `t` or `f`, and is re-evaluated two-valued from its
+members where it is `u`.
 
 The mutation test runs the same differential against programs with one rule changed, and
 asserts that it fails (#47). The measurement test asserts that the generator reaches each
@@ -27,10 +30,11 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
 import pytest
-from hypothesis import Phase, example, given, settings
+from clingo import Control
+from hypothesis import Phase, assume, example, given, settings
 from hypothesis import strategies as st
 
-from clingo_i.interpret import CHAIN, Interpreter, load_programs
+from clingo_i.interpret import CHAIN, SOLVE_2, Interpreter, load_programs
 from clingo_i.json_types import Json, Obj
 from tests.conftest import INIT, PREFIXES, vector
 
@@ -236,29 +240,119 @@ def tree_value(case: Case, tree: Tree) -> Truth:
     return results.pop() if len(results) == 1 else None
 
 
-def parts(case: Case, r: Rule) -> list[Truth | Literal]:
-    """A rule's parts: a known truth, or the literal a u part reads (due2-workflows.md §6.4).
+# The positive operator and the polarity of each operator: a complement reads its base's literal
+# negated (due2-workflows.md §6.4).
+POLARITY: dict[str, tuple[str, bool]] = {
+    "eq": ("eq", True),
+    "neq": ("eq", False),
+    "lt": ("lt", True),
+    "gteq": ("lt", False),
+    "lteq": ("lteq", True),
+    "gt": ("lteq", False),
+}
 
-    A `u` constraint part is `None`: its literal is not built yet (#48).
-    """
-    out: list[Truth | Literal] = [case.action == r.action or r.action == "use"]
+
+def leaf_literal(leaf: Leaf) -> Literal:
+    """The literal of a leaf: its operand and positive operator. Scope and right operand agree."""
+    return (f"o{leaf.operand}", POLARITY[leaf.op][0])
+
+
+@dataclass(frozen=True)
+class Open:
+    """A `u` constraint part of a `u` atom, completed under each world."""
+
+    case: Case
+    tree: Tree
+
+    def literals(self) -> Iterator[Literal]:
+        """The literals of the open leaves."""
+        return (leaf_literal(leaf) for leaf in open_leaves(self.case, self.tree))
+
+    def value(self, world: dict[Literal, bool]) -> bool:
+        return _completed(self.case, self.tree, world)
+
+
+def open_leaves(case: Case, tree: Tree) -> Iterator[Leaf]:
+    """The leaves on a path of `u` nodes from the root: the leaves completion reads."""
+    if tree_value(case, tree) is not None:
+        return
+    match tree:
+        case Leaf():
+            yield tree
+        case Node(_, members, _):
+            for m in members:
+                yield from open_leaves(case, m)
+
+
+def _completed(case: Case, tree: Tree, world: dict[Literal, bool]) -> bool:
+    """A `t` or `f` node keeps its value; a `u` leaf reads its literal; a `u` connective is
+    re-evaluated two-valued."""
+    known = tree_value(case, tree)
+    if known is not None:
+        return known
+    match tree:
+        case Leaf(_, op):
+            return world[leaf_literal(tree)] == POLARITY[op][1]
+        case Node(conn, members, _):
+            vs = [_completed(case, m, world) for m in members]
+            if conn == "and":
+                return all(vs)
+            if conn == "or":
+                return any(vs)
+            if conn == "xone":
+                return sum(vs) == 1
+            return not vs[0]
+
+
+type Part = Truth | Literal | Open
+
+
+def parts(case: Case, r: Rule) -> list[Part]:
+    """A rule's parts: a known truth, the literal a u target or party part reads, or a u tree."""
+    out: list[Part] = [case.action == r.action or r.action == "use"]
     out.append(("target", r.target) if case.target is None else case.target == r.target)
     if r.assignee is not None:
         out.append(("party", r.assignee) if case.assignee is None else case.assignee == r.assignee)
-    out.extend(tree_value(case, t) for t in r.constraints)
+    out.extend(Open(case, t) if (v := tree_value(case, t)) is None else v for t in r.constraints)
     return out
 
 
-def finding(ps: list[Truth | Literal]) -> Truth:
-    """Kleene conjunction, with every literal u."""
+def finding(ps: list[Part]) -> Truth:
+    """Kleene conjunction: a literal or an open tree is u."""
     if any(p is False for p in ps):
         return False
-    return None if any(p is None or isinstance(p, tuple) for p in ps) else True
+    return None if any(p is not True for p in ps) else True
 
 
-def applies(ps: list[Truth | Literal], world: dict[Literal, bool]) -> bool:
-    """Only called when no part is `None`, or some part is `False`."""
-    return all(world[p] if isinstance(p, tuple) else p for p in ps)
+def reads(ps: list[Part]) -> set[Literal]:
+    """The literals a u atom reads in its u parts; an f atom reads none."""
+    if finding(ps) is False:
+        return set()
+    out: set[Literal] = set()
+    for p in ps:
+        if isinstance(p, tuple):
+            out.add(p)
+        elif isinstance(p, Open):
+            out.update(p.literals())
+    return out
+
+
+def applies(ps: list[Part], world: dict[Literal, bool]) -> bool:
+    if finding(ps) is not None:
+        return bool(finding(ps))
+    return all(
+        world[p] if isinstance(p, tuple) else p.value(world) if isinstance(p, Open) else p
+        for p in ps
+    )
+
+
+def worlds(ps: dict[str, list[Part]]) -> tuple[list[Literal], list[dict[Literal, bool]]]:
+    """The literals the u atoms read, and every completion of them."""
+    lits = sorted(set[Literal]().union(*(reads(p) for p in ps.values())))
+    return lits, [
+        dict(zip(lits, vals, strict=True))
+        for vals in itertools.product((False, True), repeat=len(lits))
+    ]
 
 
 def resolve(case: Case, on: dict[str, bool]) -> tuple[str, set[tuple[str, str]]]:
@@ -277,28 +371,13 @@ def resolve(case: Case, on: dict[str, bool]) -> tuple[str, set[tuple[str, str]]]
     return "NotApplicable", set()
 
 
-def declined(case: Case) -> bool:
-    """Some `u` constraint part belongs to a `u` atom (applies.lp, `unsupported_part/1`)."""
-    return any(
-        finding(parts(case, r)) is None and any(tree_value(case, t) is None for t in r.constraints)
-        for r in case.rules
-    )
-
-
 def oracle(case: Case) -> Obj:
-    if declined(case):
-        return {"unsupported": "completion"}
     ps = {r.name: parts(case, r) for r in case.rules}
-    lits = sorted({p for v in ps.values() for p in v if isinstance(p, tuple)})
 
     def run(world: dict[Literal, bool]) -> tuple[str, set[tuple[str, str]]]:
         return resolve(case, {n: applies(p, world) for n, p in ps.items()})
 
-    worlds = [
-        dict(zip(lits, vals, strict=True))
-        for vals in itertools.product((False, True), repeat=len(lits))
-    ]
-    results = [run(w) for w in worlds]
+    results = [run(w) for w in worlds(ps)[1]]
     verdicts = {v for v, _ in results}
     out: Obj = {}
     find = {n: finding(p) for n, p in ps.items()}
@@ -320,21 +399,13 @@ def oracle(case: Case) -> Obj:
 def unknown(case: Case) -> list[str]:
     """The `u` rules that read a pivotal literal: one whose flip alone moves the verdict."""
     ps = {r.name: parts(case, r) for r in case.rules}
-    lits = sorted({p for v in ps.values() for p in v if isinstance(p, tuple)})
 
     def verdict(world: dict[Literal, bool]) -> str:
         return resolve(case, {n: applies(p, world) for n, p in ps.items()})[0]
 
-    worlds = [
-        dict(zip(lits, vals, strict=True))
-        for vals in itertools.product((False, True), repeat=len(lits))
-    ]
-    pivotal = {lit for w in worlds for lit in lits if verdict(w) != verdict({**w, lit: not w[lit]})}
-    return sorted(
-        n
-        for n, p in ps.items()
-        if finding(p) is None and any(q in pivotal for q in p if isinstance(q, tuple))
-    )
+    lits, ws = worlds(ps)
+    pivotal = {lit for w in ws for lit in lits if verdict(w) != verdict({**w, lit: not w[lit]})}
+    return sorted(n for n, p in ps.items() if finding(p) is None and reads(p) & pivotal)
 
 
 def eliminations(case: Case, find: dict[str, Truth]) -> list[Json]:
@@ -399,8 +470,34 @@ EXAMPLES = [
     # A u leaf under a connective that decides anyway: f and u is f, t or u is t.
     constrained(Node("and", (eq(1), eq(2)), True)),
     constrained(Node("or", (eq(0), eq(2)), False)),
-    # A u constraint part of a u atom: the completion decline (#48).
+    # A u leaf, and two leaves that read one literal, positively and negatively: the tree is u
+    # (Kleene), but t in every completion.
     constrained(eq(2)),
+    constrained(Node("or", (eq(2), Leaf(2, "neq")), False)),
+    # Two rules that read one literal with opposite polarity: one or the other applies.
+    Case(
+        "perm",
+        (
+            Rule("r0", True, "use", "a", None, (Leaf(2, "lt"),)),
+            Rule("r1", True, "use", "a", None, (Leaf(2, "gteq"),)),
+        ),
+        "use",
+        "a",
+        None,
+    ),
+    # A u leaf under a t node, beside an open leaf with the same literal: only the open leaf
+    # is read.
+    Case(
+        "prohibit",
+        (
+            Rule("r0", True, "use", "a", None, (Node("or", (eq(0), eq(2)), False), eq(2))),
+            Rule("r1", False, "use", "a", "bob"),
+        ),
+        "use",
+        "a",
+        None,
+        (1, None, None),
+    ),
 ]
 
 
@@ -433,6 +530,72 @@ def test_matches_brute_force(interpreter: Interpreter) -> None:
     differential(interpreter, settings(max_examples=400, deadline=None))()
 
 
+# --- the enumeration against fixed solves (#48) ---
+
+CHOICE = "{ assigned(c, L, t); assigned(c, L, f) } = 1 :- var(L)."
+
+
+def shown_sets(program: str, mode: str = "auto") -> list[frozenset[str]]:
+    """The shown atoms of every model of `program`."""
+    ctl = Control(["0", f"--enum-mode={mode}"], logger=lambda _code, _msg: None)
+    ctl.add("base", [], program)
+    ctl.ground([("base", [])])
+    models: list[frozenset[str]] = []
+    ctl.solve(on_model=lambda m: models.append(frozenset(map(str, m.symbols(shown=True)))))
+    return models
+
+
+def test_enumeration_matches_fixed_solves(interpreter: Interpreter) -> None:
+    """One answer set per completion, and the cautious reply is the fold of fixed solves.
+
+    Without it, the differential could pass while the choice rule admits a model that is not a
+    completion, or misses one, if the oracle made the same mistake; and the reply could read
+    clingo's cautious enumeration wrongly. The brute force solves the evaluation layer once per
+    assignment, with every variable a fact and no choice rule.
+    """
+    programs = load_programs()
+    assert CHOICE in programs["completion.lp"]
+    program = "\n".join(programs[f] for f in SOLVE_2)
+    fixed = program.replace(CHOICE, "")
+
+    @settings(max_examples=150, deadline=None)
+    @given(cases())
+    def run(case: Case) -> None:
+        v = render(case)
+        reply = interpreter.reply(v)
+        assert "output" in reply, reply
+        text = interpreter.facts(v)
+        ctl = Control([], logger=lambda _code, _msg: None)
+        ctl.add("base", [], text + "\n" + program)
+        ctl.ground([("base", [])])
+        variables: list[str] = []
+        ctl.solve(
+            on_model=lambda m: variables.extend(
+                str(a.arguments[0]) for a in m.symbols(atoms=True) if a.match("var", 1)
+            )
+        )
+        assume(len(variables) <= 6)
+        enumerated = shown_sets(text + "\n" + program)
+        assert len(enumerated) == 2 ** len(variables)
+        solves: list[frozenset[str]] = []
+        for values in itertools.product(("t", "f"), repeat=len(variables)):
+            facts = "".join(
+                f"assigned(c, {lit}, {val})." for lit, val in zip(variables, values, strict=True)
+            )
+            models = shown_sets(text + "\n" + facts + "\n" + fixed)
+            assert len(models) == 1, models
+            solves.extend(models)
+        assert sorted(map(sorted, enumerated)) == sorted(map(sorted, solves))
+        common = solves[0].intersection(*solves[1:])
+        verdicts = {a for s in solves for a in s if a.startswith("verdict(")}
+        out = reply["output"]
+        assert isinstance(out, dict)
+        assert (out["verdict"] == "Indeterminate") == (len(verdicts) > 1)
+        assert shown_sets(text + "\n" + program, "cautious")[-1] == common
+
+    run()
+
+
 # --- mutation (#47) ---
 
 MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
@@ -450,6 +613,21 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
                 "lit_of(part(X, party(F)), party(F, Party))",
                 "lit_of(part(X, party(F)), party(X, F, Party))",
             ),
+        ],
+    ),
+    # One variable per leaf: leaves with the same key become independent.
+    "variable-per-leaf": (
+        "completion.lp",
+        [("leaf_lit(C, cons(D), Pol) :-", "leaf_lit(C, cons(C), Pol) :- D = C,")],
+    ),
+    # A complement read as its base: `neq` as `eq`.
+    "polarity-ignored": (
+        "completion.lp",
+        [
+            (
+                "crank_in(W, C, 2 - N) :- leaf_lit(C, L, neg)",
+                "crank_in(W, C, N) :- leaf_lit(C, L, neg)",
+            )
         ],
     ),
     "u-atoms-remove": (
@@ -509,21 +687,22 @@ def shapes(case: Case) -> Iterator[str]:
     yield f"conflict {case.conflict}"
     expected = oracle(case)
     out = expected.get("output")
-    if not isinstance(out, dict):
-        yield "completion decline"
-        return
+    assert isinstance(out, dict)
     u_rules = [r.name for r in case.rules if finding(parts(case, r)) is None]
     if out["verdict"] == "Indeterminate" and len(unknown(case)) < len(u_rules):
         yield "Indeterminate with a non-pivotal u atom"
-    reads = Counter(
-        p
-        for r in case.rules
-        if finding(parts(case, r)) is None
-        for p in set(parts(case, r))
-        if isinstance(p, tuple)
-    )
-    if any(n > 1 for n in reads.values()):
+    shared = Counter(lit for r in case.rules for lit in reads(parts(case, r)))
+    if any(n > 1 for n in shared.values()):
         yield "two u atoms sharing a literal"
+    polarities: dict[Literal, set[bool]] = {}
+    for r in case.rules:
+        if finding(parts(case, r)) is not None:
+            continue
+        for t in r.constraints:
+            for leaf in open_leaves(case, t):
+                polarities.setdefault(leaf_literal(leaf), set()).add(POLARITY[leaf.op][1])
+    if any(len(p) == 2 for p in polarities.values()):
+        yield "open leaves reading one literal with both polarities"
     tops = [t for r in case.rules for t in r.constraints if isinstance(t, Leaf)]
     if len(tops) > len(set(tops)):
         yield "constraint parts sharing a key"
@@ -545,7 +724,7 @@ def test_generator_reaches_each_shape() -> None:
 
     tally()
     wanted = {f"conflict {c}" for c in ("prohibit", "perm", "invalid")} | {
-        "completion decline",
+        "open leaves reading one literal with both polarities",
         "Indeterminate with a non-pivotal u atom",
         "two u atoms sharing a literal",
         "constraint parts sharing a key",

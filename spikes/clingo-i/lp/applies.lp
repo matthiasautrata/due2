@@ -9,7 +9,7 @@
 %   `closure/3`, `le_k/3` (lift.lp); `rank/2` (kleene.lp); `top_constraint/2`,
 %   `top_refinement/2` (constraint.lp); `holds/2` of constraint nodes (compare.lp).
 % - **Provides:** `part_of/2`, `item/1`, `reaches/2`, `action_matches/1`, `target_matches/1`,
-%   `named/1`, `party_matches/2`, `atom_constraint/2`, `holds/2`, `unsupported_part/1`.
+%   `named/1`, `party_matches/2`, `atom_constraint/2`, `holds/2`.
 
 %*! part_of(X, I)
 
@@ -105,15 +105,6 @@ term. Each is one conjunct of the finding.
 atom_constraint(a(R, Term, T, Party), C) :- atom(a(R, Term, T, Party)), top_constraint(R, C).
 atom_constraint(a(R, Term, T, Party), C) :- atom(a(R, Term, T, Party)), top_refinement(Term, C).
 holds(part(X, cons(C)), V) :- atom_constraint(X, C), holds(c(C), V).
-
-%*! unsupported_part(Kind)
-
-A `u` constraint part of a `u` atom: its completion literal is #48's, so solve 1 declines the
-vector as `"completion"` before any enumeration. A `u` constraint part of an atom that is `f`
-anyway changes nothing.
-*%
-unsupported_part("completion") :- part_of(X, part(X, cons(C))), holds(part(X, cons(C)), u),
-    holds(applies(X), u).
 
 %## The finding
 

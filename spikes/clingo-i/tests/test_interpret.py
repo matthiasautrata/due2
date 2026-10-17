@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 from clingo import Control
 
-from clingo_i.interpret import PROGRAM_FILES, Interpreter, load_programs
+from clingo_i.interpret import PROGRAM_FILES, VARIABLE_CAP, Interpreter, load_programs
 from clingo_i.json_types import Json, Obj, as_obj
 from tests.conftest import INIT, PREFIXES, PROF, vector
 
@@ -353,7 +353,8 @@ def outcome(reply: Obj) -> object:
 
 
 # DESIGN.md § `compare.lp`, the worked example: `and` is the least of its members, so an f
-# member decides it whatever the u one is, and a u that decides the finding declines (#48).
+# member decides it whatever the u one is, and a u that decides the finding is completed: the
+# permission applies in one completion and not in the other, so Indeterminate.
 WORKED_CONSTRAINT = """ex:c .
 ex:c odrl:and ( ex:c1 ex:c2 ) .
 ex:c1 odrl:leftOperand ex:purpose ; odrl:operator odrl:isAnyOf ;
@@ -365,7 +366,7 @@ ex:c2 odrl:leftOperand ex:count ; odrl:operator odrl:lteq ; odrl:rightOperand 5"
     ("params", "expected"),
     [
         ({"ex:purpose": iri("ex:marketing")}, "NotApplicable"),  # f and u is f
-        ({"ex:purpose": iri("ex:research")}, "completion"),  # t and u is u: declined
+        ({"ex:purpose": iri("ex:research")}, "Indeterminate"),  # t and u is u: Permit or not
         ({"ex:purpose": iri("ex:research"), "ex:count": typed("3", "integer")}, "Permit"),
         ({"ex:purpose": iri("ex:research"), "ex:count": typed("7", "integer")}, "NotApplicable"),
     ],
@@ -385,17 +386,17 @@ def leaf(operator: str, right: str) -> str:
         # Equality: IRIs by identity; an IRI against a literal is a misfit, so u.
         (leaf("eq", "ex:v"), "", {"ex:x": iri("ex:v")}, "Permit"),
         (leaf("eq", "ex:v"), "", {"ex:x": iri("ex:w")}, "NotApplicable"),
-        (leaf("eq", "ex:v"), "", {"ex:x": typed("v", "string")}, "completion"),
+        (leaf("eq", "ex:v"), "", {"ex:x": typed("v", "string")}, "Indeterminate"),
         (leaf("neq", "ex:v"), "", {"ex:x": iri("ex:w")}, "Permit"),
         # Strings by code point; a language tag is part of the type.
         (leaf("eq", '"v"'), "", {"ex:x": {"@value": "v"}}, "Permit"),
-        (leaf("eq", '"v"@en'), "", {"ex:x": {"@value": "v", "@language": "de"}}, "completion"),
+        (leaf("eq", '"v"@en'), "", {"ex:x": {"@value": "v", "@language": "de"}}, "Indeterminate"),
         # Order within a space: by value, so 5 and 5.00 are equal under a numeric range.
         (leaf("lt", "5"), "", {"ex:x": typed("3", "integer")}, "Permit"),
         (leaf("gteq", "5"), "", {"ex:x": typed("3", "integer")}, "NotApplicable"),
         (leaf("eq", "5"), " ; rdfs:range xsd:decimal", {"ex:x": typed("5.00", "decimal")}, "Permit"),
         # Two spaces have no order: u.
-        (leaf("lt", "5"), "", {"ex:x": typed("2026-01-01T00:00:00Z", "dateTime")}, "completion"),
+        (leaf("lt", "5"), "", {"ex:x": typed("2026-01-01T00:00:00Z", "dateTime")}, "Indeterminate"),
         # The set operators, over a set-valued operand.
         (leaf("isAnyOf", "ex:v, ex:w"), "", {"ex:x": iri("ex:w")}, "Permit"),
         (leaf("isNoneOf", "ex:v, ex:w"), "", {"ex:x": iri("ex:w")}, "NotApplicable"),
@@ -448,14 +449,14 @@ def test_hierarchy_operators(
         ({"status": "resolved", "values": [iri("ex:v")]}, "Permit"),
         ({"status": "resolved", "values": [iri("ex:w")]}, "NotApplicable"),
         # Every other status, and no fact at all, is u: never f.
-        ({"status": "missing"}, "completion"),
-        ({"status": "invalid"}, "completion"),
-        ({"status": "conflict", "values": [iri("ex:v"), iri("ex:w")]}, "completion"),
-        ({"status": "unresolved"}, "completion"),
-        (None, "completion"),
+        ({"status": "missing"}, "Indeterminate"),
+        ({"status": "invalid"}, "Indeterminate"),
+        ({"status": "conflict", "values": [iri("ex:v"), iri("ex:w")]}, "Indeterminate"),
+        ({"status": "unresolved"}, "Indeterminate"),
+        (None, "Indeterminate"),
         # Two values for a one-valued operand (MultipleValues), and none.
-        ({"status": "resolved", "values": [iri("ex:v"), iri("ex:w")]}, "completion"),
-        ({"status": "resolved", "values": []}, "completion"),
+        ({"status": "resolved", "values": [iri("ex:v"), iri("ex:w")]}, "Indeterminate"),
+        ({"status": "resolved", "values": []}, "Indeterminate"),
     ],
 )
 def test_state_read(interpreter: Interpreter, fact: Obj | None, expected: str) -> None:
@@ -468,9 +469,9 @@ def test_state_read(interpreter: Interpreter, fact: Obj | None, expected: str) -
     ("constraint", "binding", "params", "expected"),
     [
         # A value outside the range is TypeMismatch: the read is u.
-        (leaf("eq", "5"), " ; rdfs:range xsd:integer", {"ex:x": {"@value": "5"}}, "completion"),
+        (leaf("eq", "5"), " ; rdfs:range xsd:integer", {"ex:x": {"@value": "5"}}, "Indeterminate"),
         (leaf("eq", "ex:v"), " ; rdfs:range ex:Thing", {"ex:x": typed("5", "integer")},
-         "completion"),
+         "Indeterminate"),
         # The context: the request's assignee, and the SOTW's clock.
         (leaf("eq", "ex:alice"), "", {}, "Permit"),
         (leaf("lt", '"2027-01-01T00:00:00Z"^^xsd:dateTime'), "", {}, "Permit"),
@@ -543,7 +544,7 @@ def layered_init(props: tuple[str, ...]) -> Obj:
     [
         (False, (), "fromCore", "Permit"),
         (False, ("fromProfile",), "fromProfile", "Permit"),
-        (False, ("fromProfile",), "fromCore", "completion"),  # the profile's property wins
+        (False, ("fromProfile",), "fromCore", "Indeterminate"),  # the profile's property wins
         (True, ("fromProfile",), "fromPolicy", "Permit"),
         (False, ("fromProfile", "fromProfile"), "fromProfile", "Permit"),  # modules agree
         (False, ("fromProfile", "fromOther"), "fromProfile", "error"),
@@ -736,7 +737,8 @@ CONSTRAINT_DELETIONS = [
 def test_deleted_constraint_rule_fails_loudly(file: str, line: str) -> None:
     # A leaf without a rank, or a read neither ok nor u, fails integrity.lp in solve 2. The
     # `or` has a t member that the deleted rule does not touch (ex:y neq for compare.lp, ex:x eq
-    # for operand.lp, ex:y unread), so solve 1 sees a t root and declines nothing first.
+    # for operand.lp, ex:y unread), so the intact program gives a definite verdict, and only the
+    # deleted rule can turn the reply into an error.
     programs = load_programs()
     assert line in programs[file].splitlines(), f"{file} no longer has {line!r}"
     programs[file] = programs[file].replace(line, "")
@@ -751,7 +753,7 @@ def test_deleted_constraint_rule_fails_loudly(file: str, line: str) -> None:
 
 def test_datatypes_differ_without_a_range(interpreter: Interpreter) -> None:
     # With no range, values of one kind compare by value (decisions/0014 #6), so 5 = 5.0. A value
-    # of another kind is a misfit: a string "5" is not a number, so u, and the request completes.
+    # of another kind is a misfit: a string "5" is not a number, so u, and the two completions disagree.
     v = vector(
         constrained(leaf("eq", "5"), bound("x")),
         request={"params": {"ex:x": typed("5.0", "decimal")}},
@@ -761,7 +763,137 @@ def test_datatypes_differ_without_a_range(interpreter: Interpreter) -> None:
         constrained(leaf("eq", "5"), bound("x")),
         request={"params": {"ex:x": typed("5", "string")}},
     )
-    assert outcome(interpreter.reply(v)) == "completion"
+    assert outcome(interpreter.reply(v)) == "Indeterminate"
+
+
+# --- the completion key (due2-workflows.md §6.4; completion.lp) ---
+
+RDF_PREFIX = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
+
+
+def two_rules(c1: str, c2: str, kind: str = "Permission", refine: bool = False) -> str:
+    """Rules ex:r1 under `c1` and ex:r2 under `c2`, both of `kind`, with ex:x unbound.
+
+    With `refine`, `c2` refines ex:r2's action instead of constraining the rule.
+    """
+    link = kind.lower()
+    r2 = f"ex:r2 a odrl:{kind} ; odrl:target ex:a ;" + (
+        f" odrl:action [ rdf:value odrl:use ; odrl:refinement {c2} ] .\n"
+        if refine
+        else f" odrl:action odrl:use ; odrl:constraint {c2} .\n"
+    )
+    return (
+        CONSTRAINT_PREFIXES
+        + RDF_PREFIX
+        + f"ex:p a odrl:Set ; odrl:conflict odrl:perm ; odrl:{link} ex:r1, ex:r2 .\n"
+        + f"ex:r1 a odrl:{kind} ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + f" odrl:constraint {c1} .\n"
+        + r2
+        + bound("x")
+        + bound("y")
+    )
+
+
+def unit(operator: str, right: str, iri: str) -> str:
+    return leaf(operator, right)[:-1] + f"; odrl:unit {iri} ]"
+
+
+# With ex:x absent, every leaf is u. Two leaves are one variable when every part of the key
+# matches; a complement reads it negatively, so r1 or r2 applies in every completion: Permit.
+# Any other difference makes two variables, and the completion where both are f gives
+# NotApplicable. Without the rows that differ, a key that merged too much would pass; without
+# the rows that agree, one variable per leaf would.
+@pytest.mark.parametrize(
+    ("c1", "c2", "refine", "expected"),
+    [
+        (leaf("eq", "5"), leaf("neq", "5"), False, "Permit"),
+        (leaf("lt", "5"), leaf("gteq", "5"), False, "Permit"),
+        (leaf("lteq", "5"), leaf("gt", "5"), False, "Permit"),
+        # A set right operand is a set: its order and repetition do not matter.
+        (leaf("isAnyOf", "ex:v, ex:w"), leaf("isNoneOf", "( ex:w ex:v )"), False, "Permit"),
+        (unit("eq", "5", "ex:EUR"), unit("neq", "5", "ex:EUR"), False, "Permit"),
+        # ex:y reads another property, so another value.
+        (leaf("eq", "5"), leaf("neq", "5").replace("ex:x", "ex:y"), False, "Indeterminate"),
+        (leaf("eq", "5"), leaf("neq", "6"), False, "Indeterminate"),
+        (leaf("eq", "5"), leaf("lt", "5"), False, "Indeterminate"),
+        (leaf("eq", "5"), unit("neq", "5", "ex:EUR"), False, "Indeterminate"),
+        (unit("eq", "5", "ex:EUR"), unit("neq", "5", "ex:USD"), False, "Indeterminate"),
+        # Right operands compare as terms, so 5 and 5.0 are two variables (completion.lp).
+        (leaf("eq", "5"), leaf("neq", "5.0"), False, "Indeterminate"),
+        (leaf("isAnyOf", "ex:v, ex:w"), leaf("isNoneOf", "ex:v"), False, "Indeterminate"),
+        # A rule's constraint and an action's refinement are different scopes.
+        (leaf("eq", "5"), leaf("neq", "5"), True, "Indeterminate"),
+    ],
+)
+def test_completion_key(
+    interpreter: Interpreter, c1: str, c2: str, refine: bool, expected: str
+) -> None:
+    pol = two_rules(c1, c2, refine=refine)
+    assert outcome(interpreter.reply(vector(pol))) == expected
+
+
+def test_binding_not_operand_iri(interpreter: Interpreter) -> None:
+    # ex:y bound to ex:x's property reads the same value, so the leaves share a variable.
+    pol = two_rules(leaf("eq", "5"), leaf("neq", "5").replace("ex:x", "ex:y")).replace(
+        "ex:y dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:y",
+        "ex:y dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:x",
+    )
+    assert outcome(interpreter.reply(vector(pol))) == "Permit"
+
+
+@pytest.mark.parametrize(
+    ("c1", "c2", "kind", "expected"),
+    [
+        # A permission whose tree is u holds in every completion: the u atom is in the basis.
+        (
+            f"[ odrl:or ( {leaf('eq', '5')} {leaf('neq', '5')} ) ]",
+            leaf("eq", "6"),
+            "Permission",
+            {
+                "verdict": "Permit",
+                "verdict_basis": basis("ex:r1 permission"),
+                "eliminated": [],
+            },
+        ),
+        # One rule applies in each completion, a different one in each: no rule applies in
+        # every completion, so the basis is empty. The permissions are DESIGN.md's example in
+        # § completion.lp.
+        (
+            leaf("eq", "5"),
+            leaf("neq", "5"),
+            "Permission",
+            {"verdict": "Permit", "verdict_basis": [], "eliminated": []},
+        ),
+        (
+            leaf("eq", "5"),
+            leaf("neq", "5"),
+            "Prohibition",
+            {"verdict": "Deny", "verdict_basis": [], "eliminated": []},
+        ),
+    ],
+)
+def test_completed_basis(
+    interpreter: Interpreter, c1: str, c2: str, kind: str, expected: Obj
+) -> None:
+    pol = two_rules(c1, c2, kind)
+    assert explained(interpreter.reply(vector(pol))) == expected
+
+
+def test_node_in_two_scopes(interpreter: Interpreter) -> None:
+    # One node as a rule's constraint and as an action's refinement (constraint.lp).
+    pol = two_rules("ex:c", "ex:c", refine=True) + f"ex:c {leaf('eq', '5')[1:-1]} .\n"
+    assert interpreter.reply(vector(pol)) == {"unsupported": "constraint: node in two scopes"}
+
+
+@pytest.mark.parametrize(
+    ("n", "expected"), [(VARIABLE_CAP, "Indeterminate"), (VARIABLE_CAP + 1, "variable-cap")]
+)
+def test_variable_cap(interpreter: Interpreter, n: int, expected: str) -> None:
+    # An or of n leaves with n right operands, each leaf twice: n variables. The repeats leave
+    # ground `var/1` atoms no model makes true, so a cap on the ground atoms would decline both.
+    leaves = " ".join(leaf("eq", str(i)) for i in range(n) for _ in range(2))
+    pol = constrained(f"[ odrl:or ( {leaves} ) ]", bound("x"))
+    assert outcome(interpreter.reply(vector(pol))) == expected
 
 
 def test_derived_strings_decline(interpreter: Interpreter) -> None:
