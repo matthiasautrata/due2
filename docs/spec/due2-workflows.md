@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.16
+**Status:** Draft v0.17
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.16** (2026-10-16): §7.1 — an evaluation is recorded once, in `evaluation`, which shares the case's `seq` counter with `event`; `event` carries only the content kinds (fact, evidence, activation), and an evaluation's request is its case's, not repeated (§3.5 names all four input ids). **History:** v0.4–v0.15 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`.
+**Changes in v0.17** (2026-10-16, `decisions/0010`): the new §3.7 makes the trace the explanation; the new law L10 (explicability) is in §8; §3.5 names the rule values `eliminated` records; §3.6 points to stage 1's lineage. **History:** v0.4–v0.16 are in git — every commit cites the sections it touched — and in `decisions/0003`–`0008`. v0.16 recorded an evaluation once, in `evaluation`, sharing the case's `seq` with `event` (§7.1).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -203,7 +203,7 @@ diagnostic     (policy_id, code, ref)
 | `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
 | `read` | W2 | Every state property consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
 | `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), and its status `Enum {fulfilled, outstanding, violated, unknown}`. The instance key is the key under which a case records what is owed and evidence is submitted. |
-| `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied. |
+| `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied: the policy's `conflict` value within a policy, the `combination` across policies (§6.2), or `violated_precondition`. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
 | `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). |
@@ -212,7 +212,41 @@ diagnostic     (policy_id, code, ref)
 
 ### 3.6 Lineage
 
-Which authored rule, which expansion selection, and which parameter binding produced each atom is a separate collection, produced by W1 and referenced by digest from the corpus. W2 and W3 never read it. Explanation and audit do.
+Which authored rule, which expansion selection, and which parameter binding produced each atom is a separate collection, produced by W1 and referenced by digest from the corpus. W2 and W3 never read it. Explanation and audit do (§3.7). Stage 1's part is normative (normalisation spec §7). Stage 2 adds, for each atom, the constraint disjunct and the parameter binding it came from (§4).
+
+### 3.7 Explanation **[D]** (2026-10-16, `decisions/0010`)
+
+A verdict alone does not explain a decision; the trace does. Every evaluation that returns a verdict emits its trace (§7), and the explanation is read from it, never computed alongside it.
+
+**The derivation.** An evaluation's explanation is the part of its trace reachable from `verdict`, through references the relations already carry:
+
+| From | To | Through |
+|---|---|---|
+| `verdict` | the determining atoms, by role | `verdict_basis`; for `Pending`, also `alternative`, `alt_duty`, `dominated` |
+| an atom | its findings | `finding` |
+| a finding | the parts that determined it (§5.2) | `basis`; for a duty, also `instance` |
+| a `fact` part | the value and status read | `read`, and the SOTW's `fact`, `fact_value`, `attribution` |
+| an `evidence` part | the record | the SOTW's `evidence`, `evidence_param` |
+| a `constraint` part | the constraint as normalised | the corpus's `constraint`, `constraint_value` |
+| a removed atom | the atom that removed it, and the rule | `eliminated` |
+| an atom | the authored rule, expansion selection, and binding | `source_rule`, lineage (§3.6) |
+| a policy in the derivation | the contested readings it was accepted under | `diagnostic` |
+
+Reading it needs the trace, the evaluation's four input collections, and the lineage, and nothing else. It never re-runs W2 or W3 and never reads the world. Law L10 (§8) makes this checkable: every reference resolves, and every finding follows from its basis. The derivation is typed relations under the canonical encoding (`decisions/0007`), so it is parseable by any reader that reads the trace.
+
+**Groups are keys.** What belongs together is a key the trace, the corpus, or the lineage already holds. The reader never infers it.
+
+- *The atoms of one authored rule* share `source_rule` and the lineage's selection tuple.
+- *A permission and the duties that gate it* are linked by `edge`, `alternative`, and `alt_duty`.
+- *The instances of one duty* are its `instance` tuples.
+- *The policies evaluated together* are told apart by `atom.policy_id`. Each elimination names its rule: the policy's own strategy, or the cross-policy combination (§6.2).
+- *The evaluations of one case* are ordered by its `seq` (§7.1). What changed between two of them is a per-relation set difference of their canonical traces, read with the events recorded between them.
+
+**Rendering is later.** Prose, a page, or a screen is a presentation step over the derivation. It may select and order, and it never adds a reason. A rendering that needs what the derivation lacks reveals a trace defect, fixed by a trace relation under L1 and L10, never by the renderer.
+
+**What the corpus asserts.** A case names atoms by their authored IRI: the projection through `source_rule`, or `source_duty` for a duty, as `frontier` and `obligations` already do (`conformance/README.md`; `verdict_basis` and `eliminated`, issue #57). Full traces, with atom ids, are pinned by L1 and replay, not by authored cases.
+
+**[O] A witness for `Indeterminate`.** The `unknown` atoms and their `U` basis say which facts decide, not how. Whether the trace also records a pair of completions with different verdicts is open (issue #58).
 
 ---
 
@@ -478,6 +512,7 @@ Acceptance criteria for any implementation, checked by property tests over gener
 | **L7** | **Readiness.** If some candidate is ready after §6.2 and no surviving `Forbid` is `T` or `U`, the verdict is `Permit`. |
 | **L8** | **Skip soundness.** Evaluating more root atoms that are certainly `F` leaves the trace unchanged. |
 | **L9** | **Preservation.** For a direct interpreter `I` over authored policies (architecture §10), which completes the authored policy's unknown literals by the same rule (§6.4): `W3(W2(W1(p), r, s), c) = I(p, r, s, c)` whenever `verdict.exact` holds. The parts W1 rewrites — DNF disjuncts, including `xone`'s negated operands and `dprod:not` pushed inward — are identical or complementary to authored ones, so they denote the same variables, and the two sides enumerate the same completions. Duty guards are not rewritten (`decisions/0003`). With `exact = false` the law weakens to refinement: a definite pipeline verdict equals `I`'s, and the pipeline may return `Indeterminate` where `I` decides. (Restated as a refinement on 2026-10-10; equality restored by v0.6.) |
+| **L10** | **Explicability** (§3.7, v0.17). Every atom, part, fact, and evidence id the trace names resolves in the trace, the evaluation's inputs, or the lineage. Every finding's truth is its predicate's connective over its `basis` truths (§5.1–§5.2). Every atom in `verdict_basis` or `eliminated` has its findings and an authored source. |
 
 ---
 

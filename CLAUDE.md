@@ -28,7 +28,8 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 | When an atom applies; guards (`owed`) vs witness conditions | workflows §5.2 |
 | Fulfilment, deadlines, recurrence, instances | workflows §5.3 |
 | Candidates, conflict, frontier, verdict, completion over literals | workflows §6 (§6.4 has the monotonicity proof) |
-| Laws L1–L9 (property-test targets) | workflows §8 |
+| Laws L1–L10 (property-test targets) | workflows §8 |
+| What explains a verdict; what a trace must let a reader re-derive | workflows §3.7, L10 (`decisions/0010`) |
 | Normalisation stage 1 (normative) | `odrl-compound-to-atomic-normalization.md` |
 | Every rejection and warning code; which stage emits it | `due2-diagnostics.md` |
 | Operand bindings, profiles, DPROD compatibility | `due2-profiles.md` |

@@ -1,6 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.5, 2026-10-16 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+**Status:** v0.6, 2026-10-16 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+
+**Changes in v0.6** (2026-10-16, `decisions/0010`): the explanation is checked as the verdict is. L10 (explicability) joins the trace properties (§4.6). The corpus asserts `verdict_basis` and `eliminated` at the authored level, and clingo-i returns them (§4.1; #57, #59). W1 stage 2's lineage gives every atom its authored source (§4.3).
 
 **Changes in v0.5** (2026-10-16, `decisions/0009`): the L9 oracle and the generator are a clingo program over flattened ODRL, in place of a Python direct interpreter; the production evaluator is unchanged (`decisions/0002` #1, the `decisions/0006` bakeoff); §3, §4.1, §5, §8 rewire; RRULE recurrence deferred (occurrence-dependent scenarios report `unsupported: recurrence`).
 
@@ -9,7 +11,7 @@
 **Changes in v0.3:** `I` comes in two modes, slow first (§3); the disagreement protocol (§6) and the generator coverage check (§5) adopted.
 
 **Changes in v0.2:** critical features and the three testing modes decided (§1.1): atomization, evaluation, and case history get bounded-exhaustive, generated, and differential testing. Case history added as a component (§4.7, risk R10). Parser sharing decided (§4.1). Invalid-input twins for every generator (§5).
-**Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L9) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
+**Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L10) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -95,7 +97,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 | L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts now; the pipeline's verdict (L9) once W1 exists | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
 | `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
 | `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]**, exists |
-| Laws L1–L9, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
+| Laws L1–L10, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
 **Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
@@ -117,7 +119,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation. R9 when it generates its own vectors.
 - **Encoding obligations** (`decisions/0009`): `U` is data — fact statuses, deadline comparisons, and witness timeliness arrive as facts; every part carries exactly one of `t/f/u`, enforced by an integrity constraint; Kleene connectives are min/max over `f < u < t`; no negation-as-failure anywhere a status can be unknown; the evaluation layer is stratified Datalog, with choice rules only in the completion and the generator. The 2026-10-10 audit encoding failed all of these.
-- **Oracles for the program.** The corpus (99 positive cases), with disagreements triaged per §6; the external suites' own answers. Its own laws: L4 and L5 on generated inputs; the status matrix and Kleene tables as ASP facts, with the one-value integrity constraint making a forgotten rule a loud failure.
+- **Oracles for the program.** The corpus (99 positive cases), with disagreements triaged per §6 — its verdicts, and its `verdict_basis` and `eliminated` where a scenario asserts them (workflows §3.7, #57, #59); the external suites' own answers. Its own laws: L4 and L5 on generated inputs; the status matrix and Kleene tables as ASP facts, with the one-value integrity constraint making a forgotten rule a loud failure.
 - **Driver.** **[D]** (2026-10-16, `decisions/0009`) The Python driver parses the Turtle and makes a purely syntactic flatten of the authored graph to facts — no lifting, no expansion, no DNF, which are the program's rules — and ranks compared values (32-bit integers; `decisions/0009` #4). It is not an evaluator. Because L9 cannot see a driver bug, it is tested on its own: round trip (facts back to a graph isomorphic to the input), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts, over the corpus, the vendored policies, and the external suites.
 - **Golden vectors.** The corpus. Occurrence-dependent scenarios (8 cases use recurrence) report `unsupported: recurrence` loudly, not as passes; every other scenario is runnable.
 - **Generators.** Coverage targets as choice rules plus constraints, `#minimize` for the smallest witness (§5). Self-generated vectors test other implementations, never the program itself.
@@ -136,6 +138,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Risks.** R1 (DNF, `xone`, `dprod:not` pushed inward, instantiation), R3 (the canonical-literal key is derived here).
 - **Oracles.** `I`, through L9 on generated policies.
 - **Properties.** L9. Complement pairs (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`) map to one variable with opposite polarity, and identical parts map to one variable. The atom-count limit fails before any output.
+- **Lineage.** Every atom's lineage names its authored rule, its stage-1 selection tuple, its constraint disjunct, and its parameter binding (workflows §3.6), which L10 needs.
 - **Done.** L9 holds on the `fast` and `nightly` Hypothesis profiles (`ways-of-working.md` §7.2), and the corpus runs through W1 without rejections other than expected ones.
 
 ### 4.4 W2: evaluate
@@ -156,7 +159,12 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 ### 4.6 Trace and replay
 
 - **Risks.** R6.
-- **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded evaluation gives the same digests (workflows §7).
+- **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded evaluation gives the same digests (workflows §7). L10 on every generated and corpus evaluation (workflows §3.7):
+  - every reference in the trace resolves in the trace, the evaluation's inputs, or the lineage;
+  - each finding is re-derived from its `basis`;
+  - every atom in `verdict_basis` and `eliminated` has its findings and an authored source.
+
+  The check is a pure function of the recorded collections, so it also runs over the ledger's recorded evaluations.
   - *Normaliser upgrade.* Replaying recorded evaluations under a new normaliser version is a regression check, outside the ledger: the same inputs giving a different verdict is a defect, or an intended change that carries a decision record. Every changed verdict is reported; the ledger is never written.
 
 ### 4.7 Case history: the ledger
@@ -212,7 +220,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | Tier | Runs |
 |---|---|
 | Every commit (today) | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
-| PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L9 and the stage-1 invariants; the L1 determinism matrix |
+| PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L10 and the stage-1 invariants; the L1 determinism matrix |
 | Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the Dafny `Den` check. Results feed the ratchet, not the gate |
 
 ---

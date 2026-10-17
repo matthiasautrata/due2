@@ -61,3 +61,5 @@
 - Only Python passes the gate: close the bakeoff, and record why.
 - A backend passes but its trace differs: that is a defect in a backend or an underspecification in workflows §3.5. Triage it per `correctness-strategy.md` §6 before scoring.
 - The shell is specified: extend Elixir's evaluation to the shell, its stronger hypothesis.
+
+**Note (2026-10-16, `decisions/0010`):** scoring criterion 1, trace and basis fidelity, is checked as law L10 (explicability, workflows §3.7, §8) over each backend's traces. Each backend also has to pass the corpus's authored-level `verdict_basis` and `eliminated` (#57).

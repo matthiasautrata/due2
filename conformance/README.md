@@ -155,5 +155,6 @@ Still open:
 - **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
 - **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).
 - **`frontier_complete`** — no case asserts it, neither an incomplete frontier under a definite `Pending` nor the beyond-`max_frontier_vars` fallback (workflows §6.4, `decisions/0004`); needs `expected.frontier_complete` in the case format (#30).
+- **`verdict_basis` and `eliminated`** — no case asserts the explanation (workflows §3.7, `decisions/0010`). Two scenarios state it in `why` only (`due2-or-unknown`, `oval-conflict-invalid`), and the W3 done-gate names `verdict_basis` (`correctness-strategy.md` §4.5). It needs `expected.verdict_basis` and `expected.eliminated` in the case format, at the authored level (#57).
 - **`hasPart` and `isA` with a list**, and a non-trivial `partOf` closure under a list — `due2-profiles.md` §4, `decisions/0005` (#32).
 - **Remedies and consequences** — carried by stage 1, not evaluated for access; no case until the monitoring question (§9 #4) is specified. OVAL's monitoring cases are the external material.
