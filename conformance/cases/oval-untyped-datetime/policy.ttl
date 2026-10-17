@@ -1,0 +1,22 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+# Source: DIPS-Tools/ODRL-Engine@40b8ac6 test_cases/evaluation/access_control/date1.ttl
+# (MIT, University of Southampton). Rule named; conflict declared; OVAL's example
+# profile IRI dropped (it names no terms). The constraint is as authored: a
+# negative case.
+
+<http://example.com/policy:6161> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:6161#print> .
+
+# The right operand is an untyped, timezone-less literal.
+<http://example.com/policy:6161#print> a odrl:Permission ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:action [ rdf:value odrl:print ] ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:dateTime ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "2020-03-11T11:33:10"
+    ] .

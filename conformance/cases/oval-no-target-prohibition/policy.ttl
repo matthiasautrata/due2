@@ -1,6 +1,6 @@
 @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
 
-# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/
+# Source: DIPS-Tools/ODRL-Engine@40b8ac6 test_cases/evaluation/access_control/
 # default_sem4-6.ttl and prohibition1-3.ttl (MIT, University of Southampton) — one policy.
 # Changes: rule named; conflict declared.
 

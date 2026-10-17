@@ -1,9 +1,9 @@
 {
   "case": "oval-list-right-operand",
-  "source": "OVAL access_control/listRightOperand1-4 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "source": "OVAL access_control/listRightOperand1-4 (DIPS-Tools/ODRL-Engine@40b8ac6)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from OVAL access_control/listRightOperand1-4. An isPartOf refinement of print, with a list right operand. The ODRL Vocabulary calls isPartOf a set-based operator (3.16.9) and allows a list there (3.14.7); due2's validator wrongly refused it until 2026-10-11 (odrl22-conformance.md, erratum). ODRL does not say what isPartOf means with a list; due2 adopts the Salas-Pareti reading (decisions/0005), generalised to the partOf closure: every left value is part of some right value (due2-profiles.md 4), and W1 warns ContestedOperatorReading. Here the closure is just reflexivity, since no partOf edges are declared, so the result is set inclusion, which is OVAL's reading. OVAL's request value is one space-separated string of page IRIs; here it is a set-valued request parameter (ex:page, cardinality set). Added because the original is not ODRL 2.2 without them: an assigner for the Offer (IM 2.1.2) and a target for the permission (IM 2.6.1), which the request names. OVAL requests carry no party or time; request.at and effective_at are an arbitrary fixed instant. OVAL's semantics switches (semantics_for_duties=1, semantics_by_default=-1) do not arise: there are no duties, and the permission decides.",
+  "notes": "Translated from OVAL access_control/listRightOperand1-4. An isPartOf refinement of print, with a list right operand. The ODRL Vocabulary calls isPartOf a set-based operator (3.16.9) and allows a list there (3.14.7); due2's validator wrongly refused it until 2026-10-11 (odrl22-conformance.md, erratum). ODRL does not say what isPartOf means with a list; due2 adopts the Salas-Pareti reading (decisions/0005), generalised to the partOf closure: every left value is part of some right value (due2-profiles.md 4), and W1 warns ContestedOperatorReading. Here the closure is just reflexivity, since no partOf edges are declared, so the result is set inclusion, which is OVAL's reading. OVAL's request value is one space-separated string of page IRIs; here it is a set-valued request parameter (ex:page, cardinality set). At f0839f6 the original was an Offer without an assigner (IM 2.1.2) and its permission had no target (IM 2.6.1); this translation added both. Upstream made it a Set (c2773ed) and added the target music/1999.mp3, which the requests name (531edf1); the translation now follows it. OVAL requests carry no party or time; request.at and effective_at are an arbitrary fixed instant. OVAL's semantics switches (semantics_for_duties=1, semantics_by_default=-1) do not arise: there are no duties, and the permission decides.",
   "prefixes": {
     "ex": "http://example.com/"
   },
@@ -13,7 +13,7 @@
       "request": {
         "reference": "oval-req",
         "action": "odrl:print",
-        "target": "ex:book",
+        "target": "ex:music/1999.mp3",
         "at": "2026-08-27T10:00:00Z",
         "parties": {},
         "params": {
@@ -47,7 +47,7 @@
       "request": {
         "reference": "oval-req",
         "action": "odrl:print",
-        "target": "ex:book",
+        "target": "ex:music/1999.mp3",
         "at": "2026-08-27T10:00:00Z",
         "parties": {},
         "params": {
@@ -84,7 +84,7 @@
       "request": {
         "reference": "oval-req",
         "action": "odrl:print",
-        "target": "ex:book",
+        "target": "ex:music/1999.mp3",
         "at": "2026-08-27T10:00:00Z",
         "parties": {},
         "params": {
@@ -121,7 +121,7 @@
       "request": {
         "reference": "oval-req",
         "action": "odrl:print",
-        "target": "ex:book",
+        "target": "ex:music/1999.mp3",
         "at": "2026-08-27T10:00:00Z",
         "parties": {},
         "params": {

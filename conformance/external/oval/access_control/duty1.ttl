@@ -3,8 +3,9 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://example.com/policy:88>
-  a odrl:Offer ;
+  a odrl:Set ;
   odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action odrl:compensate ;
   ] ;
   odrl:permission [

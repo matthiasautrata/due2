@@ -77,7 +77,7 @@ The ranking is by how silent the defect is, not how likely it is.
 | R2 | **`U` collapse.** Unknown treated as false (or true) somewhere between a fact and the verdict. | Every external evaluator does this (`conformance/external/README.md`); it is the most natural bug to write | W2 parts, Kleene connectives, W3 completion |
 | R3 | **Completion error.** Wrong variable sharing (the canonical-literal key), wrong uniform/mixed classification, unsound `max_mixed` fallback. | Turns a correct `Indeterminate` into a definite verdict, or the reverse | W3 §6.4 |
 | R4 | **Spec error.** The prose is wrong or underspecified, and the implementation copies it faithfully. | Every oracle derived from the same prose shares it | All |
-| R5 | **Corpus error.** A hand-derived expected verdict is wrong. | 99 positive and 8 negative cases, none of whose verdicts has been machine-checked yet | `conformance/cases/` |
+| R5 | **Corpus error.** A hand-derived expected verdict is wrong. | 99 positive and 9 negative cases, none of whose verdicts has been machine-checked yet | `conformance/cases/` |
 | R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (workflows §7) and the ledger | W1 identity, trace serialisation |
 | R7 | **Boundary leak.** W2 reads another atom's finding; W3 reads the request or SOTW. | Invalidates the parallelism and the completion argument | W2, W3 |
 | R8 | **Unexplained divergence from an origin evaluator.** | Undermines the compatibility claims | Translated cases |
@@ -92,7 +92,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 
 | Oracle | Decides | Independent of | Shares (common-mode risk) | Status |
 |---|---|---|---|---|
-| Hand-derived corpus (99 positive cases plus 8 negative, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
+| Hand-derived corpus (99 positive cases plus 9 negative, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
 | L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts now; the pipeline's verdict (L9) once W1 exists | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
 | `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |

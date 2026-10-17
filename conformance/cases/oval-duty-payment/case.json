@@ -1,9 +1,9 @@
 {
   "case": "oval-duty-payment",
-  "source": "OVAL access_control/duty1, duty2, duty3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "source": "OVAL access_control/duty1, duty2, duty3 (DIPS-Tools/ODRL-Engine@40b8ac6)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from OVAL access_control/duty1-3. OVAL's state of the world is an event log; the compensate row becomes one evidence record with its payAmount as an evidence parameter, and the play row is the request. OVAL's request names no party; the log's actor, ex:William_Hall, is made the assignee, so the duty's bearer is defined (the duty and its Offer-level permission name no assignee, so the bearer is the request subject, workflows §5.3). Dropped: OVAL's separate untargeted permission for compensate, which exists only to make the payment event itself compliant in monitoring mode and is not ODRL 2.2 (IM 2.6.1 requires a target). odrl:unit was a string literal; IM 2.5.1 makes it an IRI. This is the first corpus case with a witness-source operand, written as OVAL writes it: a refinement of the duty's action. due2-core binds odrl:payAmount to the witness source (due2-profiles.md §9 #6, resolved 2026-10-11), so the policy carries no binding of its own and the refinement is an ordinary witness condition. OVAL parameterises duties: under its default (semantics_for_duties=1) a permission with an unfulfilled duty is granted on the promise of performance (duty2: True); under -1 it is refused (duty3: False). due2 has one reading — Pending, naming the duty — which agrees with neither as a yes/no but is what both are approximating. duty2 and duty3 have identical inputs, so they are one scenario here.",
+  "notes": "Translated from OVAL access_control/duty1-3. OVAL's state of the world is an event log; the compensate row becomes one evidence record with its payAmount as an evidence parameter, and the play row is the request. OVAL's request names no party; the log's actor, ex:William_Hall, is made the assignee, so the duty's bearer is defined (the duty and its permission name no assignee, so the bearer is the request subject, workflows §5.3). OVAL's separate permission for compensate exists to make the payment event itself compliant in monitoring mode. At f0839f6 it had no target (IM 2.6.1) and was dropped; upstream gave it one, document:1234, in 531edf1, and the log's compensate row the same object, so both are kept. The permission does not match the play request, and the duty has no relation, so the evidence's object is not consulted (workflows §5.3). Upstream also made the policy a Set (c2773ed), which changes nothing here. odrl:unit was a string literal; IM 2.5.1 makes it an IRI. This is the first corpus case with a witness-source operand, written as OVAL writes it: a refinement of the duty's action. due2-core binds odrl:payAmount to the witness source (due2-profiles.md §9 #6, resolved 2026-10-11), so the policy carries no binding of its own and the refinement is an ordinary witness condition. OVAL parameterises duties: under its default (semantics_for_duties=1) a permission with an unfulfilled duty is granted on the promise of performance (duty2: True); under -1 it is refused (duty3: False). due2 has one reading — Pending, naming the duty — which agrees with neither as a yes/no but is what both are approximating. duty2 and duty3 have identical inputs, so they are one scenario here.",
   "prefixes": {
     "ex": "http://example.com/"
   },
@@ -29,6 +29,7 @@
             "occurred_at": "2026-08-27T10:39:36Z",
             "actor": "ex:William_Hall",
             "action": "odrl:compensate",
+            "object": "ex:document:1234",
             "params": {
               "odrl:payAmount": {
                 "@value": "6.1",
@@ -72,6 +73,7 @@
             "occurred_at": "2026-08-27T10:39:36Z",
             "actor": "ex:William_Hall",
             "action": "odrl:compensate",
+            "object": "ex:document:1234",
             "params": {
               "odrl:payAmount": {
                 "@value": "2",

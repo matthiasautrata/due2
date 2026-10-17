@@ -1,9 +1,9 @@
 {
   "case": "oval-conflict-invalid",
-  "source": "OVAL access_control/conflict3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "source": "OVAL access_control/conflict3 (DIPS-Tools/ODRL-Engine@40b8ac6)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from DIPS-Tools/ODRL-Engine@f0839f6 (OVAL) access_control/conflict3.ttl/.json/.txt. OVAL's request names Action, Asset and Party; Party becomes the assignee. OVAL requests carry no time, so request.at and effective_at are an arbitrary fixed instant (no constraint reads time). The original prohibition has no target, which IM 2.6.2 forbids; it gains the permission's target, the reading under which OVAL's own expectation holds. Scenario 2 is added: a requester the prohibition does not name, so the strategy has nothing to resolve and every variant permits. Divergence: OVAL reports the policy as not evaluable (None), the 'Indeterminate with a cause' reading. due2 decided (2026-10-11, architecture §6.2) to keep 'contributes nothing': a self-voiding policy is an evaluation outcome, recorded in the trace as eliminations with rule invalid, not a policy error.",
+  "notes": "Translated from DIPS-Tools/ODRL-Engine@40b8ac6 (OVAL) access_control/conflict3.ttl/.json/.txt. OVAL's request names Action, Asset and Party; Party becomes the assignee. OVAL requests carry no time, so request.at and effective_at are an arbitrary fixed instant (no constraint reads time). The prohibition's target, which IM 2.6.2 requires, was absent at f0839f6; this translation gave it the permission's target, and upstream added the same one in 531edf1. Scenario 2 is added: a requester the prohibition does not name, so the strategy has nothing to resolve and every variant permits. Divergence: OVAL reports the policy as not evaluable (None), the 'Indeterminate with a cause' reading. due2 decided (2026-10-11, architecture §6.2) to keep 'contributes nothing': a self-voiding policy is an evaluation outcome, recorded in the trace as eliminations with rule invalid, not a policy error.",
   "prefixes": {
     "ex": "http://example.com/"
   },

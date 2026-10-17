@@ -1,0 +1,29 @@
+{
+  "case": "oval-untyped-datetime",
+  "source": "OVAL access_control/date1 (DIPS-Tools/ODRL-Engine@40b8ac6)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "Translated from OVAL access_control/date1. Untranslated until 40b8ac6, because the permission had no target (IM 2.6.1); upstream added one in 531edf1 and made the policy a Set (c2773ed). The policy is now valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. The ODRL Information Model types no right operand, but due2-core binds odrl:dateTime with range xsd:dateTime, so a plain literal does not conform (due2-profiles.md §3). The literal also has no timezone, which XSD orders only partially (conformance/external/README.md finding 9); typing it would not be enough. OVAL's request names no time, and OVAL reads the current time instead, so its answer depends on when it runs; due2's request always carries at (workflows §3.2). OVAL's result is kept in oval_expected; due2 evaluates no request.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperatorTypeMismatch"
+    ],
+    "why": "The right operand of the dateTime constraint on <http://example.com/policy:6161#print> is the plain literal \"2020-03-11T11:33:10\", outside odrl:dateTime's range xsd:dateTime. Normalisation rejects a right operand that does not conform to its operand's range (due2-profiles.md §3), so W1 rejects the policy in stage 2."
+  },
+  "oval_expected": [
+    {
+      "test_case": "date1",
+      "title": "While the action does not match the permission, as the dateTime is not specified, the current time can be used instead to determine that a match would happen",
+      "request": {
+        "action": "odrl:print",
+        "target": "ex:document:1234"
+      },
+      "result": "accept (True), semantics_for_duties=1, semantics_by_default=-1"
+    }
+  ],
+  "scenarios": null
+}

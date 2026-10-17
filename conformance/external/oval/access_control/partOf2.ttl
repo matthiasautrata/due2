@@ -3,7 +3,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://example.com/policy:777>
-  a odrl:Agreement ;
+  a odrl:Set ;
   odrl:permission [
     odrl:action odrl:use ;
     odrl:assignee <http://example.com/team/A> ;

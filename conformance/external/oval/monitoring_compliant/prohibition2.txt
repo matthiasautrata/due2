@@ -1,0 +1,1 @@
+should be allowed as the uninstall event is not forbidden, as it is only prohibited for Anne

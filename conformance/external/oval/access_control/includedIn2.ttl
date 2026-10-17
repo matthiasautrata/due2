@@ -3,5 +3,6 @@
 <http://example.com/policy:1010>
   a odrl:Set ;
   odrl:permission [
+    odrl:target <http://example.com/music/1999.mp3> ;
     odrl:action odrl:play ;
   ] .

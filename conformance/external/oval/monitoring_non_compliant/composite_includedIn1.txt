@@ -1,0 +1,2 @@
+should not be allowed as the composite rule allows both use and give actions, but not sell
+composite_policy

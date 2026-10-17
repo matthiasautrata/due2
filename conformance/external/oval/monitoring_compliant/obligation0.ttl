@@ -1,0 +1,14 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:action odrl:print ;
+    odrl:target <http://example.com/document:1234> ;
+  ] ;
+  odrl:obligation [
+    odrl:action odrl:print ;
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .

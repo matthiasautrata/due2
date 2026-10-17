@@ -1,7 +1,0 @@
-@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
-
-<http://example.com/policy:1010>
-  a odrl:Set ;
-  odrl:permission [
-    odrl:action odrl:use ;
-  ] .

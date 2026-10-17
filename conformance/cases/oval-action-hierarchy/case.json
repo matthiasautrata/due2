@@ -1,9 +1,9 @@
 {
   "case": "oval-action-hierarchy",
-  "source": "OVAL access_control/includedIn1-3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "source": "OVAL access_control/includedIn1-3 (DIPS-Tools/ODRL-Engine@40b8ac6)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from OVAL access_control/includedIn1-3. The originals have no target and requests with no Asset; due2 requires both (IM 2.6.1; workflows §3.2 makes request.target mandatory — see conformance/external/README.md on OVAL's target-less requests). Each scenario targets the asset of the rule it exercises, so the other rule is F on target and the case still isolates the action part.",
+  "notes": "Translated from OVAL access_control/includedIn1-3. At f0839f6 the originals had no target (IM 2.6.1) and their requests no Asset; upstream added both in 531edf1, one target for every policy. Here the two policies are one, so each rule gets its own target and each scenario targets the asset of the rule it exercises: the other rule is F on target, and the case still isolates the action part.",
   "prefixes": {
     "ex": "http://example.com/"
   },

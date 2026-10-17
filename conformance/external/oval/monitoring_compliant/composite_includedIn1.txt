@@ -1,0 +1,2 @@
+should be allowed as the composite rule allows both use and transfer actions
+composite_policy

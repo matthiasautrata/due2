@@ -5,15 +5,21 @@
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
-# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/duty1.ttl
+# Source: DIPS-Tools/ODRL-Engine@40b8ac6 test_cases/evaluation/access_control/duty1.ttl
 # (MIT, University of Southampton). Changes, all recorded in case.json notes:
-# rules named; the separate untargeted `compensate` permission dropped;
-# odrl:unit an IRI instead of a string; conflict and profiles declared.
+# rules named; odrl:unit an IRI instead of a string; conflict and profiles
+# declared; OVAL's example profile IRI dropped (it names no terms).
 
-<http://example.com/policy:88> a odrl:Offer ;
+<http://example.com/policy:88> a odrl:Set ;
     odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
     odrl:conflict odrl:prohibit ;
-    odrl:permission <http://example.com/policy:88#play> .
+    odrl:permission <http://example.com/policy:88#compensate>, <http://example.com/policy:88#play> .
+
+# OVAL's permission for the payment itself, which monitoring mode needs; it does
+# not match a play request.
+<http://example.com/policy:88#compensate> a odrl:Permission ;
+    odrl:action odrl:compensate ;
+    odrl:target <http://example.com/document:1234> .
 
 <http://example.com/policy:88#play> a odrl:Permission ;
     odrl:action odrl:play ;

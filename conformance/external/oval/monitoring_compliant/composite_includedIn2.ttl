@@ -1,0 +1,9 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://example.com/policy:1010>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:action odrl:use, odrl:transfer ;
+    odrl:target <http://example.com/document:1234>, <http://example.com/document:9999>, <http://example.com/document:5555> ;
+    odrl:assignee <http://example.com/Anne>, <http://example.com/Bob>, <http://example.com/Clive> ;
+  ] .

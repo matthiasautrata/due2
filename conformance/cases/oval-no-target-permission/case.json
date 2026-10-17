@@ -1,6 +1,6 @@
 {
   "case": "oval-no-target-permission",
-  "source": "OVAL access_control/default_sem1-3 and permission1-3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "source": "OVAL access_control/default_sem1-3 and permission1-3 (DIPS-Tools/ODRL-Engine@40b8ac6)",
   "classification": "odrl-core",
   "needs": [],
   "notes": "Translated from OVAL's default-semantics cases, which pose a request with no Asset, and the matching permission1-3 cases, which pose the same request with it. OVAL decides the target-less request by an evaluator switch (semantics_by_default: prohibit, permit, or unspecified by default). due2 has no default semantics: a request without a target makes every relation part U (workflows §3.2, §5.2, decided 2026-10-11, issue #26), so the verdict is Indeterminate whenever the target could decide it, and the default is the enforcement point's. OVAL's three answers to scenario 1 are the three completions a caller might choose; due2 reports that the request is underspecified. OVAL requests carry no time; request.at and effective_at are an arbitrary fixed instant.",

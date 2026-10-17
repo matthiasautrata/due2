@@ -113,7 +113,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 - `codes` is the exact set of error codes W1 returns, from `docs/spec/due2-diagnostics.md` §3. W1 reports every error of the first failing stage and runs no later stage (diagnostics §1), so the set is deterministic. `tools/check_corpus.py` compares it with what it emits.
 - `why` names the defining section, as a scenario's `why` does.
 - `odrl22_valid: false` marks a policy that is not valid ODRL 2.2, for example FORCE policies 1–7, which have no target. `tools/check_odrl22.py` then expects the shape to fail it (`xfail`) and fails if it conforms. Omitted, it means `true`: the rejection is due2's own (`due2-witness-outside-duty`). Only a negative case may set it to `false`.
-- The origin's results are kept as they are on a translated scenario. `force-01` … `force-07` keep FORCE's test cases as a `force_expected` list of `{test_case, title, request, sotw, result}`.
+- The origin's results are kept as they are on a translated scenario. `force-01` … `force-07` keep FORCE's test cases as a `force_expected` list of `{test_case, title, request, sotw, result}`; `oval-untyped-datetime` keeps OVAL's as an `oval_expected` list of `{test_case, title, request, result}`.
 
 **Values.** A literal is `{"@value": ..., "@type": ...}`, an IRI `{"@id": ...}` — the JSON-LD forms. Prefixed names expand through `prefixes`.
 
@@ -136,7 +136,7 @@ Expected results are hand-derived until an evaluator exists. The derivation in `
 
 Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus. **Tracked as GitHub issues** (label `corpus`); this section remains the specification record.
 
-Re-derived 2026-10-16, after the explanation fields (#57). Closed since 2026-10-10:
+Re-derived 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51). Closed since 2026-10-10:
 
 - ~~`due2:witnessSource` and `evidence_param`~~ — `oval-duty-payment`, `w3c-fs-c1`, `w3c-fs-c2` (as duty-action refinements, `due2-profiles.md` §9 #6).
 - ~~Grant scope and `discharges`~~, ~~`signers`~~ — `due2-grant-signers`.
@@ -149,11 +149,11 @@ Re-derived 2026-10-16, after the explanation fields (#57). Closed since 2026-10-
 - ~~Unknown duty guards; many conditional duties on one permission~~ — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
 - ~~`isPartOf` with a list right operand~~ — `oval-list-right-operand` (`decisions/0005`).
 - ~~`verdict_basis` and `eliminated`~~ — `expected.verdict_basis` and `expected.eliminated` in the case format (#57), asserted by 22 scenarios: `due2-or-unknown`, `oval-conflict-invalid`, `oval-conflict-perm`, `oval-conflict-prohibit`, `rl2-pay-to-play`, `rl2-attestation-gating`. Every verdict and role is asserted, and the eliminations `prohibit`, `perm`, `invalid`, and `violated_precondition`.
-- ~~Negative cases~~ — `expected_rejection` in the case format; `force-01` … `force-07` (`MissingAction`, `MissingTarget`) and `due2-witness-outside-duty` (`WitnessOutsideDuty`).
+- ~~Negative cases~~ — `expected_rejection` in the case format; `force-01` … `force-07` (`MissingAction`, `MissingTarget`), `due2-witness-outside-duty` (`WitnessOutsideDuty`), and `oval-untyped-datetime` (`OperatorTypeMismatch`).
 
 Still open:
 
-- **Rejection codes without a negative case.** Covered: `MissingAction`, `MissingTarget`, `WitnessOutsideDuty`. Every other error of `due2-diagnostics.md` §3 still needs one. Normalisation §10's minimum suite names the stage-1 vectors. The *unchecked* rows need W1 itself, because the checker cannot see them.
+- **Rejection codes without a negative case.** Covered: `MissingAction`, `MissingTarget`, `WitnessOutsideDuty`, `OperatorTypeMismatch` (a right operand outside its range; the operator-not-allowed and `isA`-over-a-set forms still lack one). Every other error of `due2-diagnostics.md` §3 still needs one. Normalisation §10's minimum suite names the stage-1 vectors. The *unchecked* rows need W1 itself, because the checker cannot see them.
 - **`admit_source` / `admit_age`** — a case-format gap: `sotw.facts` carries no attribution (`source`, `observed_at`), so the filter cannot be shown at work; three cases note this in `notes`. Fixing it needs a fact-attribution extension to the case format.
 - **`config.preference`** — the incomparable frontier exists now, but the preference format is open (§9 #3).
 - **Several policies per case** — workflows §9 #7; blocked on a case-format extension. With it, the cross-policy combinations (`combination` is still always `prohibit-overrides`).

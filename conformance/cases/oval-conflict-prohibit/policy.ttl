@@ -1,8 +1,8 @@
 @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
 
-# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/conflict2.ttl
-# (MIT, University of Southampton). Rules named; the prohibition gains the
-# permission's target, which IM 2.6.2 requires and the original omits.
+# Source: DIPS-Tools/ODRL-Engine@40b8ac6 test_cases/evaluation/access_control/conflict2.ttl
+# (MIT, University of Southampton). Rules named. The prohibition's target, which
+# IM 2.6.2 requires, was absent at f0839f6 and was added upstream in 531edf1.
 
 <http://example.com/policy:1010> a odrl:Set ;
     odrl:conflict odrl:prohibit ;

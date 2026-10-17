@@ -80,6 +80,15 @@ OVAL policies                                      105 checked, 85 failing  (Off
 
 The seven "invalid as expected" are FORCE policies 1–7, carried verbatim as negative cases (`odrl22_valid: false`, `conformance/README.md`). The harness fails if one of them conforms. The external failures are upstream IM violations, itemised in `conformance/external/README.md`. Six OVAL policies use a list right operand with `isPartOf`; the shape flagged them until the erratum of §2, which this record earlier described as a reading the IM leaves open. It was a due2 shape defect. The fix does not change the count: all six also lack an assigner (IM 2.1.2) and a target (IM 2.6.1), so they still fail.
 
+Re-run 2026-10-16, after the OVAL refresh to `40b8ac6` (#51):
+
+```text
+python3 tools/check_odrl22.py --all                 112 checked, 0 failing, 7 invalid as expected   (108 cases: the new negative case oval-untyped-datetime is valid ODRL 2.2)
+OVAL policies                                      110 checked, 52 failing  (undeclared left operands 47, unit as string 5)
+```
+
+Upstream fixed the assigners and targets. The four `listRightOperand` files now fail only on the undeclared left operand `ex:page`.
+
 ## 6. Reproducing
 
 ```bash

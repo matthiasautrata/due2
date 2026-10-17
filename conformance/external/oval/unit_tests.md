@@ -56,9 +56,9 @@ To add an evaluation test, create the following files, where X is a filename of 
 * `X.csv` (a State of the World)
 * `X.txt` (optional file, with information about the test)
 
-If this is a test that should result in a "valid" output (if the ODRL policy in X.ttl is valid in State of the World X.csv) 
-place the files under `test_cases\evaluation\valid`, 
-otherwise under `test_cases\evaluation\invalid`.
+If this is a test that should result in a "valid" output (if the ODRL policy in X.ttl is compliant in State of the World X.csv) 
+place the files under `test_cases\evaluation\monitoring_compliant`, 
+otherwise under `test_cases\evaluation\monitoring_non_compliant`.
 
 Tests placed here will be run automatically when `test.py` is run.
 

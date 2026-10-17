@@ -1,0 +1,32 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
+    odrl:action [
+      rdf:value odrl:print ;
+	  odrl:refinement [ odrl:xone (
+			 [
+				odrl:leftOperand odrl:adminLevel ;
+				odrl:operator odrl:gteq ;
+				odrl:rightOperand 3 ;
+			  ]
+			 [ odrl:or (
+                     [
+                        odrl:leftOperand odrl:resolution ;
+                        odrl:operator odrl:lteq ;
+                        odrl:rightOperand 256 ;
+                      ]
+                     [
+                        odrl:leftOperand odrl:media ;
+                        odrl:operator odrl:eq ;
+                        odrl:rightOperand "paper" ;
+                      ]
+               ) ]
+       ) ]        
+    ] ;
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .

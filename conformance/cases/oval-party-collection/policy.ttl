@@ -2,11 +2,11 @@
 @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
-# Source: DIPS-Tools/ODRL-Engine@f0839f6 test_cases/evaluation/access_control/partOf1.ttl
+# Source: DIPS-Tools/ODRL-Engine@40b8ac6 test_cases/evaluation/access_control/partOf1.ttl
 # (MIT, University of Southampton) — partOf2/3 use the same policy. Rule named;
 # conflict declared; OVAL's example profile IRI dropped (it names no terms).
 
-<http://example.com/policy:777> a odrl:Agreement ;
+<http://example.com/policy:777> a odrl:Set ;
     odrl:conflict odrl:prohibit ;
     odrl:permission <http://example.com/policy:777#use> .
 

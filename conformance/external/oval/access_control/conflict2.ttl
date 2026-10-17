@@ -5,6 +5,7 @@
   odrl:conflict odrl:prohibit ;
   odrl:prohibition [
     odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie> ;
     odrl:assignee <http://example.com/party:Bob>
   ] ;
   odrl:permission [

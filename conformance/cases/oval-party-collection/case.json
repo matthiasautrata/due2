@@ -1,9 +1,9 @@
 {
   "case": "oval-party-collection",
-  "source": "OVAL access_control/partOf1-3 (DIPS-Tools/ODRL-Engine@f0839f6)",
+  "source": "OVAL access_control/partOf1-3 (DIPS-Tools/ODRL-Engine@40b8ac6)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from OVAL access_control/partOf1-3; OVAL's Party becomes the assignee. Membership is declared in the policy file (corpus closure, workflows §3.1), as in the original. Agreement parties: the rule names its own assignee, so due2-profiles.md §8.2 exception 4 does not arise. OVAL requests carry no time; request.at and effective_at are an arbitrary fixed instant.",
+  "notes": "Translated from OVAL access_control/partOf1-3; OVAL's Party becomes the assignee. Membership is declared in the policy file (corpus closure, workflows §3.1), as in the original. The original was an Agreement at f0839f6 and is a Set since c2773ed; the rule names its own assignee and assigner, so the policy type changes nothing. OVAL requests carry no time; request.at and effective_at are an arbitrary fixed instant.",
   "prefixes": {
     "ex": "http://example.com/"
   },
