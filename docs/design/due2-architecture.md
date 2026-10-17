@@ -35,6 +35,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 | `T` / `F` / `U` | Kleene truth: true, false, unknown — never collapse `U` to `F` | workflows §2 |
 | verdict | Permit · Deny · Pending(frontier) · NotApplicable · Indeterminate | §6.1 |
 | frontier | The `Pending` answer's routes, incomparable ones all listed | workflows §6.3 |
+| trace / explanation | What W2 and W3 emit for an evaluation; the explanation is the part reachable from the verdict (`verdict_basis`, `eliminated`) | workflows §3.5, §3.7 |
 | in force | An obligation travels with its policy: in force when that policy matches | workflows §5.2 |
 | profile | An ODRL extension, declared as data and compiled mechanically | profiles §1 |
 

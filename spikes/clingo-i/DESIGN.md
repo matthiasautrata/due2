@@ -1,6 +1,6 @@
 # clingo-i — design
 
-clingo-i is the semantics program of `decisions/0009`: a generic clingo program over flattened ODRL that implements the `interpret` task of `spikes/README.md`. Python parses and flattens; every semantic step is a rule in `lp/`. This file is the Docs step of `ways-of-working.md` §14.1: structure, internal interfaces (the fact schema), and what the spike declines and why. It grows with each increment of #9 (#45–#50).
+clingo-i is the semantics program of `decisions/0009`: a generic clingo program over flattened ODRL that implements the `interpret` task of `spikes/README.md`. Python parses and flattens; every semantic step is a rule in `lp/`. This file is the Docs step of `ways-of-working.md` §14.1: structure, internal interfaces (the fact schema), and what the spike declines and why. It grows with each increment of #9 (#45, #46, #59, #47–#50).
 
 Increment 1 (#45) handles policies with permissions and prohibitions over action, target, and assignee, with no constraints or duties, under the default cross-policy combination. Everything else is declined, with the feature named.
 
