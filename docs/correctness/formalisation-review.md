@@ -1,9 +1,9 @@
 # due2 — Formalisation review (2026-10-17)
 
-**Status:** Review input, 2026-10-17. **Not adopted.** Nothing here changes a [D] item. It is material for when the semantics program covers enough of the corpus to be worth formalising. Its own trigger is about 100 passing vectors; clingo-i passed 29 of 397 at `f5dc357`.
+**Status:** Review input, 2026-10-17. **Not adopted.** Nothing here changes a [D] item. It is material for when the semantics program covers enough of the corpus to be worth formalising. Its own trigger is about 100 passing vectors; clingo-i passed 29 of 397 at `f5dc357`, and 172 of 406 at `e301c46`.
 **Companions:** `correctness-strategy.md` (the adopted plan; §4.5 cites `check_completion.py`) · `decisions/0002` (W1 in Python with a Dafny oracle) · `decisions/0009` (the semantics as a clingo program) · `implementation-alternatives.md` (the 2026-10-10 review of Python+Dafny, Lean, Clingo, OCaml+Why3) · `spikes/clingo-i/DESIGN.md`.
 
-The user brought this review in on 2026-10-17. §1–§4 keep its substance. §5 records what was checked against the repository on the same day. §6 lists what adopting any part would touch.
+The user brought this review in on 2026-10-17. §1–§4 keep its substance. §5 records what was checked against the repository at `f5dc357`, and again at `e301c46` when the trigger was reached. §3 marks each deficit's state at `e301c46`. §6 lists what adopting any part would touch.
 
 ---
 
@@ -62,10 +62,15 @@ Each theorem is a literal sentence of the spec:
 ## 3. Deficits found reading the code
 
 1. **`decisions/0009`'s Kleene obligation is half-built.** There is no `#max` in `lp/`, only conjunction (`#min`). Disjunction (`fulfilled` over witnesses, §5.3) and the `dprod:not` involution are not implemented. Neither are constraint parts, and with them the whole correlated-variable key that K is about. The 29 passes never exercise disjunction or negation.
+   - *At `e301c46`:* partly fixed. Constraint parts, disjunction (`#max` in `compare.lp`), and `dprod:not` landed with #47 (`6b67c98`). The key has not. `completion.lp` completes target and party parts, which share variables by request field (`decisions/0012`). A `u` constraint part declines the vector (`completion`, 47 vectors at `e301c46`), and its key, the shared variables of `due2-workflows.md` §6.4, is issue #48's work.
 2. **"Fails loudly" stops at the finding layer.** The integrity constraints cover `holds` and `cval` per item, and `verdict`. Nothing constrains `atom_effect`, `atom_policy` or `atom_rule`. A rule referenced by both `odrl:permission` and `odrl:prohibition` would give one atom id two effects, silently. Since `effect` is part of §3.1's atom key, that is a corrupt corpus accepted without a diagnostic.
+   - *At `e301c46`:* fixed by #59 (`5f3e22d`). `explain.lp` requires exactly one `atom_effect`, `atom_policy`, and `atom_rule` for every atom.
 3. **Cross-policy elimination is not recorded as one.** `deny :- forbidding(X), not eliminated(X)` folds §6.2's cross-policy rule into the verdict instead of recording an elimination with its rule. §3.5 records every elimination with its rule, so `eliminated` cannot be derived from the program as written. #59 has to add it.
+   - *At `e301c46`:* fixed by #59 (`5f3e22d`). `explain.lp` records every removal as `elim(X, Y, Strat)`, the cross-policy one under `"prohibit-overrides"`. `structure.lp` admits one policy, so no vector reaches that rule; `test_combination_rows_on_facts` runs it on hand-written facts.
 4. **The differential is not the definition.** The abstract model in `check_completion.py` (flat conjunctions, no nested constraints, no recurrence) is shared with the algorithm it checks. M, F and the `max_mixed` fallback are each checked against a model, not against §6.4, and each failure mode is a wrong definite verdict.
+   - *At `e301c46`:* still open. `check_completion.py` keeps its own abstract model (one policy; `Permit` and `Forbid` atoms; duties guarded by literals over the same variables), not the semantics clingo-i implements.
 5. **The oracle has no audited ground.** The mapping from rule blocks to spec sections is prose in `DESIGN.md`, and nothing checks it: the `% workflows §6.1` comments are outside the cross-reference sweeps. Since `decisions/0009` makes the program a second semantics, encoding faithfulness is the largest structural gap, and running the corpus cannot close it.
+   - *At `e301c46`:* still open. `tests/test_docs.py` checks the doc blocks and their references, but no test maps a rule block to the spec section it encodes.
 
 ## 4. Order of operations
 
@@ -88,6 +93,8 @@ Revisit all of it when the program clears about 100 vectors. The object to forma
 
 ## 5. Checked against the repository (2026-10-17)
 
+**At `f5dc357`:**
+
 | Claim | Checked | Result |
 |---|---|---|
 | clingo-i at `f5dc357`: 397 vectors, 29 pass, 368 unsupported | `uv run pytest --backend=clingo-i` | Confirmed |
@@ -97,7 +104,21 @@ Revisit all of it when the program clears about 100 vectors. The object to forma
 | §3 #3: cross-policy denial without an `eliminated` row | `lp/resolve.lp` lines 11–16 | Confirmed: `eliminated/1` exists within a policy only |
 | `formal-semantics.md` is not vendored | `profiles/vendor/dprod/` | Confirmed: only the two `.ttl` files and the examples |
 | `violations = deny` justified by monotonicity | workflows §6.4 | Confirmed, and already recorded as DPROD exception 6 (`due2-profiles.md` §8.2); the "chosen for provability" framing is new |
-| `invalid` voiding justified by monotonicity | workflows §6.2, §6.4 | Not yet checked |
+| `invalid` voiding justified by monotonicity | workflows §6.2, §6.4 | Checked at `e301c46`; see below |
+
+**At `e301c46`** (2026-10-17, when the trigger was reached):
+
+| Claim | Checked | Result |
+|---|---|---|
+| clingo-i at `e301c46`: 406 vectors, 172 pass, 234 unsupported | `spikes/clingo-i/scorecard.json` (`a731e76`) | Confirmed. The largest decline reasons are a constraint on a node that is not a rule (83), `odrl:duty` (48), completion (47), `odrl:obligation` (41), and `rdf:value` (15). |
+| No verification toolchain | `command -v`, as above | Confirmed: none installed |
+| §3 #1: disjunction and `dprod:not` | `rg '#max' lp/` | Fixed: `compare.lp` takes the Kleene disjunction with `#max`. The key is still missing (#48). |
+| §3 #2: one-value constraints on the structure | `rg '^:-' lp/` | Fixed: `explain.lp` lines 20–22 |
+| §3 #3: cross-policy elimination recorded | `lp/explain.lp`, `elim/3` | Fixed: the cross-policy rule is recorded with its strategy. Only hand-written facts reach it, because `structure.lp` admits one policy. |
+| `formal-semantics.md` is not vendored | `profiles/vendor/dprod/` | Confirmed: the `.ttl` files, the examples, and the shapes only (#35) |
+| `invalid` voiding justified by monotonicity | `due2-architecture.md` §6.2 (the 2026-10-11 [D] entry); workflows §6.4 | Partly. The [D] entry gives two reasons: voiding is ODRL's reading (the policy does not govern), and it keeps the verdict monotone. So monotonicity is not its only justification. Workflows §6.4 adds that reading `invalid` as `Indeterminate` would put a value outside the chain, so that parked alternative would need its own argument. `violations = deny`, by contrast, cites monotonicity as its only reason (workflows §6.4; DPROD exception 6). |
+
+The trigger's count is met, but the declines fall where theorems K and F apply. K needs the completion key (#48). F needs the frontier, and clingo-i declines `odrl:duty` and `odrl:obligation` (89 vectors). So §4's steps 1 and 2 still come first. On 2026-10-17 the user set the order: finish the clingo-i corpus runner (issue #9), then take up this review, counterexamples first (§4's decision rule: Alloy, plus bounded-exhaustive testing over the real semantics). Issue #70 holds that work.
 
 ## 6. What adopting a part would touch
 
