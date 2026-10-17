@@ -26,7 +26,7 @@ Neither proposition is better unconditionally. What a review can honestly delive
 
 The comparison is a host comparison, not a semantics comparison. Everything normative travels unchanged:
 
-- the corpus (108 cases / 397 scenarios, 9 negative) and its hand-derived verdicts;
+- the corpus and its hand-derived verdicts;
 - the three workflows and the laws L1–L9 (`due2-workflows.md` §8);
 - the `Den` oracle plan (`decisions/0002`);
 - measurement before any compiled hot path (`due2-architecture.md` §9.1);

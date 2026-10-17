@@ -29,9 +29,9 @@ The L9 oracle and the generators were to be Python (`decisions/0002` #7, `correc
    - **(c) Generator.** It drives controlled test generation (`correctness-strategy.md` §5). Coverage targets are choice rules plus constraints, and `#minimize` gives the smallest witness, which is stronger than generate-and-filter.
    - **(d) Bakeoff entrant.** It is the Clingo entrant in the `decisions/0006` bakeoff (#41) on relation-level vectors, under that record's gate.
    - **(e) Later.** Monitoring queries, policy diff, and the MDS readings stage become brave or cautious questions over the same program.
-7. **RRULE recurrence is deferred.** Scenarios that need generated occurrences (8 cases use recurrence) report `unsupported: recurrence` loudly, never as passes. The first gate is every runnable scenario. Deadlines and durations (18 cases) are in scope via (4).
+7. **RRULE recurrence is deferred.** Scenarios that need generated occurrences (8 cases use recurrence) report `unsupported: recurrence` loudly, never as passes. The first gate is every runnable scenario. Deadlines and durations are in scope via (4).
 8. **Independence and authority.** `due2-workflows.md` stays normative. The program is a second rendering, and a disagreement is a finding, not an override.
-   - The hand corpus (397 scenarios) and the external suites' own answers are the oracle *for* the program.
+   - The hand corpus (`conformance/cases/`) and the external suites' own answers are the oracle *for* the program.
    - L1–L8 run as properties over its outputs.
    - Self-generated vectors test other implementations, never the generator.
    - The program is exactly as trustworthy as the vectors it passes.
