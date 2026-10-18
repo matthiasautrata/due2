@@ -115,3 +115,4 @@
 {"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1135, "name": "basedpyright"}
 {"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 24, "name": "ruff"}
 {"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
+{"at": "2026-10-18T10:49:29Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 513.0, "p50_ms": 34.61, "p95_ms": 49.01, "p99_ms": 295.87, "pass": 245, "revision": "69a7ed9", "task": "interpret", "total_ms": 10045.7, "unsupported": 187, "vectors": 432}
