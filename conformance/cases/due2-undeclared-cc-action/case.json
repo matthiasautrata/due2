@@ -1,0 +1,16 @@
+{
+  "case": "due2-undeclared-cc-action",
+  "source": "due2-native: a Creative Commons action used without a profile",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "profiles/vendor/w3c/ODRL22.ttl types nine cc: terms as odrl:Action, each with odrl:includedIn odrl:use, and notes that each is defined by Creative Commons. due2 counts only the odrl: namespace as defined, so a cc: action needs a declared profile like any other foreign term (decisions/0020 #4). The reason: four of the nine duplicate ODRL actions without being related to them (cc:Distribution beside odrl:distribute), and their includedIn edges flatten Creative Commons' own permissions, requirements, and prohibitions. profiles/odrl-actions.ttl omits those edges. The strict reading of IM 2.1 agrees: the cc: terms are not in the ODRL Core Vocabulary. The action class check passes, since ODRL22.ttl types cc:Distribution. Contrast due2-undeclared-action, which fails it too.",
+  "prefixes": {
+    "cc": "http://creativecommons.org/ns#",
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": ["UndeclaredProfile"],
+    "why": "The action cc:Distribution is not an odrl: term, and the policy declares no profile and does not type it (decisions/0020 #1, #4). W1 rejects the policy in stage 1."
+  }
+}

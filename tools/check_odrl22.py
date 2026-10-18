@@ -10,10 +10,13 @@ policies are validated *as written* — no preprocessing: compact form (IM 2.7.1
 set-based operators (IM 2.5.1), and list-form logical constraints (IM 2.5.2)
 are all checked natively.
 
-Also checks IM 2.1's vocabulary rule — a policy uses only ODRL Core terms,
-or declares the profiles whose terms it uses (odrl:profile) — which SHACL
-cannot scope to a single policy file once graphs are merged, so it is done
-on the policy file alone before merging.
+Also checks IM 2.1's vocabulary rule — a policy uses only ODRL terms, or
+declares the profiles whose terms it uses (odrl:profile) — which SHACL cannot
+scope to a single policy file once graphs are merged, so it is done on the
+policy file alone before merging. due2's reading of the rule is
+docs/decisions/0020: a term in a vocabulary position is defined by the odrl:
+namespace of the official vocabulary, a declared profile's modules, or the
+policy itself.
 
 This checks ODRL 2.2 validity only. due2 admissibility (the constructs due2
 rejects with diagnostics) is tools/check_corpus.py. The protocol and its
@@ -36,30 +39,45 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 # pyshacl's own annotations leave parts of validate's return type unknown.
 from pyshacl import validate  # pyright: ignore[reportUnknownVariableType]
-from rdflib import Graph, Namespace, URIRef
+from rdflib import BNode, Graph, Namespace, URIRef
 from rdflib.namespace import RDF
 from rdflib.term import Node
 
 ROOT = Path(__file__).resolve().parent.parent
 SHAPE = ROOT / "conformance" / "odrl22-shape.ttl"
-BASE = [
-    ROOT / "profiles" / "vendor" / "w3c" / "ODRL22.ttl",
-    ROOT / "profiles" / "due2-core.ttl",
-    ROOT / "profiles" / "odrl-actions.ttl",
-    ROOT / "profiles" / "dprod.ttl",
-    *sorted((ROOT / "profiles" / "vendor" / "dprod").glob("*.ttl")),
-]
+PROFILES = ROOT / "profiles"
+W3C_VOCABULARY = PROFILES / "vendor" / "w3c" / "ODRL22.ttl"
+CORE_MODULES = [PROFILES / "due2-core.ttl", PROFILES / "odrl-actions.ttl"]
+DPROD_MODULES = [*sorted((PROFILES / "vendor" / "dprod").glob("*.ttl")), PROFILES / "dprod.ttl"]
+BASE = [W3C_VOCABULARY, *CORE_MODULES, *DPROD_MODULES]
 
 ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
-# IM 2.1: use only Core terms, or declare the profiles whose terms are used.
+# IM 2.1: use only ODRL terms, or declare the profiles whose terms are used.
 NAMESPACED_PROFILES = {
     "https://ekgf.org/dprod/spec/develop/": "DPROD Contracts",
     "https://w3id.org/due2/profile#": "due2 core",
 }
+# The modules a declared profile adds to the baseline, CORE_MODULES
+# (check_corpus.py MODULES).
+PROFILE_MODULES = {
+    "https://ekgf.org/dprod/spec/develop/": DPROD_MODULES,
+    "https://w3id.org/due2/profile#": [],
+}
+# Where a policy names vocabulary (decisions/0020 #2). odrl:unit is not among
+# them: a unit is a value's measure, from any vocabulary (#3).
+VOCABULARY_POSITIONS = (
+    ODRL.action,
+    ODRL.leftOperand,
+    ODRL.operator,
+    ODRL.function,
+    ODRL.relation,
+    ODRL.conflict,
+)
 
 
 def ns_terms(g: Graph, ns: str) -> int:
@@ -71,7 +89,49 @@ def ns_terms(g: Graph, ns: str) -> int:
     return n
 
 
-def check_profile_declarations(alone: Graph) -> list[str]:
+def typed(g: Graph) -> set[Node]:
+    return {s for s in g.subjects(RDF.type, None) if isinstance(s, URIRef)}
+
+
+@dataclass(frozen=True)
+class Vocabulary:
+    """The terms each source defines (decisions/0020 #1): the odrl: namespace of
+    the official vocabulary and the baseline modules always, a profile's modules
+    when the policy declares it."""
+
+    baseline: frozenset[Node]
+    profiles: dict[str, frozenset[Node]]
+
+    @classmethod
+    def load(cls) -> Vocabulary:
+        w3c = Graph().parse(W3C_VOCABULARY)
+        odrl = {t for t in typed(w3c) if str(t).startswith(str(ODRL))}
+        core = Graph()
+        for f in CORE_MODULES:
+            core.parse(f)
+        profiles: dict[str, frozenset[Node]] = {}
+        for ns, files in PROFILE_MODULES.items():
+            g = Graph()
+            for f in files:
+                g.parse(f)
+            profiles[ns] = frozenset(typed(g))
+        return cls(frozenset(odrl | typed(core)), profiles)
+
+
+def vocabulary_terms(alone: Graph) -> set[Node]:
+    """The IRIs in vocabulary positions. A refined action is a blank node whose
+    rdf:value names the action (IM 2.5.4)."""
+    terms: set[Node] = set()
+    for p in VOCABULARY_POSITIONS:
+        for o in alone.objects(None, p):
+            if isinstance(o, BNode) and p == ODRL.action:
+                o = alone.value(o, RDF.value)
+            if isinstance(o, URIRef):
+                terms.add(o)
+    return terms
+
+
+def check_profile_declarations(alone: Graph, vocabulary: Vocabulary) -> list[str]:
     declared = {str(p) for p in alone.objects(None, ODRL.profile)}
     problems: list[str] = []
     for ns, label in NAMESPACED_PROFILES.items():
@@ -79,6 +139,17 @@ def check_profile_declarations(alone: Graph) -> list[str]:
             problems.append(
                 f"IM 2.1: policy uses {label} terms but declares no odrl:profile <{ns}>"
             )
+    # A declared profile due2 has no module for may define any term (#5).
+    if declared - PROFILE_MODULES.keys():
+        return problems
+    defined = set(vocabulary.baseline) | typed(alone)
+    for ns in declared:
+        defined |= vocabulary.profiles[ns]
+    for t in sorted(vocabulary_terms(alone) - defined, key=str):
+        problems.append(
+            f"IM 2.1: <{t}> is defined by neither the ODRL vocabulary (odrl: namespace), "
+            "a declared profile, nor the policy"
+        )
     return problems
 
 
@@ -116,7 +187,6 @@ RANGE_TYPES = {
     ODRL.duty: ODRL.Duty,
     ODRL.remedy: ODRL.Duty,
     ODRL.consequence: ODRL.Duty,
-    ODRL.action: ODRL.Action,  # a refined action is an untyped node (IM 2.5.4)
     ODRL.target: ODRL.Asset,
     ODRL.assignee: ODRL.Party,
     ODRL.assigner: ODRL.Party,
@@ -124,7 +194,10 @@ RANGE_TYPES = {
 # Deliberately absent: rdfs:range odrl:LeftOperand of odrl:leftOperand. Applying
 # it would make IM 2.5.1's "MUST be a LeftOperand" vacuous; whether an operand
 # is declared is a vocabulary fact a profile must supply (IM 2.1), not a type
-# the shape may assume.
+# the shape may assume. rdfs:range odrl:Action of odrl:action is applied only to
+# blank nodes, for the same reason: a refined action is an untyped node
+# (IM 2.5.4), and an IRI action is an Action only where a vocabulary or the
+# policy types it so (decisions/0020 #7).
 DOMAIN_TYPES = {ODRL.leftOperand: ODRL.Constraint}  # rdfs:domain odrl:Constraint
 # IM 2.5.2: a Logical Constraint is identified by its operand property; the
 # vocabulary declares no domain for them, so the connective is the evidence.
@@ -142,6 +215,9 @@ def entailed_types(alone: Graph) -> Graph:
     for p, c in RANGE_TYPES.items():
         for o in alone.objects(None, p):
             t.add((o, RDF.type, c))
+    for o in alone.objects(None, ODRL.action):
+        if isinstance(o, BNode):
+            t.add((o, RDF.type, ODRL.Action))
     for p, c in DOMAIN_TYPES.items():
         for s in alone.subjects(p, None):
             t.add((s, RDF.type, c))
@@ -151,10 +227,12 @@ def entailed_types(alone: Graph) -> Graph:
     return t
 
 
-def check_file(path: Path, shapes: Graph, base: Graph) -> tuple[str, list[str]]:
+def check_file(
+    path: Path, shapes: Graph, base: Graph, vocabulary: Vocabulary
+) -> tuple[str, list[str]]:
     alone = Graph()
     alone.parse(path)
-    problems = check_profile_declarations(alone)
+    problems = check_profile_declarations(alone, vocabulary)
     data = Graph()
     data += base
     data += alone
@@ -219,11 +297,12 @@ def main() -> int:
     base = Graph()
     for f in BASE:
         base.parse(f)
+    vocabulary = Vocabulary.load()
 
     bad = xfail = 0
     for t in targets:
         try:
-            name, problems = check_file(t, shapes, base)
+            name, problems = check_file(t, shapes, base, vocabulary)
         except Exception as e:  # noqa: BLE001
             name, problems = str(t), [f"HARNESS ERROR: {e}"]
         if expects_invalid(t):

@@ -23,6 +23,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass, field
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,7 @@ DUE2 = Namespace("https://w3id.org/due2/profile#")
 ROOT = Path(__file__).resolve().parent.parent
 PROFILES = ROOT / "profiles"
 CORE = [PROFILES / "due2-core.ttl", PROFILES / "odrl-actions.ttl"]
+W3C_VOCABULARY = PROFILES / "vendor" / "w3c" / "ODRL22.ttl"
 MODULES = {
     str(DPROD): [*sorted((PROFILES / "vendor" / "dprod").glob("*.ttl")), PROFILES / "dprod.ttl"],
     str(DUE2): [],  # the baseline, always loaded: selecting it adds no module (decisions/0014)
@@ -47,6 +49,17 @@ ALIASES = {"dprod": str(DPROD), "due2": str(DUE2)}
 # it uses. Normalisation selects a profile's binding module by odrl:profile
 # (normalisation spec 3), so an undeclared namespace is a W1 input error.
 NAMESPACED_PROFILES = {str(DPROD): "DPROD Contracts", str(DUE2): "due2 core"}
+# Where a policy names vocabulary; each term there must be defined by the odrl:
+# namespace of the official vocabulary, a selected module, or the policy itself
+# (decisions/0020). odrl:unit is not among them: a unit is a value's measure.
+VOCABULARY_POSITIONS = (
+    ODRL.action,
+    ODRL.leftOperand,
+    ODRL.operator,
+    ODRL.function,
+    ODRL.relation,
+    ODRL.conflict,
+)
 
 POLICY_CLASSES = {ODRL.Policy, ODRL.Set, ODRL.Offer, ODRL.Agreement}
 RULE_EDGES = {
@@ -693,6 +706,30 @@ def check_rule(
             check_rule(g, d, ODRL.Duty, policy, b, r, used, seen, [*path, rule], named)
 
 
+def typed(g: Graph) -> set[Node]:
+    return {s for s in g.subjects(RDF.type, None) if isinstance(s, URIRef)}
+
+
+@cache
+def odrl_terms() -> frozenset[Node]:
+    """The odrl: terms the official vocabulary types, Core and Common. Its cc:
+    terms are not among them (decisions/0020 #4)."""
+    return frozenset(t for t in typed(parse([W3C_VOCABULARY])) if str(t).startswith(str(ODRL)))
+
+
+def vocabulary_terms(g: Graph) -> set[Node]:
+    """The IRIs in vocabulary positions; a refined action names its action by
+    rdf:value (IM 2.5.4)."""
+    terms: set[Node] = set()
+    for p in VOCABULARY_POSITIONS:
+        for o in g.objects(None, p):
+            if isinstance(o, BNode) and p == ODRL.action:
+                o = g.value(o, RDF.value)
+            if isinstance(o, URIRef):
+                terms.add(o)
+    return terms
+
+
 def ns_terms(g: Graph, ns: str) -> int:
     n = 0
     for _, p, o in g:
@@ -723,8 +760,11 @@ def asset_party_nodes(g: Graph) -> set[Node]:
     return nodes
 
 
-def check_policy(g: Graph, policy: Node, b: Bindings, r: Report, named: bool) -> Used:
-
+def check_policy(
+    g: Graph, policy: Node, b: Bindings, r: Report, named: bool, defined: frozenset[Node] | None
+) -> Used:
+    """`defined` is the vocabulary the policy may use (decisions/0020), or None
+    when a selected profile has no module and so may define any term."""
     used: Used = {}
     declared = {str(p) for p in g.objects(policy, ODRL.profile)}
     for ns, label in NAMESPACED_PROFILES.items():
@@ -733,6 +773,13 @@ def check_policy(g: Graph, policy: Node, b: Bindings, r: Report, named: bool) ->
                 "UndeclaredProfile",
                 f"{q(g, policy)}: uses {label} terms but declares no "
                 f"odrl:profile <{ns}>; normalisation will not select its module",
+            )
+    if defined is not None:
+        for t in sorted(vocabulary_terms(g) - defined, key=str):
+            r.diag(
+                "UndeclaredProfile",
+                f"{q(g, t)}: defined by neither the ODRL vocabulary (odrl: namespace), "
+                "a selected profile, nor the policy",
             )
     if isinstance(policy, BNode) and not list(g.objects(policy, ODRL.uid)):
         r.diag("MissingPolicyIdentity", f"{q(g, policy)}: policy has no identity (IRI or odrl:uid)")
@@ -817,7 +864,13 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
                 r.warn(f"profile {p} has no due2 binding module; its terms are metadata")
             elif MODULES[p]:
                 modules.append(parse(MODULES[p]))
-        used = check_policy(g, policy, Bindings(g, modules, parse(CORE), r), r, named)
+        core = parse(CORE)
+        defined = None
+        if all(p in MODULES for p in sel):
+            defined = frozenset(
+                odrl_terms().union(typed(core), typed(g), *(typed(m) for m in modules))
+            )
+        used = check_policy(g, policy, Bindings(g, modules, core, r), r, named, defined)
         out.append((r, used, g))
     return out
 

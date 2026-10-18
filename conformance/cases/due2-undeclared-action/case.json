@@ -1,0 +1,15 @@
+{
+  "case": "due2-undeclared-action",
+  "source": "due2-native: an action that no vocabulary, profile, or the policy defines",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "IM 2.1 requires a policy to use only ODRL terms or to declare the profiles whose terms it uses. ex:promote is neither, so the policy is not valid ODRL 2.2: tools/check_odrl22.py reports the undefined term and also the action class check of IM 2.5.4, since nothing types ex:promote as an odrl:Action. Until decisions/0020 both checkers passed such a policy, as they passed the 347 DALICC licenses with their undeclared dalicc: actions (docs/design/references.md, DALICC). A policy that types ex:promote as an odrl:Action in its own graph is admitted, as the rl2-* cases do.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": ["UndeclaredProfile"],
+    "why": "The action ex:promote is not an odrl: term, the policy declares no profile that defines it, and the policy does not type it (decisions/0020 #1, #2). W1 rejects the policy in stage 1."
+  }
+}

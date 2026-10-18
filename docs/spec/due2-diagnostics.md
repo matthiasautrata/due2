@@ -37,7 +37,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `IdentityConflict` | error | 1 | Distinct resources claim one effective identity. *Unchecked.* | normalisation §5.1 |
 | `SharedAnonymousNode` | error | 1 | A blank node without a uid is the object of more than one triple. *Unchecked.* | normalisation §3 |
 | `UnanchoredAnonymousNode` | error | 1 | A blank node reaches no IRI or uid-bearing anchor. *Unchecked.* | normalisation §3 |
-| `UndeclaredProfile` | error | 1 | Profile-namespace terms used without declaring the profile by `odrl:profile`. | ODRL IM §2.1; normalisation §3; `odrl22-conformance.md` §3 |
+| `UndeclaredProfile` | error | 1 | A DPROD or due2 core term used without declaring the profile by `odrl:profile`; or a term in a vocabulary position (an action, or a refined action's `rdf:value`, left operand, operator, function, relation, or conflict value) that is not an `odrl:` term of the ODRL vocabulary, a term of a selected profile's modules, or a term the policy types itself. A `cc:` term needs a profile. The second form is not raised when the policy declares a profile that has no due2 module. | ODRL IM §2.1; `odrl-compound-to-atomic-normalization.md` §3; `odrl22-conformance.md` §3 (`decisions/0020`) |
 | `UnsupportedProfileTerm` | error | 1 | A profile term needs an extension point not on the list. *Unchecked.* | profiles §2 |
 | `UnsupportedConstruct` | error | 1 | `odrl:inheritFrom`, `odrl:rightOperandReference`, `odrl:implies`, `odrl:source` outside a collection, or a collection `odrl:refinement`. The ref names the node, the message the term. | normalisation §3; profiles §8.1 |
 | `UnsupportedConnective` | error | 1 | `odrl:andSequence`. | profiles §5 |

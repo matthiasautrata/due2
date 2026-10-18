@@ -1,0 +1,15 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <http://example.com/> .
+
+# A negative case: an action no vocabulary defines. ex:promote is not an
+# odrl: term, the policy declares no profile, and it does not type ex:promote
+# itself, so nothing gives the action a meaning (IM 2.1, decisions/0020).
+
+ex:policy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:advertise .
+
+ex:advertise a odrl:Permission ;
+    odrl:action ex:promote ;
+    odrl:target ex:dataset ;
+    odrl:assignee ex:alice .

@@ -1,0 +1,17 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix cc:   <http://creativecommons.org/ns#> .
+@prefix ex:   <http://example.com/> .
+
+# A negative case: a Creative Commons action with no profile. The official
+# ODRL vocabulary types cc:Distribution as an odrl:Action, but it is not an
+# odrl: term, and due2 counts only the odrl: namespace as defined
+# (decisions/0020 #4).
+
+ex:policy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:share .
+
+ex:share a odrl:Permission ;
+    odrl:action cc:Distribution ;
+    odrl:target ex:dataset ;
+    odrl:assignee ex:alice .

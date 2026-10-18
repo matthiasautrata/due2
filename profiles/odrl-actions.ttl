@@ -1,7 +1,9 @@
 # ODRL 2.2 Common Vocabulary action hierarchy: the direct odrl:includedIn edges.
 # Extracted from https://www.w3.org/ns/odrl/2/ODRL22.ttl on 2026-10-09
-# (Creative Commons cc: actions omitted). due2-profiles.md §6 closes them transitively.
-# Verify against the vocabulary file before relying on completeness.
+# due2-profiles.md §6 closes them transitively. The vocabulary's nine Creative
+# Commons cc: actions are omitted: due2 does not count them as ODRL terms, so a
+# policy that uses them declares a profile for them (decisions/0020 #4).
+# Verify the odrl: edges against the vocabulary file before relying on completeness.
 
 @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
 
