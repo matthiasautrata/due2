@@ -756,8 +756,8 @@ def test_pending_basis_under_an_uncertain_route(duty_interpreter: Interpreter) -
     # ex:perm2's finding is u (a missing parameter), and its {d} dominates ex:perm's {d, d2}
     # when it applies, so the Pending holds by dominance, with one variable. The frontier is
     # world k's, where ex:perm2 is uncertain; the basis is what holds in every completion: d,
-    # and no permission. check_corpus.py would reject this as a scenario (#75). Read from the
-    # completions instead, the frontier would be [[d]] or [[d, d2]] by the variable.
+    # and no permission, which check_corpus.py accepts under unknowns (decisions/0019). Read
+    # from the completions instead, the frontier would be [[d]] or [[d, d2]] by the variable.
     body = (
         "    odrl:permission ex:perm, ex:perm2 .\n"
         + "ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:x .\n"
@@ -772,6 +772,35 @@ def test_pending_basis_under_an_uncertain_route(duty_interpreter: Interpreter) -
     assert (out["verdict"], routes(out)) == ("Pending", [["ex:d", "ex:d2"]])
     assert refs(out, "verdict_basis") == {("ex:d", "duty")}
     assert refs(out, "unknown_parts") == {("ex:perm2", "ex:x", "missing")}
+
+
+def test_pending_basis_beyond_the_listed_frontier(duty_interpreter: Interpreter) -> None:
+    # ex:permA (ex:x eq 5) and ex:permB (ex:x neq 5) both need ex:d3, and ex:x is unresolved, so
+    # exactly one of them applies in each completion: ex:d3 is outstanding in every frontier
+    # and is in the basis, but neither permission is listed, so the frontier is ex:perm's alone.
+    # The basis's duties are then not a subset of the frontier's (decisions/0019).
+    body = (
+        "    odrl:permission ex:perm, ex:permA, ex:permB .\n"
+        + "ex:x dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:x .\n"
+        + "ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d .\n"
+    )
+    for name, op in (("ex:permA", "eq"), ("ex:permB", "neq")):
+        body += (
+            f"{name} a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+            + " odrl:duty ex:d3 ;\n    odrl:constraint [ odrl:leftOperand ex:x ;"
+            + f" odrl:operator odrl:{op} ; odrl:rightOperand 5 ] .\n"
+        )
+    body += (
+        "ex:d a odrl:Duty ; odrl:action odrl:compensate .\n"
+        + "ex:d3 a odrl:Duty ; odrl:action odrl:inform .\n"
+    )
+    out = output(duty_interpreter, body, profile=True)
+    assert (out["verdict"], routes(out)) == ("Pending", [["ex:d"]])
+    assert refs(out, "verdict_basis") == {
+        ("ex:perm", "permission"),
+        ("ex:d", "duty"),
+        ("ex:d3", "duty"),
+    }
 
 
 OBLIGED = root_obligation(PAST)  # ex:o, in force, its deadline passed with no witness

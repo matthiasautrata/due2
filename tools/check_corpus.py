@@ -1098,13 +1098,18 @@ def check_explanation(
         # asks the scenario to list one.
         parts = (entry(u, {"ref", "input", "status"}) for u in exp.get("unknown_parts", []))
         by_cases = any(u is not None and u["status"] == "unresolved" for u in parts)
-        if not need.get(str(verdict), True) and not (verdict != "Indeterminate" and by_cases):
+        # A Pending's frontier varies by dominance, so one variable of any status can leave
+        # either role empty, and the listed frontier can miss duties of every completion's
+        # (decisions/0019). Under unknowns only the kinds are checked.
+        loose = verdict == "Pending" and bool(exp.get("unknown_parts"))
+        waived = loose or (verdict != "Indeterminate" and by_cases)
+        if not need.get(str(verdict), True) and not waived:
             r.err(
                 f"{tag}: verdict_basis lacks the atoms that determine {verdict} (workflows 6.4);"
                 " a verdict that holds by cases states its unresolved unknown_parts"
             )
         frontier = {expand(d, pfx) for alt in exp.get("frontier", []) for d in alt}
-        if verdict == "Pending" and by_role.get("duty", set()) != frontier:
+        if verdict == "Pending" and not loose and by_role.get("duty", set()) != frontier:
             r.err(f"{tag}: the basis's duties must be the frontier's duties")
         in_force = {expand(o.get("duty", ""), pfx) for o in exp.get("obligations", [])}
         if by_role.get("obligation", set()) != in_force:
