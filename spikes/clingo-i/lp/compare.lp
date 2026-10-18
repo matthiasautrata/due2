@@ -1,7 +1,7 @@
 %# compare.lp: the operators, and the Kleene value of every constraint node
 %
 % Compares each value a leaf's operand reads with each of its right operand values, by value
-% within a value space, and combines the comparisons by the operator's definition
+% within a value space or, on an operand with a concept scheme, under `skos:broader`, and combines the comparisons by the operator's definition
 % (due2-profiles.md §4). A comparison the operands do not fit, such as an IRI against a literal
 % or values of two spaces, is `u` (rank 1), never `f`. Then the connectives combine their
 % members' values: `and` is the least rank, `or` the greatest, `dprod:not` the involution, and
@@ -10,9 +10,10 @@
 %
 % - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
 %   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `op/2`,
-%   `right/2` (constraint.lp); `read_ok/1`, `read_u/1`, `read_value/2`
+%   `right/2` (constraint.lp); `read_ok/1`, `read_u/1`, `read_value/2`, `has_scheme/1`
 %   (operand.lp).
-% - **Provides:** `cpair/3`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `ordered/1`,
+% - **Provides:** `cpair/3`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
+%   `above/2`, `ceqr/4`, `ordered/1`,
 %   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
 %   `any_eq/3`, `any_le/3`, `crank/2`, `xone_term/3`; extends `item/1`, `holds/2`
 %   (applies.lp) and `unsupported_value/1` (lift.lp).
@@ -79,6 +80,37 @@ eqr(Lv, Rv, 0) :- pair(Lv, Rv), kind(Lv, lit), not placed(Lv), kind(Rv, lit), no
     same_type(Lv, Rv), Lv != Rv.
 eqr(Lv, Rv, 1) :- pair(Lv, Rv), kind(Lv, lit), not placed(Lv), kind(Rv, lit), not placed(Rv),
     not same_type(Lv, Rv).
+
+%## Concepts
+
+%*! concept_pair(C, Lv, Rv)
+
+Leaf `C` compares the IRIs `Lv` and `Rv` as concepts: its left operand has a concept scheme.
+Only IRIs are concepts, so a literal on either side is compared by `eqr/3` (decisions/0015 #7).
+*%
+concept_pair(C, Lv, Rv) :- cpair(C, Lv, Rv), left(C, Op), has_scheme(Op), kind(Lv, iri),
+    kind(Rv, iri).
+
+%*! above(Lv, Hi)
+
+A chain of one or more `skos:broader` edges leads from the read concept `Lv` to `Hi`: the
+transitive closure SKOS calls `skos:broaderTransitive` (decisions/0015 #5). Not reflexive:
+`ceqr/4` adds identity.
+*%
+above(Lv, Hi) :- concept_pair(_, Lv, _), closure(broader, Lv, Hi).
+above(Lv, Hi) :- above(Lv, Mid), closure(broader, Mid, Hi).
+
+%*! ceqr(C, Lv, Rv, N)
+
+In leaf `C`, `Lv = Rv` has rank `N`. For a concept pair it is `Lv ⊑ Rv`: `t` when `Lv` is `Rv` or
+below it, `f` otherwise, closed-world over the declared edges (decisions/0015 #3, #4). A read
+concept in none of the operand's schemes never gets here: its read is `invalid` (operand.lp).
+Every other pair has its `eqr/3` rank.
+*%
+ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), Lv = Rv.
+ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), above(Lv, Rv).
+ceqr(C, Lv, Rv, 0) :- concept_pair(C, Lv, Rv), Lv != Rv, not above(Lv, Rv).
+ceqr(C, Lv, Rv, N) :- cpair(C, Lv, Rv), not concept_pair(C, Lv, Rv), eqr(Lv, Rv, N).
 
 %## Order
 
@@ -156,10 +188,10 @@ isar(Lv, Cls, 1) :- cpair(C, Lv, Cls), op(C, isA), kind(Lv, iri), not kind(Cls, 
 %*! any_eq(C, Rv, N)
 
 Some value leaf `C` reads equals its right value `Rv`, with rank `N`: the Kleene disjunction over
-the read values.
+the read values, under `skos:broader` for concepts (`ceqr/4`).
 *%
 any_eq(C, Rv, N) :- right(C, Rv), left(C, Op), read_ok(Op),
-    N = #max { 0; M, Lv : cpair(C, Lv, Rv), eqr(Lv, Rv, M) }.
+    N = #max { 0; M, Lv : ceqr(C, Lv, Rv, M) }.
 
 %*! any_le(C, Lo, N)
 
@@ -178,10 +210,11 @@ Node `C` has rank `N`. A leaf whose read is `u` has rank 1. Otherwise its operat
 right value; `isAnyOf` is the greatest `eq` over the right values, and `isNoneOf` its negation;
 `isAllOf` is the least, over right values, of `any_eq`; `isPartOf` and `hasPart` are the least
 of `any_le`, and an empty read set holds vacuously; `isA` is the least over the listed classes.
+Each `eq`, on a concept-scheme operand, is `⊑` (`ceqr/4`).
 *%
 crank(C, 1) :- leaf(C), left(C, Op), read_u(Op).
-crank(C, N) :- op(C, eq), cpair(C, Lv, Rv), eqr(Lv, Rv, N).
-crank(C, 2 - N) :- op(C, neq), cpair(C, Lv, Rv), eqr(Lv, Rv, N).
+crank(C, N) :- op(C, eq), ceqr(C, _, _, N).
+crank(C, 2 - N) :- op(C, neq), ceqr(C, _, _, N).
 crank(C, N) :- op(C, O), cpair(C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
 crank(C, N) :- op(C, isAnyOf), left(C, Op), read_ok(Op),
     N = #max { 0; M, Rv : any_eq(C, Rv, M) }.

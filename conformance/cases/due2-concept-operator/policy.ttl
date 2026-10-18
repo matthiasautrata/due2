@@ -1,0 +1,33 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dpv:   <https://w3id.org/dpv#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native negative case: an ordering operator on a concept-scheme operand
+# (decisions/0015 #8). Only eq, neq, isAnyOf, and isNoneOf compare concepts.
+
+ex:negativePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readCustomerData .
+
+ex:readCustomerData a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:CustomerData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand dpv:Marketing
+    ] .
+
+odrl:purpose due2:conceptScheme dpv:purposes-classes .
+
+# An abridged DPV 2.1 purpose scheme (decisions/0015 § Question).
+dpv:purposes-classes a skos:ConceptScheme .
+dpv:Purpose          a skos:Concept ; skos:inScheme dpv:purposes-classes .
+dpv:Marketing        a skos:Concept ; skos:broader dpv:Purpose ;   skos:inScheme dpv:purposes-classes .
+dpv:DirectMarketing  a skos:Concept ; skos:broader dpv:Marketing ; skos:inScheme dpv:purposes-classes .
+dpv:ServiceProvision a skos:Concept ; skos:broader dpv:Purpose ;   skos:inScheme dpv:purposes-classes .

@@ -8,7 +8,8 @@
 % Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `decl/4`, `layer_rank/2`, `source_kind/2`, `context_property/2`,
-%   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2` (lift.lp);
+%   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2`,
+%   `concept_scheme/2`, `declared_in_scheme/2`, `closure/3` (lift.lp);
 %   `request_param/2`, `request_param_set/1`, `fact/2`, `fact_value/2`,
 %   `request_party/2`, `sotw_effective_at/1`, `request_at/1`, `value/3` (driver); `left/2`,
 %   `c_operator/2`, `op/2`, `right/2` (constraint.lp).
@@ -16,7 +17,8 @@
 %   `where_rank/3`, `owner_rank/2`, `bdecl/3`, `owned/3`, `retyped/1`, `src/2`, `prop/2`,
 %   `card/2`, `has_range/1`, `range_kind/2`, `has_range_kind/1`, `prop_range_kind/2`,
 %   `allowed/2`, `has_allowed/1`,
-%   `single_left/1`, `candidate_value/2`, `conforms/2`, `read_value/2`, `read_resolved/1`,
+%   `single_left/1`, `scheme/2`, `has_scheme/1`, `concept_operator/1`, `declared_concept/2`,
+%   `read_concept/2`, `candidate_value/2`, `conforms/2`, `read_value/2`, `read_resolved/1`,
 %   `nonconforming/1`, `card_ok/1`, `read_ok/1`, `read_u/1`, `read_status/2`; extends
 %   `reject/2` (structure.lp)
 %   and `unsupported/1` (lift.lp).
@@ -211,6 +213,55 @@ reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, isA).
 unsupported("constraint: set-valued operand on a single-value operator") :- left(C, Op),
     card(Op, set), op(C, O), single_left(O).
 
+%## Concept schemes
+
+%*! scheme(Op, S)
+
+`Op` compares concepts of the SKOS concept scheme `S`: some layer states `Op due2:conceptScheme S`.
+The schemes are the union over the layers (decisions/0015 #6).
+*%
+scheme(Op, S) :- used(Op), concept_scheme(Op, S).
+
+%*! has_scheme(Op)
+
+`Op` has a concept scheme, so it compares IRIs under `skos:broader`. The comparison is
+`ceqr/4` in compare.lp.
+*%
+has_scheme(Op) :- scheme(Op, _).
+
+%*! concept_operator(O)
+
+`O` is an operator that reads a concept hierarchy: `eq` and `isAnyOf`, and their complements
+`neq` and `isNoneOf` (decisions/0015 #3).
+*%
+concept_operator(eq; neq; isAnyOf; isNoneOf).
+
+%*! declared_concept(Op, V)
+
+The IRI right operand `V` of a constraint on `Op` is in one of `Op`'s schemes, by a membership
+the policy or a selected module declares.
+*%
+declared_concept(Op, V) :- left(C, Op), right(C, V), scheme(Op, S), declared_in_scheme(V, S).
+
+%*! read_concept(Op, V)
+
+The IRI `V` that `Op` reads is in one of `Op`'s schemes, by a membership the policy, a selected
+module, or the SOTW states.
+*%
+read_concept(Op, V) :- read_value(Op, V), scheme(Op, S), closure(inScheme, V, S).
+
+% The three checks of decisions/0015 #8. Normalisation does not see the SOTW, so a right
+% operand counts only the memberships the policy and its modules declare. A literal is not a
+% concept, so it is not checked: a string against a concept is a misfit (decisions/0015 #7).
+reject("OperatorTypeMismatch", C) :- left(C, Op), has_scheme(Op), right(C, V), kind(V, iri),
+    not declared_concept(Op, V).
+reject("OperatorTypeMismatch", C) :- left(C, Op), has_scheme(Op), op(C, O),
+    not concept_operator(O).
+% A datatype range admits no IRI, so no concept. `rdfs:Literal` and `rdfs:Resource` are classes,
+% not datatypes: the first has kind `literal`, the second none.
+reject("InvalidBinding", C) :- left(C, Op), has_scheme(Op), range_kind(Op, K), K != iri,
+    K != literal.
+
 %## Range conformance
 
 %*! candidate_value(Op, Term)
@@ -269,9 +320,12 @@ read_resolved(Op) :- src(Op, context), read_value(Op, _).
 
 %*! nonconforming(Op)
 
-Some value `Op` reads is outside its range. That is `TypeMismatch` in due2-profiles.md §3.
+Some value `Op` reads is outside its range, or is an IRI in none of its concept schemes. The
+first is `TypeMismatch` in due2-profiles.md §3, the second decisions/0015 #4: either way the read
+is `invalid`, so `u`, never `f`.
 *%
 nonconforming(Op) :- read_value(Op, Term), not conforms(Term, Op).
+nonconforming(Op) :- read_value(Op, V), kind(V, iri), has_scheme(Op), not read_concept(Op, V).
 
 %*! card_ok(Op)
 

@@ -20,9 +20,10 @@
 %   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
 %   `subclass/2`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`, `stated_conflict/2`,
 %   `profile_conflict/1`, `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`,
-%   `decl/4`, `layer_rank/2`); the kinds (`declared_datatype/1`, `datatype/1`, `dt_kind/2`,
-%   `term_kind/2`, `admits_kind/2`, `range_iri/1`); the hierarchies (`closure_key/1`, `closure/3`,
-%   `coll_kind/2`, `node_kind/2`, `le_k/3`); the declines (`policy_predicate/1`,
+%   `decl/4`, `layer_rank/2`, `concept_scheme/2`); the kinds (`declared_datatype/1`,
+%   `datatype/1`, `dt_kind/2`, `term_kind/2`, `admits_kind/2`, `range_iri/1`); the hierarchies
+%   (`closure_key/1`, `closure/3`, `declared_in_scheme/2`, `coll_kind/2`, `node_kind/2`,
+%   `le_k/3`); the declines (`policy_predicate/1`,
 %   `family_predicate/1`, `anywhere_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`,
 %   `closure_relation/1`, `unsupported_input/1`, `compared/1`, `unsupported_value/1`); extends
 %   `reject/2` (structure.lp).
@@ -76,6 +77,12 @@ voc(operandProperty, "https://ekgf.org/dprod/spec/develop/operandProperty").
 voc(range,       "http://www.w3.org/2000/01/rdf-schema#range").
 voc(cardinality, "https://w3id.org/due2/profile#cardinality").
 voc(allowedOperator, "https://w3id.org/due2/profile#allowedOperator").
+voc(conceptScheme, "https://w3id.org/due2/profile#conceptScheme").
+voc(broader,     "http://www.w3.org/2004/02/skos/core#broader").
+voc(narrower,    "http://www.w3.org/2004/02/skos/core#narrower").
+voc(inScheme,    "http://www.w3.org/2004/02/skos/core#inScheme").
+voc(topConceptOf, "http://www.w3.org/2004/02/skos/core#topConceptOf").
+voc(hasTopConcept, "http://www.w3.org/2004/02/skos/core#hasTopConcept").
 
 %*! conflict_value(Iri, Strat)
 
@@ -460,6 +467,16 @@ layer_rank(policy, 0).
 layer_rank(Layer, 1) :- layer(_, Layer), Layer = module(_).
 layer_rank(core, 2).
 
+%*! concept_scheme(Op, S)
+
+Some layer states `Op due2:conceptScheme S`: the policy graph, a selected module, or the
+baseline. An operand's schemes are the union over its layers, not a type attribute
+(decisions/0015 #6), so this is not a `decl/4` attribute: a layer that states only a scheme
+does not own the operand's type.
+*%
+concept_scheme(Op, S) :- triple(Op, Pred, S), voc(conceptScheme, Pred).
+concept_scheme(Op, S) :- module(_, Op, Pred, S), voc(conceptScheme, Pred).
+
 %## Kinds
 
 %*! declared_datatype(Dt)
@@ -525,9 +542,10 @@ range_iri(Rg) :- decl(_, _, range, Rg), kind(Rg, iri).
 %*! closure_key(Key)
 
 `Key` names a hierarchy the spike reads: `includedIn` (actions), `partOf` (assets and parties),
-`type`, and `subclass` (`isA`). See due2-profiles.md §6.
+`type`, and `subclass` (`isA`), `broader` and `inScheme` (concepts). See due2-profiles.md §6 and
+decisions/0015.
 *%
-closure_key(includedIn; partOf; type; subclass).
+closure_key(includedIn; partOf; type; subclass; broader; inScheme).
 
 %*! closure(Key, Lo, Hi)
 
@@ -538,6 +556,24 @@ SOTW closure. The edges are closed-world: an undeclared edge does not hold (due2
 closure(Key, Lo, Hi) :- triple(Lo, Pred, Hi), voc(Key, Pred), closure_key(Key).
 closure(Key, Lo, Hi) :- module(_, Lo, Pred, Hi), voc(Key, Pred), closure_key(Key).
 closure(Key, Lo, Hi) :- sotw_closure(Pred, Lo, Hi), voc(Key, Pred), closure_key(Key).
+% A `skos:narrower` triple is the inverse `skos:broader` edge (decisions/0015 #5). The SOTW
+% states its edges in one orientation, so it gives `skos:broader` only.
+closure(broader, Lo, Hi) :- triple(Hi, Pred, Lo), voc(narrower, Pred).
+closure(broader, Lo, Hi) :- module(_, Hi, Pred, Lo), voc(narrower, Pred).
+closure(inScheme, C, S) :- declared_in_scheme(C, S).
+
+%*! declared_in_scheme(C, S)
+
+The policy graph or a selected module states that concept `C` is in scheme `S`: by
+`skos:inScheme`, by its sub-property `skos:topConceptOf`, or by the inverse
+`skos:hasTopConcept` (SKOS Reference S7, S8). Membership is not inherited along `skos:broader`.
+Normalisation checks right operands against these memberships alone, since it does not see the
+SOTW (decisions/0015 #8); `closure(inScheme, C, S)` adds the SOTW's.
+*%
+declared_in_scheme(C, S) :- triple(C, Pred, S), voc((inScheme; topConceptOf), Pred).
+declared_in_scheme(C, S) :- module(_, C, Pred, S), voc((inScheme; topConceptOf), Pred).
+declared_in_scheme(C, S) :- triple(S, Pred, C), voc(hasTopConcept, Pred).
+declared_in_scheme(C, S) :- module(_, S, Pred, C), voc(hasTopConcept, Pred).
 
 %*! coll_kind(Node, K)
 
@@ -596,15 +632,16 @@ family_predicate(action; target).
 
 %*! anywhere_predicate(Key)
 
-`Key` names a predicate the spike reads on any node: the hierarchy edge, the constraint
-predicates, the connectives (`andSequence` so that it is rejected, not declined), and the
-binding attributes.
+`Key` names a predicate the spike reads on any node: the hierarchy edges, the constraint
+predicates, the connectives (`andSequence` so that it is rejected, not declined), the
+binding attributes, the concept schemes, and the SKOS hierarchy and membership.
 *%
 % odrl:unit labels the right operand and joins the completion key (due2-workflows.md §6.4). It
 % converts nothing, so a comparison reads the values alone.
 anywhere_predicate(includedIn; partOf; source; leftOperand; operator; rightOperand; unit).
 anywhere_predicate(Key) :- connective(Key).
 anywhere_predicate(Key) :- binding_key(Key).
+anywhere_predicate(conceptScheme; broader; narrower; inScheme; topConceptOf; hasTopConcept).
 
 %*! consumed(Node, Pred)
 

@@ -1,0 +1,210 @@
+{
+  "case": "due2-concept-complement",
+  "source": "due2-native (pins decisions/0015 #3: neq and isNoneOf as the complements of eq and isAnyOf over a SKOS concept scheme; issues #52, #69)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The scheme is DPV 2.1's, abridged, with dpv:Profiling added beside dpv:Marketing. ex:readNotForMarketing excludes two purposes with isNoneOf, and ex:exportNotForMarketing one with neq; each rule is for its own action, so each scenario exercises one of them. odrl:distribute and odrl:read are both under odrl:use, and neither is under the other.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "dpv": "https://w3id.org/dpv#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "scenarios": [
+    {
+      "name": "read for direct marketing",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:DirectMarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "DirectMarketing ⊑ Marketing, so isAnyOf (Marketing Profiling) would be T and its complement isNoneOf is F (decisions/0015 #3). ex:exportNotForMarketing is for another action. No rule applies: NotApplicable."
+      }
+    },
+    {
+      "name": "read for service provision",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:ServiceProvision"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readNotForMarketing",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "dpv:ServiceProvision is in the scheme and has no path to dpv:Marketing or dpv:Profiling, so isNoneOf is T and ex:readNotForMarketing applies: Permit."
+      }
+    },
+    {
+      "name": "export for direct marketing",
+      "request": {
+        "reference": "req",
+        "action": "odrl:distribute",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:DirectMarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "DirectMarketing ⊑ Marketing, so eq dpv:Marketing would be T and its complement neq is F (decisions/0015 #3). ex:readNotForMarketing is for another action. No rule applies: NotApplicable."
+      }
+    },
+    {
+      "name": "export for service provision",
+      "request": {
+        "reference": "req",
+        "action": "odrl:distribute",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:ServiceProvision"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:exportNotForMarketing",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "dpv:ServiceProvision has no path to dpv:Marketing, so neq is T and ex:exportNotForMarketing applies: Permit."
+      }
+    },
+    {
+      "name": "read for a purpose in no scheme",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:Telemarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readNotForMarketing",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readNotForMarketing",
+            "input": "odrl:purpose",
+            "status": "invalid"
+          }
+        ],
+        "why": "ex:Telemarketing is in no scheme, so isNoneOf is U, as eq and isAnyOf would be: a value outside every scheme gives U on both sides of a complement pair (due2-profiles.md §5). The permission is completed alone: Indeterminate, NotApplicable..Permit. ex:exportNotForMarketing is F on its action, so its parts are not reported."
+      }
+    }
+  ]
+}

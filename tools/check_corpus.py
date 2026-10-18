@@ -28,7 +28,7 @@ from typing import Any
 
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
-from rdflib.namespace import RDF, RDFS, XSD
+from rdflib.namespace import RDF, RDFS, SKOS, XSD
 from rdflib.term import Node
 
 ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
@@ -82,6 +82,8 @@ SET_BASED = {
     ODRL.isAnyOf,
     ODRL.isNoneOf,
 }  # Vocab §3.16.7-3.16.12: a list, or repeated values, as the right operand (decisions/0013)
+# The operators a concept-scheme operand admits (due2-profiles.md §4, decisions/0015 #8).
+CONCEPT_OPERATORS = {ODRL.eq, ODRL.neq, ODRL.isAnyOf, ODRL.isNoneOf}
 CONTESTED = {
     ODRL.isPartOf,
     ODRL.hasPart,
@@ -388,6 +390,22 @@ class Bindings:
         self._check_range(g, op, b, r)
         return b
 
+    def schemes(self, op: Node) -> frozenset[Node]:
+        """The operand's concept schemes: the union over every layer (decisions/0015 #6)."""
+        return frozenset(s for lg in self.all for s in lg.objects(op, DUE2.conceptScheme))
+
+    def in_scheme(self, v: Node, schemes: frozenset[Node]) -> bool:
+        """Whether the policy or a module declares concept `v` a member of one of
+        `schemes`: `skos:inScheme`, its sub-property `skos:topConceptOf`, or the
+        inverse `skos:hasTopConcept` (SKOS Reference S7, S8; decisions/0015 #8).
+        Membership is not inherited along `skos:broader` (SKOS Reference 4.6)."""
+        return any(
+            (v, p, s) in lg
+            for lg in self.all
+            for s in schemes
+            for p in (SKOS.inScheme, SKOS.topConceptOf)
+        ) or any((s, SKOS.hasTopConcept, v) in lg for lg in self.all for s in schemes)
+
     def range_kind(self, rng: Node) -> str | None:
         """A range's kind (decisions/0014 #4); None when it has none to check: a
         blank-node range, or `rdfs:Resource`, which admits every value."""
@@ -466,6 +484,12 @@ def check_constraint(
             f"{q(g, c)}: a list rightOperand together with other values; write one list "
             f"or repeated values (due2-profiles.md 4, decisions/0013)",
         )
+    if operator in SET_BASED and RDF.nil in rights:
+        r.diag(
+            "MalformedConstraint",
+            f"{q(g, c)}: the empty list as the right operand of {q(g, operator)} "
+            f"(due2-profiles.md 4, decisions/0013 amendment)",
+        )
     if operator in CONTESTED and sum(len(members(g, ro)) for ro in rights) > 1:
         r.diag(
             "ContestedOperatorReading",
@@ -505,6 +529,7 @@ def check_constraint(
             "OperatorTypeMismatch",
             f"{q(g, c)}: operator {q(g, operator)} not allowed for {q(g, op)}",
         )
+    check_concepts(g, c, op, operator, rights, bnd, b, r)
     # The right operand's kind against the range's (due2-profiles.md 3 Kinds); a range
     # without a kind (a blank-node union, rdfs:Resource) admits any value, and
     # rdfs:Literal any literal.
@@ -524,6 +549,43 @@ def check_constraint(
                     "OperatorTypeMismatch",
                     f"{q(g, c)}: right operand {q(g, v)} is of kind {have}, "
                     f"not the range's {sorted(want)}",
+                )
+
+
+def check_concepts(
+    g: Graph,
+    c: Node,
+    op: Node,
+    operator: Node,
+    rights: list[Node],
+    bnd: Binding,
+    b: Bindings,
+    r: Report,
+) -> None:
+    """The three checks on a concept-scheme operand (due2-profiles.md 4, decisions/0015 #8).
+    A range of kind IRI or `rdfs:Literal`, or with no kind, is not a datatype."""
+    schemes = b.schemes(op)
+    if not schemes:
+        return
+    if any(k not in (None, "IRI", LITERAL) for v in bnd.range for k in (b.range_kind(v),)):
+        r.diag(
+            "InvalidBinding",
+            f"{q(g, c)}: {q(g, op)} names a concept scheme, but its range is a datatype "
+            f"(due2-profiles.md 4, decisions/0015 #8)",
+        )
+    if operator not in CONCEPT_OPERATORS:
+        r.diag(
+            "OperatorTypeMismatch",
+            f"{q(g, c)}: {q(g, operator)} on {q(g, op)}, which names a concept scheme; "
+            f"only eq, neq, isAnyOf, and isNoneOf compare concepts (decisions/0015 #8)",
+        )
+    for ro in rights:
+        for v in members(g, ro):
+            if isinstance(v, URIRef) and not b.in_scheme(v, schemes):
+                r.diag(
+                    "OperatorTypeMismatch",
+                    f"{q(g, c)}: right operand {q(g, v)} is in none of {q(g, op)}'s concept "
+                    f"schemes (decisions/0015 #8)",
                 )
 
 
@@ -904,7 +966,7 @@ def check_case(case_dir: Path) -> list[Report]:
             r.err(f"{tag}: Pending needs a frontier")
         check_explanation(tag, exp, sc.get("config", {}), g, prefixes, r)
         check_range(tag, exp, r)
-        check_unknown_parts(tag, exp, g, prefixes, r)
+        check_unknown_parts(tag, exp, g, prefixes, {str(p) for _, p, _ in used.values()}, r)
     return reports
 
 
@@ -940,13 +1002,15 @@ PART_STATUSES = {"missing", "invalid", "conflict", "unresolved", "misfit"}
 
 
 def check_unknown_parts(
-    tag: str, exp: dict[str, Any], g: Graph, pfx: dict[str, str], r: Report
+    tag: str, exp: dict[str, Any], g: Graph, pfx: dict[str, str], props: set[str], r: Report
 ) -> None:
     """expected.unknown_parts (conformance/README.md, workflows 3.5, decisions/0016): shape,
     that each ref is a rule or duty of policy.ttl, and that a target or party input is missing.
 
-    A request field is never unresolved (due2-profiles.md 3), and the case format carries an
-    absent target or party as absent, so its status can only be `missing`.
+    An input that is not the property of an operand the policy reads, `props`, is the target
+    or a party function. A request field is never unresolved (due2-profiles.md 3), and the
+    case format carries an absent target or party as absent, so its status can only be
+    `missing`. An operand's property, `odrl:purpose` among them, can have any status.
     """
     if "unknown_parts" not in exp:
         return
@@ -963,7 +1027,7 @@ def check_unknown_parts(
             )
         if expand(u["ref"], pfx) not in rules | duties:
             r.err(f"{tag}: unknown part {u['ref']} is no rule or duty of policy.ttl")
-        if expand(u["input"], pfx).startswith(str(ODRL)) and u["status"] != "missing":
+        if expand(u["input"], pfx) not in props and u["status"] != "missing":
             r.err(f"{tag}: the request field {u['input']} can only be missing (profiles 3)")
 
 

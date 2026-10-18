@@ -457,6 +457,67 @@ def test_hierarchy_operators(
     assert outcome(reply) == expected
 
 
+SKOS = "http://www.w3.org/2004/02/skos/core#"
+# A scheme ex:s of four concepts, each membership in another of the three forms: ex:low is
+# below ex:top by two edges, one of them a skos:narrower triple; ex:other has no path to ex:top.
+SCHEME = f"""@prefix skos: <{SKOS}> .
+ex:s skos:hasTopConcept ex:top .
+ex:top skos:narrower ex:mid . ex:mid skos:inScheme ex:s .
+ex:low skos:broader ex:mid ; skos:inScheme ex:s .
+ex:other skos:topConceptOf ex:s .
+"""
+
+
+@pytest.mark.parametrize(
+    ("constraint", "scheme", "params", "sotw", "expected"),
+    [
+        # eq is ⊑: identity, one inverted narrower edge, two edges; no path is f.
+        (leaf("eq", "ex:top"), True, iri("ex:top"), {}, "Permit"),
+        (leaf("eq", "ex:top"), True, iri("ex:mid"), {}, "Permit"),
+        (leaf("eq", "ex:top"), True, iri("ex:low"), {}, "Permit"),
+        (leaf("eq", "ex:mid"), True, iri("ex:top"), {}, "NotApplicable"),
+        (leaf("eq", "ex:top"), True, iri("ex:other"), {}, "NotApplicable"),
+        # Without a scheme the same edges are not read: eq is identity.
+        (leaf("eq", "ex:top"), False, iri("ex:low"), {}, "NotApplicable"),
+        # The complements: "not ex:top" excludes everything below it.
+        (leaf("neq", "ex:top"), True, iri("ex:low"), {}, "NotApplicable"),
+        (leaf("isNoneOf", "( ex:top )"), True, iri("ex:low"), {}, "NotApplicable"),
+        (leaf("isAnyOf", "( ex:other ex:top )"), True, iri("ex:low"), {}, "Permit"),
+        # A read concept in no scheme is invalid, and a string is a misfit: u, never f.
+        (leaf("eq", "ex:top"), True, iri("ex:new"), {}, "Indeterminate"),
+        (leaf("neq", "ex:top"), True, iri("ex:new"), {}, "Indeterminate"),
+        (leaf("eq", "ex:top"), True, typed("top", "string"), {}, "Indeterminate"),
+        # The SOTW supplies a read concept's edges and membership; an edge alone is not enough.
+        (leaf("eq", "ex:top"), True, iri("ex:new"),
+         {"closure": [[SKOS + "broader", "ex:new", "ex:low"], [SKOS + "inScheme", "ex:new", "ex:s"]]},
+         "Permit"),
+        (leaf("eq", "ex:top"), True, iri("ex:new"),
+         {"closure": [[SKOS + "broader", "ex:new", "ex:low"]]}, "Indeterminate"),
+        # A right operand counts the declared memberships only: normalisation has no SOTW.
+        (leaf("eq", "ex:new"), True, iri("ex:new"),
+         {"closure": [[SKOS + "inScheme", "ex:new", "ex:s"]]}, "error"),
+    ],
+)  # fmt: skip
+def test_concept_operators(
+    interpreter: Interpreter, constraint: str, scheme: bool, params: Obj, sotw: Obj, expected: str
+) -> None:
+    extra = " ; due2:conceptScheme ex:s" if scheme else ""
+    pol = constrained(constraint, bound("x", extra=extra)) + SCHEME
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": params}}, sotw=sotw))
+    assert outcome(reply) == expected
+
+
+def test_concept_broader_cycle(interpreter: Interpreter) -> None:
+    # SKOS does not forbid a cycle of skos:broader edges. The closure is a least fixpoint, so it
+    # terminates, and each concept of the cycle is below the other.
+    pol = constrained(leaf("eq", "ex:a"), bound("x", extra=" ; due2:conceptScheme ex:s")) + (
+        f"@prefix skos: <{SKOS}> .\n"
+        + "ex:a skos:broader ex:b ; skos:inScheme ex:s . ex:b skos:broader ex:a ; skos:inScheme ex:s .\n"
+    )
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": iri("ex:b")}}))
+    assert outcome(reply) == "Permit"
+
+
 @pytest.mark.parametrize(
     ("fact", "expected"),
     [
@@ -705,6 +766,16 @@ def test_typed_part_of(
         (leaf("eq", "ex:v"), bound("x", extra=" ; due2:allowedOperator odrl:neq"),
          "OperatorTypeMismatch"),
         (leaf("eq", "5"), bound("x", extra=" ; rdfs:range ex:Thing"), "OperatorTypeMismatch"),
+        # The empty list on a set-based operator (decisions/0013, amendment).
+        (leaf("isAnyOf", "()"), "", "MalformedConstraint"),
+        (leaf("isNoneOf", "()"), "", "MalformedConstraint"),
+        # A concept-scheme operand (decisions/0015 #8): an IRI right operand in no scheme, an
+        # operator that reads no hierarchy, and a datatype range.
+        (leaf("eq", "ex:v"), bound("x", extra=" ; due2:conceptScheme ex:s"), "OperatorTypeMismatch"),
+        (leaf("lt", "ex:top"), bound("x", extra=" ; due2:conceptScheme ex:s") + SCHEME,
+         "OperatorTypeMismatch"),
+        (leaf("eq", '"v"'), bound("x", extra=" ; due2:conceptScheme ex:s ; rdfs:range xsd:string"),
+         "InvalidBinding"),
     ],
 )  # fmt: skip
 def test_constraint_rejections(
@@ -726,7 +797,7 @@ def test_constraint_rejections(
          "constraint: dprod:not without one member"),
         ("ex:c . ex:c odrl:or ( ex:c ex:d ) . ex:d " + leaf("eq", "ex:v")[1:-1], "",
          "constraint: cycle"),
-        (leaf("isAnyOf", "()"), "", "constraint: empty list"),
+        (leaf("eq", "()"), "", "constraint: list on a scalar operator"),
         (leaf("eq", "( ex:v )"), "", "constraint: list on a scalar operator"),
         (leaf("eq", "ex:v"), " ; due2:cardinality due2:set",
          "constraint: set-valued operand on a single-value operator"),
@@ -742,7 +813,7 @@ def test_constraint_declines(
 
 
 CONSTRAINT_DELETIONS = [
-    ("compare.lp", "crank(C, N) :- op(C, eq), cpair(C, Lv, Rv), eqr(Lv, Rv, N)."),
+    ("compare.lp", "crank(C, N) :- op(C, eq), ceqr(C, _, _, N)."),
     ("operand.lp", "read_u(Op) :- used(Op), not read_resolved(Op)."),
 ]
 

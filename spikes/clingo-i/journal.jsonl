@@ -84,3 +84,11 @@
 {"at": "2026-10-17T23:40:25Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1130, "name": "basedpyright"}
 {"at": "2026-10-17T23:40:25Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff"}
 {"at": "2026-10-17T23:40:25Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff format"}
+{"at": "2026-10-18T01:52:05Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 150, "summary": "#69: concept-scheme operands under skos:broader (decisions/0015) and the empty right-operand list rejected (decisions/0013 amendment)"}
+{"at": "2026-10-18T01:52:05Z", "by": "claude-opus-5-5", "kind": "attempt", "minutes": 90, "summary": "Concept schemes: scheme/2 from due2:conceptScheme over every layer; declared_in_scheme/2 from inScheme, topConceptOf, and inverse hasTopConcept; closure(broader) with narrower inverted; ceqr/4 makes eq, neq, isAnyOf, isNoneOf read under ⊑; a read IRI outside every scheme is nonconforming (invalid, so u); the #8 rejections. 16 new vectors pass"}
+{"at": "2026-10-18T01:52:06Z", "by": "claude-opus-5-5", "kind": "attempt", "minutes": 15, "summary": "Empty list on a set-based operator: reject MalformedConstraint instead of declining; on a scalar operator it stays the list-on-a-scalar decline"}
+{"at": "2026-10-18T01:52:06Z", "by": "claude-opus-5-5", "kind": "note", "summary": "Mutation checks: deleting the narrower inversion, the out-of-scheme nonconforming rule, the transitive above step, hasTopConcept membership, or read_concept each fails at least 3 tests"}
+{"at": "2026-10-18T01:52:06Z", "by": "claude-opus-5-5", "kind": "bug", "minutes": 5, "summary": "A has_scheme doc-block summary cut at 'compare.' (the dotted file name ends the first sentence); reworded so the summary is whole"}
+{"at": "2026-10-18T01:52:07Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1129, "name": "basedpyright"}
+{"at": "2026-10-18T01:52:07Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff"}
+{"at": "2026-10-18T01:52:07Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff format"}

@@ -1,0 +1,19 @@
+{
+  "case": "due2-concept-datatype-range",
+  "source": "due2-native: a concept scheme on an operand whose range is a datatype (decisions/0015 #8; issue #69)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2. The policy is valid ODRL 2.2; the rejection is due2's own.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "dpv": "https://w3id.org/dpv#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidBinding"
+    ],
+    "why": "ex:purposeCode has range xsd:string, so its values are never IRIs and never concepts, yet its binding names a concept scheme. due2-profiles.md §4 rejects the binding with InvalidBinding."
+  }
+}

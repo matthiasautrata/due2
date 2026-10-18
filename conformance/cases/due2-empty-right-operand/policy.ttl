@@ -1,0 +1,38 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native negative case: the empty list as a set right operand
+# (decisions/0013 amendment, due2-profiles.md §4). In RDF, () is rdf:nil.
+# Read as the empty set, ex:readInRegion would never apply and
+# ex:noReadOutsideRegion would apply to every request.
+
+ex:emptyPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readInRegion ;
+    odrl:prohibition ex:noReadOutsideRegion .
+
+ex:readInRegion a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:region ;
+        odrl:operator odrl:isAnyOf ;
+        odrl:rightOperand ()
+    ] .
+
+ex:noReadOutsideRegion a odrl:Prohibition ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:region ;
+        odrl:operator odrl:isNoneOf ;
+        odrl:rightOperand ()
+    ] .
+
+ex:region a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterRegion .

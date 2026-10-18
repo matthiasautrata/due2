@@ -1,0 +1,193 @@
+{
+  "case": "due2-concept-purpose-prohibition",
+  "source": "due2-native (pins decisions/0015 #3-#5: a prohibition on marketing over a SKOS concept scheme written top-down; issues #52, #69)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The scheme is DPV 2.1's, abridged, and written with skos:narrower, skos:hasTopConcept, and skos:topConceptOf instead of DPV's skos:broader and skos:inScheme. due2 reads the first as the inverse skos:broader edge and the other two as membership (due2-profiles.md §6), so the hierarchy is the one due2-concept-purpose writes bottom-up. dpv:Marketing is in the scheme as a top concept and dpv:DirectMarketing by skos:inScheme.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "dpv": "https://w3id.org/dpv#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "scenarios": [
+    {
+      "name": "direct marketing",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:DirectMarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:noMarketing",
+            "role": "prohibition"
+          }
+        ],
+        "eliminated": [
+          {
+            "ref": "ex:readCustomerData",
+            "by": "ex:noMarketing",
+            "rule": "prohibit"
+          }
+        ],
+        "unknown_parts": [],
+        "why": "dpv:Marketing skos:narrower dpv:DirectMarketing reads as DirectMarketing ⊑ Marketing, so the prohibition's constraint is T and the prohibition applies (due2-profiles.md §4, §6). Under conflict prohibit it removes the permission: Deny."
+      }
+    },
+    {
+      "name": "service provision",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:ServiceProvision"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readCustomerData",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "dpv:ServiceProvision is in the scheme as a top concept and has no path to dpv:Marketing, so the prohibition's constraint is F (due2-profiles.md §4). Only the unconstrained permission applies: Permit."
+      }
+    },
+    {
+      "name": "a purpose in no scheme",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:Telemarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:noMarketing",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "Deny",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:noMarketing",
+            "input": "odrl:purpose",
+            "status": "invalid"
+          }
+        ],
+        "why": "ex:Telemarketing is in no scheme, so the prohibition's constraint is U, never F: an unknown purpose does not slip past a prohibition on marketing (decisions/0015 #4). The permission applies, so the completions give Deny and Permit: Indeterminate."
+      }
+    },
+    {
+      "name": "no purpose",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:noMarketing",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "Deny",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:noMarketing",
+            "input": "odrl:purpose",
+            "status": "missing"
+          }
+        ],
+        "why": "The request gives no purpose, so the prohibition's constraint is U, its part missing and opaque (decisions/0016 #2). The permission applies, so the completions give Deny and Permit: Indeterminate."
+      }
+    }
+  ]
+}

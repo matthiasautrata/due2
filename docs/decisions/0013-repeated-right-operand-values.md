@@ -60,3 +60,22 @@ due2 already accepts both forms for the operands of a logical constraint (`odrl2
 ## Revisit when
 
 - The ODRL WG or CG changes the JSON-LD context to `@list`, or states that the repeated form is invalid.
+
+## Amendment (2026-10-17, the empty list)
+
+A fourth form has no reading: the empty list, `odrl:rightOperand ()`, as the right operand of a set-based operator. In RDF, `()` is the IRI `rdf:nil`. Normalisation rejects it with `MalformedConstraint`, as it does the three forms of item 3 of § Decision (#69).
+
+ODRL gives the empty list no meaning. IM §2.5.1 asks a set-based operator for a "list of literals, or list of IRIs, or list of RightOperands". The Vocabulary describes a list of values (§3.14.7, §3.16.7–§3.16.12), and asks only that `rdf:List` SHOULD be used (§5.1). None of them, nor `ODRL22.ttl`, nor the Community Group's formal semantics draft, mentions an empty list or an empty set. Read as the empty set, each operator gives an answer that does not depend on the request at all:
+
+| Operator | On the empty set |
+|---|---|
+| `isAnyOf` | `F`: no member to match |
+| `isNoneOf` | `T`: no member to exclude |
+| `isAllOf`, `hasPart`, `isA` | `T`, vacuously |
+| `isPartOf` | `F`, unless the left value is itself empty |
+
+A constraint like this decides nothing about the request, so it is more likely an authoring error, such as a generator that emptied a list, than an intent. It can also do harm without any sign: a prohibition on `isNoneOf ()` applies to every request. Rejecting it shows the author the error instead.
+
+The other serialisations agree. In JSON-LD, `"rightOperand": []` gives no triple, so the constraint has no right operand and is already rejected. `{"@list": []}` gives `rdf:nil`, which this amendment rejects.
+
+`odrl22-shape.ttl` keeps accepting the empty list, since it is an IRI and the IM does not require a list to have members. So the rejection is due2's own, as `WitnessOutsideDuty` is, and the negative case `due2-empty-right-operand` keeps `odrl22_valid` at its default. `due2-profiles.md` v0.11 §4, `due2-diagnostics.md` v0.4 §3, and `tools/check_corpus.py` follow.

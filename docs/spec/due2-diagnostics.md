@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.3 (2026-10-17)
+**Status:** Draft v0.4 (2026-10-17)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
+**Changes in v0.4** (2026-10-17, `decisions/0013` amendment, #69): `MalformedConstraint` covers an empty list as a set right operand. **v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -49,7 +49,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `InvalidNesting` | error | 1 | A Consequence with a Consequence, or a Remedy with a Consequence. *Unchecked.* | normalisation §6.3 |
 | `RuleReferenceCycle` | error | 1 | A cycle of `duty`, `consequence`, `remedy` edges. | normalisation §6.3 |
 | `LimitExceeded` | error | 1 | Input triples, generated rules, or generated policies over the invocation's limit. *Unchecked.* | normalisation §3 |
-| `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; or a set right operand that mixes a list with other values or gives two lists. | ODRL IM §2.5.1; profiles §4 (`decisions/0013`) |
+| `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; or a set right operand that mixes a list with other values, gives two lists, or is the empty list. | ODRL IM §2.5.1; profiles §4 (`decisions/0013` and its amendment) |
 | `UnsupportedOperator` | error | 2 | An operator outside the core registry. | profiles §4 |
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | profiles §3 |
 | `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in; or a `due2:conceptScheme` on an operand whose range is a datatype. | profiles §3, §4 |

@@ -1,0 +1,331 @@
+{
+  "case": "due2-concept-purpose",
+  "source": "due2-native (pins decisions/0015 #3-#5 and #7: a purpose permission over a SKOS concept scheme; issues #52, #69)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The scheme is DPV 2.1's purposes, abridged to four concepts and kept in policy.ttl. odrl:purpose is bound in the baseline, and the policy adds its scheme with due2:conceptScheme, which adds up across layers (decisions/0015 #6). Scenarios 5 and 6 take ex:EmailMarketing's edges from the SOTW, as a deployment's own purposes would arrive.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "dpv": "https://w3id.org/dpv#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "scenarios": [
+    {
+      "name": "direct marketing, under marketing",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:DirectMarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForMarketing",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "dpv:DirectMarketing skos:broader dpv:Marketing, so DirectMarketing ⊑ Marketing and the purpose constraint is T (due2-profiles.md §4). The permission applies and has no duties: Permit."
+      }
+    },
+    {
+      "name": "marketing itself",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:Marketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForMarketing",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "c ⊑ d holds when c = d, so the request's dpv:Marketing satisfies eq dpv:Marketing (due2-profiles.md §4), and the permission applies: Permit."
+      }
+    },
+    {
+      "name": "service provision, in the scheme with no path",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:ServiceProvision"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "dpv:ServiceProvision is in the scheme, but no skos:broader chain leads from it to dpv:Marketing, so the constraint is F, closed-world over the declared edges (due2-profiles.md §4). No rule applies: NotApplicable."
+      }
+    },
+    {
+      "name": "a purpose in no scheme",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:Telemarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForMarketing",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readForMarketing",
+            "input": "odrl:purpose",
+            "status": "invalid"
+          }
+        ],
+        "why": "ex:Telemarketing is in none of odrl:purpose's schemes, so the value is invalid and the constraint U (due2-profiles.md §4). The part is opaque, so the permission is completed alone (decisions/0016 #2): Permit or NotApplicable, so Indeterminate."
+      }
+    },
+    {
+      "name": "edges from the SOTW",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:EmailMarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "skos:broader",
+            "ex:EmailMarketing",
+            "dpv:DirectMarketing"
+          ],
+          [
+            "skos:inScheme",
+            "ex:EmailMarketing",
+            "dpv:purposes-classes"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForMarketing",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The SOTW states that ex:EmailMarketing is in the scheme and that its broader concept is dpv:DirectMarketing, so EmailMarketing ⊑ DirectMarketing ⊑ Marketing (due2-workflows.md §3.3). The constraint is T, and the permission applies: Permit."
+      }
+    },
+    {
+      "name": "a broader edge without membership",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:EmailMarketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "skos:broader",
+            "ex:EmailMarketing",
+            "dpv:DirectMarketing"
+          ]
+        ]
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForMarketing",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readForMarketing",
+            "input": "odrl:purpose",
+            "status": "invalid"
+          }
+        ],
+        "why": "The SOTW gives ex:EmailMarketing a broader edge into the scheme but no membership, and membership is not inherited along the hierarchy (due2-profiles.md §6), so the value is in no scheme: invalid, and the constraint U. The permission is completed alone: Indeterminate, NotApplicable..Permit."
+      }
+    },
+    {
+      "name": "a purpose written as a string",
+      "request": {
+        "reference": "req",
+        "action": "odrl:read",
+        "target": "ex:CustomerData",
+        "at": "2026-10-17T10:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@value": "marketing",
+            "@type": "xsd:string"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-10-17T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForMarketing",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readForMarketing",
+            "input": "odrl:purpose",
+            "status": "misfit"
+          }
+        ],
+        "why": "Only IRIs are concepts: a string compares by code point, so against the concept dpv:Marketing it does not fit, a misfit, and the constraint is U (decisions/0015 #7). The permission is completed alone: Indeterminate, NotApplicable..Permit."
+      }
+    }
+  ]
+}

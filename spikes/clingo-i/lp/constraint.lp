@@ -132,7 +132,9 @@ unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
 
 % A node that is neither a leaf nor a connective; a leaf without one left operand, one
 % operator, and a right operand; several values on a scalar operator; a list with other values,
-% or two lists (due2-diagnostics.md, MalformedConstraint).
+% or two lists; the empty list on a set-based operator, which ODRL gives no meaning and which
+% would make the leaf's value independent of the request (due2-diagnostics.md,
+% MalformedConstraint; decisions/0013, amendment).
 reject("MalformedConstraint", C) :- cnode(C), not leaf(C), not conn(C, _).
 reject("MalformedConstraint", C) :- leaf(C), #count { Op : left(C, Op) } != 1.
 reject("MalformedConstraint", C) :- leaf(C), #count { Iri : c_operator(C, Iri) } != 1.
@@ -141,6 +143,7 @@ reject("MalformedConstraint", C) :- op(C, O), not set_based(O),
     #count { Term : right_value(C, Term) } > 1.
 reject("MalformedConstraint", C) :- right_value(C, List), is_list(List), right_value(C, Term),
     Term != List.
+reject("MalformedConstraint", C) :- op(C, O), set_based(O), right_value(C, List), voc(nil, List).
 reject("UnsupportedOperator", C) :- c_operator(C, Iri), not operator(Iri, _).
 reject("UnsupportedConnective", C) :- conn(C, andSequence).
 reject("FloatingPointOperand", C) :- right(C, Term), unplaceable(Term, "value: xsd:double").
@@ -158,7 +161,7 @@ unsupported("constraint: cycle") :- reach_c(C, C).
 % A node shared by a rule's constraint and an action's refinement would need two completion
 % variables, one per scope, for one value (completion.lp).
 unsupported("constraint: node in two scopes") :- scope(C, rule), scope(C, action).
-unsupported("constraint: empty list") :- right_value(C, List), voc(nil, List).
-% A list on a scalar operator: one value that is a list, which no scalar comparison reads.
+% A list on a scalar operator, the empty list included: one value that is a list, which no
+% scalar comparison reads.
 unsupported("constraint: list on a scalar operator") :- op(C, O), not set_based(O),
     right_value(C, List), is_list(List).

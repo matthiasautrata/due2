@@ -1,0 +1,38 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dpv:   <https://w3id.org/dpv#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: a prohibition on marketing over a SKOS concept scheme
+# (decisions/0015). The scheme is written top-down, with skos:narrower,
+# skos:hasTopConcept, and skos:topConceptOf, which due2 reads as the inverse
+# skos:broader edges and as scheme membership (due2-profiles.md §6).
+
+ex:customerPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readCustomerData ;
+    odrl:prohibition ex:noMarketing .
+
+ex:readCustomerData a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:CustomerData .
+
+ex:noMarketing a odrl:Prohibition ;
+    odrl:action odrl:read ;
+    odrl:target ex:CustomerData ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand dpv:Marketing
+    ] .
+
+odrl:purpose due2:conceptScheme dpv:purposes-classes .
+
+dpv:purposes-classes a skos:ConceptScheme ; skos:hasTopConcept dpv:Marketing .
+dpv:Marketing        a skos:Concept ; skos:narrower dpv:DirectMarketing .
+dpv:DirectMarketing  a skos:Concept ; skos:inScheme dpv:purposes-classes .
+dpv:ServiceProvision a skos:Concept ; skos:topConceptOf dpv:purposes-classes .

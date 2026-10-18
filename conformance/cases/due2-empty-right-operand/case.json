@@ -1,0 +1,16 @@
+{
+  "case": "due2-empty-right-operand",
+  "source": "due2-native: the empty list as a set right operand (decisions/0013 amendment; issue #69)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2. ODRL never mentions an empty list or set as a right operand, and odrl22-shape.ttl accepts () as the IRI rdf:nil, so the policy is valid ODRL 2.2 and the rejection is due2's own (decisions/0013 amendment). Read as the empty set, the permission would never apply and the prohibition would apply to every request.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "ex:readInRegion's isAnyOf and ex:noReadOutsideRegion's isNoneOf each take the empty list (), which has no reading. due2-profiles.md §4 rejects it with MalformedConstraint, in stage 2."
+  }
+}
