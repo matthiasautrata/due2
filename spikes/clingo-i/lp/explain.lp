@@ -17,20 +17,23 @@
 % The listed frontier is due2-workflows.md §6.3's, from the ready and pending candidates of world
 % `k`: an uncertain candidate enters only through the verdict. The `obligations` rows name each
 % obligation in force with its duty status, and each whose `in_force` is `u` as `unknown`
-% (due2-workflows.md §6.1). The `unknown_part` rows name every `u` part of every atom whose
-% finding is not `f`, with what it reads and why it is `u` (decisions/0016 #3 and its amendment).
+% (due2-workflows.md §6.1). The `unknown_part` rows name every `u` part of every finding that is
+% not `f`, an atom's or a duty's, with what it reads and why it is `u` (decisions/0016 #3 and its
+% amendment).
 % Variable letters: DESIGN.md § Vocabulary; in an `elim` row `X` is removed and `Y` removes it.
 %
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
-%   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2`, `atom_constraint/2`
-%   (applies.lp); `member/2`, `left/2` (constraint.lp); `prop/2` (operand.lp); `rank/2`
-%   (kleene.lp); `instance/1`, `passed/1`, `status/3` (duty.lp); `leaf_status/2` (completion.lp).
+%   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2` (applies.lp); `member/2`,
+%   `leaf/1`, `left/2` (constraint.lp); `prop/2`, `read_ok/2`, `read_status/3` (operand.lp);
+%   `crank/3`, `evaluates/2` (compare.lp); `rank/2` (kleene.lp); `voc/2` (lift.lp);
+%   `witness_cond/2`, `obligation_policy/2`, `instance/1`, `passed/1`, `status/3` (duty.lp);
+%   `duty_item/1`, `finding_atom/2`, `item_root/2`, `leaf_status/2` (completion.lp).
 % - **Provides:** `may_apply/1`, `surely_applies/1`, `same_policy/3`, `closed_by/2`,
 %   `surely_closed/1`, `maybe_closed/1`, `may_candidate/1`, `sure_candidate/1`, `may_contend/1`,
 %   `sure_contender/1`, `elim_within/3`, `void/1`, `removed_within/1`, `elim/3`, `open_k/2`,
 %   `uncertain/1`, `conflicted/1`, `candidate_state/2`, `listed/1`, `listed_out/2`,
 %   `listed_apart/2`, `listed_dominated/1`, `listed_front/1`, `front_duty/2`,
-%   `obligation_row/2`, `in_tree/2`, `unknown_part/3`.
+%   `obligation_row/2`, `reported/1`, `in_tree/2`, `witness_status/2`, `unknown_part/3`.
 
 %## Integrity
 
@@ -183,8 +186,6 @@ The candidate `X` is uncertain in world `k`: its finding is `u`, a precondition'
 `u`, or a violated precondition's `owed` is `u`. The states are those of due2-workflows.md §6.1.
 *%
 uncertain(X) :- may_candidate(X), holds(applies(X), u).
-% The next two rules cannot fire while solve 1 declines a `u` duty finding (#49). They are the
-% table of due2-workflows.md §6.1, kept for when the decline goes.
 uncertain(X) :- may_candidate(X), pre(X, Y), open_k(Y, 1).
 uncertain(X) :- may_candidate(X), pre(X, Y), status(k, Y, violated), holds(owed(Y), u).
 
@@ -259,38 +260,65 @@ The obligation `Y` is reported with status `S`: its duty status when it is in fo
 (due2-workflows.md §6.1). interpret.py also names each in role `obligation`, under any verdict.
 *%
 obligation_row(Y, S) :- obligation(Y), holds(in_force(Y), t), status(k, Y, S).
-% Cannot fire while solve 1 declines a `u` duty finding (#49).
 obligation_row(Y, unknown) :- obligation(Y), holds(in_force(Y), u).
 
 #show obligation_row/2.
 
 %## Unknown parts
 
-%*! in_tree(X, C)
+%*! reported(I)
 
-Constraint node `C` is in a tree of atom `X`: one of its roots, or a member of a node in one.
+Finding `I` is `t` or `u`, so its `u` parts are reported. An `f` finding is not: none of its `u`
+parts can change it, and due2-workflows.md §5.5 lets an index skip an `f` atom, so reporting it
+would make the reply depend on the index (decisions/0016, amendment).
 *%
-in_tree(X, C) :- atom_constraint(X, C).
-in_tree(X, D) :- in_tree(X, C), member(C, D).
+% Every finding has exactly one value (kleene.lp), so `not ... f` is "`t` or `u`".
+reported(applies(X)) :- atom(X), not holds(applies(X), f).
+reported(I) :- duty_item(I), not holds(I, f).
+
+%*! in_tree(I, C)
+
+Constraint node `C` is in a tree of finding `I`: one of its roots, or a member of a node in one.
+The roots of `fulfilled(Y)` are the witness conditions of `Y`.
+*%
+in_tree(I, C) :- item_root(I, C).
+in_tree(fulfilled(Y), C) :- duty_item(fulfilled(Y)), witness_cond(Y, C).
+in_tree(I, D) :- in_tree(I, C), member(C, D).
+
+%*! witness_status(C, S)
+
+The witness leaf `C` is `u` in some world `wit(E)` with status `S`, as `leaf_status/2` gives it
+for world `k`: its operand's read status there, or `misfit`.
+*%
+witness_status(C, S) :- evaluates(wit(E), C), leaf(C), left(C, Op), read_status(wit(E), Op, S).
+witness_status(C, misfit) :- evaluates(wit(E), C), leaf(C), left(C, Op), read_ok(wit(E), Op),
+    crank(wit(E), C, 1).
 
 %*! unknown_part(X, Input, S)
 
-Atom `X` has a `u` part that reads `Input` with status `S`. The relation is the
-`unknown_part` of due2-workflows.md §3.5 and decisions/0016 #3. `Input` is `target` for the
-request's target, `party(F)` for its party under function `F`, and `prop(Prop)` for a `u` leaf
-whose left operand reads the property `Prop`. An absent target or party is `missing`, and a
-leaf has its `leaf_status/2`. Every atom whose finding is `t` or `u` is reported, with every `u`
-leaf of its trees, whether or not it decides its node: the reply names what was missing even
-where it did not matter. An `f` atom is not reported. None of its `u` parts can change it, and
-due2-workflows.md §5.5 lets an index skip it, so reporting it would make the reply depend on the
-index (decisions/0016, amendment).
+Atom or duty atom `X` has a `u` part, in a finding that is `t` or `u`, that reads `Input` with
+status `S`. The relation is the `unknown_part` of due2-workflows.md §3.5 and decisions/0016 #3.
+`Input` is `target` for the request's target, `party(F)` for its party under function `F`, and
+`prop(Prop)` for a `u` leaf whose left operand reads the property `Prop`. An absent target or
+party is `missing`, and a leaf has its status. Every `u` leaf of a reported finding's trees is
+named, whether or not it decides its node: the reply names what was missing even where it did
+not matter. The parts of a duty's findings are its guards for `owed` and `in_force`; the match
+parts of its policy's rules for `in_force`, under the obligation; and for `fulfilled`, its
+witness conditions in each evidence's world and a `u` actor check, which reads the request's
+assignee (duty.lp).
 *%
-% `holds(applies(X), V)` has exactly one `V` (kleene.lp), so `not ... f` is "`t` or `u`".
-unknown_part(X, target, missing) :- atom(X), holds(part(X, target), u),
-    not holds(applies(X), f).
-unknown_part(X, party(F), missing) :- atom_party(X, F, _), holds(part(X, party(F)), u),
-    not holds(applies(X), f).
-unknown_part(X, prop(Prop), S) :- in_tree(X, C), leaf_status(C, S), left(C, Op), prop(Op, Prop),
-    not holds(applies(X), f).
+unknown_part(X, target, missing) :- reported(applies(X)), holds(part(X, target), u).
+unknown_part(X, party(F), missing) :- reported(applies(X)), atom_party(X, F, _),
+    holds(part(X, party(F)), u).
+unknown_part(Y, target, missing) :- reported(in_force(Y)), obligation_policy(Y, P),
+    atom_policy(X, P), holds(part(X, target), u).
+unknown_part(Y, party(F), missing) :- reported(in_force(Y)), obligation_policy(Y, P),
+    atom_policy(X, P), atom_party(X, F, _), holds(part(X, party(F)), u).
+unknown_part(X, prop(Prop), S) :- reported(I), finding_atom(I, X), in_tree(I, C),
+    leaf_status(C, S), left(C, Op), prop(Op, Prop).
+unknown_part(Y, prop(Prop), S) :- reported(fulfilled(Y)), in_tree(fulfilled(Y), C),
+    witness_status(C, S), left(C, Op), prop(Op, Prop).
+unknown_part(Y, party(F), missing) :- reported(fulfilled(Y)), holds(check(Y, _, actor), u),
+    voc(assignee, F).
 
 #show unknown_part/3.

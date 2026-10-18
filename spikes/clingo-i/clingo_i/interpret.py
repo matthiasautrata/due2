@@ -188,7 +188,8 @@ class Interpreter:
                 for s in pivots
                 if s.match("verdict", 2) and _text(s.arguments[0]) == "c"
             }
-        # Every obligation in force has role `obligation`, under any verdict (DESIGN.md § Output).
+        # Every listed obligation, in force t or u, has role `obligation`, under any verdict
+        # (DESIGN.md § Output).
         basis |= {(d, "obligation") for d, _ in rows}
         out["verdict_basis"] = [{"ref": r, "role": role} for r, role in sorted(basis)]
         out["eliminated"] = [

@@ -24,15 +24,31 @@ PREFIXES = """\
 @prefix ex:   <https://example.org/> .
 """
 
+CORE = PREFIXES + "odrl:play odrl:includedIn odrl:use .\n"
+PROFILE = (
+    PREFIXES
+    + f"<{PROF}> odrl:conflict odrl:prohibit .\n"
+    + "ex:Contract rdfs:subClassOf odrl:Agreement .\n"
+)
 INIT: Obj = {
-    "modules": {
-        "core.ttl": PREFIXES + "odrl:play odrl:includedIn odrl:use .\n",
-        "prof.ttl": PREFIXES
-        + f"<{PROF}> odrl:conflict odrl:prohibit .\n"
-        + "ex:Contract rdfs:subClassOf odrl:Agreement .\n",
-    },
+    "modules": {"core.ttl": CORE, "prof.ttl": PROFILE},
     "core": ["core.ttl"],
     "profiles": {PROF: ["prof.ttl"]},
+}
+
+DPROD = "https://ekgf.org/dprod/spec/develop/"
+DUE2 = "https://w3id.org/due2/profile#"
+# INIT with the bearer roles of profiles/due2-core.ttl and profiles/dprod.ttl, for duties.
+DUTY_INIT: Obj = {
+    "modules": {
+        "core.ttl": CORE
+        + f"@prefix due2: <{DUE2}> .\nodrl:assignee due2:playsRole due2:bearer .\n",
+        "prof.ttl": PROFILE,
+        "dprod.ttl": f"@prefix due2: <{DUE2}> .\n@prefix dprod: <{DPROD}> .\n"
+        + "dprod:subjectOfDuty due2:playsRole due2:bearer .\n",
+    },
+    "core": ["core.ttl"],
+    "profiles": {PROF: ["prof.ttl"], DPROD: ["dprod.ttl"]},
 }
 
 # A permission on use of ex:a for ex:alice, and a prohibition on use of ex:b.
@@ -87,3 +103,8 @@ def vector(policy: str | None = None, /, **sections: Obj) -> Obj:
 @pytest.fixture(scope="session")
 def interpreter() -> Interpreter:
     return Interpreter(INIT)
+
+
+@pytest.fixture(scope="session")
+def duty_interpreter() -> Interpreter:
+    return Interpreter(DUTY_INIT)

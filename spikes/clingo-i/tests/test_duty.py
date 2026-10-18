@@ -8,17 +8,13 @@ reply, which `output` asks for.
 
 from __future__ import annotations
 
-import copy
-
 import pytest
 from clingo import Control
 
 from clingo_i.interpret import SOLVE_1, SOLVE_2, Interpreter, load_programs
 from clingo_i.json_types import Obj
-from tests.conftest import INIT, PREFIXES, vector
+from tests.conftest import DPROD, DUE2, PREFIXES, vector
 
-DPROD = "https://ekgf.org/dprod/spec/develop/"
-DUE2 = "https://w3id.org/due2/profile#"
 HEAD = (
     PREFIXES
     + f"@prefix dprod: <{DPROD}> .\n@prefix due2: <{DUE2}> .\n"
@@ -30,25 +26,6 @@ SHOWN = (
     "duty_atom", "pre", "bearer", "obligation", "duty_deadline", "deadline_kind", "duty_scope",
     "guard", "witness_cond", "reject", "unsupported",
 )  # fmt: skip
-
-
-@pytest.fixture(scope="module")
-def duty_interpreter() -> Interpreter:
-    """INIT with the bearer roles of profiles/due2-core.ttl and profiles/dprod.ttl."""
-    init = copy.deepcopy(INIT)
-    modules = init["modules"]
-    assert isinstance(modules, dict)
-    modules["core.ttl"] = str(modules["core.ttl"]) + (
-        f"@prefix due2: <{DUE2}> .\nodrl:assignee due2:playsRole due2:bearer .\n"
-    )
-    modules["dprod.ttl"] = (
-        f"@prefix due2: <{DUE2}> .\n@prefix dprod: <{DPROD}> .\n"
-        + "dprod:subjectOfDuty due2:playsRole due2:bearer .\n"
-    )
-    profiles = init["profiles"]
-    assert isinstance(profiles, dict)
-    profiles[DPROD] = ["dprod.ttl"]
-    return Interpreter(init)
 
 
 def rows(interp: Interpreter, body: str, profile: bool = False) -> set[str]:
@@ -817,3 +794,132 @@ def test_violated_obligation_denies_only_under_violations_deny(
     assert out["verdict"] == verdict
     assert refs(out, "obligations") == {("ex:o", "violated")}
     assert ("ex:o", "obligation") in refs(out, "verdict_basis")
+
+
+# --- u duty findings: completion, unknown, and unknown_parts -------------------------------
+
+ODRL = "http://www.w3.org/ns/odrl/2/"
+MISSING_G: Obj = {"facts": {"ex:g": {"status": "missing"}}}
+
+
+def test_unknown_owed_is_completed(duty_interpreter: Interpreter) -> None:
+    # A missing guard fact makes owed u. Its completions are owed t, so Pending on ex:d, and
+    # owed f, so Permit: Indeterminate over that range, naming ex:d unknown with the fact
+    # that made it u. Uncompleted, the u owed would leave the verdict undefined in every world.
+    out = output(duty_interpreter, duty_with(leaf("g"), GUARD), profile=True, sotw=MISSING_G)
+    assert out["verdict"] == "Indeterminate"
+    assert out["verdict_range"] == {"low": "Pending", "high": "Permit"}
+    assert routes(out) == []
+    assert refs(out, "verdict_basis") == {("ex:d", "unknown")}
+    assert refs(out, "unknown_parts") == {("ex:d", "ex:g", "missing")}
+
+
+def test_guard_and_rule_leaf_share_a_variable(duty_interpreter: Interpreter) -> None:
+    # ex:perm and its duty's guard compare one unresolved state property alike, so they read
+    # one variable: ex:perm applies exactly where ex:d is owed, and no completion permits.
+    # With a variable for each leaf, the completion where ex:perm applies and ex:d is not
+    # owed would make the range reach Permit.
+    x = "[ odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand 5 ]"
+    body = (
+        "    odrl:permission ex:perm .\n"
+        + "ex:x dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:x .\n"
+        + "ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d ;"
+        + f"\n    odrl:constraint {x} .\n"
+        + f"ex:d a odrl:Duty ; odrl:action odrl:compensate ; odrl:constraint {x} .\n"
+    )
+    out = output(
+        duty_interpreter, body, profile=True, sotw={"facts": {"ex:x": {"status": "unresolved"}}}
+    )
+    assert out["verdict_range"] == {"low": "NotApplicable", "high": "Pending"}
+    assert refs(out, "unknown_parts") == {
+        ("ex:perm", "ex:x", "unresolved"),
+        ("ex:d", "ex:x", "unresolved"),
+    }
+
+
+@pytest.mark.parametrize(
+    ("body", "sections", "part"),
+    [(PRE, {"sotw": {"evidence": [PAID]}, "request": {"parties": {}}},
+      ("ex:d", ODRL + "assignee", "missing")),
+     (duty_with(leaf("w"), WITNESS), {"sotw": {"evidence": [PAID]}}, ("ex:d", "ex:w", "missing"))],
+)  # fmt: skip
+def test_unknown_fulfilled_is_its_own_variable(
+    duty_interpreter: Interpreter, body: str, sections: dict[str, Obj], part: tuple[str, ...]
+) -> None:
+    # A u witness, through a request that names no subject or through a missing evidence
+    # parameter, makes fulfilled u: its variable ful(Y) gives Pending or Permit (due2-workflows.md
+    # §6.4). The part names the input the witness lacks: the bearer's function, or the
+    # parameter. Without the actor row, the first case would name ex:d unknown with no reason.
+    out = output(duty_interpreter, body, profile=True, **sections)
+    assert out["verdict_range"] == {"low": "Pending", "high": "Permit"}
+    assert refs(out, "verdict_basis") == {("ex:d", "unknown")}
+    assert refs(out, "unknown_parts") == {part}
+
+
+def guarded_obligation() -> str:
+    """ex:o of `root_obligation(PAST)` guarded by ex:g: in force where the guard holds."""
+    return (
+        "    odrl:target ex:a ; odrl:permission ex:perm ; odrl:obligation ex:o .\n"
+        + "ex:perm a odrl:Permission ; odrl:action odrl:use .\n"
+        + f"ex:o a odrl:Duty ; odrl:action odrl:delete ; dprod:deadline {PAST} ;"
+        + f" odrl:constraint {leaf('g')} .\n"
+        + GUARD
+    )
+
+
+@pytest.mark.parametrize(
+    ("violations", "verdict"), [("ignore", "Permit"), ("deny", "Indeterminate")]
+)
+def test_unknown_in_force_is_reported_and_completed(
+    duty_interpreter: Interpreter, violations: str, verdict: str
+) -> None:
+    # A missing guard fact makes in_force u: the row is unknown, whatever the instance status
+    # (due2-workflows.md §6.1). Under deny the completion in force and violated denies, so the
+    # verdict ranges from Deny; under ignore the obligation cannot touch the verdict, so it is
+    # Permit and ex:o is not in role unknown, though its part is still reported. Without the
+    # completion of in_force, the deny case would be Permit, as if the guard were f.
+    out = output(
+        duty_interpreter,
+        guarded_obligation(),
+        profile=True,
+        sotw=MISSING_G,
+        config={"violations": violations},
+    )
+    assert refs(out, "obligations") == {("ex:o", "unknown")}
+    assert refs(out, "unknown_parts") == {("ex:o", "ex:g", "missing")}
+    assert out["verdict"] == verdict
+    assert (("ex:o", "unknown") in refs(out, "verdict_basis")) == (violations == "deny")
+    if violations == "deny":
+        assert out["verdict_range"] == {"low": "Deny", "high": "Permit"}
+
+
+def test_missing_target_leaves_rule_and_obligation_unknown(duty_interpreter: Interpreter) -> None:
+    # With no request target, ex:perm's target part is u, and so is the policy match that puts
+    # ex:o in force (due2-workflows.md §5.2). Each finding reports the part under its own ref,
+    # and each reads its own variable (decisions/0016 #2): the completion where ex:perm applies
+    # and ex:o is not in force permits, the one where ex:o is in force and violated denies.
+    out = output(
+        duty_interpreter,
+        root_obligation(PAST),
+        profile=True,
+        request={"target": None},
+        config={"violations": "deny"},
+    )
+    assert out["verdict_range"] == {"low": "Deny", "high": "Permit"}
+    assert refs(out, "obligations") == {("ex:o", "unknown")}
+    assert refs(out, "unknown_parts") == {
+        ("ex:perm", ODRL + "target", "missing"),
+        ("ex:o", ODRL + "target", "missing"),
+    }
+
+
+def test_evidence_without_effective_at_declines(duty_interpreter: Interpreter) -> None:
+    # Without effective_at the effective check is u, and that u reads no input an unknown part
+    # can name (due2-workflows.md §3.5), so the vector declines instead of naming ex:d unknown
+    # with no reason.
+    head = "ex:p a odrl:Set ;\n"
+    case = vector(HEAD + head + PRE, sotw={"evidence": [PAID]})
+    sotw = case["sotw"]
+    assert isinstance(sotw, dict)
+    del sotw["effective_at"]
+    assert duty_interpreter.reply(case) == {"unsupported": "duty: evidence without effective_at"}

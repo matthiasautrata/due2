@@ -22,9 +22,22 @@ opaque: it stays `u` in every completion. Under a completion, a tree takes its s
 with its paired leaves set, and an atom whose parts still leave it `u` takes the value of a
 variable of its own.
 
-The mutation test runs the same differential against programs with one rule changed, and
-asserts that it fails (#47). The measurement test asserts that the generator reaches each
-shape the differential relies on.
+The duty differential extends the generated policies with duties (due2-workflows.md §5.3, §6;
+decisions/0018, decisions/0019). Each permission may require some of three duties, and the
+policy may carry a root obligation, with `violations` set to `ignore` or `deny`. A duty may
+have a guard tree, a passed deadline, and one evidence row whose actor is alice or bob. With
+no request subject, the actor check of a duty borne by the subject is `u`. A guard tree is
+completed as a rule's tree is, so a guard leaf with a rule leaf's key reads its variable; an
+`owed` or `in_force` still `u`, and a `fulfilled` that is `u`, takes a variable of its own.
+The oracle then derives closure, the candidates, the frontier
+(listed only when every completion agrees, due2-workflows.md §6.3), the verdict, its range, the
+basis, and the duties named `unknown`. Half the generated cases make every finding known, so
+that a definite Pending, a frontier of two alternatives, and a Deny by the obligation occur
+often enough to be tested.
+
+The mutation tests run the same differentials against programs with one rule changed, and
+assert that they fail (#47, #49). The duty examples alone kill each duty mutant. The
+measurement tests assert that the generators reach each shape the differentials rely on.
 """
 
 from __future__ import annotations
@@ -33,7 +46,7 @@ import itertools
 import operator
 from collections import Counter
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pytest
 from clingo import Control
@@ -42,7 +55,7 @@ from hypothesis import strategies as st
 
 from clingo_i.interpret import CHAIN, SOLVE_2, Interpreter, load_programs
 from clingo_i.json_types import Json, Obj
-from tests.conftest import INIT, PREFIXES, vector
+from tests.conftest import DUTY_INIT, INIT, PREFIXES, vector
 
 EX = "https://example.org/"
 XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer"
@@ -715,13 +728,13 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
             ("open(C), leaf_status(C, unresolved), scope", "open(C), not opaque_leaf(C), scope"),
         ],
     ),
-    # One variable for every opaque atom: their completions become correlated.
+    # One variable for every opaque finding: their completions become correlated.
     "opaque-atoms-share-a-variable": (
         "completion.lp",
         [
-            ("var(fin(X)) :- opaque_atom(X).", "var(fin(0)) :- opaque_atom(X)."),
-            ("reads(X, fin(X)) :- opaque_atom(X).", "reads(X, fin(0)) :- opaque_atom(X)."),
-            ("assigned(W, fin(X), V).", "assigned(W, fin(0), V)."),
+            ("var(fin(I)) :- opaque_item(I).", "var(fin(0)) :- opaque_item(I)."),
+            ("reads(I, fin(I)) :- opaque_item(I).", "reads(I, fin(0)) :- opaque_item(I)."),
+            ("assigned(W, fin(I), V).", "assigned(W, fin(0), V)."),
         ],
     ),
     # An opaque leaf read as f in each world: unknown as false.
@@ -734,23 +747,23 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
             )
         ],
     ),
-    # The absent target of an f atom reported: the reply would depend on the index.
+    # The u parts of an f atom reported: the reply would depend on the index.
     "unknown-parts-of-f-atoms": (
         "explain.lp",
         [
             (
-                "holds(part(X, target), u),\n    not holds(applies(X), f).",
-                "holds(part(X, target), u).",
+                "reported(applies(X)) :- atom(X), not holds(applies(X), f).",
+                "reported(applies(X)) :- atom(X).",
             )
         ],
     ),
-    # The u leaves of a t atom dropped: only u atoms report their leaves.
+    # The u parts of a t atom dropped: only u atoms report their parts.
     "unknown-parts-of-u-atoms-only": (
         "explain.lp",
         [
             (
-                "prop(Op, Prop),\n    not holds(applies(X), f).",
-                "prop(Op, Prop), holds(applies(X), u).",
+                "reported(applies(X)) :- atom(X), not holds(applies(X), f).",
+                "reported(applies(X)) :- holds(applies(X), u).",
             )
         ],
     ),
@@ -887,5 +900,595 @@ def test_generator_reaches_each_shape() -> None:
         "an f atom on an absent target",
         "constraint parts sharing a key",
         "u leaf under a deciding connective",
+    }
+    assert {s: seen[s] for s in wanted if seen[s] == 0} == {}, seen
+
+
+# --- duties (#49) ---
+
+# The actions of ex:d0 to ex:d2: distinct, so an evidence row witnesses one duty only. The root
+# obligation ex:ob deletes.
+DUTY_ACTIONS = ("compensate", "inform", "attribute")
+EARLY = "2026-05-01T00:00:00Z"  # every evidence row's time: before the deadline and effective_at
+DEADLINE = "2026-05-15T00:00:00Z"  # before effective_at (conftest.BASE), so it has passed
+
+
+@dataclass(frozen=True)
+class Duty:
+    guards: tuple[Tree, ...] = ()
+    actor: str | None = None  # the actor of the duty's one evidence row; None: no row
+    past: bool = False  # the duty has a deadline, DEADLINE
+
+
+@dataclass(frozen=True)
+class Duties:
+    """A `Case` whose permissions carry preconditions, and an optional root obligation."""
+
+    case: Case
+    duties: tuple[Duty, ...]  # ex:d0, ex:d1, ...
+    edges: tuple[tuple[str, int], ...]  # (permission, duty index): the permission requires it
+    obligation: Duty | None = None  # ex:ob, on the policy
+    violations: str = "ignore"
+
+
+@st.composite
+def duty_cases(draw: st.DrawFn) -> Duties:
+    case = draw(cases())
+    tops = [t for r in case.rules for t in r.constraints if isinstance(t, Leaf)]
+    # A guard that copies a rule's leaf shares its key, so the two read one variable when the
+    # operand is unresolved; drawn freely, that is a few cases in a thousand.
+    guards = st.lists(st.sampled_from(tops) | TREES if tops else TREES, max_size=1).map(tuple)
+    actors, past = st.sampled_from((None, "alice", "bob")), st.booleans()
+    least = 0
+    if draw(st.booleans()):
+        # Every finding known in half the cases, and each permission with an open duty more
+        # often: with unknowns, nearly every case is Indeterminate, and a definite Pending with
+        # two alternatives, or a Deny by the obligation, is a few cases in a thousand.
+        rules = tuple(replace(r, constraints=()) for r in case.rules)
+        subject = case.assignee or draw(st.sampled_from(PARTIES))
+        case = replace(case, rules=rules, target=case.target or "a", assignee=subject)
+        guards, actors = st.just(()), st.sampled_from((None, None, "alice", "bob"))
+        past, least = st.sampled_from((False, False, True)), 1
+    duty = st.builds(Duty, guards, actors, past)
+    duties = tuple(draw(duty) for _ in DUTY_ACTIONS)
+    wanted = {
+        (r, k)
+        for r in case.rules
+        if r.permit
+        for k in draw(
+            st.lists(st.integers(0, len(DUTY_ACTIONS) - 1), min_size=least, max_size=2, unique=True)
+        )
+    }
+    # The holders of one duty share its bearer, the first holder's, so a duty IRI names one
+    # duty atom, and the reply's IRIs say which atoms the program compared.
+    first = {k: r.assignee for r, k in sorted(wanted, key=lambda e: e[0].name)}
+    edges = {(r.name, k) for r, k in wanted if r.assignee == first[k]}
+    return Duties(
+        case,
+        duties,
+        tuple(sorted(edges)),
+        draw(st.none() | duty),
+        draw(st.sampled_from(("ignore", "deny"))),
+    )
+
+
+def render_duties(dc: Duties) -> Obj:
+    v = render(dc.case)
+    policy = str(v["policy"])
+    head = "ex:p a odrl:Set ;"
+    assert policy.count(head) == 1
+    lines = [policy.replace(head, head + " odrl:profile dprod: ;")]
+    evidence: list[Json] = []
+
+    def duty(name: str, action: str, d: Duty, target: str | None = None) -> None:
+        rel = f" ; odrl:target {target}" if target else ""
+        deadline = f' ; dprod:deadline "{DEADLINE}"^^xsd:dateTime' if d.past else ""
+        cons = f" ; odrl:constraint {', '.join(map(turtle, d.guards))}" if d.guards else ""
+        lines.append(f"ex:{name} a odrl:Duty ; odrl:action odrl:{action}{rel}{deadline}{cons} .")
+        if d.actor is not None:
+            row: Obj = {"id": f"ex:e{name}", "occurred_at": EARLY, "actor": f"ex:{d.actor}"}
+            row["action"] = f"odrl:{action}"
+            if target:
+                row["object"] = target
+            evidence.append(row)
+
+    lines.extend(f"ex:{n} odrl:duty ex:d{k} ." for n, k in dc.edges)
+    for k in sorted({k for _, k in dc.edges}):
+        duty(f"d{k}", DUTY_ACTIONS[k], dc.duties[k])
+    if dc.obligation is not None:
+        lines.append("ex:p odrl:obligation ex:ob .")
+        duty("ob", "delete", dc.obligation, "ex:a")
+    v["policy"] = "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n" + "\n".join(lines) + "\n"
+    sotw, config = v["sotw"], v["config"]
+    assert isinstance(sotw, dict) and isinstance(config, dict)
+    sotw["evidence"] = evidence
+    config["violations"] = dc.violations
+    return v
+
+
+# A precondition atom's key: `dK@bearer`, the bearer the parent permission's assignee, or `None`
+# for the request subject. The root obligation's is `ob`.
+
+
+def pres(dc: Duties) -> dict[str, list[str]]:
+    """Each permission's precondition atom keys."""
+    rules = {r.name: r for r in dc.case.rules}
+    out: dict[str, list[str]] = {r.name: [] for r in dc.case.rules}
+    for n, k in dc.edges:
+        out[n].append(f"d{k}@{rules[n].assignee}")
+    return out
+
+
+def duty_of(dc: Duties, key: str) -> Duty:
+    if key == "ob":
+        assert dc.obligation is not None
+        return dc.obligation
+    return dc.duties[int(key[1])]
+
+
+def iri(key: str) -> str:
+    """The IRI of a rule name, a duty atom key, or an item name (`owed KEY`, `in_force ob`)."""
+    return EX + key.split(" ")[-1].split("@")[0]
+
+
+def matched(case: Case, r: Rule) -> Truth:
+    """The request matches rule `r`, constraints aside: its action, target, and party parts."""
+    return finding(parts(case, r)[: 3 if r.assignee else 2])
+
+
+def fulfilment(case: Case, key: str, d: Duty) -> Truth:
+    """The duty's `fulfilled` in world k: its one row, if any, is timely and of its action, so
+    the actor check decides. The bearer is the parent's assignee or the request subject, and
+    `u` when the request names no subject (due2-workflows.md §5.3)."""
+    if d.actor is None:
+        return False
+    bearer = key.split("@")[1] if "@" in key else "None"
+    who = case.assignee if bearer == "None" else bearer
+    return None if who is None else d.actor == who
+
+
+def duty_items(dc: Duties) -> tuple[dict[str, list[Part]], dict[str, Truth]]:
+    """The items completion reads, by name: each rule's parts, each precondition atom's guards
+    (`owed KEY`), and the obligation's policy match and guards (`in_force ob`); and each
+    instance's `fulfilled` in world k, by key. Only an owed or in-force `t` or `u` has an
+    instance."""
+    case = dc.case
+    items: dict[str, list[Part]] = {r.name: parts(case, r) for r in case.rules}
+    fulfilled: dict[str, Truth] = {}
+
+    def guards(d: Duty) -> list[Part]:
+        return [Open(case, t) if (v := tree_value(case, t)) is None else v for t in d.guards]
+
+    for key in sorted({k for ks in pres(dc).values() for k in ks}):
+        d = duty_of(dc, key)
+        items[f"owed {key}"] = guards(d)
+        if finding(items[f"owed {key}"]) is not False:
+            fulfilled[key] = fulfilment(case, key, d)
+    if dc.obligation is not None:
+        ms = [matched(case, r) for r in case.rules]
+        match: Truth = True if True in ms else (None if None in ms else False)
+        items["in_force ob"] = [match, *guards(dc.obligation)]
+        if finding(items["in_force ob"]) is not False:
+            fulfilled["ob"] = fulfilment(case, "ob", dc.obligation)
+    return items, fulfilled
+
+
+def ful(key: str) -> Literal:
+    """The variable of a `u` `fulfilled`: a disjunction over witnesses, one variable of its own
+    (due2-workflows.md §6.4)."""
+    return ("ful", key)
+
+
+def duty_reads(dc: Duties) -> dict[str, set[Literal]]:
+    """The variables each item reads, `fulfilled KEY` included."""
+    items, fulfilled = duty_items(dc)
+    out = {n: reads(n, ps) for n, ps in items.items()}
+    out.update({f"fulfilled {k}": {ful(k)} for k, v in fulfilled.items() if v is None})
+    return out
+
+
+type Basis = set[tuple[str, str]]
+
+
+def resolve_duties(dc: Duties, world: dict[Literal, bool]) -> tuple[str, Basis]:
+    """One completion's verdict and basis, by atom key (due2-workflows.md §6.1 to §6.4)."""
+    items, fulfilled = duty_items(dc)
+    on = {n: applies(n, ps, world) for n, ps in items.items()}
+    done = {k: world[ful(k)] if v is None else v for k, v in fulfilled.items()}
+    rules = dc.case.rules
+    pre = pres(dc)
+
+    def violated(key: str) -> bool:
+        return done.get(key) is False and duty_of(dc, key).past
+
+    def owed(key: str) -> bool:
+        return on[f"owed {key}"]
+
+    permitting = {r.name for r in rules if r.permit and on[r.name]}
+    closed = {x for x in permitting if any(owed(k) and violated(k) for k in pre[x])}
+    cands = permitting - closed
+    outstanding = {x: frozenset(k for k in pre[x] if owed(k) and done[k] is False) for x in cands}
+    forbids = {r.name for r in rules if not r.permit and on[r.name]}
+    conflict = dc.case.conflict
+    void = conflict == "invalid" and bool(cands) and bool(forbids)
+    if void or (conflict == "prohibit" and forbids):
+        cands = set[str]()
+    if void or (conflict == "perm" and cands):
+        forbids = set[str]()
+    obliged = dc.obligation is not None and on["in_force ob"] and violated("ob")
+    if forbids or (dc.violations == "deny" and obliged):
+        return "Deny", {(f, "prohibition") for f in forbids}
+    front = {x for x in cands if not any(outstanding[y] < outstanding[x] for y in cands)}
+    if any(not outstanding[x] for x in front):
+        return "Permit", {(x, "permission") for x in front}
+    if front:
+        duties = {(k, "duty") for x in front for k in outstanding[x]}
+        return "Pending", {(x, "permission") for x in front} | duties
+    return "NotApplicable", {(x, "closed") for x in closed}
+
+
+def listed_frontier(dc: Duties) -> list[Json]:
+    """The frontier the reply lists: from the candidates that are ready or pending in world k
+    (due2-workflows.md §6.3), as `tools/check_completion.py`'s `listed_frontier` forms it. A
+    candidate is uncertain when its finding is `u`, a precondition's open value is `u`, or a
+    violated precondition's `owed` is `u`. Conflict removes no candidate here: the frontier is
+    listed under a definite `Pending`, and a `t` forbid that removed candidates under `prohibit`
+    or `invalid` would make some completion `Deny` or `NotApplicable`."""
+    items, fulfilled = duty_items(dc)
+    k_find = {n: finding(ps) for n, ps in items.items()}
+    sure: set[frozenset[str]] = set()
+    for x, keys in pres(dc).items():
+        if not next(r for r in dc.case.rules if r.name == x).permit or k_find[x] is False:
+            continue
+        unsure, removed, opens = k_find[x] is None, False, set[str]()
+        for k in keys:
+            ow = k_find[f"owed {k}"]
+            if ow is False:
+                continue
+            fu = fulfilled[k]
+            if fu is False and duty_of(dc, k).past:
+                removed |= ow is True
+                unsure |= ow is None
+                continue
+            op = kleene_and([ow, None if fu is None else not fu])
+            if op is True:
+                opens.add(k)
+            unsure |= op is None
+        if not removed and not unsure:
+            sure.add(frozenset(opens))
+    front = {x for x in sure if not any(y < x for y in sure)}
+    routes = {tuple(sorted(iri(k) for k in x)) for x in front}
+    return [list(a) for a in sorted(routes, key=lambda a: (len(a), a))]
+
+
+def duty_unknown(dc: Duties) -> set[str]:
+    """The IRIs of the `u` items that read a pivotal variable."""
+    by = duty_reads(dc)
+    lits = sorted(set[Literal]().union(*by.values()))
+    pivotal: set[Literal] = set()
+    for vals in itertools.product((False, True), repeat=len(lits)):
+        w = dict(zip(lits, vals, strict=True))
+        v = resolve_duties(dc, w)[0]
+        pivotal |= {lit for lit in lits if resolve_duties(dc, {**w, lit: not w[lit]})[0] != v}
+    return {iri(n) for n, ls in by.items() if ls & pivotal}
+
+
+def duty_oracle(dc: Duties) -> Obj:
+    """The verdict, `verdict_range`, basis, and listed frontier of brute force over `dc`."""
+    lits = sorted(set[Literal]().union(*duty_reads(dc).values()))
+    results = [
+        resolve_duties(dc, dict(zip(lits, vals, strict=True)))
+        for vals in itertools.product((False, True), repeat=len(lits))
+    ]
+    verdicts = {v for v, _ in results}
+    items, _ = duty_items(dc)
+    obligation = (
+        {(EX + "ob", "obligation")}
+        if "in_force ob" in items and finding(items["in_force ob"]) is not False
+        else set[tuple[str, str]]()
+    )
+    out: Obj = {"frontier": []}
+    if len(verdicts) == 1:
+        out["verdict"] = verdict = verdicts.pop()
+        common = results[0][1].intersection(*(b for _, b in results[1:]))
+        basis = {(iri(k), role) for k, role in common}
+        if verdict == "Pending":
+            out["frontier"] = listed_frontier(dc)
+    else:
+        out["verdict"] = "Indeterminate"
+        basis = {(n, "unknown") for n in duty_unknown(dc)}
+        out["verdict_range"] = {
+            "low": min(verdicts, key=CHAIN.index),
+            "high": max(verdicts, key=CHAIN.index),
+        }
+    out["verdict_basis"] = [{"ref": r, "role": role} for r, role in sorted(basis | obligation)]
+    return out
+
+
+def check_duties(interp: Interpreter, dc: Duties) -> None:
+    reply = interp.reply(render_duties(dc))
+    got = reply.get("output")
+    assert isinstance(got, dict), reply
+    keys = ("verdict", "frontier", "verdict_range", "verdict_basis")
+    assert {k: got[k] for k in keys if k in got} == duty_oracle(dc)
+
+
+def checked(dc: Duties) -> bool:
+    """`dc` is small enough to enumerate: at most `DUTY_VARIABLES` variables."""
+    return len(set[Literal]().union(*duty_reads(dc).values())) <= DUTY_VARIABLES
+
+
+DUTY_VARIABLES = 10
+PLAIN = Rule("r0", True, "use", "a", None)
+OPEN = Duty()  # unguarded, no evidence, no deadline: owed t and outstanding
+LAPSED = Duty(past=True)  # owed t, no evidence, deadline passed: violated
+
+
+def duties(
+    case: Case,
+    edges: tuple[tuple[str, int], ...],
+    *ds: Duty,
+    obligation: Duty | None = None,
+    violations: str = "ignore",
+) -> Duties:
+    return Duties(
+        case, (*ds, *(OPEN,) * (len(DUTY_ACTIONS) - len(ds))), edges, obligation, violations
+    )
+
+
+DUTY_EXAMPLES = [
+    # A violated precondition whose `owed` is u: where it is owed it closes r0, elsewhere r0 waits
+    # on ex:d1, and r1 waits on ex:d2 in both. Pending is definite, but r0 is uncertain, so only
+    # ex:d2 is listed (due2-workflows.md §6.3). Read as pending, r0 would add [ex:d1].
+    duties(
+        Case(
+            "perm",
+            (PLAIN, Rule("r1", True, "use", "a", None)),
+            "use",
+            "a",
+            "alice",
+            (None,) * OPERANDS,
+            PAIRED,
+        ),
+        (("r0", 0), ("r0", 1), ("r1", 2)),
+        Duty((eq(2),), past=True),
+    ),
+    # Two alternatives, ex:d0 and ex:d1 with ex:d2, neither a subset of the other, so both are
+    # listed; r0 and r2 wait on one atom, ex:d0, and collapse into one alternative.
+    duties(
+        Case(
+            "perm",
+            (PLAIN, Rule("r1", True, "use", "a", None), Rule("r2", True, "use", "a", None)),
+            "use",
+            "a",
+            "alice",
+        ),
+        (("r0", 0), ("r1", 1), ("r1", 2), ("r2", 0)),
+    ),
+    # A guard and a rule constraint on one unresolved operand read one variable: where the
+    # forbid applies the guard is f, so r1 is never closed and Permit is out of range. Read
+    # apart, the range would reach Permit.
+    duties(
+        Case(
+            "prohibit",
+            (Rule("r0", False, "use", "a", None, (eq(2),)), Rule("r1", True, "use", "a", None)),
+            "use",
+            "a",
+            "alice",
+            (None,) * OPERANDS,
+            PAIRED,
+        ),
+        (("r1", 0),),
+        Duty((Leaf(2, "neq"),), past=True),
+    ),
+    # An absent target leaves r0 and the policy match u, each with a variable of its own: the
+    # violated root obligation denies only where it is in force (due2-workflows.md §6.4).
+    duties(
+        Case("perm", (PLAIN,), "use", None, None),
+        (),
+        obligation=LAPSED,
+        violations="deny",
+    ),
+    # A request with no subject: the actor check is u, so `fulfilled` is u, with its own
+    # variable, and the lapsed precondition closes r0 only where it is unfulfilled.
+    duties(Case("perm", (PLAIN,), "use", "a", None), (("r0", 0),), Duty((), "alice", True)),
+    # Two lapsed duties with u `fulfilled`, each its own variable. ex:d0 decides r0, so it is
+    # pivotal; ex:d1 hangs off r1, whose action never matches, so no flip of it moves the
+    # verdict, and only ex:d0 is named `unknown`. Read as one variable, ex:d1 would share
+    # ex:d0's pivot and be named too.
+    duties(
+        Case("perm", (PLAIN, Rule("r1", True, "read", "a", None)), "use", "a", None),
+        (("r0", 0), ("r1", 1)),
+        Duty((), "alice", True),
+        Duty((), "alice", True),
+    ),
+    # A guarded obligation: in force where its guard is, so the lapse denies only there. Read
+    # from the policy match alone, it would deny in every completion.
+    duties(
+        Case("perm", (PLAIN,), "use", "a", None, (None,) * OPERANDS, PAIRED),
+        (),
+        obligation=Duty((eq(2),), past=True),
+        violations="deny",
+    ),
+    # A definite Permit with an empty basis (DESIGN.md § `resolve.lp`): ex:d0's guard repeats
+    # r1's constraint on an unresolved operand. Where it holds, ex:d0 is owed and violated, so r0
+    # is closed and r1 permits; where it does not, r1 does not apply and r0 permits.
+    duties(
+        Case(
+            "perm",
+            (PLAIN, Rule("r1", True, "use", "a", None, (eq(2),))),
+            "use",
+            "a",
+            "alice",
+            (None,) * OPERANDS,
+            PAIRED,
+        ),
+        (("r0", 0),),
+        Duty((eq(2),), past=True),
+    ),
+    # One duty under two permissions with one bearer is one atom: fulfilled by alice, it leaves
+    # both ready; bob's act would fulfil nothing.
+    duties(
+        Case(
+            "perm",
+            (Rule("r0", True, "use", "a", "alice"), Rule("r1", True, "use", "a", "alice")),
+            "use",
+            "a",
+            "alice",
+        ),
+        (("r0", 0), ("r1", 0), ("r1", 1)),
+        Duty((), "alice", True),
+    ),
+]
+
+
+def duty_differential(interp: Interpreter, config: settings) -> Callable[[], None]:
+    """The duty differential against `interp`, on the examples and then on generated cases."""
+
+    @config
+    @given(duty_cases())
+    def run(dc: Duties) -> None:
+        assume(checked(dc))
+        check_duties(interp, dc)
+
+    for dc in DUTY_EXAMPLES:
+        run = example(dc)(run)
+    return run
+
+
+def test_duties_match_brute_force(duty_interpreter: Interpreter) -> None:
+    duty_differential(duty_interpreter, settings(max_examples=300, deadline=None))()
+
+
+DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
+    # A guard read negated in the completion worlds.
+    "duty-roots-negated": (
+        "completion.lp",
+        [
+            (
+                "duty_item(I), crank(W, C, N).",
+                "duty_item(I), crank(W, C, M), N = 2 - M.",
+            )
+        ],
+    ),
+    # One variable for every u `fulfilled`: their completions become correlated.
+    "fulfilled-share-a-variable": (
+        "completion.lp",
+        [
+            ("var(ful(Y)) :- u_item(fulfilled(Y)).", "var(ful(0)) :- u_item(fulfilled(Y))."),
+            ("reads(fulfilled(Y), ful(Y))", "reads(fulfilled(Y), ful(0))"),
+            ("assigned(W, ful(Y), V).", "assigned(W, ful(0), V)."),
+        ],
+    ),
+    # A u `in_force` completed from its policy match alone, its guards dropped.
+    "in-force-guards-ignored": (
+        "completion.lp",
+        [("policy_match(Y, Np); M, C : root_in(W, in_force(Y), C, M) }", "policy_match(Y, Np) }")],
+    ),
+    # A u `fulfilled` read as f in each world: unknown as false.
+    "fulfilled-u-as-f": (
+        "completion.lp",
+        [
+            (
+                "completed(W, fulfilled(Y), V) :- u_item(fulfilled(Y)), assigned(W, ful(Y), V).",
+                "completed(W, fulfilled(Y), f) :- u_item(fulfilled(Y)), world(W).",
+            )
+        ],
+    ),
+    # Only rule atoms named `unknown`: a pivotal duty finding goes unreported.
+    "duties-never-unknown": (
+        "pivot.lp",
+        [
+            (
+                "unknown(X) :- reads(I, L), pivot(L), finding_atom(I, X).",
+                "unknown(X) :- reads(applies(X), L), pivot(L).",
+            )
+        ],
+    ),
+    # A candidate with a violated precondition of u `owed` listed as if it waited on the rest.
+    "violated-u-owed-listed": (
+        "explain.lp",
+        [
+            (
+                (
+                    "uncertain(X) :- may_candidate(X), pre(X, Y), status(k, Y, violated), "
+                    "holds(owed(Y), u).\n"
+                ),
+                "",
+            )
+        ],
+    ),
+}
+
+
+@pytest.mark.parametrize("name", sorted(DUTY_MUTANTS))
+def test_duty_differential_kills_mutant(name: str) -> None:
+    file, edits = DUTY_MUTANTS[name]
+    programs = load_programs()
+    for old, new in edits:
+        assert programs[file].count(old) == 1, f"{file} no longer has {old!r} once"
+        programs[file] = programs[file].replace(old, new)
+    mutant = duty_differential(
+        Interpreter(DUTY_INIT, programs),
+        settings(
+            max_examples=100, deadline=None, database=None, phases=(Phase.explicit, Phase.generate)
+        ),
+    )
+    with pytest.raises((AssertionError, BaseExceptionGroup)):
+        mutant()
+
+
+def duty_shapes(dc: Duties) -> Iterator[str]:
+    """The shapes the duty differential relies on that `dc` has."""
+    items, fulfilled = duty_items(dc)
+    k_find = {n: finding(ps) for n, ps in items.items()}
+    if any(n.startswith("owed ") and v is None for n, v in k_find.items()):
+        yield "a u owed"
+    if None in fulfilled.values():
+        yield "a u fulfilled"
+    if k_find.get("in_force ob", False) is None:
+        yield "a u in_force"
+    by = duty_reads(dc)
+    rule_lits = set[Literal]().union(*(by[r.name] for r in dc.case.rules))
+    if any(ls & rule_lits for n, ls in by.items() if " " in n):
+        yield "a duty finding sharing a variable with a rule"
+    out = duty_oracle(dc)
+    verdict = out["verdict"]
+    frontier, basis = out["frontier"], out["verdict_basis"]
+    assert isinstance(frontier, list) and isinstance(basis, list)
+    roles = {(b["ref"], b["role"]) for b in basis if isinstance(b, dict)}
+    rules = {EX + r.name for r in dc.case.rules}
+    if verdict == "Pending":
+        yield "Pending"
+    if len(frontier) > 1:
+        yield "two listed alternatives"
+    if any(role == "closed" for _, role in roles):
+        yield "a closed route"
+    if verdict == "Deny" and not any(role == "prohibition" for _, role in roles):
+        yield "Deny by an obligation"
+    if any(role == "unknown" and ref not in rules for ref, role in roles):
+        yield "Indeterminate naming a duty"
+
+
+def test_duty_generator_reaches_each_shape() -> None:
+    seen: Counter[str] = Counter()
+
+    @settings(max_examples=1000, deadline=None, database=None, derandomize=True)
+    @given(duty_cases())
+    def tally(dc: Duties) -> None:
+        assume(checked(dc))
+        seen.update(duty_shapes(dc))
+
+    tally()
+    wanted = {
+        "a u owed",
+        "a u fulfilled",
+        "a u in_force",
+        "a duty finding sharing a variable with a rule",
+        "Pending",
+        "two listed alternatives",
+        "a closed route",
+        "Deny by an obligation",
+        "Indeterminate naming a duty",
     }
     assert {s: seen[s] for s in wanted if seen[s] == 0} == {}, seen

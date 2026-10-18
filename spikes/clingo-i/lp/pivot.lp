@@ -7,8 +7,8 @@
 % bravely: the union of `unknown/1` over all of them is the reply's pivotal atoms. Variable
 % letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `var/1`, `assigned/3`, `reads/2` (completion.lp); `verdict/2` (resolve.lp);
-%   `holds/2` (applies.lp).
+% - **Consumes:** `var/1`, `assigned/3`, `reads/2`, `finding_atom/2` (completion.lp);
+%   `verdict/2` (resolve.lp).
 % - **Provides:** `pivot/1`, `unknown/1`; extends `world/1` and `assigned/3` (completion.lp).
 
 world(flip).
@@ -29,9 +29,10 @@ assigned(flip, L, f) :- pivot(L), assigned(c, L, t).
 
 %*! unknown(X)
 
-Atom `X` has finding `u` and reads the pivot in one of its `u` parts: one of the atoms that
-make the verdict Indeterminate (decisions/0011).
+Atom or duty atom `X` has a `u` finding that reads the pivot in one of its `u` parts: one of
+the atoms that make the verdict Indeterminate (decisions/0011). Only a `u` finding reads a
+variable (completion.lp).
 *%
-unknown(X) :- holds(applies(X), u), reads(X, L), pivot(L).
+unknown(X) :- reads(I, L), pivot(L), finding_atom(I, X).
 
 #show unknown/1.

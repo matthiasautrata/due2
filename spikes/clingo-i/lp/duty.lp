@@ -233,6 +233,9 @@ holds(check(Y, E, effective), t) :- witness_pair(Y, E), occurred_pos(E, N), effe
 holds(check(Y, E, effective), f) :- witness_pair(Y, E), occurred_pos(E, N), effective_pos(M),
     N > M.
 holds(check(Y, E, effective), u) :- witness_pair(Y, E), not effective_pos(_).
+% The u check reads no input that due2-workflows.md §3.5 lets `unknown_part` name, so the reply
+% could not say what is missing: solve 1 declines the vector instead.
+unsupported("duty: evidence without effective_at") :- witness_pair(_, _), not effective_pos(_).
 
 %*! activated(Duty)
 
@@ -416,9 +419,3 @@ status(k, Y, fulfilled) :- holds(fulfilled(Y), t).
 status(k, Y, outstanding) :- holds(fulfilled(Y), f), not passed(Y).
 status(k, Y, violated) :- holds(fulfilled(Y), f), passed(Y).
 status(k, Y, unknown) :- holds(fulfilled(Y), u).
-
-% A `u` duty finding needs a completion variable of its own (due2-workflows.md §6.4), and
-% completion.lp completes only the findings of atoms (#49), so solve 1 declines the vector.
-unsupported("duty: unknown finding") :- holds(owed(_), u).
-unsupported("duty: unknown finding") :- holds(in_force(_), u).
-unsupported("duty: unknown finding") :- holds(fulfilled(_), u).

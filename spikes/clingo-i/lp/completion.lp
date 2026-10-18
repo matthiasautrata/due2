@@ -1,35 +1,67 @@
 %# completion.lp: the completion variables, and one completion of them
 %
-% Each `u` part of a `u` atom is completed or opaque (due2-workflows.md §6.4, decisions/0016).
-% A `u` leaf whose operand reads an `unresolved` state property is completed: it reads a
-% variable keyed by the comparison it makes, so a leaf and its complement read one variable
-% with opposite polarities (decisions/0012). Every other `u` part is opaque: a `u` target or
-% party part (an absent request field is `missing`), and a `u` leaf whose status is `missing`,
-% `invalid`, `conflict`, or `misfit`. An opaque part stays `u` in every completion, and when it
-% leaves the atom's finding `u`, the atom's own variable `fin(X)` completes the finding. A `u`
-% part of an `f` atom reads none: the atom is `f` in every completion. One answer set gives
-% every variable `t` or `f`, so solve 2's answer sets are the completions, `2^n` of them for
-% `n` variables. Under each completion, the open nodes of every tree are re-evaluated under
-% strong Kleene logic, and every `u` finding is re-derived. Every completed value is indexed by
-% a world, so that pivot.lp can hold a second completion beside the first. Variable letters:
-% DESIGN.md § Vocabulary.
+% Each `u` part of a `u` finding is completed or opaque (due2-workflows.md §6.4, decisions/0016).
+% The findings are an atom's `applies`, and a duty's `owed`, `in_force`, and `fulfilled`. A `u`
+% leaf whose operand reads an `unresolved` state property is completed: it reads a variable keyed
+% by the comparison it makes, so a leaf and its complement read one variable with opposite
+% polarities (decisions/0012), and a guard leaf and a rule leaf on one comparison read one
+% variable. Every other `u` part is opaque: a `u` target or party part (an absent request field
+% is `missing`), and a `u` leaf whose status is `missing`, `invalid`, `conflict`, or `misfit`. An
+% opaque part stays `u` in every completion, and when it leaves the finding `u`, the finding's
+% own variable `fin(I)` completes it. A `u` `fulfilled` is one variable of its own, `ful(Y)`,
+% independent of every other as `fin(I)` is. A `u` part of an `f` finding reads none: the
+% finding is `f` in every completion. One answer set gives every variable `t` or `f`, so the
+% answer sets of solve 2 are the completions, `2^n` of them for `n` variables. Under each
+% completion, the open nodes of every tree are re-evaluated under strong Kleene logic, and every
+% `u` finding is re-derived. Every completed value is indexed by a world, so that pivot.lp can
+% hold a second completion beside the first. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `operator/2` (lift.lp); `atom/1`, `atom_party/3` (structure.lp);
 %   `scope/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2` (constraint.lp);
 %   `src/2`, `prop/2`, `read_ok/2`, `read_status/3` (operand.lp); `crank/3`, `evaluates/2`
 %   (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp);
-%   `pre/2`, `obligation/1` (structure.lp); `instance/1` (duty.lp).
-% - **Provides:** `u_atom/1`, `leaf_status/2`, `opaque_leaf/1`, `opened/2`, `open/1`,
-%   `opaque_atom/1`, `complement/2`, `op_literal/3`, `leaf_key/5`, `leaf_attr/2`,
-%   `attr_apart/2`, `same_key/2`, `leaf_lit/3`, `var/1`, `reads/2`, `world/1`, `assigned/3`,
-%   `part_in/3`, `pre_in/3`, `duty_item/1`, `completed/3`, `completed_item/1`; extends `crank/3` and
-%   `evaluates/2` (compare.lp).
+%   `pre/2`, `obligation/1` (structure.lp); `guard/2`, `policy_match/2`, `instance/1` (duty.lp).
+% - **Provides:** `duty_item/1`, `u_item/1`, `item_root/2`, `finding_atom/2`, `leaf_status/2`,
+%   `opaque_leaf/1`, `opened/2`, `open/1`, `opaque_item/1`, `complement/2`, `op_literal/3`,
+%   `leaf_key/5`, `leaf_attr/2`, `attr_apart/2`, `same_key/2`, `leaf_lit/3`, `var/1`, `reads/2`,
+%   `world/1`, `assigned/3`, `part_in/3`, `root_in/4`, `pre_in/3`, `completed/3`,
+%   `completed_item/1`; extends `crank/3` and `evaluates/2` (compare.lp).
 
-%*! u_atom(X)
+%## Findings
 
-Atom `X`'s finding is `u`, so completion decides it.
+%*! duty_item(I)
+
+`I` is a duty finding: `owed(Y)`, `in_force(Y)`, or `fulfilled(Y)`. duty.lp derives each.
 *%
-u_atom(X) :- holds(applies(X), u).
+duty_item(owed(Y)) :- pre(_, Y).
+duty_item(in_force(Y)) :- obligation(Y).
+duty_item(fulfilled(Y)) :- instance(Y).
+
+%*! u_item(I)
+
+Finding `I` is `u`, so completion decides it: `applies(X)` of an atom, or a duty finding.
+*%
+u_item(applies(X)) :- holds(applies(X), u).
+u_item(I) :- duty_item(I), holds(I, u).
+
+%*! item_root(I, C)
+
+Constraint node `C` is a root of a tree that finding `I` conjoins: a constraint of the atom for
+`applies(X)`, and a guard of the duty for `owed(Y)` and `in_force(Y)`. A `fulfilled` finding has
+none: it is one variable of its own.
+*%
+item_root(applies(X), C) :- atom_constraint(X, C).
+item_root(owed(Y), C) :- pre(_, Y), guard(Y, C).
+item_root(in_force(Y), C) :- obligation(Y), guard(Y, C).
+
+%*! finding_atom(I, X)
+
+Finding `I` is a finding of the atom or duty atom `X`. pivot.lp names `X` as unknown.
+*%
+finding_atom(applies(X), X) :- atom(X).
+finding_atom(owed(Y), Y) :- duty_item(owed(Y)).
+finding_atom(in_force(Y), Y) :- duty_item(in_force(Y)).
+finding_atom(fulfilled(Y), Y) :- duty_item(fulfilled(Y)).
 
 %## Statuses
 
@@ -52,31 +84,34 @@ opaque_leaf(C) :- leaf_status(C, S), S != unresolved.
 
 %## Open nodes
 
-%*! opened(X, C)
+%*! opened(I, C)
 
-Constraint node `C` is `u`, and lies on a path of `u` nodes from a constraint root of the `u`
-atom `X`. Only these nodes are re-evaluated: a node that is `t` or `f` keeps that value in every
-completion, because strong Kleene logic never turns `t` or `f` into the other when a `u` is
-replaced by `t` or `f`.
+Constraint node `C` is `u`, and lies on a path of `u` nodes from a root of the `u` finding `I`
+(`item_root/2`). Only these nodes are re-evaluated: a node that is `t` or `f` keeps that value
+in every completion, because strong Kleene logic never turns `t` or `f` into the other when a
+`u` is replaced by `t` or `f`.
 *%
-opened(X, C) :- u_atom(X), atom_constraint(X, C), holds(c(C), u).
-opened(X, D) :- opened(X, C), member(C, D), holds(c(D), u).
+opened(I, C) :- u_item(I), item_root(I, C), holds(c(C), u).
+opened(I, D) :- opened(I, C), member(C, D), holds(c(D), u).
 
 %*! open(C)
 
-Node `C` is opened for some atom, so each completion world evaluates it (`evaluates/2`) and
+Node `C` is opened for some finding, so each completion world evaluates it (`evaluates/2`) and
 gives it a rank (`crank/3`).
 *%
 open(C) :- opened(_, C).
 
-%*! opaque_atom(X)
+%*! opaque_item(I)
 
-The `u` atom `X` has an opaque part: a `u` target or party part, or an opaque leaf in an
-opened tree. Its finding can stay `u` in a world, so it has its own variable `fin(X)`.
+The `u` finding `I` has an opaque part, so it can stay `u` in a world and has its own variable
+`fin(I)`. For an atom the part is a `u` target or party part; for an obligation's `in_force`, a
+`u` match of its policy, which only such parts make `u` (`policy_match/2` in duty.lp); and for
+either, or for `owed`, an opaque leaf in an opened tree.
 *%
-opaque_atom(X) :- u_atom(X), holds(part(X, target), u).
-opaque_atom(X) :- u_atom(X), atom_party(X, F, _), holds(part(X, party(F)), u).
-opaque_atom(X) :- opened(X, C), opaque_leaf(C).
+opaque_item(applies(X)) :- u_item(applies(X)), holds(part(X, target), u).
+opaque_item(applies(X)) :- u_item(applies(X)), atom_party(X, F, _), holds(part(X, party(F)), u).
+opaque_item(in_force(Y)) :- u_item(in_force(Y)), policy_match(Y, 1).
+opaque_item(I) :- opened(I, C), opaque_leaf(C).
 
 %## Paired variables
 
@@ -142,23 +177,26 @@ leaf_lit(C, cons(D), Pol) :- leaf_key(C, _, _, _, _), op(C, O), op_literal(O, _,
 
 %*! var(L)
 
-`L` is a completion variable: `cons(D)` for a key class of paired leaves, or `fin(X)` for the
-opaque atom `X`. interpret.py counts the `var/1` atoms of the first answer set, the same in
-every answer set, and declines the vector above the variable cap (correctness-strategy.md §3).
+`L` is a completion variable: `cons(D)` for a key class of paired leaves, `fin(I)` for the
+opaque finding `I`, or `ful(Y)` for a `u` `fulfilled(Y)`. interpret.py counts the `var/1`
+atoms of the first answer set, the same in every answer set, and declines the vector above the
+variable cap (correctness-strategy.md §3).
 *%
 var(L) :- leaf_lit(_, L, _).
-var(fin(X)) :- opaque_atom(X).
+var(fin(I)) :- opaque_item(I).
+var(ful(Y)) :- u_item(fulfilled(Y)).
 % Shown so that interpret.py can count them: in cautious and brave mode a model reports only
 % shown atoms, and grounding leaves `var/1` atoms that no model makes true.
 #show var/1.
 
-%*! reads(X, L)
+%*! reads(I, L)
 
-The `u` atom `X` reads the variable `L`: a paired leaf of an opened tree, or its own `fin(X)`.
-pivot.lp names `X` when `L` is pivotal.
+The `u` finding `I` reads the variable `L`: a paired leaf of an opened tree, its own `fin(I)`,
+or, for `fulfilled(Y)`, `ful(Y)`. pivot.lp names `I`'s atom when `L` is pivotal.
 *%
-reads(X, L) :- opened(X, C), leaf_lit(C, L, _).
-reads(X, fin(X)) :- opaque_atom(X).
+reads(I, L) :- opened(I, C), leaf_lit(C, L, _).
+reads(I, fin(I)) :- opaque_item(I).
+reads(fulfilled(Y), ful(Y)) :- u_item(fulfilled(Y)).
 
 %*! world(W)
 
@@ -191,44 +229,55 @@ In world `W`, the part `I` of a `u` atom has rank `N`. A constraint part whose r
 takes its root's rank in the world. A `u` target or party part is opaque and keeps rank 1.
 Every other part keeps its rank.
 *%
-part_in(W, part(X, cons(C)), N) :- opened(X, C), atom_constraint(X, C), crank(W, C, N).
-part_in(W, I, N) :- world(W), u_atom(X), part_of(X, I), holds(I, V), V != u, rank(V, N).
-part_in(W, part(X, target), 1) :- world(W), u_atom(X), holds(part(X, target), u).
-part_in(W, part(X, party(F)), 1) :- world(W), u_atom(X), atom_party(X, F, _),
+part_in(W, part(X, cons(C)), N) :- opened(applies(X), C), atom_constraint(X, C),
+    crank(W, C, N).
+part_in(W, I, N) :- world(W), u_item(applies(X)), part_of(X, I), holds(I, V), V != u,
+    rank(V, N).
+part_in(W, part(X, target), 1) :- world(W), u_item(applies(X)), holds(part(X, target), u).
+part_in(W, part(X, party(F)), 1) :- world(W), u_item(applies(X)), atom_party(X, F, _),
     holds(part(X, party(F)), u).
 
-%*! pre_in(W, X, N)
+%*! root_in(W, I, C, N)
 
-In world `W`, the parts of the `u` atom `X` have Kleene conjunction of rank `N`. Rank 1 means
-that an opaque part leaves the finding `u`.
+In world `W`, the guard `C` of the `u` duty finding `I` has rank `N`: its rank in the world when
+it is open, and its rank in world `k` otherwise.
 *%
-pre_in(W, X, N) :- world(W), u_atom(X), N = #min { M, I : part_of(X, I), part_in(W, I, M) }.
+root_in(W, I, C, N) :- opened(I, C), item_root(I, C), duty_item(I), crank(W, C, N).
+root_in(W, I, C, N) :- world(W), u_item(I), duty_item(I), item_root(I, C), holds(c(C), V),
+    V != u, rank(V, N).
 
-%*! duty_item(I)
+%*! pre_in(W, I, N)
 
-`I` is a duty finding: `owed(Y)`, `in_force(Y)`, or `fulfilled(Y)`. duty.lp derives each.
+In world `W`, the parts of the `u` finding `I` have Kleene conjunction of rank `N`. The parts
+are an atom's parts, the guards of `owed`, and the policy match and guards of `in_force`, as
+duty.lp conjoins them in world `k`. Rank 1 means that an opaque part leaves the finding `u`. A `u`
+`fulfilled` has no `pre_in`: its variable `ful(Y)` decides it.
 *%
-duty_item(owed(Y)) :- pre(_, Y).
-duty_item(in_force(Y)) :- obligation(Y).
-duty_item(fulfilled(Y)) :- instance(Y).
+pre_in(W, applies(X), N) :- world(W), u_item(applies(X)),
+    N = #min { M, I : part_of(X, I), part_in(W, I, M) }.
+% A `u` `owed` has a `u` guard, so the set is never empty.
+pre_in(W, owed(Y), N) :- world(W), u_item(owed(Y)),
+    N = #min { M, C : root_in(W, owed(Y), C, M) }.
+% The tag `match` keeps the policy match's rank apart from a guard's equal rank in the set.
+pre_in(W, in_force(Y), N) :- world(W), u_item(in_force(Y)),
+    N = #min { Np, match : policy_match(Y, Np); M, C : root_in(W, in_force(Y), C, M) }.
 
 %*! completed(W, I, V)
 
-In world `W`, the item `I`, which is `applies(X)` or a duty finding, has value `V`, `t` or `f`. An
-atom that is not `u` keeps its finding. A `u` atom takes the conjunction of its parts in the
-world, and when that is `u`, the value of its variable `fin(X)`. A duty finding keeps its value:
-solve 1 declines a `u` one (duty.lp).
+In world `W`, the finding `I` has value `V`, `t` or `f`. A finding that is not `u` keeps its
+value. A `u` `applies`, `owed`, or `in_force` takes the conjunction of its parts in the world,
+and when that is `u`, the value of its variable `fin(I)`. A `u` `fulfilled(Y)` takes the value
+of `ful(Y)`.
 *%
-completed(W, applies(X), V) :- world(W), holds(applies(X), V), V != u.
-completed(W, I, V) :- world(W), duty_item(I), holds(I, V), V != u.
-completed(W, applies(X), V) :- pre_in(W, X, N), N != 1, rank(V, N).
-completed(W, applies(X), V) :- pre_in(W, X, 1), assigned(W, fin(X), V).
+completed(W, I, V) :- world(W), completed_item(I), holds(I, V), V != u.
+completed(W, I, V) :- pre_in(W, I, N), N != 1, rank(V, N).
+completed(W, I, V) :- pre_in(W, I, 1), assigned(W, fin(I), V).
+completed(W, fulfilled(Y), V) :- u_item(fulfilled(Y)), assigned(W, ful(Y), V).
 
 %*! completed_item(I)
 
-`I` has a completed value in every world: `applies(X)` for each atom, and each duty finding that
-is not `u`. The constraint is in integrity.lp.
+`I` has a completed value in every world: `applies(X)` for each atom, and each duty finding. The
+constraint is in integrity.lp.
 *%
 completed_item(applies(X)) :- atom(X).
-% Solve 1 declines a vector with a `u` duty finding (duty.lp), so solve 2 never completes one.
-completed_item(I) :- duty_item(I), not holds(I, u).
+completed_item(I) :- duty_item(I).

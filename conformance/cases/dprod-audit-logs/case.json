@@ -128,8 +128,9 @@
       "expected": {
         "verdict": "Deny",
         "frontier": [],
-        "obligations": [],
-        "why": "rule:audit-no-export matches ex:export by equality; ex:export also sits under odrl:distribute, but that only adds nothing here. The read permission does not match (export is not below read). A surviving, applying prohibition: Deny. The retention obligation is not in force — no permission or prohibition of the policy matches an export, which is what in force turns on (§5.2)."
+        "obligations": [{ "duty": "rule:audit-retention", "status": "unknown" }],
+        "unknown_parts": [{ "ref": "rule:audit-retention", "input": "ex:retentionPeriod", "status": "missing" }],
+        "why": "rule:audit-no-export matches ex:export by equality; the read permission does not (export is not below read). A surviving, applying prohibition: Deny. That prohibition matches, so the retention obligation is in force if its guard holds (§5.2), and the request states no retention period: in_force is U, reported unknown (§6.1), and under violations ignore it does not touch the verdict."
       },
       "dprod_expected": "Deny (prohibition overrides)"
     }

@@ -74,7 +74,7 @@ def test_anonymous_rule(interpreter: Interpreter) -> None:
 DELETIONS = [
     ("kleene.lp", "rank(u, 1)."),
     ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
-    ("completion.lp", "completed(W, applies(X), V) :- pre_in(W, X, 1), assigned(W, fin(X), V)."),
+    ("completion.lp", "completed(W, I, V) :- pre_in(W, I, 1), assigned(W, fin(I), V)."),
     (
         "resolve.lp",
         'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W), not pending(W).',
