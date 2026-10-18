@@ -98,3 +98,4 @@
 {"at": "2026-10-18T02:09:52Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1138, "name": "basedpyright"}
 {"at": "2026-10-18T02:09:52Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff"}
 {"at": "2026-10-18T02:09:52Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff format"}
+{"at": "2026-10-18T02:10:34Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 434.09, "p50_ms": 31.87, "p95_ms": 46.32, "p99_ms": 251.8, "pass": 245, "revision": "471b35d", "task": "interpret", "total_ms": 9168.8, "unsupported": 187, "vectors": 432}
