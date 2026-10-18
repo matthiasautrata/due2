@@ -15,14 +15,14 @@
 % DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `operator/2` (lift.lp); `atom/1`, `atom_party/3` (structure.lp);
-%   `scope/2`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2`
-%   (constraint.lp); `src/2`, `prop/2`, `read_ok/1`, `read_status/2` (operand.lp); `crank/2`
-%   (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2`
-%   (kleene.lp).
+%   `scope/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2` (constraint.lp);
+%   `src/2`, `prop/2`, `read_ok/1`, `read_status/2` (operand.lp); `crank/3` (compare.lp);
+%   `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp).
 % - **Provides:** `u_atom/1`, `leaf_status/2`, `opaque_leaf/1`, `opened/2`, `open/1`,
 %   `opaque_atom/1`, `complement/2`, `op_literal/3`, `leaf_key/5`, `leaf_attr/2`,
 %   `attr_apart/2`, `same_key/2`, `leaf_lit/3`, `var/1`, `reads/2`, `world/1`, `assigned/3`,
-%   `crank_in/3`, `xone_in/4`, `part_in/3`, `pre_in/3`, `completed/3`, `completed_item/1`.
+%   `part_in/3`, `pre_in/3`, `completed/3`, `completed_item/1`; extends `crank/3` and
+%   `evaluates/2` (compare.lp).
 
 %*! u_atom(X)
 
@@ -40,7 +40,7 @@ exactly one status (integrity.lp).
 *%
 leaf_status(C, S) :- leaf(C), left(C, Op), read_status(Op, S).
 % A leaf whose read is ok has rank 1 only when some comparison is a misfit (compare.lp).
-leaf_status(C, misfit) :- leaf(C), left(C, Op), read_ok(Op), crank(C, 1).
+leaf_status(C, misfit) :- leaf(C), left(C, Op), read_ok(Op), crank(k, C, 1).
 
 %*! opaque_leaf(C)
 
@@ -62,7 +62,8 @@ opened(X, D) :- opened(X, C), member(C, D), holds(c(D), u).
 
 %*! open(C)
 
-Node `C` is opened for some atom, so each world gives it a rank (`crank_in/3`).
+Node `C` is opened for some atom, so each completion world evaluates it (`evaluates/2`) and
+gives it a rank (`crank/3`).
 *%
 open(C) :- opened(_, C).
 
@@ -159,8 +160,9 @@ reads(X, fin(X)) :- opaque_atom(X).
 
 %*! world(W)
 
-`W` is a world: an index for one completion held in the answer set. World `c` (for
-"completion") is the completion the answer set chose; pivot.lp adds `flip`.
+`W` is a completion world: an index for one completion held in the answer set. World `c`
+(for "completion") is the completion the answer set chose; pivot.lp adds `flip`. The Kleene
+world `k` of `crank/3` is not one: it holds no completion.
 *%
 world(c).
 
@@ -171,32 +173,15 @@ In world `W`, variable `L` has value `V`, `t` or `f`.
 % The choice: exactly one value for each variable in world c.
 { assigned(c, L, t); assigned(c, L, f) } = 1 :- var(L).
 
-%*! crank_in(W, C, N)
-
-In world `W`, the open node `C`, or a member of an open node, has rank `N`. A member that is not
-open keeps its rank. An opaque leaf keeps rank 1. A paired leaf takes its variable's value,
-negated for polarity `neg`. An open connective is re-evaluated from its members by the
-connective rules of compare.lp, so a world can leave a node `u`.
-*%
-crank_in(W, D, N) :- world(W), open(C), member(C, D), not open(D), crank(D, N).
-crank_in(W, C, 1) :- world(W), open(C), opaque_leaf(C).
-crank_in(W, C, N) :- leaf_lit(C, L, pos), assigned(W, L, V), rank(V, N).
-crank_in(W, C, 2 - N) :- leaf_lit(C, L, neg), assigned(W, L, V), rank(V, N).
-crank_in(W, C, N) :- world(W), open(C), conn(C, and),
-    N = #min { 2; M, D : member(C, D), crank_in(W, D, M) }.
-crank_in(W, C, N) :- world(W), open(C), conn(C, or),
-    N = #max { 0; M, D : member(C, D), crank_in(W, D, M) }.
-crank_in(W, C, 2 - N) :- open(C), conn(C, negation), member(C, D), crank_in(W, D, N).
-crank_in(W, C, N) :- world(W), open(C), conn(C, xone), N = #max { 0; M, D : xone_in(W, C, D, M) }.
-
-%*! xone_in(W, C, D, N)
-
-In world `W`, the disjunct of the open `xone` node `C` for its member `D` has rank `N`: `D`,
-and not each other member. It is `xone_term/3` of compare.lp over one world's ranks.
-*%
-xone_in(W, C, D, N) :- world(W), open(C), conn(C, xone), member(C, D), crank_in(W, D, _),
-    N = #min { M, self : crank_in(W, D, M); 2 - M2, D2 : member(C, D2), D2 != D,
-        crank_in(W, D2, M2) }.
+% A completion world's ranks. It evaluates the open nodes, and the connective rules of
+% compare.lp re-evaluate each open connective from its members, so a world can leave a node
+% `u`. A member that is not open keeps its world-`k` rank. An opaque leaf keeps rank 1. A paired
+% leaf takes its variable's value, negated for polarity `neg`.
+evaluates(W, C) :- world(W), open(C).
+crank(W, D, N) :- world(W), open(C), member(C, D), not open(D), crank(k, D, N).
+crank(W, C, 1) :- world(W), open(C), opaque_leaf(C).
+crank(W, C, N) :- leaf_lit(C, L, pos), assigned(W, L, V), rank(V, N).
+crank(W, C, 2 - N) :- leaf_lit(C, L, neg), assigned(W, L, V), rank(V, N).
 
 %*! part_in(W, I, N)
 
@@ -204,7 +189,7 @@ In world `W`, the part `I` of a `u` atom has rank `N`. A constraint part whose r
 takes its root's rank in the world. A `u` target or party part is opaque and keeps rank 1.
 Every other part keeps its rank.
 *%
-part_in(W, part(X, cons(C)), N) :- opened(X, C), atom_constraint(X, C), crank_in(W, C, N).
+part_in(W, part(X, cons(C)), N) :- opened(X, C), atom_constraint(X, C), crank(W, C, N).
 part_in(W, I, N) :- world(W), u_atom(X), part_of(X, I), holds(I, V), V != u, rank(V, N).
 part_in(W, part(X, target), 1) :- world(W), u_atom(X), holds(part(X, target), u).
 part_in(W, part(X, party(F)), 1) :- world(W), u_atom(X), atom_party(X, F, _),

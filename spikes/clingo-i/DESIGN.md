@@ -21,7 +21,7 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 - **Unknown part.** A row of `unknown_part(X, Input, S)`: atom `X` has a `u` part that reads `Input` with status `S` (§ `explain.lp`).
 - **Scope.** What a constraint node refines: `rule`, under a rule's `odrl:constraint`, or `action`, under an action term's `odrl:refinement` (`due2-workflows.md` §3.1). It is part of the completion key.
 - **Completion.** One assignment of `t` or `f` to every variable. With `n` variables there are `2^n`.
-- **World.** An index that lets one answer set hold more than one completion. World `c` is the completion the answer set chose, and world `flip` (solve 3 only) is `c` with one variable negated.
+- **World.** An index that lets one answer set hold more than one completion. World `c` is the completion the answer set chose, and world `flip` (solve 3 only) is `c` with one variable negated. These two are the *completion worlds*. The node ranks also carry the *Kleene world* `k`: the ranks before completion, under strong Kleene logic. `world/1` lists the completion worlds only.
 - **Pivot.** The variable `flip` negates. A variable is *pivotal* when flipping it alone changes some completion's verdict (`decisions/0011` #1).
 - **Remover.** In an elimination row, the atom that removes the other (`due2-workflows.md` §3.5).
 - **Solve 1, 2, 3.** The three clingo runs of § Data flow. *Cautious* enumeration keeps the atoms true in every answer set, and *brave* the atoms true in some.
@@ -366,7 +366,7 @@ A fact with any other status (`missing`, `invalid`, `conflict`, `unresolved`), n
 
 ### `compare.lp`
 
-Gives every constraint node its rank, `crank(C, N)`, and every node item its truth value, `holds(c(C), V)`.
+Gives every constraint node its rank in the Kleene world, `crank(k, C, N)`, and every node item its truth value, `holds(c(C), V)`. The connective rules serve every world: `evaluates(W, C)` says which nodes world `W` evaluates with them, every node for `k`, and the open nodes for a completion world (§ `completion.lp`).
 
 **Leaves.** A leaf on a `u` read has rank 1. On an `ok` read, `cpair(C, Lv, Rv)` pairs each read value with each right operand value, and the pair is compared on its own:
 
@@ -377,7 +377,7 @@ Gives every constraint node its rank, `crank(C, N)`, and every node item its tru
 
 **The operators** combine the pairs (`due2-profiles.md` §4). `eq`, `neq`, and the order operators compare the one read value with the one right value; `neq` is the negation of `eq`. `any_eq(C, Rv, N)` is the disjunction, over the read values, of `= Rv`. Each `=` is `ceqr/4`, so on a concept-scheme operand `neq` and `isNoneOf` exclude every concept below a right value. `isAnyOf` is the greatest `any_eq` over the right values, and `isNoneOf` its negation. `isAllOf` is the least `any_eq` over the right values: every right value is read. `isPartOf` is the least, over the read values, of "part of some right value", and `hasPart` the least, over the right values, of "part of some read value"; with no read values `isPartOf` holds vacuously. `isA` is the least over the listed classes. The aggregates carry their identities (`#max { 0; … }`, `#min { 2; … }`), so an empty set has the value the operator's quantifier gives it.
 
-**Connectives.** `and` is the least rank of its members, `or` the greatest, `dprod:not` maps rank `N` to `2 − N`, and `xone` is the disjunction of its terms `xone_term(C, D, N)`: member `D` and the negation of every other member, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ). Strong Kleene logic gives the tree the same value as its NNF and its DNF, because De Morgan's laws, double negation, and distributivity hold in it, so these rules realise the structural rules of normalisation stage 2 without rewriting. `xone` uses its expansion, not "exactly one is `t`", so that `t xone u` is `u`, as the expansion gives, and not `t`.
+**Connectives.** `and` is the least rank of its members, `or` the greatest, `dprod:not` maps rank `N` to `2 − N`, and `xone` is the disjunction of its terms `xone_term(W, C, D, N)`: member `D` and the negation of every other member, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ). Strong Kleene logic gives the tree the same value as its NNF and its DNF, because De Morgan's laws, double negation, and distributivity hold in it, so these rules realise the structural rules of normalisation stage 2 without rewriting. `xone` uses its expansion, not "exactly one is `t`", so that `t xone u` is `u`, as the expansion gives, and not `t`.
 
 **Units.** `odrl:unit` labels a right operand (`unit/2`, `constraint.lp`), and the completion key includes it (§ `completion.lp`). It converts nothing, and what a unit means for a comparison is open (#67), so a leaf compares the values alone: `5` with unit `ex:EUR` equals a read `5` (`test_unit_labels_without_converting`).
 
@@ -395,12 +395,12 @@ ex:purpose dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:pu
 ex:count dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:count .
 ```
 
-| Request `params` | Reads | Leaves | `crank(ex:c, N)` | Reply |
+| Request `params` | Reads | Leaves | `crank(k, ex:c, N)` | Reply |
 |---|---|---|---|---|
-| purpose `ex:marketing` | `read_ok(ex:purpose)`, `read_u(ex:count)` | `eqr(ex:marketing, ex:research, 0)` and `eqr(ex:marketing, ex:teaching, 0)`, so `any_eq` is 0 for both and `crank(ex:c1, 0)`; `crank(ex:c2, 1)` | 0 | `NotApplicable` |
-| purpose `ex:research` | as above | `eqr(ex:research, ex:research, 2)`, so `crank(ex:c1, 2)`; `crank(ex:c2, 1)` | 1 | `Indeterminate`, from `NotApplicable` to `Permit` |
-| purpose `ex:research`, count `3` | both `ok` | `cpair(ex:c2, lit("3", xsd:integer), lit("5", xsd:integer))`, `crank(ex:c2, 2)` | 2 | `Permit` |
-| purpose `ex:research`, count `7` | both `ok` | `crank(ex:c2, 0)` | 0 | `NotApplicable` |
+| purpose `ex:marketing` | `read_ok(ex:purpose)`, `read_u(ex:count)` | `eqr(ex:marketing, ex:research, 0)` and `eqr(ex:marketing, ex:teaching, 0)`, so `any_eq` is 0 for both and `crank(k, ex:c1, 0)`; `crank(k, ex:c2, 1)` | 0 | `NotApplicable` |
+| purpose `ex:research` | as above | `eqr(ex:research, ex:research, 2)`, so `crank(k, ex:c1, 2)`; `crank(k, ex:c2, 1)` | 1 | `Indeterminate`, from `NotApplicable` to `Permit` |
+| purpose `ex:research`, count `3` | both `ok` | `cpair(ex:c2, lit("3", xsd:integer), lit("5", xsd:integer))`, `crank(k, ex:c2, 2)` | 2 | `Permit` |
+| purpose `ex:research`, count `7` | both `ok` | `crank(k, ex:c2, 0)` | 0 | `NotApplicable` |
 
 The first row is the point of Kleene evaluation: `ex:count` is unknown, but `f ∧ u` is `f`, so the unknown does not matter, and the atom does not apply. In the second row `t ∧ u` is `u`, the constraint part is `u`, and so is the atom's finding. Completion decides it (§ `completion.lp`): `ex:c` and `ex:c2` are open, and `ex:c1` keeps its `t`. `ex:c2` reads one variable, so there are two completions. The permission applies when the variable is `t`, which gives `Permit`, and not when it is `f`, which gives `NotApplicable`. The reply names `ex:r` with role `unknown`.
 
@@ -427,7 +427,7 @@ These are the values before completion. `completion.lp` gives each world's value
 **Paired variables.** A `u` constraint part is completed node by node, but only on its open nodes (`opened/2`, `open/1`): those that are `u` and lie on a path of `u` nodes from the part's root. A node that is `t` or `f` keeps its value in every completion, because strong Kleene logic is monotone: replacing a `u` by `t` or `f` never turns a `t` into `f`, or an `f` into `t`. So:
 
 - each open paired leaf reads one variable with a polarity (`leaf_lit(C, L, Pol)`);
-- in each world, each open node gets a rank (`crank_in/3`). A paired leaf takes its variable's value, 0 or 2, negated for `neg`. An opaque leaf keeps 1. An open connective is re-evaluated from its members with the connectives of `compare.lp`. A member that is not open keeps its rank;
+- in each completion world, each open node gets a rank, `crank(W, C, N)`. A paired leaf takes its variable's value, 0 or 2, negated for `neg`. An opaque leaf keeps 1. An open connective is re-evaluated from its members by the connective rules of `compare.lp`, which the world applies to its open nodes (`evaluates(W, C)`). A member that is not open keeps its rank in world `k`;
 - the constraint part takes its root's rank in the world.
 
 **The key.** Two open paired leaves read one variable when they make the same comparison (`due2-workflows.md` §6.4). The key has five components:
@@ -500,7 +500,8 @@ The integrity constraints over every earlier file, in solves 2 and 3:
 - every used left operand is exactly one of `read_ok` and `read_u`, and every compared pair has exactly one equality rank;
 - every `u` read, and every `u` leaf, has exactly one status;
 - every open leaf that is not opaque reads exactly one variable;
-- in every world, every variable, every open node, and every completed item has exactly one value, `f` or `t` (a rank, 0 or 2, for a node);
+- in every completion world, every variable and every completed item has exactly one value, `f` or `t`;
+- in every world, `k` included, every node the world evaluates has exactly one rank;
 - every world has exactly one verdict.
 
 They are why a rule deleted from the program fails loudly. Without its rule, some item has no value, some read no outcome or status, or some world no verdict, so the solve has no model and the reply is an `error`, never a verdict standing on the missing part (§ Tests).
@@ -560,7 +561,7 @@ Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)` (`due2-
 - input syntax and what `lift.lp`, `structure.lp`, and `constraint.lp` derive from it: whether a family is stated, a predicate consumed, a function named, a node a list, a leaf or a connective;
 - the value table and the term shapes (`not placed`, `not kind`, `not same_type`), which decide only that a pair is a misfit, and a misfit is `u`;
 - the reads: `not read_resolved`, `not card_ok`, and `not conforms` make a read `u`, never `f`;
-- in `completion.lp`, over relations fixed before the choice. `not complement`, `not leaf_attr`, and `not attr_apart` decide only which variable a leaf reads and with which polarity. `not open` picks the members of an open node that keep their rank, and these are `t` or `f`, because a `u` member of an open node is open itself;
+- in `completion.lp`, over relations fixed before the choice. `not complement`, `not leaf_attr`, and `not attr_apart` decide only which variable a leaf reads and with which polarity. `not open` picks the members of an open node that keep their rank, and these are `t` or `f`, because a `u` member of an open node is open itself. `open/1` reads the ranks of world `k`, and no rule for world `k` reads another world, so the ground program has no cycle through `not open`, although `crank/3` holds the ranks of every world;
 - inside one world in `resolve.lp`, where every value is already `t` or `f`;
 - in `explain.lp`, over `elim` rows derived from findings (a `forbid` its own policy did not remove). A `u` finding gives no row, and the rows are only ever read as "no remover", never as a truth value.
 

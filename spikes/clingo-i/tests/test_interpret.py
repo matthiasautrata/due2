@@ -835,7 +835,7 @@ def test_constraint_declines(
 
 
 CONSTRAINT_DELETIONS = [
-    ("compare.lp", "crank(C, N) :- op(C, eq), ceqr(C, _, _, N)."),
+    ("compare.lp", "crank(k, C, N) :- op(C, eq), ceqr(C, _, _, N)."),
     ("operand.lp", "read_u(Op) :- used(Op), not read_resolved(Op)."),
 ]
 

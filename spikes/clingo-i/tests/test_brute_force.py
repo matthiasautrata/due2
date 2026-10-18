@@ -729,8 +729,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "crank_in(W, C, 1) :- world(W), open(C), opaque_leaf(C).",
-                "crank_in(W, C, 0) :- world(W), open(C), opaque_leaf(C).",
+                "crank(W, C, 1) :- world(W), open(C), opaque_leaf(C).",
+                "crank(W, C, 0) :- world(W), open(C), opaque_leaf(C).",
             )
         ],
     ),
@@ -764,8 +764,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "crank_in(W, C, 2 - N) :- leaf_lit(C, L, neg)",
-                "crank_in(W, C, N) :- leaf_lit(C, L, neg)",
+                "crank(W, C, 2 - N) :- leaf_lit(C, L, neg)",
+                "crank(W, C, N) :- leaf_lit(C, L, neg)",
             )
         ],
     ),
@@ -781,20 +781,25 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     "and-or-swapped": (
         "compare.lp",
         [
-            ("conn(C, and), N = #min { 2;", "conn(C, and), N = #max { 0;"),
-            ("conn(C, or), N = #max { 0;", "conn(C, or), N = #min { 2;"),
+            ("conn(C, and),\n    N = #min { 2;", "conn(C, and),\n    N = #max { 0;"),
+            ("conn(C, or),\n    N = #max { 0;", "conn(C, or),\n    N = #min { 2;"),
         ],
     ),
     "not-as-identity": (
         "compare.lp",
-        [("crank(C, 2 - N) :- conn(C, negation)", "crank(C, N) :- conn(C, negation)")],
+        [
+            (
+                "crank(W, C, 2 - N) :- evaluates(W, C), conn(C, negation)",
+                "crank(W, C, N) :- evaluates(W, C), conn(C, negation)",
+            )
+        ],
     ),
     "xone-without-negations": (
         "compare.lp",
         [
             (
-                "{ M, self : crank(D, M); 2 - M2, D2 : member(C, D2), D2 != D, crank(D2, M2) }",
-                "{ M, self : crank(D, M) }",
+                "{ M, self : crank(W, D, M); 2 - M2, D2 : member(C, D2), D2 != D,\n        crank(W, D2, M2) }",
+                "{ M, self : crank(W, D, M) }",
             )
         ],
     ),

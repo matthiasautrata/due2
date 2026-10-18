@@ -1,11 +1,13 @@
 %# compare.lp: the operators, and the Kleene value of every constraint node
 %
 % Compares each value a leaf's operand reads with each of its right operand values, by value
-% within a value space or, on an operand with a concept scheme, under `skos:broader`, and combines the comparisons by the operator's definition
-% (due2-profiles.md §4). A comparison the operands do not fit, such as an IRI against a literal
-% or values of two spaces, is `u` (rank 1), never `f`. Then the connectives combine their
-% members' values: `and` is the least rank, `or` the greatest, `dprod:not` the involution, and
-% `xone` the value of its expansion (DESIGN.md § `compare.lp`). Ranks are those of kleene.lp.
+% within a value space or, on an operand with a concept scheme, under `skos:broader`, and
+% combines the comparisons by the operator's definition (due2-profiles.md §4). A comparison the
+% operands do not fit, such as an IRI against a literal or values of two spaces, is `u` (rank
+% 1), never `f`. Then the connectives combine their members' values: `and` is the least rank,
+% `or` the greatest, `dprod:not` the involution, and `xone` the value of its expansion
+% (DESIGN.md § `compare.lp`). The connective rules serve every world: the Kleene world `k`,
+% before completion, and the completion worlds of completion.lp. Ranks are those of kleene.lp.
 % Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
@@ -15,7 +17,7 @@
 % - **Provides:** `cpair/3`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
 %   `above/2`, `ceqr/4`, `ordered/1`,
 %   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
-%   `any_eq/3`, `any_le/3`, `crank/2`, `xone_term/3`; extends `item/1`, `holds/2`
+%   `any_eq/3`, `any_le/3`, `crank/3`, `evaluates/2`, `xone_term/4`; extends `item/1`, `holds/2`
 %   (applies.lp) and `unsupported_value/1` (lift.lp).
 
 %## Pairs
@@ -203,52 +205,66 @@ any_le(C, Lv, N) :- op(C, isPartOf), left(C, Op), read_value(Op, Lv), read_ok(Op
 any_le(C, Rv, N) :- op(C, hasPart), right(C, Rv), left(C, Op), read_ok(Op),
     N = #max { 0; M, Lv : cpair(C, Lv, Rv), ler(Rv, Lv, M) }.
 
-%*! crank(C, N)
+%*! crank(W, C, N)
 
-Node `C` has rank `N`. A leaf whose read is `u` has rank 1. Otherwise its operator decides
+In world `W`, node `C` has rank `N`. World `k` is the Kleene world: the ranks before
+completion, under strong Kleene logic, which this file derives for every node. completion.lp
+adds the ranks of the completion worlds `c` and `flip`. In world `k` a leaf whose read is `u`
+has rank 1. Otherwise its operator decides
 (due2-profiles.md §4): `eq` and the order operators compare the one read value with the one
 right value; `isAnyOf` is the greatest `eq` over the right values, and `isNoneOf` its negation;
 `isAllOf` is the least, over right values, of `any_eq`; `isPartOf` and `hasPart` are the least
 of `any_le`, and an empty read set holds vacuously; `isA` is the least over the listed classes.
 Each `eq`, on a concept-scheme operand, is `⊑` (`ceqr/4`).
 *%
-crank(C, 1) :- leaf(C), left(C, Op), read_u(Op).
-crank(C, N) :- op(C, eq), ceqr(C, _, _, N).
-crank(C, 2 - N) :- op(C, neq), ceqr(C, _, _, N).
-crank(C, N) :- op(C, O), cpair(C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
-crank(C, N) :- op(C, isAnyOf), left(C, Op), read_ok(Op),
+crank(k, C, 1) :- leaf(C), left(C, Op), read_u(Op).
+crank(k, C, N) :- op(C, eq), ceqr(C, _, _, N).
+crank(k, C, 2 - N) :- op(C, neq), ceqr(C, _, _, N).
+crank(k, C, N) :- op(C, O), cpair(C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
+crank(k, C, N) :- op(C, isAnyOf), left(C, Op), read_ok(Op),
     N = #max { 0; M, Rv : any_eq(C, Rv, M) }.
-crank(C, 2 - N) :- op(C, isNoneOf), left(C, Op), read_ok(Op),
+crank(k, C, 2 - N) :- op(C, isNoneOf), left(C, Op), read_ok(Op),
     N = #max { 0; M, Rv : any_eq(C, Rv, M) }.
-crank(C, N) :- op(C, isAllOf), left(C, Op), read_ok(Op),
+crank(k, C, N) :- op(C, isAllOf), left(C, Op), read_ok(Op),
     N = #min { 2; M, Rv : any_eq(C, Rv, M) }.
-crank(C, N) :- op(C, O), O = (isPartOf; hasPart), left(C, Op), read_ok(Op),
+crank(k, C, N) :- op(C, O), O = (isPartOf; hasPart), left(C, Op), read_ok(Op),
     N = #min { 2; M, Lo : any_le(C, Lo, M) }.
-crank(C, N) :- op(C, isA), left(C, Op), read_ok(Op),
+crank(k, C, N) :- op(C, isA), left(C, Op), read_ok(Op),
     N = #min { 2; M, Lv, Cls : cpair(C, Lv, Cls), isar(Lv, Cls, M) }.
 
 %## Connectives
 
+%*! evaluates(W, C)
+
+World `W` evaluates node `C` with the connective rules below. World `k` evaluates every node.
+A completion world evaluates only the open nodes (completion.lp): every other node keeps its
+world-`k` rank there, so one set of connective rules serves every world.
+*%
+evaluates(k, C) :- cnode(C).
+
 % Kleene conjunction and disjunction as #min and #max with their identities (⋀∅ = t,
 % ⋁∅ = f); `dprod:not` maps rank N to 2 - N. The identities only seed the aggregates: a
-% connective with no member is rejected in constraint.lp (decisions/0017). Strong Kleene logic gives a tree the value of its
-% NNF and DNF, so these rules realise the structural rules of normalisation stage 2 without
-% rewriting.
-crank(C, N) :- conn(C, and), N = #min { 2; M, D : member(C, D), crank(D, M) }.
-crank(C, N) :- conn(C, or), N = #max { 0; M, D : member(C, D), crank(D, M) }.
-crank(C, 2 - N) :- conn(C, negation), member(C, D), crank(D, N).
-crank(C, N) :- conn(C, xone), N = #max { 0; M, D : xone_term(C, D, M) }.
+% connective with no member is rejected in constraint.lp (decisions/0017). Strong Kleene logic
+% gives a tree the value of its NNF and DNF, so these rules realise the structural rules of
+% normalisation stage 2 without rewriting.
+crank(W, C, N) :- evaluates(W, C), conn(C, and),
+    N = #min { 2; M, D : member(C, D), crank(W, D, M) }.
+crank(W, C, N) :- evaluates(W, C), conn(C, or),
+    N = #max { 0; M, D : member(C, D), crank(W, D, M) }.
+crank(W, C, 2 - N) :- evaluates(W, C), conn(C, negation), member(C, D), crank(W, D, N).
+crank(W, C, N) :- evaluates(W, C), conn(C, xone), N = #max { 0; M, D : xone_term(W, C, D, M) }.
 
-%*! xone_term(C, D, N)
+%*! xone_term(W, C, D, N)
 
-The disjunct of `xone` node `C` for its member `D` has rank `N`: `D`, and not each other
-member. `xone` is the disjunction of these terms, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ).
+In world `W`, the disjunct of `xone` node `C` for its member `D` has rank `N`: `D`, and not
+each other member. `xone` is the disjunction of these terms, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ).
 *%
-xone_term(C, D, N) :- conn(C, xone), member(C, D), crank(D, _),
-    N = #min { M, self : crank(D, M); 2 - M2, D2 : member(C, D2), D2 != D, crank(D2, M2) }.
+xone_term(W, C, D, N) :- evaluates(W, C), conn(C, xone), member(C, D), crank(W, D, _),
+    N = #min { M, self : crank(W, D, M); 2 - M2, D2 : member(C, D2), D2 != D,
+        crank(W, D2, M2) }.
 
 %## Values
 
 % Every constraint node `c(C)` is an item, so a node without a rank fails integrity.lp.
 item(c(C)) :- cnode(C).
-holds(c(C), V) :- crank(C, N), rank(V, N).
+holds(c(C), V) :- crank(k, C, N), rank(V, N).
