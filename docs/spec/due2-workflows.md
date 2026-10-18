@@ -1,7 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.27
+**Status:** Draft v0.28
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
+
+**Changes in v0.28** (2026-10-18, `decisions/0018`, #49): §5.3 says that each member bears a duty whose bearer is a party collection, so the witness's actor is the request subject when the subject is a member; §6's opening says that the one duty finding W3 reads before conflict is a violated precondition, which closes its route (§6.1).
 
 **Changes in v0.27** (2026-10-17): §6.4 says that the completion key compares right operands as written terms, so the datatype is part of the key through them, and that two terms with one value are two variables.
 
@@ -341,7 +343,7 @@ Fulfilment follows RL2 (`spec/RL2_Model.md` §4.3, §7.3). It is derived from ev
 - `e.occurred_at ≤ sotw.effective_at`;
 - `e.action ⊑ d.action`;
 - `e.object = d.relation_value`, if `d` has one;
-- `e.actor` is `d`'s bearer — the party in the bearer role (`due2-profiles.md` §6: `odrl:assignee` unless a profile says otherwise), after role inheritance (§4) — or the request subject if `d` still names none;
+- `e.actor` is `d`'s bearer — the party in the bearer role (`due2-profiles.md` §6: `odrl:assignee` unless a profile says otherwise), after role inheritance (§4) — or the request subject if `d` still names none. A bearer that is an `odrl:PartyCollection` is borne by each of its members, which "undertake the same functional role in the Rule" (ODRL IM §2.3), so when the request subject is a member (`subject ⊑ bearer` under the party closure), `e.actor` must be the subject: another member's act does not discharge it. When the request names no subject, an act by a member is `U`, since that member may be the subject (`decisions/0018`);
 - `signer` admits `e.issuer` for `d`'s `source_duty` (§3.4);
 - for scope `grant`, `e.discharges` is `d`'s instance key. For scope `member`, `discharges` is not consulted.
 
@@ -400,7 +402,7 @@ An index may skip root atoms that are certainly `F` — wrong action, wrong targ
 W3 : Corpus × finding × basis × unknown_part × Config → eliminated × alternative × alt_duty × dominated × verdict × verdict_basis
 ```
 
-Four steps in fixed order. The order is normative: conflict resolution runs before any duty is looked at, so duties can choose among surviving permissions but never decide which survive.
+Four steps in fixed order. The order is normative: conflict resolution runs before duties choose among routes, so duties can choose among surviving permissions but never decide which survive. The one duty finding read before conflict is a violated precondition that is owed: it closes its route outright (§6.1), so the closed permission takes no part in conflict.
 
 ### 6.1 Candidates
 
