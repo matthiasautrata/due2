@@ -158,3 +158,11 @@
 {"at": "2026-10-18T14:03:10Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1384, "name": "basedpyright"}
 {"at": "2026-10-18T14:03:10Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 58, "name": "ruff"}
 {"at": "2026-10-18T14:03:10Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
+{"at": "2026-10-18T14:22:15Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 615.28, "p50_ms": 44.74, "p95_ms": 65.97, "p99_ms": 81.6, "pass": 394, "revision": "82c9c95", "task": "interpret", "total_ms": 19461.5, "unsupported": 38, "vectors": 432}
+{"at": "2026-10-18T14:22:16Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1548, "name": "basedpyright"}
+{"at": "2026-10-18T14:22:16Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 57, "name": "ruff"}
+{"at": "2026-10-18T14:22:16Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}
+{"at": "2026-10-18T14:22:27Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 10, "summary": "#50 corpus gate: recorded run (--scorecard --repeat=5), 432 vectors, 394 pass, 0 fail, 0 error, 38 unsupported (37 recurrence, 1 max_mixed fallback, exact_only, DESIGN.md § Declines); the one corpus disagreement (dprod-audit-logs) triaged as #76; p50 44.74 ms, p99 81.6 ms"}
+{"at": "2026-10-18T14:22:28Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1258, "name": "basedpyright"}
+{"at": "2026-10-18T14:22:29Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff"}
+{"at": "2026-10-18T14:22:29Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
