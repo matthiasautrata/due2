@@ -806,6 +806,20 @@ def check_policy(
     for node in sorted(asset_party_nodes(g), key=str):
         if (node, ODRL.refinement, None) in g:
             r.diag("UnsupportedConstruct", f"{q(g, node)}: collection refinement is not admitted")
+    # The target and the assignee are what a request matches (workflows 5.2); an
+    # anonymous one has a generated identity nothing can name (normalisation 3).
+    for edge, field_ in ((ODRL.target, "target"), (ODRL.assignee, "assignee")):
+        for owner, node in sorted(g.subject_objects(edge), key=str):
+            if not isinstance(node, BNode) or (node, ODRL.uid, None) in g:
+                continue
+            if (node, ODRL.refinement, None) in g:
+                continue
+            r.diag(
+                "AnonymousEntity",
+                f"{q(g, owner)}: anonymous {field_} {q(g, node)} has no identity a request can "
+                f"name; the rule is never T, and a request with no {field_} makes it U, so the "
+                "verdict can be Indeterminate",
+            )
     conflicts = list(g.objects(policy, ODRL.conflict))
     if len(conflicts) > 1:
         r.diag("InvalidConflict", f"{q(g, policy)}: more than one odrl:conflict")

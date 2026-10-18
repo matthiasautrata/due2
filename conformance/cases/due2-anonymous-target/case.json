@@ -1,0 +1,65 @@
+{
+  "case": "due2-anonymous-target",
+  "source": "due2-native: the anonymous target of the DALICC licenses (docs/design/references.md, DALICC)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "The target is a blank-node odrl:AssetCollection with no odrl:uid and no refinement, described only by dct:type. ODRL allows it (an Asset SHOULD have a uid, IM 2.2). Stage 1 gives it a generated identity (normalisation §5.1, case 3) that no request can name and no odrl:partOf edge reaches, so the permission is never T. W1 accepts the policy and warns AnonymousEntity (normalisation §3, issue #79). dct:type is not read as a refinement: a collection refinement is rejected (UnsupportedConstruct, #21). An author who means 'any software' names the collection and supplies its members as partOf edges.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "scenarios": [
+    {
+      "name": "target named",
+      "request": {
+        "reference": "req",
+        "action": "odrl:display",
+        "at": "2026-10-18T10:00:00Z",
+        "parties": {},
+        "params": {},
+        "target": "ex:my-app"
+      },
+      "sotw": {
+        "effective_at": "2026-10-18T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "why": "ex:my-app is not the generated identity of the anonymous target, and no closure edge makes it part of it, so the relation part is F (workflows §5.2). No rule applies."
+      }
+    },
+    {
+      "name": "no target",
+      "request": {
+        "reference": "req",
+        "action": "odrl:display",
+        "at": "2026-10-18T10:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-18T10:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "why": "The request names no target, so the relation part is U (workflows §5.2, absent is not false); the action matches. Completing the permission T gives Permit, F gives NotApplicable. Indeterminate."
+      }
+    }
+  ]
+}

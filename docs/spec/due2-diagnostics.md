@@ -49,6 +49,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `InvalidNesting` | error | 1 | A Consequence with a Consequence, or a Remedy with a Consequence. *Unchecked.* | normalisation §6.3 |
 | `RuleReferenceCycle` | error | 1 | A cycle of `duty`, `consequence`, `remedy` edges. | normalisation §6.3 |
 | `LimitExceeded` | error | 1 | Input triples, generated rules, or generated policies over the invocation's limit. *Unchecked.* | normalisation §3 |
+| `AnonymousEntity` | warning | 1 | A blank-node target or assignee with no `odrl:uid` and no refinement: no request can name it, so its Rule is never `T`, and `U` on a request without a target or assignee. Also raised when the Rule names other targets. The ref names the node and its Rule. | normalisation §3 |
 | `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; a set right operand that mixes a list with other values, gives two lists, or is the empty list; or a logical constraint with the empty list as an operand value. | ODRL IM §2.5.1, §2.5.2; profiles §4 (`decisions/0013` and its amendment), §5 (`decisions/0017`) |
 | `UnsupportedOperator` | error | 2 | An operator outside the core registry. | profiles §4 |
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | profiles §3 |

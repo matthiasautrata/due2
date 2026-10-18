@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.12  
+Version: 0.13  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
+Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged. Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
 
 ## 1. Goal
 
@@ -68,6 +68,8 @@ Anonymous structure must have a local shape:
 - every blank node without an authored `odrl:uid` MUST be the object of exactly one triple, and following those triples upward MUST reach an IRI node or a node with an authored `odrl:uid` — its *anchor*. A blank node referenced twice is rejected with `SharedAnonymousNode`. One that reaches no anchor, including any cycle of blank nodes, is rejected with `UnanchoredAnonymousNode`.
 
 Anything shared must be named. Anonymous structure is thus a forest of trees hanging from named nodes, which is what makes its identity local (§5.2).
+
+An anonymous Asset or Party is admitted with a warning. A blank node without an authored `odrl:uid` and without an `odrl:refinement` that is an `odrl:target` or an `odrl:assignee` (the one party function a request matches, `due2-workflows.md` §5.2) gets a generated identity (§5.1, case 3). No request names that identity, and no `odrl:partOf` edge reaches it (`due2-profiles.md` §6). So the Rule's target or party part is `F` when the request names a target or an assignee, and `U` when it names none (absent is not false, `due2-workflows.md` §5.2). The Rule never applies definitely, and on a request without a target or assignee it can make the verdict `Indeterminate`. W1 warns with `AnonymousEntity`, naming the node and its Rule, also when the Rule names other targets. A refined collection is rejected instead (`UnsupportedConstruct`, #21). An author who means a collection names it and supplies its members as `odrl:partOf` edges.
 
 Rules may be anonymous, as ODRL allows (a Rule's `uid` is optional, IM §2.6). An anonymous Rule's identity is local and content-derived like any anonymous node (§5.2): editing the Rule changes its identity and that of its atoms. A Rule whose identity must survive edits — in particular a duty that evidence names (grant scope, `due2-workflows.md` §5.3) — should be named.
 

@@ -42,6 +42,8 @@ The IM ties list-valued right operands to "set-based operators"; the Vocabulary 
 
 **Repeated values (2026-10-17).** Many authors write a set right operand as repeated values, `odrl:rightOperand ex:a, ex:b`, not as one list. IM §2.5.1 gives a Constraint "one rightOperand property value", but Vocabulary §5.1 makes the list a SHOULD ("the rdf:List predicate SHOULD be used"), and the ODRL JSON-LD context maps `rightOperand` without `@container: @list`, so a JSON array expands to repeated values. The shape accepts them on the six set-based operators, and rejects repeated values on any other operator and a list together with any other value (`decisions/0013`). Until then it accepted every repeated form silently, `eq ex:a, ex:b` included. `due2-repeated-right-operand` tests the accepted form and `due2-malformed-right-operand` the rejected ones.
 
+**Anonymous targets (2026-10-18).** The shape required an IRI target on every Permission, Prohibition, and Duty. IM §2.6.1 asks for a target "of type Asset", and IM §2.2 says an Asset SHOULD have a uid, so an anonymous target is valid ODRL 2.2. The shape now admits a blank node there. due2 admits it with the `AnonymousEntity` warning, because no request can name it (`odrl-compound-to-atomic-normalization.md` §3, #79). `due2-anonymous-target` tests it.
+
 ## 3. Results (2026-10-10)
 
 ```text

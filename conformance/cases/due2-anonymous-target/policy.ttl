@@ -1,0 +1,15 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix ex:   <http://example.com/> .
+
+# An anonymous target, as in the DALICC licenses: a blank-node collection
+# described only by dct:type, which ODRL gives no meaning. Stage 1 gives it a
+# generated identity that no request names (AnonymousEntity, a warning).
+
+ex:policy a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:display-software .
+
+ex:display-software a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target [ a odrl:AssetCollection ; dct:type ex:Software ] .

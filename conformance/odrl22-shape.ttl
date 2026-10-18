@@ -129,7 +129,7 @@ odrl22:PermissionShape a sh:NodeShape ;
     # IM §2.6.1: a Permission MUST have one target. Compact form supplies it
     # from the policy level; compound form may repeat.
     sh:path odrl:target ;
-    sh:nodeKind sh:IRI
+    sh:nodeKind sh:BlankNodeOrIRI    # IM §2.2: an Asset SHOULD have a uid, so it may be anonymous
   ] ;
   sh:or (
     [ sh:property [ sh:path odrl:target ; sh:minCount 1 ] ]
@@ -150,7 +150,7 @@ odrl22:ProhibitionShape a sh:NodeShape ;
   sh:property [
     # IM §2.6.2: a Prohibition MUST have one target (compact/compound as above).
     sh:path odrl:target ;
-    sh:nodeKind sh:IRI
+    sh:nodeKind sh:BlankNodeOrIRI    # IM §2.2: an Asset SHOULD have a uid, so it may be anonymous
   ] ;
   sh:or (
     [ sh:property [ sh:path odrl:target ; sh:minCount 1 ] ]
@@ -172,7 +172,7 @@ odrl22:DutyShape a sh:NodeShape ;
     # IM §2.6.3: a Duty MAY have none or one target. Authored/compound form
     # may repeat (IM §2.7 note); the atomic cardinality holds after expansion.
     sh:path odrl:target ;
-    sh:nodeKind sh:IRI
+    sh:nodeKind sh:BlankNodeOrIRI    # IM §2.2: an Asset SHOULD have a uid, so it may be anonymous
   ] ;
   sh:property [
     # IM §2.6.6: consequence values are Duties (permitted only on duties
