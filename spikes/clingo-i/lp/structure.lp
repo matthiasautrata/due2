@@ -19,11 +19,12 @@
 %   `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`, `atom_effect/2`,
 %   `atom_party/3`; the duties (`root_obligation/1`, `pre_rule/2`, `duty_node/1`,
 %   `duty_stated/3`, `duty_states/2`, `duty_value/3`, `has_duty_value/2`, `duty_rel/2`,
-%   `inherits/1`, `duty_states_party/1`, `own_bearer/2`, `has_own_bearer/1`,
-%   `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`, `duty_atom/1`,
-%   `duty_of/2`, `pre/2`, `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`); their
-%   timing and scope (`node_deadline/2`, `deadline_kind/2`, `duty_deadline/2`, `duty_scope/2`,
-%   `scope_value/1`, `states_scope/1`); extends `unsupported/1` (lift.lp).
+%   `inherits/1`, `duty_states_party/1`, `states_bearer/1`, `bearer_value/3`, `own_bearer/2`,
+%   `has_own_bearer/1`, `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`,
+%   `duty_atom/1`, `duty_of/2`, `pre/2`, `obligation/1`, `bearer/2`, `duty_action/2`,
+%   `duty_relation/2`); their timing and scope (`node_deadline/2`, `deadline_kind/2`,
+%   `duty_deadline/2`, `duty_scope/2`, `scope_value/1`, `states_scope/1`); extends
+%   `unsupported/1` (lift.lp).
 
 %## The policy
 
@@ -339,18 +340,34 @@ inherits(Duty) :- pre_rule(_, Duty), not root_obligation(Duty), not duty_states_
 *%
 duty_states_party(Duty) :- duty_value(Duty, F, _), function(F).
 
+%*! states_bearer(Duty)
+
+`Duty` itself states a value for a function that plays the bearer role (`bearer_fn/1`).
+*%
+states_bearer(Duty) :- duty_stated(Duty, F, _), bearer_fn(F).
+
+%*! bearer_value(Duty, F, Party)
+
+`Party` is a value of `Duty`'s function `F`, which plays the bearer role, and decides its
+bearer: a value the duty states, or, if it states none for the role, one interiorised from the
+policy level.
+*%
+% odrl-compound-to-atomic-normalization.md §6.2 fills each function separately, so a root
+% obligation that states dprod:subjectOfDuty still receives the policy-level odrl:assignee. For
+% each role, a value the rule states beats an interiorised one (due2-workflows.md §4, stage 2),
+% so the interiorised assignee is not a bearer.
+bearer_value(Duty, F, Party) :- duty_stated(Duty, F, Party), bearer_fn(F).
+bearer_value(Duty, F, Party) :- duty_value(Duty, F, Party), bearer_fn(F), not states_bearer(Duty).
+% Two bearer functions that disagree, both stated or both from the policy level, name two
+% bearers for one performance, a case the spec does not settle.
+unsupported("duty: bearer from two functions") :- bearer_value(Duty, F, Party),
+    bearer_value(Duty, F2, _), F != F2, not bearer_value(Duty, F2, Party).
+
 %*! own_bearer(Duty, Party)
 
-`Party` is a bearer of `Duty` from its own function values: a value of a function that plays the
-bearer role (`bearer_fn/1`).
+`Party` is a bearer of `Duty` from its own function values (`bearer_value/3`).
 *%
-own_bearer(Duty, Party) :- duty_value(Duty, F, Party), bearer_fn(F).
-% A root obligation that states dprod:subjectOfDuty still receives the policy-level
-% odrl:assignee, because odrl-compound-to-atomic-normalization.md §6.2 fills each function
-% separately. Two bearer functions that disagree then name two bearers for one performance, a
-% case the spec does not settle.
-unsupported("duty: bearer from two functions") :- duty_value(Duty, F, Party), bearer_fn(F),
-    duty_value(Duty, F2, _), bearer_fn(F2), F != F2, not duty_value(Duty, F2, Party).
+own_bearer(Duty, Party) :- bearer_value(Duty, _, Party).
 
 %*! has_own_bearer(Duty)
 

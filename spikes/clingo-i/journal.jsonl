@@ -116,3 +116,7 @@
 {"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 24, "name": "ruff"}
 {"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
 {"at": "2026-10-18T10:49:29Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 513.0, "p50_ms": 34.61, "p95_ms": 49.01, "p99_ms": 295.87, "pass": 245, "revision": "69a7ed9", "task": "interpret", "total_ms": 10045.7, "unsupported": 187, "vectors": 432}
+{"at": "2026-10-18T10:54:50Z", "by": "claude-opus-5-5", "kind": "bug", "minutes": 15, "summary": "two-bearer decline was wrong: due2-workflows.md §4 (stage 2) settles it — for each role a value the rule states beats an interiorised one; the 3 DPROD contract cases already say so in their notes. Fixed with states_bearer/1 and bearer_value/3; the decline now covers only two bearer functions that disagree within one source. The 13 vectors now decline on odrl:obligation (consumed in step 3)"}
+{"at": "2026-10-18T10:54:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1312, "name": "basedpyright"}
+{"at": "2026-10-18T10:54:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 56, "name": "ruff"}
+{"at": "2026-10-18T10:54:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}

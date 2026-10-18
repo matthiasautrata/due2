@@ -163,8 +163,10 @@ ex:o a odrl:Duty ; odrl:action odrl:delete .
     assert pick(found, "pre") == {f'pre({PERM}"ex:alice"),{alice})'}
 
 
-def test_two_bearer_functions_decline(duty_interpreter: Interpreter) -> None:
-    # dprod:subjectOfDuty on the obligation and odrl:assignee from the policy name two bearers.
+def test_stated_bearer_beats_interiorised(duty_interpreter: Interpreter) -> None:
+    # The obligation states dprod:subjectOfDuty and receives the policy-level odrl:assignee; the
+    # stated value is the only bearer (due2-workflows.md §4). Without states_bearer/1 the two
+    # functions would disagree and the vector would decline.
     found = rows(
         duty_interpreter,
         """    odrl:target ex:a ; odrl:assignee ex:alice ; odrl:obligation ex:o .
@@ -172,11 +174,26 @@ ex:o a odrl:Duty ; odrl:action odrl:delete ; dprod:subjectOfDuty ex:bob .
 """,
         profile=True,
     )
+    assert declines(found) == set()
+    assert pick(found, "bearer") == {'bearer(a("ex:o","odrl:delete","ex:a","ex:bob"),"ex:bob")'}
+
+
+def test_two_stated_bearer_functions_decline(duty_interpreter: Interpreter) -> None:
+    # A duty that states both bearer functions names two bearers for one performance.
+    found = rows(
+        duty_interpreter,
+        """    odrl:target ex:a ; odrl:obligation ex:o .
+ex:o a odrl:Duty ; odrl:action odrl:delete ; odrl:assignee ex:alice ;
+    dprod:subjectOfDuty ex:bob .
+""",
+        profile=True,
+    )
     assert 'unsupported("duty: bearer from two functions")' in found
     agreeing = rows(
         duty_interpreter,
-        """    odrl:target ex:a ; odrl:assignee ex:alice ; odrl:obligation ex:o .
-ex:o a odrl:Duty ; odrl:action odrl:delete ; dprod:subjectOfDuty ex:alice .
+        """    odrl:target ex:a ; odrl:obligation ex:o .
+ex:o a odrl:Duty ; odrl:action odrl:delete ; odrl:assignee ex:alice ;
+    dprod:subjectOfDuty ex:alice .
 """,
         profile=True,
     )
