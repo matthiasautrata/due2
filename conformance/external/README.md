@@ -10,7 +10,7 @@ Other evaluators' test cases, vendored **unmodified** so that every translated c
 
 Refresh by re-cloning at a newer commit and re-running the translation; never edit files here.
 
-Searched and not vendored: ODRL-PAP (tests are ODRL→Rego translations, not verdicts), odrl-manager (expectations embedded in TypeScript), ODRE (policies without expected verdicts), Gaia-X odrl-toolbox testbed (one case), W3C POE 2018 test material (structural validation only; superseded by `odrl22-shape.ttl`).
+Searched and not vendored: ODRL-PAP (tests are ODRL→Rego translations, not verdicts), odrl-manager (expectations embedded in TypeScript), ODRE (policies without expected verdicts), Gaia-X odrl-toolbox testbed (one case), W3C POE 2018 test material (structural validation only; superseded by `odrl22-shape.ttl`), RDFLicense (license dump from before ODRL 2.2: every file fails both checkers, and no license is stated), the Mustafa et al. benchmark of arXiv:2602.19883 (conflict problems over pairs of constraints, in TPTP and SMT-LIB, not request verdicts; its ten runtime problems use left operands due2 does not bind). Both are annotated in `docs/design/references.md`.
 
 ## Translated into the corpus
 
