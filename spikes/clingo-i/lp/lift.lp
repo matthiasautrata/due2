@@ -12,9 +12,10 @@
 %   `fact_value/2`, `evidence/4`, `evidence_param/3`, `signer/2`, `activation/2`,
 %   `sotw_closure/3`), the config (`config_combination/1`, `config_violations/1`), and the
 %   driver's own findings (`unread/1`, `unplaceable/2`); `policy/1`, `rule/1`,
-%   `structure_node/1`, and `action_term/1` (structure.lp); `right/2` (constraint.lp).
+%   `structure_node/1`, `action_term/1`, `duty_node/1`, and `node_deadline/2` (structure.lp);
+%   `right/2` (constraint.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
-%   `match_key/1`, `vocab_ns/1`, `annotation/1`, `annotation_ns/1`, `operator/2`,
+%   `match_key/1`, `bearer_fn/1`, `vocab_ns/1`, `annotation/1`, `annotation_ns/1`, `operator/2`,
 %   `set_based/1`, `connective/1`, `binding_key/1`, `source_kind/2`, `context_property/2`,
 %   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`,
 %   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
@@ -23,10 +24,10 @@
 %   `decl/4`, `layer_rank/2`, `concept_scheme/2`); the kinds (`declared_datatype/1`,
 %   `datatype/1`, `dt_kind/2`, `term_kind/2`, `admits_kind/2`, `range_iri/1`); the hierarchies
 %   (`closure_key/1`, `closure/3`, `declared_in_scheme/2`, `coll_kind/2`, `node_kind/2`,
-%   `le_k/3`); the declines (`policy_predicate/1`,
-%   `family_predicate/1`, `anywhere_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`,
-%   `closure_relation/1`, `unsupported_input/1`, `compared/1`, `unsupported_value/1`); extends
-%   `reject/2` (structure.lp).
+%   `le_k/3`); the declines (`policy_predicate/1`, `family_predicate/1`, `anywhere_predicate/1`,
+%   `timing_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`, `closure_relation/1`,
+%   `unsupported_input/1`, `compared/1`, `unsupported_value/1`); extends `reject/2`
+%   (structure.lp).
 
 %## Vocabulary
 
@@ -83,6 +84,18 @@ voc(narrower,    "http://www.w3.org/2004/02/skos/core#narrower").
 voc(inScheme,    "http://www.w3.org/2004/02/skos/core#inScheme").
 voc(topConceptOf, "http://www.w3.org/2004/02/skos/core#topConceptOf").
 voc(hasTopConcept, "http://www.w3.org/2004/02/skos/core#hasTopConcept").
+voc(obligation,  "http://www.w3.org/ns/odrl/2/obligation").
+voc(duty,        "http://www.w3.org/ns/odrl/2/duty").
+voc(output,      "http://www.w3.org/ns/odrl/2/output").
+voc(deadline,    "https://ekgf.org/dprod/spec/develop/deadline").
+voc(recurrence,  "https://ekgf.org/dprod/spec/develop/recurrence").
+voc(playsRole,   "https://w3id.org/due2/profile#playsRole").
+voc(bearer,      "https://w3id.org/due2/profile#bearer").
+voc(instanceScope, "https://w3id.org/due2/profile#instanceScope").
+voc(member,      "https://w3id.org/due2/profile#member").
+voc(grant,       "https://w3id.org/due2/profile#grant").
+voc(xsd_dateTime, "http://www.w3.org/2001/XMLSchema#dateTime").
+voc(xsd_duration, "http://www.w3.org/2001/XMLSchema#duration").
 
 %*! conflict_value(Iri, Strat)
 
@@ -105,8 +118,10 @@ policy_class("http://www.w3.org/ns/odrl/2/Agreement").
 
 %*! function(F)
 
-`F` is one of the 14 function predicates: the party roles. They are listed in
-odrl-compound-to-atomic-normalization.md §3. Each is a family a rule can inherit from its policy.
+`F` is a function predicate: a party role. These are the 14 of
+odrl-compound-to-atomic-normalization.md §3, and each property a selected module gives a role with
+`due2:playsRole`, as profiles/dprod.ttl gives `dprod:subjectOfDuty` (due2-profiles.md §6). Each is
+a family a rule can inherit from its policy.
 *%
 function("http://www.w3.org/ns/odrl/2/assignee").
 function("http://www.w3.org/ns/odrl/2/assigner").
@@ -122,6 +137,15 @@ function("http://www.w3.org/ns/odrl/2/informedParty").
 function("http://www.w3.org/ns/odrl/2/informingParty").
 function("http://www.w3.org/ns/odrl/2/trackedParty").
 function("http://www.w3.org/ns/odrl/2/trackingParty").
+function(F) :- module(_, F, Pred, _), voc(playsRole, Pred).
+
+%*! bearer_fn(F)
+
+The function `F` plays the bearer role: a selected module states `F due2:playsRole due2:bearer`.
+The baseline gives it to `odrl:assignee`, DPROD to `dprod:subjectOfDuty` (due2-profiles.md §6).
+The bearer of a duty must perform it (due2-workflows.md §5.3).
+*%
+bearer_fn(F) :- function(F), module(_, F, Pred, Role), voc(playsRole, Pred), voc(bearer, Role).
 
 %*! match_key(F)
 
@@ -373,11 +397,13 @@ has_rule(P, R, forbid) :- triple(P, Pred, R), voc(prohibition, Pred).
 
 %*! stated(Node, Fam, Term)
 
-`Node` states `Term` for family `Fam`: `action`, `target`, or a function IRI (then `Term` is a
-party). Any node; structure.lp reads only the policy's and its rules'.
+`Node` states `Term` for `Fam`: `action`, `target`, `output`, or a function IRI (then `Term` is a
+party). Any node; structure.lp reads only those of the policy, its rules, and its duties, and
+`output` only on a duty.
 *%
 stated(Node, action, A) :- triple(Node, Pred, A), voc(action, Pred).
 stated(Node, target, T) :- triple(Node, Pred, T), voc(target, Pred).
+stated(Node, output, T) :- triple(Node, Pred, T), voc(output, Pred).
 stated(Node, F, Party) :- triple(Node, F, Party), function(F).
 
 %*! stated_conflict_iri(P, Iri)
@@ -643,6 +669,15 @@ anywhere_predicate(Key) :- connective(Key).
 anywhere_predicate(Key) :- binding_key(Key).
 anywhere_predicate(conceptScheme; broader; narrower; inScheme; topConceptOf; hasTopConcept).
 
+%*! timing_predicate(Pred)
+
+`Pred` is `dprod:deadline` or `dprod:recurrence`, and DPROD is a selected profile. The timing
+vocabulary is DPROD's (due2-profiles.md §7): without the profile it is a predicate the spike does
+not read.
+*%
+timing_predicate(Pred) :- voc((deadline; recurrence), Pred), pred_ns(Pred, NS),
+    selected_profile(NS).
+
 %*! consumed(Node, Pred)
 
 The spike reads predicate `Pred` on `Node`, so it declines nothing there. The table of what it
@@ -658,6 +693,10 @@ consumed(Node, Pred) :- triple(Node, Pred, _), voc(Key, Pred), family_predicate(
 consumed(Node, Pred) :- triple(Node, Pred, _), function(Pred).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(Key, Pred), anywhere_predicate(Key).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(constraint, Pred), rule(Node).
+consumed(Node, Pred) :- triple(Node, Pred, _), voc(constraint, Pred), duty_node(Node).
+consumed(Node, Pred) :- triple(Node, Pred, _), voc((output; instanceScope), Pred), duty_node(Node).
+% Timing is read on the policy and its rules too, where it is rejected (structure.lp).
+consumed(Node, Pred) :- triple(Node, Pred, _), timing_predicate(Pred), structure_node(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), action_term(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), coll_kind(Node, _).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(value, Pred), action_term(Node).
@@ -722,6 +761,7 @@ compared(Lit) :- request_param(_, Lit).
 compared(Lit) :- fact_value(_, Lit).
 compared(Lit) :- evidence_param(_, _, Lit).
 compared(Lit) :- right(_, Lit).
+compared(Lit) :- node_deadline(_, Lit).
 
 %*! unsupported_value(Reason)
 

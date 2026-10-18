@@ -1,17 +1,17 @@
 %# constraint.lp: the authored constraint trees, and their static checks
 %
-% Reads each rule's constraints and each action term's refinements as the tree the policy
-% authored: a leaf compares a left operand with right operand values, and a connective node
-% combines its members (due2-profiles.md §4, §5). The tree is not rewritten to DNF: compare.lp
-% gives every node its Kleene value directly (DESIGN.md § `compare.lp`). A tree that is not
-% admissible gets a `reject`; one whose reading the spike does not trust is declined. Variable
+% Reads the constraints of each rule and duty, and each action term's refinements, as the tree
+% the policy authored: a leaf compares a left operand with right operand values, and a connective
+% node combines its members (due2-profiles.md §4, §5). The tree is not rewritten to DNF:
+% compare.lp gives every node its Kleene value directly (DESIGN.md § `compare.lp`). A tree that is
+% not admissible gets a `reject`; one whose reading the spike does not trust is declined. Variable
 % letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `triple/3`, `voc/2`, `operator/2`, `set_based/1`, `connective/1`,
-%   `is_list/1`, `list_item/2`, `unplaceable/2` (lift.lp); `rule/1`, `action_term/1`
-%   (structure.lp).
+%   `is_list/1`, `list_item/2`, `unplaceable/2`, `stated/3` (lift.lp); `rule/1`, `duty_node/1`,
+%   `action_term/1` (structure.lp).
 % - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
-%   `member/2`, `reach_c/2`, `scope/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`,
+%   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`,
 %   `right_value/2`, `right/2`, `unit/2`; extends `reject/2` (structure.lp) and
 %   `unsupported/1` (lift.lp).
 
@@ -19,19 +19,20 @@
 
 %*! top_value(Kind, Owner, C)
 
-`Owner` has the root `C`: `Kind` is `constraint` for a rule's `odrl:constraint` and
-`refinement` for an action term's `odrl:refinement`. A list value gives each of its items.
+`Owner` has the root `C`: `Kind` is `constraint` for the `odrl:constraint` of a rule or a duty,
+and `refinement` for an action term's `odrl:refinement`. A list value gives each of its items.
 *%
 top_value(constraint, R, C) :- rule(R), triple(R, Pred, C), voc(constraint, Pred).
+top_value(constraint, Duty, C) :- duty_node(Duty), triple(Duty, Pred, C), voc(constraint, Pred).
 top_value(refinement, Term, C) :- action_term(Term), triple(Term, Pred, C), voc(refinement, Pred).
 
-%*! top_constraint(R, C)
+%*! top_constraint(Owner, C)
 
-Rule `R` has the constraint root `C`. Each root is one conjunct of the rule's atoms
-(applies.lp).
+The rule or duty `Owner` has the constraint root `C`. Each root of a rule is one conjunct of the
+rule's atoms (applies.lp); duty.lp splits a duty's roots into guards and witness conditions.
 *%
-top_constraint(R, C) :- top_value(constraint, R, C), not is_list(C).
-top_constraint(R, C) :- top_value(constraint, R, List), is_list(List), list_item(List, C).
+top_constraint(Owner, C) :- top_value(constraint, Owner, C), not is_list(C).
+top_constraint(Owner, C) :- top_value(constraint, Owner, List), is_list(List), list_item(List, C).
 
 %*! top_refinement(Term, C)
 
@@ -82,6 +83,15 @@ the completion key (completion.lp).
 scope(C, rule) :- top_constraint(_, C).
 scope(C, action) :- top_refinement(_, C).
 scope(D, Scope) :- scope(C, Scope), member(C, D).
+
+%*! node_tree(Node, C)
+
+`C` lies in a constraint tree of the structure node `Node`: under one of its constraint roots,
+or under a refinement root of an action term it states. A tree shared by two nodes is in both.
+*%
+node_tree(Node, C) :- top_constraint(Node, C).
+node_tree(Node, C) :- stated(Node, action, Term), top_refinement(Term, C).
+node_tree(Node, D) :- node_tree(Node, C), member(C, D).
 
 %*! leaf(C)
 

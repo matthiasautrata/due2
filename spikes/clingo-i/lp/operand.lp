@@ -12,7 +12,8 @@
 %   `concept_scheme/2`, `declared_in_scheme/2`, `closure/3` (lift.lp);
 %   `request_param/2`, `request_param_set/1`, `fact/2`, `fact_value/2`,
 %   `request_party/2`, `sotw_effective_at/1`, `request_at/1`, `value/3` (driver); `left/2`,
-%   `c_operator/2`, `op/2`, `right/2` (constraint.lp).
+%   `c_operator/2`, `op/2`, `right/2`, `node_tree/2` (constraint.lp); `duty_node/1`
+%   (structure.lp).
 % - **Provides:** `used/1`, `declares/2`, `where_key/1`, `type_key/1`, `module_differs/1`,
 %   `where_rank/3`, `owner_rank/2`, `bdecl/3`, `owned/3`, `retyped/1`, `src/2`, `prop/2`,
 %   `card/2`, `has_range/1`, `range_kind/2`, `has_range_kind/1`, `prop_range_kind/2`,
@@ -120,8 +121,10 @@ reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandSource, Src), not s
 reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandProperty, Prop), not kind(Prop, iri).
 reject("InvalidBinding", C) :- left(C, Op), src(Op, context), prop(Op, Prop),
     not context_property(Prop, _).
-% The witness is read inside a duty's constraints only, and duties are declined (#49).
-reject("WitnessOutsideDuty", C) :- left(C, Op), src(Op, witness).
+% The witness is read inside a duty's constraints and the refinements of its actions only
+% (due2-workflows.md §5.2): a tree shared with a policy or a rule is rejected.
+reject("WitnessOutsideDuty", C) :- left(C, Op), src(Op, witness), node_tree(Node, C),
+    not duty_node(Node).
 
 %*! src(Op, Src)
 

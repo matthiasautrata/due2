@@ -1,20 +1,29 @@
-%# structure.lp: the policy, its conflict strategy, and its atoms
+%# structure.lp: the policy, its conflict strategy, its atoms, and its duty atoms
 %
 % Finds the one policy, its conflict strategy, and the rules' values after interiorisation, and
 % expands each rule into atoms: one per action, target, and assignee
-% (odrl-compound-to-atomic-normalization.md §3, §6.2, §6.3). The atom relations are the columns
-% of the atom table of due2-workflows.md §3.1. A policy that is not admissible gets a `reject`.
-% Variable letters: DESIGN.md § Vocabulary.
+% (odrl-compound-to-atomic-normalization.md §3, §6.2, §6.3). Each precondition duty and root
+% obligation is expanded the same way into duty atoms, one per action, relation value, and
+% bearer, with the edges that tie a permission atom to its preconditions. The atom relations are
+% the columns of the atom table of due2-workflows.md §3.1. A policy that is not admissible gets a
+% `reject`. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
-%   `function/1`, `match_key/1`, `voc/2`, `kind/2` (lift.lp); `triple/3` (driver).
+%   `function/1`, `match_key/1`, `bearer_fn/1`, `timing_predicate/1`, `term_kind/2`, `voc/2`,
+%   `kind/2` (lift.lp); `triple/3` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
 %   `structure_node/1`, `states_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
 %   `family/1`, `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
 %   `assignee/2`, `action_term/1`, `action_of/2`, `has_action_value/1`, `atom/1`,
 %   `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`, `atom_effect/2`,
-%   `atom_party/3`; extends `unsupported/1` (lift.lp).
+%   `atom_party/3`; the duties (`root_obligation/1`, `pre_rule/2`, `duty_node/1`,
+%   `duty_stated/3`, `duty_states/2`, `duty_value/3`, `has_duty_value/2`, `duty_rel/2`,
+%   `inherits/1`, `duty_states_party/1`, `own_bearer/2`, `has_own_bearer/1`,
+%   `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`, `duty_atom/1`,
+%   `duty_of/2`, `pre/2`, `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`); their
+%   timing and scope (`node_deadline/2`, `deadline_kind/2`, `duty_deadline/2`, `duty_scope/2`,
+%   `scope_value/1`, `states_scope/1`); extends `unsupported/1` (lift.lp).
 
 %## The policy
 
@@ -56,13 +65,42 @@ Node `R` is a rule of the policy: a permission or a prohibition.
 *%
 rule(R) :- policy(P), has_rule(P, R, _).
 
+%*! root_obligation(Duty)
+
+Node `Duty` is a root obligation: the policy states `odrl:obligation Duty`.
+*%
+root_obligation(Duty) :- policy(P), triple(P, Pred, Duty), voc(obligation, Pred).
+
+%*! pre_rule(R, Duty)
+
+Node `Duty` is a precondition duty of the permission `R`: `R` states `odrl:duty Duty`. A duty of a
+duty, a remedy, and a consequence are not evaluated for access (due2-workflows.md §5.5), so they
+are not read.
+*%
+pre_rule(R, Duty) :- policy(P), has_rule(P, R, permit), triple(R, Pred, Duty), voc(duty, Pred).
+
+%*! duty_node(Duty)
+
+Node `Duty` is a duty: a root obligation, a precondition duty, or both.
+*%
+duty_node(Duty) :- root_obligation(Duty).
+duty_node(Duty) :- pre_rule(_, Duty).
+% A rule that is its own precondition is a cycle of odrl:duty edges
+% (odrl-compound-to-atomic-normalization.md §6.3). A rule that is another rule's precondition
+% is a Permission or Prohibition read as a Duty, which the spec gives no reading.
+reject("RuleReferenceCycle", Duty) :- pre_rule(Duty, Duty).
+unsupported("duty: also a permission or prohibition") :- duty_node(Duty), rule(Duty),
+    not pre_rule(Duty, Duty).
+
 %*! structure_node(Node)
 
-`Node` is the policy or one of its rules: where an unknown predicate declines, whatever its
-namespace, because it may be a semantic extension. The rule is `unsupported/1` in lift.lp.
+`Node` is the policy, one of its rules, or one of its duties: where an unknown predicate declines,
+whatever its namespace, because it may be a semantic extension. The rule is `unsupported/1` in
+lift.lp.
 *%
 structure_node(Node) :- policy(Node).
 structure_node(Node) :- rule(Node).
+structure_node(Node) :- duty_node(Node).
 
 %## The conflict strategy
 
@@ -218,7 +256,7 @@ atom_policy(X, P) :- atom_rule(X, R), policy(P), has_rule(P, R, _).
 
 %*! atom_effect(X, E)
 
-Atom `X` has effect `E`: `permit` or `forbid`.
+Atom `X` has effect `E`: `permit` or `forbid` for a rule atom, `oblige` for a duty atom.
 *%
 atom_effect(X, E) :- atom_rule(X, R), policy(P), has_rule(P, R, E).
 
@@ -229,3 +267,242 @@ Atom `X` is for party `Party` under match key `F`. An atom whose assignee is `no
 *%
 atom_party(a(R, A, T, Party), F, Party) :- atom(a(R, A, T, Party)), rule_value(R, F, Party),
     match_key(F).
+
+%## Duties
+
+% A duty is expanded like a rule, over its actions, its relation values, and its bearers
+% (odrl-compound-to-atomic-normalization.md §6.3). A root obligation is a root rule, so it fills
+% each family it leaves unstated from the policy (odrl-compound-to-atomic-normalization.md
+% §6.2); a precondition duty takes no policy-level value. Its parties come from its parent
+% permission instead, after expansion (due2-workflows.md §4, stage 2): a duty that states no
+% function takes all of them from the parent atom, and one that states any takes none (IM 2.2
+% §2.6.5). A duty that is both a root obligation and a precondition is one atom with the
+% policy-level values, which count as its own, so it inherits nothing (due2-profiles.md §6).
+
+%*! duty_stated(Duty, Fam, Term)
+
+`Duty` itself states `Term` for `Fam`, which is `action`, `relation`, or a function IRI. The
+relation family holds an `odrl:target` or an `odrl:output`, as in
+odrl-compound-to-atomic-normalization.md §6.2.
+*%
+duty_stated(Duty, action, A) :- duty_node(Duty), stated(Duty, action, A).
+duty_stated(Duty, relation, T) :- duty_node(Duty), stated(Duty, (target; output), T).
+duty_stated(Duty, F, Party) :- duty_node(Duty), function(F), stated(Duty, F, Party).
+reject("TargetAndOutput", Duty) :- duty_node(Duty), stated(Duty, target, _),
+    stated(Duty, output, _).
+
+%*! duty_states(Duty, Fam)
+
+`Duty` itself states at least one value for `Fam`.
+*%
+duty_states(Duty, Fam) :- duty_stated(Duty, Fam, _).
+
+%*! duty_value(Duty, Fam, Term)
+
+`Term` is one of `Duty`'s own values for `Fam`: what it states, or, for a root obligation that
+states nothing for the family, each value the policy states. An inherited party is not one: it
+belongs to the parent atom (`inh_bearer/3`).
+*%
+duty_value(Duty, Fam, Term) :- duty_stated(Duty, Fam, Term).
+duty_value(Duty, action, A) :- root_obligation(Duty), not duty_states(Duty, action), policy(P),
+    stated(P, action, A).
+duty_value(Duty, relation, T) :- root_obligation(Duty), not duty_states(Duty, relation), policy(P),
+    stated(P, target, T).
+duty_value(Duty, F, Party) :- root_obligation(Duty), function(F), not duty_states(Duty, F),
+    policy(P), stated(P, F, Party).
+
+%*! has_duty_value(Duty, Fam)
+
+`Duty` has a value of its own for `Fam`. A duty needs an action; it may have no relation.
+*%
+has_duty_value(Duty, Fam) :- duty_value(Duty, Fam, _).
+reject("MissingAction", Duty) :- duty_node(Duty), not has_duty_value(Duty, action).
+
+%*! duty_rel(Duty, T)
+
+`T` is a relation value of `Duty`, or the sentinel `none` when it has none, so that a duty
+without a relation still expands to atoms.
+*%
+duty_rel(Duty, T) :- duty_value(Duty, relation, T).
+duty_rel(Duty, none) :- duty_node(Duty), not has_duty_value(Duty, relation).
+
+%*! inherits(Duty)
+
+The precondition duty `Duty` states no function and is not a root obligation, so it takes its
+parties from each parent atom.
+*%
+inherits(Duty) :- pre_rule(_, Duty), not root_obligation(Duty), not duty_states_party(Duty).
+
+%*! duty_states_party(Duty)
+
+`Duty` has a function value of its own.
+*%
+duty_states_party(Duty) :- duty_value(Duty, F, _), function(F).
+
+%*! own_bearer(Duty, Party)
+
+`Party` is a bearer of `Duty` from its own function values: a value of a function that plays the
+bearer role (`bearer_fn/1`).
+*%
+own_bearer(Duty, Party) :- duty_value(Duty, F, Party), bearer_fn(F).
+% A root obligation that states dprod:subjectOfDuty still receives the policy-level
+% odrl:assignee, because odrl-compound-to-atomic-normalization.md §6.2 fills each function
+% separately. Two bearer functions that disagree then name two bearers for one performance, a
+% case the spec does not settle.
+unsupported("duty: bearer from two functions") :- duty_value(Duty, F, Party), bearer_fn(F),
+    duty_value(Duty, F2, _), bearer_fn(F2), F != F2, not duty_value(Duty, F2, Party).
+
+%*! has_own_bearer(Duty)
+
+`Duty` has a bearer of its own.
+*%
+has_own_bearer(Duty) :- own_bearer(Duty, _).
+
+%*! parent_bearer(X, Party)
+
+`Party` is a bearer the permission atom `X` passes to a duty that inherits from it: its party for a
+match key that plays the bearer role, or its rule's value for a carried function that does.
+*%
+parent_bearer(X, Party) :- atom_party(X, F, Party), bearer_fn(F).
+parent_bearer(X, Party) :- atom(X), atom_rule(X, R), rule_value(R, F, Party), bearer_fn(F),
+    not match_key(F).
+unsupported("duty: parent with two bearers") :- parent_bearer(X, Party), parent_bearer(X, Party2),
+    Party != Party2, atom_rule(X, R), pre_rule(R, Duty), inherits(Duty).
+
+%*! has_parent_bearer(X)
+
+The permission atom `X` passes a bearer.
+*%
+has_parent_bearer(X) :- parent_bearer(X, _).
+
+%*! inh_bearer(X, Duty, Party)
+
+`Duty`, which inherits, has bearer `Party` under its parent atom `X`: the bearer `X` passes, or
+the sentinel `none` when it passes none.
+*%
+inh_bearer(X, Duty, Party) :- pre_rule(R, Duty), inherits(Duty), atom_rule(X, R),
+    parent_bearer(X, Party).
+inh_bearer(X, Duty, none) :- pre_rule(R, Duty), inherits(Duty), atom_rule(X, R),
+    not has_parent_bearer(X).
+
+%*! duty_bearer(Duty, Party)
+
+`Party` is a bearer of `Duty`: its own, one passed by a parent atom, or the sentinel `none`. A
+bearer `none` is the request subject (due2-profiles.md §6).
+*%
+duty_bearer(Duty, Party) :- own_bearer(Duty, Party).
+duty_bearer(Duty, none) :- duty_node(Duty), not inherits(Duty), not has_own_bearer(Duty).
+duty_bearer(Duty, Party) :- inh_bearer(_, Duty, Party).
+
+%*! duty_atom(Y)
+
+`Y = a(Duty, A, T, Party)` is a duty atom: `Duty` expanded to one action term `A`, one relation
+value `T` (or `none`), and one bearer `Party` (or `none`). A duty atom is not an `atom/1`: it is
+matched against evidence, not against the request (due2-workflows.md §5.3). The bearer is in the
+id, so a duty shared by two parents with one bearer is one atom, with one instance, and shared
+under two bearers it is two (`binding_key` of due2-workflows.md §3.1). Other inherited parties are
+not in the id, though `binding_key` holds them. A witness reads only the bearer of a duty, and a
+`grant` instance is keyed on the request instead (due2-workflows.md §5.3), so two atoms that
+differ only in such a party would have the same findings and the same authored duty IRI.
+*%
+duty_atom(a(Duty, A, T, Party)) :- duty_value(Duty, action, A), duty_rel(Duty, T),
+    duty_bearer(Duty, Party).
+
+%*! duty_of(Y, Duty)
+
+Duty atom `Y` comes from `Duty`. That is its `source_duty` in due2-workflows.md §3.1.
+*%
+duty_of(a(Duty, A, T, Party), Duty) :- duty_atom(a(Duty, A, T, Party)).
+
+%*! pre(X, Y)
+
+The duty atom `Y` is a precondition of the permission atom `X`. Edges fan out over every atom of
+the duty (odrl-compound-to-atomic-normalization.md §6.3), so `X`'s preconditions are read as a
+conjunction. A duty that inherits gives `X` only the atoms with `X`'s bearer.
+*%
+pre(X, Y) :- pre_rule(R, Duty), not inherits(Duty), atom_rule(X, R), duty_of(Y, Duty).
+pre(X, a(Duty, A, T, Party)) :- inh_bearer(X, Duty, Party), duty_atom(a(Duty, A, T, Party)).
+
+%*! obligation(Y)
+
+The duty atom `Y` is a root obligation of the policy.
+*%
+obligation(Y) :- duty_of(Y, Duty), root_obligation(Duty).
+atom_effect(Y, oblige) :- duty_atom(Y).
+
+%*! bearer(Y, Party)
+
+The duty atom `Y` must be performed by `Party`, or by the request subject when `Party` is `none`.
+*%
+bearer(a(Duty, A, T, Party), Party) :- duty_atom(a(Duty, A, T, Party)).
+
+%*! duty_action(Y, A)
+
+The duty atom `Y` is for action `A`: the action of its action term.
+*%
+duty_action(a(Duty, Term, T, Party), A) :- duty_atom(a(Duty, Term, T, Party)), action_of(Term, A).
+
+%*! duty_relation(Y, T)
+
+The duty atom `Y` is for relation value `T`, the object a witness must name. A duty atom without
+a relation has none.
+*%
+duty_relation(a(Duty, A, T, Party), T) :- duty_atom(a(Duty, A, T, Party)), T != none.
+
+%## Duty timing and scope
+
+%*! node_deadline(Duty, Lit)
+
+`Duty` states `dprod:deadline Lit`. At most one, an `xsd:dateTime` or an `xsd:duration`
+(due2-diagnostics.md, InvalidTiming).
+*%
+node_deadline(Duty, Lit) :- duty_node(Duty), triple(Duty, Pred, Lit), voc(deadline, Pred),
+    timing_predicate(Pred).
+reject("InvalidTiming", Duty) :- duty_node(Duty), #count { Lit : node_deadline(Duty, Lit) } > 1.
+reject("InvalidTiming", Duty) :- node_deadline(Duty, Lit), not deadline_kind(Lit, _).
+% Timing belongs to duties (due2-profiles.md §7).
+reject("TimingOutsideDuty", Node) :- triple(Node, Pred, _), timing_predicate(Pred), policy(Node).
+reject("TimingOutsideDuty", Node) :- triple(Node, Pred, _), timing_predicate(Pred), rule(Node).
+% Recurrence needs occurrences, which the spike does not compute (decisions/0009 #7). The whole
+% vector declines, since a duty's instances would otherwise be read without them.
+unsupported("recurrence") :- duty_node(Duty), triple(Duty, Pred, _), voc(recurrence, Pred),
+    timing_predicate(Pred).
+
+%*! deadline_kind(Lit, K)
+
+The deadline `Lit` is `absolute`, an `xsd:dateTime`, or `relative`, an `xsd:duration`. A
+relative deadline counts from the instance's activation (due2-workflows.md §5.3).
+*%
+deadline_kind(Lit, absolute) :- node_deadline(_, Lit), term_kind(Lit, K), voc(xsd_dateTime, K).
+deadline_kind(Lit, relative) :- node_deadline(_, Lit), term_kind(Lit, K), voc(xsd_duration, K).
+
+%*! duty_deadline(Y, Lit)
+
+The duty atom `Y` has the deadline `Lit`, its duty's.
+*%
+duty_deadline(Y, Lit) :- duty_of(Y, Duty), node_deadline(Duty, Lit).
+
+%*! duty_scope(Y, InstScope)
+
+The duty atom `Y` has instance scope `InstScope`: `member`, the default, or `grant`. The scopes
+are those of due2-workflows.md §5.3.
+*%
+duty_scope(Y, InstScope) :- duty_of(Y, Duty), triple(Duty, Pred, Iri), voc(instanceScope, Pred),
+    voc(InstScope, Iri), scope_value(InstScope).
+duty_scope(Y, member) :- duty_of(Y, Duty), not states_scope(Duty).
+% No diagnostic covers a value outside due2:member and due2:grant, or two values, so the
+% vector is declined rather than rejected under a guessed code.
+unsupported("duty: instance scope") :- states_scope(Duty),
+    #count { InstScope : duty_scope(Y, InstScope), duty_of(Y, Duty) } != 1.
+
+%*! scope_value(InstScope)
+
+`InstScope` names an instance scope: `member` or `grant`.
+*%
+scope_value(member; grant).
+
+%*! states_scope(Duty)
+
+`Duty` states a `due2:instanceScope`.
+*%
+states_scope(Duty) :- duty_node(Duty), triple(Duty, Pred, _), voc(instanceScope, Pred).

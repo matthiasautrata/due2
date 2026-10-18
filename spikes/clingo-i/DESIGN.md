@@ -4,9 +4,10 @@ clingo-i is the semantics program of `decisions/0009`. It is a generic clingo pr
 
 ## Vocabulary
 
-The spec defines most terms: atom, part, finding, candidate, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.4), and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
+The spec defines most terms: atom, part, finding, candidate, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.4); duty, precondition, root obligation, bearer, guard, and witness condition (`due2-workflows.md` §3.1, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
 
 - **Driver.** `flatten.py` and `values.py`: the Python that turns a vector into facts. It is syntactic, and decides nothing.
+- **Duty atom.** A duty node expanded like a rule, to one action term, one relation value, and one bearer: `a(Duty, A, T, Party)`, with the sentinel `none` for a missing relation or bearer (§ `structure.lp`). It is not an `atom/1`, because it is matched against evidence, not against the request.
 - **Item.** Anything that carries a truth value: a part (`part(X, action)`, `part(X, target)`, `part(X, party(F))`, or `part(X, cons(C))`), an atom's finding (`applies(X)`), or a constraint node (`c(C)`).
 - **Truth value.** `f`, `u`, or `t`, in that order. Its **rank** is 0, 1, or 2. Elsewhere "value" is qualified: a rule's *stated value* (`stated/3`), a *read value* (what a left operand reads), a *right operand value*, and a literal's *position* in a value space (§ Values).
 - **Constraint node.** A node of an authored constraint tree: a *root* (a rule's `odrl:constraint` value or an action term's `odrl:refinement` value), a *leaf* (it has an `odrl:leftOperand`), or a *connective* node (`odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not`). Its *members* are the nodes the connective combines.
@@ -31,13 +32,14 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 
 | Letter | Kind |
 |---|---|
-| `X`, `Y` | an atom. In an elimination row, `X` is removed and `Y` removes it |
+| `X`, `Y` | an atom, or a duty atom. In an elimination row, `X` is removed and `Y` removes it; in `pre(X, Y)`, `Y` is a duty atom of the permission atom `X` |
 | `P`, `Q` | a policy |
 | `R` | a rule |
 | `A`, `B` | an action, or an action term in an atom id; `B` is the broader one in an `includedIn` edge |
-| `T` | a target |
+| `T` | a target, or a duty's relation value: its target or its `odrl:output` |
 | `F` | a function predicate (a party role, such as `odrl:assignee`) |
-| `Party` | a party |
+| `Party` | a party, or `none` for a duty atom's missing bearer |
+| `Duty` | a duty node: a precondition duty, a root obligation, or both |
 | `E` | an effect, `permit` or `forbid` |
 | `Strat` | a conflict strategy (`prohibit`, `perm`, `invalid`), or the cross-policy combination in an elimination row |
 | `I` | an item |
@@ -48,6 +50,7 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `Pol` | a polarity, `pos` or `neg` |
 | `Base` | the positive operator a leaf asserts: the operator itself, or the one its complement negates |
 | `Scope` | a scope, `rule` or `action` |
+| `InstScope` | an instance scope, `member` or `grant` |
 | `Attr` | an attribute of a completion key: `right(Term)` or `unit(Iri)` |
 | `W` | a world |
 | `C`, `D`, `D2` | a constraint node; `D` is a member of `C` |
@@ -55,14 +58,14 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `Op` | a left operand |
 | `Lv`, `Rv` | a read value and a right operand value |
 | `Lo`, `Hi` | the narrower and the broader end of a hierarchy edge |
-| `K` | a kind: of term (`iri`, `lit`, `blank`), collection or node (`asset`, `party`), connective, cardinality (`one`, `set`), or range |
+| `K` | a kind: of term (`iri`, `lit`, `blank`), collection or node (`asset`, `party`), connective, cardinality (`one`, `set`), range, or deadline (`absolute`, `relative`) |
 | `Src` | a source kind: `request`, `state`, `context`, or `witness` |
 | `Prop` | an operand property |
 | `Space`, `Dt`, `Tag` | a value space, a datatype, and a language tag |
 | `Rg` | a range |
 | `Rel` | an order relation: `lt`, `eq`, `gt`, or `u` |
 
-Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, and `Vp` (the truth value of a part inside an aggregate).
+Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, and `Vp` (the truth value of a part inside an aggregate).
 
 ## Layout
 
@@ -73,12 +76,13 @@ clingo_i/values.py     the driver's value table: value spaces, positions, and in
 clingo_i/interpret.py  the three solves, the declines, and the reply
 clingo_i/json_types.py the JSON value type
 lp/lift.lp             triples to relations that name no IRI; the hierarchies; detects what the spike does not read
-lp/structure.lp        the policy, its conflict strategy, interiorisation, action terms, and expansion into atoms
+lp/structure.lp        the policy, its conflict strategy, interiorisation, action terms, and expansion into atoms and duty atoms
 lp/kleene.lp           truth values and their ranks
 lp/constraint.lp       the authored constraint trees, and their static checks
 lp/operand.lp          each left operand's binding, and what it reads
 lp/compare.lp          the operators, and the Kleene value of every constraint node
 lp/applies.lp          the parts of an atom, and its finding
+lp/duty.lp             a duty's guards and witness conditions
 lp/completion.lp       the completion variables, and one completion of them per answer set
 lp/resolve.lp          candidates, conflict, verdict, and basis of one world
 lp/integrity.lp        the integrity constraints that make a gap an error
@@ -96,7 +100,7 @@ tests/                 the spike's own tests (§ Tests)
 
 1. **Init.** The driver parses every module once and keeps its facts.
 2. **Flatten** (`flatten.py`). The policy graph becomes `triple/3`. The core modules, and the modules of each profile the policy's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `module(Iri)`, the module of the profile `Iri`. The request, SOTW, and config become facts (§ Input facts). Then `values.py` places every RDF literal in those facts (§ Values).
-3. **Solve 1:** facts, and `lift.lp` to `applies.lp` (the first seven files). The program has no choice rule and is stratified, so it has exactly one model. It is read in this order, and the first hit decides:
+3. **Solve 1:** facts, and `lift.lp` to `duty.lp` (the first eight files). The program has no choice rule and is stratified, so it has exactly one model. It is read in this order, and the first hit decides:
    1. any `unsupported(Feature)`: the vector is declined, naming the smallest such feature in code-point order, so the same vector always gives the same reason;
    2. any `reject(Code, Node)`: an `error` reply, because `interpret` receives only admissible policies;
    3. any `unsupported_input(Field)`: declined, naming the smallest input field;
@@ -264,7 +268,7 @@ These are the value spaces of `due2-profiles.md` §4. The first five are ordered
   - `value: mixed xsd:duration`: year-month and day-time components together have no single order (`due2-profiles.md` §4);
   - `value: ill-typed <datatype>`: the lexical form is not in the datatype's lexical space, or is out of its range.
 
-  An unplaceable literal matters only if the program compares it: `unsupported_value(Reason)` holds for `unplaceable(Lit, Reason)` with `compared(Lit)`. `compared` covers the input instants, the input values, and the right operand values. A float or a mixed duration as a right operand is a rejection instead (`FloatingPointOperand`, `MixedDuration`, `constraint.lp`), because solve 1 reads `reject` before `unsupported_value`. The policy's other literals, such as deadlines, belong to duties, which are declined first (#49).
+  An unplaceable literal matters only if the program compares it: `unsupported_value(Reason)` holds for `unplaceable(Lit, Reason)` with `compared(Lit)`. `compared` covers the input instants, the input values, the right operand values, and the deadlines. A float or a mixed duration as a right operand is a rejection instead (`FloatingPointOperand`, `MixedDuration`, `constraint.lp`), because solve 1 reads `reject` before `unsupported_value`.
 
 ### `lift.lp`
 
@@ -287,6 +291,11 @@ Shaped like `due2-workflows.md` §3.1, under `odrl-compound-to-atomic-normalizat
 | `policy(P)`, `conflict(P, Strat)` | `policy(policy_id \| conflict, …)` |
 | `atom(X)`, `atom_effect(X, E)`, `atom_policy(X, P)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, policy_id, source_rule)` |
 | `atom_party(X, F, Party)` | `atom_party`, match keys only |
+| `duty_atom(Y)`, `atom_effect(Y, oblige)`, `duty_action(Y, A)`, `duty_relation(Y, T)` | `atom`, for an `Oblige` atom |
+| `duty_of(Y, Duty)`, `duty_scope(Y, InstScope)`, `duty_deadline(Y, Lit)` | `duty(atom_id \| source_duty, scope, binding_key, deadline?, recurrence?)` |
+| `bearer(Y, Party)` | `atom_party`, for the bearer role |
+| `pre(X, Y)` | `edge`, a precondition |
+| `obligation(Y)` | `root` |
 | `reject(Code, Node)` | a W1 rejection (`due2-diagnostics.md`) |
 
 - **Policy.** A policy is a node typed by a policy class, or by a class that a selected module declares `rdfs:subClassOf` one. Only declared, direct edges count (`odrl-compound-to-atomic-normalization.md` §3). No policy is `reject("NoPolicy", none)`, and more than one is `reject("MultiplePolicies", P)`.
@@ -295,7 +304,15 @@ Shaped like `due2-workflows.md` §3.1, under `odrl-compound-to-atomic-normalizat
 - **Action terms.** `action_term(Term)` is each stated action. `action_of(Term, A)` is its `rdf:value` if it states one, or the term itself if it is an IRI. A blank node with no `rdf:value`, or a term with two, is declined (`action: blank node without rdf:value`, `action: several rdf:value`).
 - **Expansion** (`odrl-compound-to-atomic-normalization.md` §6.3). One atom for each action term × target × assignee. A rule left with no action or no target is `reject("MissingAction" | "MissingTarget", R)`.
 - **Atom ids.** An atom id is `a(R, A, T, Party)`: its source rule, action term, target, and assignee, or the sentinel `none` for a rule with no assignee. The id holds the action term, not the action, so that applies.lp can find the term's refinements; `atom_action/2` gives the action. Digests stay host-side (`decisions/0007`); the spike needs only ids that are distinct and stable.
-- **Carried functions.** Function predicates that are not match keys are carried, not matched (`due2-workflows.md` §5.2). Expanding over them would only copy atoms whose findings are identical, so clingo-i does not expand over them. They are needed when a trace names a duty's bearer, and duties are declined (#49).
+- **Carried functions.** Function predicates that are not match keys are carried, not matched (`due2-workflows.md` §5.2). Expanding over them would only copy atoms whose findings are identical, so clingo-i does not expand over them. A carried function that plays the bearer role still reaches a duty: `parent_bearer/2` reads it from the rule's values.
+- **Duties.** A duty node is a precondition duty (`odrl:duty` of a permission, `pre_rule/2`), a root obligation (`odrl:obligation` of the policy), or both. A duty of a duty, a remedy, and a consequence are not evaluated for access (`due2-workflows.md` §5.5). Each duty node is expanded like a rule, into duty atoms `a(Duty, A, T, Party)`: one per action term, relation value, and bearer.
+  - **Relation.** `T` is the duty's `odrl:target` or its `odrl:output` (`duty_rel/2`), or `none` when it states neither. Both together is `reject("TargetAndOutput", Duty)`.
+  - **Values.** A root obligation is a root rule, so it takes the policy's values for each family it leaves unstated (`odrl-compound-to-atomic-normalization.md` §6.2). A stated `odrl:output` fills the relation family, so the policy's target is not taken. A precondition duty takes no policy-level value.
+  - **Inheritance.** A precondition duty that states no function, and is not a root obligation, inherits its parties from each parent atom (`inherits/1`, `due2-profiles.md` §6). One that states any function inherits none (IM 2.2 §2.6.5).
+  - **Bearer.** The bearer is the party of a function that plays the bearer role (`bearer_fn/1`): `odrl:assignee`, or `dprod:subjectOfDuty` under DPROD. An inheriting duty takes the bearer of its parent atom (`inh_bearer/3`). With none, the bearer is `none`: the request subject.
+  - **The id.** The bearer is in the id, and the other inherited parties are not. A duty shared by two parents with one bearer is therefore one atom, with one instance, and shared under two bearers it is two. `binding_key` (`due2-workflows.md` §3.1) also holds the other inherited parties, but a witness reads only the bearer, and a `grant` instance is keyed on the request (`due2-workflows.md` §5.3). So two atoms that differ only in another party would have the same findings, and the reply names both by one duty IRI.
+  - **Edges.** `pre(X, Y)` fans out over every atom of the duty (`odrl-compound-to-atomic-normalization.md` §6.3), so a permission atom's preconditions are read as a conjunction. An inheriting duty gives `X` only its atoms with `X`'s bearer. A permission that is its own precondition is `reject("RuleReferenceCycle", R)`.
+  - **Timing and scope.** `dprod:deadline` on a duty, when DPROD is selected, gives `duty_deadline(Y, Lit)`, `absolute` for an `xsd:dateTime` and `relative` for an `xsd:duration` (`deadline_kind/2`). Two deadlines, or one of another type, is `reject("InvalidTiming", Duty)`; a deadline or a recurrence on the policy or a rule is `reject("TimingOutsideDuty", Node)`. `due2:instanceScope` gives `duty_scope(Y, InstScope)`, `member` by default.
 
 ### `kleene.lp`
 
@@ -335,7 +352,7 @@ Binds each left operand a leaf uses (`used/1`), and reads its values (`due2-prof
 
 The binding gives:
 
-- `src(Op, Src)` and `prop(Op, Prop)`, exactly one each, or `reject("UnboundLeftOperand", C)`. A source outside the four, a property that is not an IRI, or a context property that is not a built-in is `reject("InvalidBinding", C)`. The `witness` source is read only in a duty's constraints, so a rule constraint on it is `reject("WitnessOutsideDuty", C)`.
+- `src(Op, Src)` and `prop(Op, Prop)`, exactly one each, or `reject("UnboundLeftOperand", C)`. A source outside the four, a property that is not an IRI, or a context property that is not a built-in is `reject("InvalidBinding", C)`. The `witness` source is read only in a duty's conditions, so a leaf on it in a tree of any other structure node is `reject("WitnessOutsideDuty", C)`. `node_tree/2` (`constraint.lp`) gives each node's trees: its constraint roots, and the refinement roots of the action terms it states. A tree shared by a duty and a rule is in both, and so is rejected.
 - `card(Op, K)`: `set` if the binding states `due2:set`, otherwise `one`. Another cardinality IRI, or two, declines as `binding: cardinality`.
 - `range_kind(Op, K)`: the kind the owner's range admits (`admits_kind/2`). `rdfs:Resource` admits every kind, so it has no `range_kind`. Two ranges, or one that is not an IRI, decline as `binding: range`.
 - `prop_range_kind(Op, K)`: the kind of the `rdfs:range` that some layer states for the property `Op` reads. When no value has both kinds, the binding is `reject("OperandRangeMismatch", C)` (`decisions/0014` #5): every value the property gives would fail the range. Two kinds that differ have no value in common, except that `literal` shares its values with every kind but `iri`. An operand that reads itself, such as `odrl:payAmount`, is not compared with itself.
@@ -415,6 +432,17 @@ The first row is the point of Kleene evaluation: `ex:count` is unknown, but `f �
 - **applies** is the Kleene conjunction of the atom's parts. The rule uses `#min` as a function: `Min = #min { N : … }` binds the least rank. Every atom has an action and a target part, so the set is never empty. If it were, `#min` would be `#sup`, no rank would match, and the item constraint in `integrity.lp` would fail.
 
 These are the values before completion. `completion.lp` gives each world's value of every `u` part and finding.
+
+### `duty.lp`
+
+`due2-workflows.md` §5.2. A duty's conditions are its constraint roots and the refinement roots of its action terms (`duty_root/2`); a root obligation that takes the policy's action takes its refinements too. They split into guards, which decide whether the duty is owed, and witness conditions, which decide whether a piece of evidence fulfils it:
+
+- a leaf is a *witness leaf* when its left operand is bound to `due2:witnessSource`, or reads the context property `due2:actionTime`, the evidence's `occurred_at` (`witness_leaf/1`);
+- a conjunction splits into its members, recursively (`duty_part/2`), and each conjunct that is not a conjunction is a *split part* (`split_part/2`);
+- a split part with no witness leaf is a guard (`guard(Duty, C)`), and one whose leaves are all witness leaves is a witness condition (`witness_cond(Duty, C)`);
+- a split part with both, an `or`, `xone`, or `dprod:not` over a guard leaf and a witness leaf, is `reject("MixedDutyConstraint", C)` (`due2-diagnostics.md`). A guard is read once, in world `k`, before any evidence, and a witness condition once per piece of evidence, so a node that mixes them has no single place to be read.
+
+For example, take a duty whose constraint is `ex:g eq ex:v and ex:w eq ex:v and ex:t eq ex:v`, with `ex:g` bound to the state, `ex:w` to `due2:witnessSource`, and `ex:t` to the context property `due2:actionTime`. The `and` splits into three parts: one guard, the `ex:g` leaf, and two witness conditions (`test_conjunction_splits_into_guard_and_witness`).
 
 ### `completion.lp`
 
@@ -558,7 +586,7 @@ Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)` (`due2-
 `not` never turns a missing truth value into `f`. Each use reads something that is complete by construction:
 
 - the declared hierarchy edges (`not action_matches`, `not target_matches`, `not party_matches`, `not le_k`, `not inst`), which are closed-world (`due2-profiles.md` §6);
-- input syntax and what `lift.lp`, `structure.lp`, and `constraint.lp` derive from it: whether a family is stated, a predicate consumed, a function named, a node a list, a leaf or a connective;
+- input syntax and what `lift.lp`, `structure.lp`, `constraint.lp`, and `duty.lp` derive from it: whether a family is stated, a predicate consumed, a function named, a duty inheriting or with a bearer, a node a list, a leaf or a connective, or a leaf a witness leaf;
 - the value table and the term shapes (`not placed`, `not kind`, `not same_type`), which decide only that a pair is a misfit, and a misfit is `u`;
 - the reads: `not read_resolved`, `not card_ok`, and `not conforms` make a read `u`, never `f`;
 - in `completion.lp`, over relations fixed before the choice. `not complement`, `not leaf_attr`, and `not attr_apart` decide only which variable a leaf reads and with which polarity. `not open` picks the members of an open node that keep their rank, and these are `t` or `f`, because a `u` member of an open node is open itself. `open/1` reads the ranks of world `k`, and no rule for world `k` reads another world, so the ground program has no cycle through `not open`, although `crank/3` holds the ranks of every world;
@@ -578,9 +606,11 @@ A vector is declined, never guessed at, when it uses something the spike does no
 | `rdf:type` | anywhere |
 | `odrl:uid` | when it names `S` itself |
 | `odrl:profile`, `odrl:conflict`, `odrl:permission`, `odrl:prohibition` | the policy |
-| `odrl:action`, `odrl:target`, and the function predicates | anywhere: they are read on the policy and its rules, and elsewhere they hang under a declined link (`odrl:duty`) or off the policy, so declining on them would hide the feature |
+| `odrl:action`, `odrl:target`, and the function predicates | anywhere: they are read on the policy, its rules, and its duties, and elsewhere they hang under a declined link (`odrl:duty`) or off the policy, so declining on them would hide the feature |
 | `odrl:includedIn`, `odrl:partOf`, `odrl:source`, `odrl:leftOperand`, `odrl:operator`, `odrl:rightOperand`, `odrl:unit`, the connectives, the binding attributes, `due2:conceptScheme`, `skos:broader`, `skos:narrower`, `skos:inScheme`, `skos:topConceptOf`, and `skos:hasTopConcept` | anywhere |
-| `odrl:constraint` | a rule |
+| `odrl:constraint` | a rule or a duty |
+| `odrl:output`, `due2:instanceScope` | a duty |
+| `dprod:deadline`, `dprod:recurrence` | the policy, a rule, or a duty, with DPROD selected; on the policy or a rule they are rejected |
 | `odrl:refinement` | an action term, or a collection (where it is rejected) |
 | `rdf:value` | an action term |
 
@@ -594,7 +624,7 @@ A predicate is on the annotation allowlist when it is:
 `unsupported(P)` holds for a predicate that is neither consumed nor allowlisted, when either:
 
 - it is in a vocabulary namespace: `odrl:`, `due2:`, or a selected profile's IRI. Such a predicate means something, so ignoring it could change the verdict. Examples are `odrl:duty`, `odrl:remedy`, and `odrl:constraint` on a node that is not a rule; or
-- it sits on a structure node (the policy or one of its rules), whatever its namespace. An unknown predicate there may be a semantic extension (`odrl-compound-to-atomic-normalization.md` §3: "MUST NOT introduce additional … semantics").
+- it sits on a structure node (the policy, one of its rules, or one of its duties), whatever its namespace. An unknown predicate there may be a semantic extension (`odrl-compound-to-atomic-normalization.md` §3: "MUST NOT introduce additional … semantics").
 
 Elsewhere, on asset, party, and action nodes, a predicate from another vocabulary is data the spike never reads, and it is ignored. Issue #53 adds a W1 warning for an unevaluated predicate on a structure node. The allowlist is the spike's version of that line.
 
@@ -607,8 +637,13 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `constraint: cycle`, `constraint: dprod:not with several members`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (§ `completion.lp`) |
 | `constraint: set-valued operand on a single-value operator` | `operand.lp` | no reading in `due2-profiles.md` §4 |
+| `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |
+| `duty: bearer from two functions` | `structure.lp` | a root obligation that states `dprod:subjectOfDuty` and receives a different policy-level `odrl:assignee`: two bearers for one performance, which the spec does not settle |
+| `duty: parent with two bearers` | `structure.lp` | a parent atom that passes two bearers to an inheriting duty |
+| `duty: instance scope` | `structure.lp` | a `due2:instanceScope` other than `due2:member` or `due2:grant`, or two; no diagnostic covers it |
 | `odrl:partOf: cross-kind edge`, `odrl:partOf: untyped collection` | `lift.lp` | a hierarchy the spike does not trust |
 | `profile-conflict-defaults` | `structure.lp` | two profile defaults, and no rule for which wins |
+| `recurrence` | `structure.lp` | a duty's `dprod:recurrence` needs occurrences, which the spike does not compute (`decisions/0009` #7) |
 
 **In the input** (`lift.lp`). The driver flattens every field, and `unsupported_input(Field)` names each field the program does not read:
 
@@ -627,7 +662,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 These are an `error` reply, not a decline:
 
 - an unknown `odrl:profile`;
-- a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, and `MissingTarget` (`structure.lp`); `UnsupportedConstruct` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); and `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, `WitnessOutsideDuty`, and `OperatorTypeMismatch` (`operand.lp`). Each is defined in `due2-diagnostics.md`;
+- a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, `MissingTarget`, `TargetAndOutput`, `RuleReferenceCycle`, `InvalidTiming`, and `TimingOutsideDuty` (`structure.lp`); `UnsupportedConstruct` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); and `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, `WitnessOutsideDuty`, and `OperatorTypeMismatch` (`operand.lp`); and `MixedDutyConstraint` (`duty.lp`). Each is defined in `due2-diagnostics.md`;
 - a malformed vector (§ Input facts);
 - an unsatisfiable program.
 
@@ -656,6 +691,13 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
 - **The cap** (`test_variable_cap`). An `or` of `n` leaves on one unresolved operand, each with its own right operand, each leaf written twice: `n` variables. `n = 64` answers and `n = 65` declines as `variable-cap`. The repeated leaves leave ground `var/1` atoms that no model makes true, so a count of the ground atoms would decline both.
 - **Rejections and declines** (`test_constraint_rejections`, `test_constraint_declines`, `test_datatypes_differ_without_a_range`, `test_derived_strings_decline`, `test_node_in_two_scopes`). Each code and reason of § Declines and § Errors that a constraint or a binding produces, on a minimal policy, so a check that is deleted or never fires is caught.
 - **Declines.** A feature the spike does not read must decline, never be ignored. A policy with both `odrl:duty` and `odrl:remedy` declines naming `odrl:duty`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
+- **Duties** (`test_duty.py`), on solve 1's program, which shows the duty relations before `odrl:duty` and `odrl:obligation` are consumed:
+  - **Inheritance.** The duty of a permission with two assignees is two duty atoms, each the precondition of the parent atom with its bearer. Shared by two permissions with one assignee, it is one atom, and a parent with no assignee passes `none`. A program that dropped the bearer from the id, or gave each parent atom every duty atom, fails a row. A duty that names its own party keeps it under every parent atom. A root obligation takes the policy's target and parties, and a precondition duty takes neither.
+  - **Bearers.** A root obligation with `dprod:subjectOfDuty` and a different policy-level `odrl:assignee` declines as `duty: bearer from two functions`, and with the same party it does not.
+  - **The split.** An `and` of a state leaf, a witness leaf, and an `actionTime` leaf gives one guard and two witness conditions. A witness refinement of a duty's action is a witness condition. An `or`, an `xone`, or a `dprod:not` over a guard leaf and a witness leaf is `MixedDutyConstraint`, and an `or` of witness leaves alone is not. Without the conjunction rule, the first row's `and` is one part with both kinds of leaf, and is rejected.
+  - **Relations and timing.** A stated `odrl:output` is the relation, and the policy's target is not taken. Each deadline kind, each instance scope with `member` the default, and an unknown scope declines.
+  - **Rejections.** `InvalidTiming` (two deadlines, and a deadline of another type), `TimingOutsideDuty`, `TargetAndOutput`, `MissingAction`, `RuleReferenceCycle`, and `WitnessOutsideDuty` for a witness refinement of a permission's action: without the action branch of `node_tree/2`, the last one passes.
+  - **Recurrence.** A `dprod:recurrence` declines the vector as `recurrence`.
 - **Protocol.** `main.py` answers `init` with `ready`, declaring `interpret`, and echoes the request `id`.
 
 **The brute-force differential** (`test_brute_force.py`, Hypothesis, `correctness-strategy.md` §4.1):

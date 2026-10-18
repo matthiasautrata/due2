@@ -5,7 +5,7 @@
 vector to facts (`clingo_i.flatten`, `clingo_i.values`), and the program in `lp/` decides
 everything else, in three solves (DESIGN.md § Data flow):
 
-1. the declines and rejections, over `lift.lp` to `applies.lp`;
+1. the declines and rejections, over `lift.lp` to `duty.lp`;
 2. every completion of the unknown variables, cautious: the verdict, the basis, the
    eliminations, and the unknown parts;
 3. for an `Indeterminate` only, every completion and one flipped variable, brave: the
@@ -34,13 +34,14 @@ PROGRAM_FILES = (
     "operand.lp",
     "compare.lp",
     "applies.lp",
+    "duty.lp",
     "completion.lp",
     "resolve.lp",
     "integrity.lp",
     "explain.lp",
     "pivot.lp",
 )
-SOLVE_1 = PROGRAM_FILES[:7]  # lift.lp to applies.lp: no choice, so one model
+SOLVE_1 = PROGRAM_FILES[:8]  # lift.lp to duty.lp: no choice, so one model
 SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
 CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
 VARIABLE_CAP = 64  # correctness-strategy.md §3, set by measurement (journal, #48)

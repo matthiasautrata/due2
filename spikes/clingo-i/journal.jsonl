@@ -107,3 +107,11 @@
 {"at": "2026-10-18T02:25:53Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1306, "name": "basedpyright"}
 {"at": "2026-10-18T02:25:53Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 54, "name": "ruff"}
 {"at": "2026-10-18T02:25:53Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 27, "name": "ruff format"}
+{"at": "2026-10-18T10:34:14Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 490.13, "p50_ms": 34.58, "p95_ms": 48.31, "p99_ms": 289.2, "pass": 245, "revision": "27fd3c4+dirty", "task": "interpret", "total_ms": 9964.5, "unsupported": 187, "vectors": 432}
+{"at": "2026-10-18T10:48:37Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 240, "summary": "#49 step 1: duty atoms in structure.lp (inheritance per parent atom, bearer from due2:playsRole, output as relation, deadlines, instance scope), the guard/witness split in duty.lp, MixedDutyConstraint, and the recurrence decline; odrl:duty and odrl:obligation stay unconsumed until step 3"}
+{"at": "2026-10-18T10:48:37Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "TargetAndOutput test stated the target on the policy: a stated odrl:output correctly keeps the policy target out, so the test was wrong; pinned that behaviour as its own test"}
+{"at": "2026-10-18T10:48:37Z", "by": "claude-opus-5-5", "kind": "note", "summary": "duty atom id keeps the bearer but not the other inherited parties, though binding_key (workflows §3.1) includes them: a witness reads only the bearer and a grant instance keys on the request, so the split would only copy atoms with equal findings under one duty IRI"}
+{"at": "2026-10-18T10:48:37Z", "by": "claude-opus-5-5", "kind": "note", "summary": "two-bearer gap: a root obligation stating dprod:subjectOfDuty also receives the policy-level odrl:assignee (normalisation §6.2 fills per function); when they differ it declines as 'duty: bearer from two functions'; the spec does not settle it"}
+{"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1135, "name": "basedpyright"}
+{"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 24, "name": "ruff"}
+{"at": "2026-10-18T10:48:38Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
