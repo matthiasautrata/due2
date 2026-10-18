@@ -121,3 +121,13 @@
 {"at": "2026-10-18T10:54:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 56, "name": "ruff"}
 {"at": "2026-10-18T10:54:51Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}
 {"at": "2026-10-18T10:55:50Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 494.97, "p50_ms": 35.0, "p95_ms": 48.82, "p99_ms": 293.21, "pass": 245, "revision": "ca2db1d", "task": "interpret", "total_ms": 10051.4, "unsupported": 187, "vectors": 432}
+{"at": "2026-10-18T11:40:04Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 240, "summary": "#49 step 2: W2 duty findings (owed, in_force, witness test, fulfilled, duty status) in world k; reads and comparisons per world, witness world wit(E); DESIGN.md and a Sonnet cold read"}
+{"at": "2026-10-18T11:40:05Z", "by": "claude-opus-5-5", "kind": "attempt", "summary": "#49 step 2: duty findings and statuses in world k; 1554 spike tests pass"}
+{"at": "2026-10-18T11:40:05Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "evidence terms missing from term/1, so kind/2 had no row for them and solve 2 was unsatisfiable on any vector with evidence; added the evidence terms"}
+{"at": "2026-10-18T11:40:05Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "test_obligation_without_a_matching_rule_is_not_in_force requested odrl:play, so its counterfactual (an obligation matched on its own action) was not exercised; it now requests odrl:delete"}
+{"at": "2026-10-18T11:40:06Z", "diagnostics": 3, "exit": 1, "kind": "check", "ms": 1604, "name": "basedpyright"}
+{"at": "2026-10-18T11:40:06Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 166, "name": "ruff"}
+{"at": "2026-10-18T11:40:06Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 35, "name": "ruff format"}
+{"at": "2026-10-18T11:43:44Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1169, "name": "basedpyright"}
+{"at": "2026-10-18T11:43:44Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff"}
+{"at": "2026-10-18T11:43:44Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}

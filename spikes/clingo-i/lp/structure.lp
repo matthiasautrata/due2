@@ -255,11 +255,11 @@ Atom `X` belongs to policy `P`.
 *%
 atom_policy(X, P) :- atom_rule(X, R), policy(P), has_rule(P, R, _).
 
-%*! atom_effect(X, E)
+%*! atom_effect(X, Eff)
 
-Atom `X` has effect `E`: `permit` or `forbid` for a rule atom, `oblige` for a duty atom.
+Atom `X` has effect `Eff`: `permit` or `forbid` for a rule atom, `oblige` for a duty atom.
 *%
-atom_effect(X, E) :- atom_rule(X, R), policy(P), has_rule(P, R, E).
+atom_effect(X, Eff) :- atom_rule(X, R), policy(P), has_rule(P, R, Eff).
 
 %*! atom_party(X, F, Party)
 

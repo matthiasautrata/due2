@@ -835,8 +835,8 @@ def test_constraint_declines(
 
 
 CONSTRAINT_DELETIONS = [
-    ("compare.lp", "crank(k, C, N) :- op(C, eq), ceqr(C, _, _, N)."),
-    ("operand.lp", "read_u(Op) :- used(Op), not read_resolved(Op)."),
+    ("compare.lp", "crank(W, C, N) :- op(C, eq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N)."),
+    ("operand.lp", "read_u(W, Op) :- read_in(W, Op), not read_resolved(W, Op)."),
 ]
 
 
@@ -1190,12 +1190,9 @@ EVIDENCE: Obj = {
 @pytest.mark.parametrize(
     ("changes", "reason"),
     [
-        ({"sotw": {"evidence": [EVIDENCE]}}, "sotw.evidence"),
-        ({"sotw": {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}}, "sotw.activation"),
         ({"sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]}}, "sotw.closure"),  # not a hierarchy
         ({"config": {"violations": "deny"}}, "config.violations"),
         ({"config": {"combination": "permit-overrides"}}, "config.combination"),
-        ({"config": {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}}, "config.signers"),
         ({"config": {"preference": "ex:p"}}, "config.preference"),
         # The smallest field wins, whatever the section order.
         (
@@ -1224,9 +1221,23 @@ def test_empty_fields_are_not_declined(interpreter: Interpreter) -> None:
     assert verdict(interpreter.reply(v)) == "Permit"
 
 
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"sotw": {"evidence": [EVIDENCE]}},
+        {"sotw": {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}},
+        {"config": {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}},
+    ],
+)
+def test_duty_inputs_are_read(interpreter: Interpreter, changes: dict[str, Obj]) -> None:
+    # The fields duty.lp reads are not declined, and without a duty they change nothing. Had
+    # lift.lp kept their declines, each would reply `unsupported`.
+    assert verdict(interpreter.reply(vector(**changes))) == "Permit"
+
+
 def test_policy_declines_come_first(interpreter: Interpreter) -> None:
     policy = PREFIXES + POLICY_BODY + "ex:perm odrl:duty [ odrl:action odrl:compensate ] .\n"
-    v = vector(policy, sotw={"evidence": [EVIDENCE]})
+    v = vector(policy, sotw={"closure": [["ex:knows", "ex:a", "ex:b"]]})
     assert interpreter.reply(v) == {"unsupported": ODRL + "duty"}
 
 

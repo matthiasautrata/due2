@@ -4,17 +4,17 @@ clingo-i is the semantics program of `decisions/0009`. It is a generic clingo pr
 
 ## Vocabulary
 
-The spec defines most terms: atom, part, finding, candidate, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.4); duty, precondition, root obligation, bearer, guard, and witness condition (`due2-workflows.md` §3.1, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
+The spec defines most terms: atom, part, finding, candidate, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.4); duty, precondition, root obligation, bearer, guard, witness condition, evidence, instance, witness, and deadline (`due2-workflows.md` §3.1, §3.3, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
 
 - **Driver.** `flatten.py` and `values.py`: the Python that turns a vector into facts. It is syntactic, and decides nothing.
 - **Duty atom.** A duty node expanded like a rule, to one action term, one relation value, and one bearer: `a(Duty, A, T, Party)`, with the sentinel `none` for a missing relation or bearer (§ `structure.lp`). It is not an `atom/1`, because it is matched against evidence, not against the request.
-- **Item.** Anything that carries a truth value: a part (`part(X, action)`, `part(X, target)`, `part(X, party(F))`, or `part(X, cons(C))`), an atom's finding (`applies(X)`), or a constraint node (`c(C)`).
+- **Item.** Anything that carries a truth value: a part (`part(X, action)`, `part(X, target)`, `part(X, party(F))`, or `part(X, cons(C))`), an atom's finding (`applies(X)`), a constraint node (`c(C)`), a duty finding (`owed(Y)`, `in_force(Y)`, `fulfilled(Y)`), or a step of the witness test (`check(Y, E, K)`, `witness(Y, E)`, § `duty.lp`).
 - **Truth value.** `f`, `u`, or `t`, in that order. Its **rank** is 0, 1, or 2. Elsewhere "value" is qualified: a rule's *stated value* (`stated/3`), a *read value* (what a left operand reads), a *right operand value*, and a literal's *position* in a value space (§ Values).
 - **Constraint node.** A node of an authored constraint tree: a *root* (a rule's `odrl:constraint` value or an action term's `odrl:refinement` value), a *leaf* (it has an `odrl:leftOperand`), or a *connective* node (`odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not`). Its *members* are the nodes the connective combines.
 - **Action term.** The value of `odrl:action`: an action IRI, or a node whose `rdf:value` is the action and which carries the refinements (IM 2.2 §2.5).
 - **Layer.** Where a binding is declared: the policy graph, a selected profile module, or a core module (`due2-profiles.md` §2).
 - **Misfit.** A comparison whose two values do not fit the operator: an IRI against a literal, or literals of two value spaces. A misfit is `u`, never `f`.
-- **Status.** Why a `u` part is `u` (`due2-profiles.md` §3, `decisions/0016`): `missing` (no value: an absent target, party, request parameter, or context value, a state fact `missing`, or `resolved` with no value for a single-valued operand), `invalid` (a value outside the range), `conflict` (several values for a single-valued operand), `unresolved` (a state fact `unresolved`, or no fact), or `misfit`.
+- **Status.** Why a `u` part is `u` (`due2-profiles.md` §3, `decisions/0016`): `missing` (no value: an absent target, party, request parameter, or context value, a state fact `missing`, or `resolved` with no value for a single-valued operand), `invalid` (a value outside the range), `conflict` (several values for a single-valued operand), `unresolved` (a state fact `unresolved`, or no fact), or `misfit`. A *duty status* is the other sense, and is always qualified: `fulfilled`, `outstanding`, `violated`, or `unknown`, the status of a duty's instance (`due2-workflows.md` §5.3, § `duty.lp`).
 - **Paired and opaque.** A `u` leaf whose status is `unresolved` is *paired*: its value exists and fits, so it shares a completion variable with every leaf that makes the same comparison, its complement included. Every other `u` part is *opaque*: a `u` target or party part, and a `u` leaf of any other status. An opaque part stays `u` in every completion (`decisions/0016` #1, #2).
 - **Completion variable.** What a `u` atom reads (`due2-workflows.md` §6.4): `cons(D)` for a class of paired leaves with one key, `D` a leaf that names the class, and `fin(X)` for an atom `X` with an opaque part, which completes the finding the opaque part leaves `u`. The spec calls the variable with a polarity a *literal*. "Literal" alone, in this note, means an RDF literal, `lit(Lex, Datatype)`.
 - **Polarity.** How a paired leaf reads its variable: `pos`, or `neg` for a complement operator such as `neq`, which reads the variable of `eq` negated (§ `completion.lp`). `fin(X)` is read `pos`.
@@ -22,7 +22,7 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 - **Unknown part.** A row of `unknown_part(X, Input, S)`: atom `X` has a `u` part that reads `Input` with status `S` (§ `explain.lp`).
 - **Scope.** What a constraint node refines: `rule`, under a rule's `odrl:constraint`, or `action`, under an action term's `odrl:refinement` (`due2-workflows.md` §3.1). It is part of the completion key.
 - **Completion.** One assignment of `t` or `f` to every variable. With `n` variables there are `2^n`.
-- **World.** An index that lets one answer set hold more than one completion. World `c` is the completion the answer set chose, and world `flip` (solve 3 only) is `c` with one variable negated. These two are the *completion worlds*. The node ranks also carry the *Kleene world* `k`: the ranks before completion, under strong Kleene logic. `world/1` lists the completion worlds only.
+- **World.** An index that lets one answer set hold more than one completion. World `c` is the completion the answer set chose, and world `flip` (solve 3 only) is `c` with one variable negated. These two are the *completion worlds*. The node ranks also carry the *Kleene world* `k`: the ranks before completion, under strong Kleene logic, with the operands read from the request and the SOTW. A *witness world* `wit(E)`, one per piece of evidence `E`, reads a duty's witness conditions from `E` (§ `duty.lp`). `world/1` lists the completion worlds only.
 - **Pivot.** The variable `flip` negates. A variable is *pivotal* when flipping it alone changes some completion's verdict (`decisions/0011` #1).
 - **Remover.** In an elimination row, the atom that removes the other (`due2-workflows.md` §3.5).
 - **Solve 1, 2, 3.** The three clingo runs of § Data flow. *Cautious* enumeration keeps the atoms true in every answer set, and *brave* the atoms true in some.
@@ -40,13 +40,14 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `F` | a function predicate (a party role, such as `odrl:assignee`) |
 | `Party` | a party, or `none` for a duty atom's missing bearer |
 | `Duty` | a duty node: a precondition duty, a root obligation, or both |
-| `E` | an effect, `permit` or `forbid` |
+| `E` | a piece of evidence: an evidence record's `id` |
+| `Eff` | an effect, `permit` or `forbid` |
 | `Strat` | a conflict strategy (`prohibit`, `perm`, `invalid`), or the cross-policy combination in an elimination row |
 | `I` | an item |
 | `V` | a truth value |
 | `N`, `M`, `M2` | a rank of a truth value, or a position in a value space |
 | `L` | a completion variable |
-| `S` | a status, such as `missing` or `unresolved` |
+| `S` | a status, such as `missing` or `unresolved`, or a duty status, such as `outstanding` |
 | `Pol` | a polarity, `pos` or `neg` |
 | `Base` | the positive operator a leaf asserts: the operator itself, or the one its complement negates |
 | `Scope` | a scope, `rule` or `action` |
@@ -58,14 +59,14 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `Op` | a left operand |
 | `Lv`, `Rv` | a read value and a right operand value |
 | `Lo`, `Hi` | the narrower and the broader end of a hierarchy edge |
-| `K` | a kind: of term (`iri`, `lit`, `blank`), collection or node (`asset`, `party`), connective, cardinality (`one`, `set`), range, or deadline (`absolute`, `relative`) |
+| `K` | a kind: of term (`iri`, `lit`, `blank`), collection or node (`asset`, `party`), connective, cardinality (`one`, `set`), range, deadline (`absolute`, `relative`), or check of the witness test (`actor`, `deadline`, …) |
 | `Src` | a source kind: `request`, `state`, `context`, or `witness` |
 | `Prop` | an operand property |
 | `Space`, `Dt`, `Tag` | a value space, a datatype, and a language tag |
 | `Rg` | a range |
 | `Rel` | an order relation: `lt`, `eq`, `gt`, or `u` |
 
-Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, and `Vp` (the truth value of a part inside an aggregate).
+Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, `Actor` (an evidence record's actor), `Issuer`, `Ref` (a request's `reference`), `Start` (the instant a duty's instance was first owed), `Np` (a rank inside an aggregate), and `Vp`, `Vc`, `Vk`, `Vw` (the truth value of a part, a node, a check, or a witness inside an aggregate).
 
 ## Layout
 
@@ -82,7 +83,7 @@ lp/constraint.lp       the authored constraint trees, and their static checks
 lp/operand.lp          each left operand's binding, and what it reads
 lp/compare.lp          the operators, and the Kleene value of every constraint node
 lp/applies.lp          the parts of an atom, and its finding
-lp/duty.lp             a duty's guards and witness conditions
+lp/duty.lp             a duty's guards and witness conditions, its findings, and its duty status
 lp/completion.lp       the completion variables, and one completion of them per answer set
 lp/resolve.lp          candidates, conflict, verdict, and basis of one world
 lp/integrity.lp        the integrity constraints that make a gap an error
@@ -194,12 +195,12 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 
 | Fact | From | Read by |
 |---|---|---|
-| `request_reference/1` | `reference`, as given | — |
+| `request_reference/1` | `reference`, as given | `duty.lp` |
 | `request_action/1`: `request_action(A)` | `action` | `applies.lp` |
 | `request_target/1`: `request_target(T)` | `target` | `applies.lp` |
 | `request_absent/1`: `request_absent(target)` | the absence of `target` | `applies.lp` |
-| `request_at/1`: `request_at(I)` | `at` | `lift.lp`, `operand.lp` (`actionTime`) |
-| `request_party/2`: `request_party(F, Party)` | each entry of `parties`; `F` is the function predicate IRI | `lift.lp`, `operand.lp` (`agent`), `applies.lp` |
+| `request_at/1`: `request_at(Lit)` | `at` | `lift.lp`, `operand.lp` (`actionTime`) |
+| `request_party/2`: `request_party(F, Party)` | each entry of `parties`; `F` is the function predicate IRI | `lift.lp`, `operand.lp` (`agent`), `applies.lp`, `duty.lp` (the request subject) |
 | `request_param/2`: `request_param(Prop, Value)` | each value of `params`, keyed by property IRI | `lift.lp`, `operand.lp` |
 | `request_param_set/1`: `request_param_set(Prop)` | a `params` entry given as a list, so an empty set is not an absent parameter | `operand.lp` |
 
@@ -207,14 +208,14 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 
 | Fact | From | Read by |
 |---|---|---|
-| `sotw_effective_at/1` | `effective_at` | `lift.lp`, `operand.lp` (`clock`) |
+| `sotw_effective_at/1` | `effective_at` | `lift.lp`, `operand.lp` (`clock`), `duty.lp` |
 | `fact/2`: `fact(Prop, Status)` | each entry of `facts`. `Status` is one of `resolved`, `missing`, `invalid`, `conflict`, `unresolved` | `operand.lp` |
 | `fact_value/2`: `fact_value(Prop, Value)` | each value of a `facts` entry | `lift.lp`, `operand.lp` |
-| `evidence/4`: `evidence(E, OccurredAt, Actor, Action)` | each `evidence` record, `E` its `id` | `lift.lp` (declined) |
-| `evidence_object/2`, `evidence_issuer/2` | its optional `object` and `issuer` | — |
-| `evidence_discharges/3`: `evidence_discharges(E, Duty, Reference)` | its optional `discharges` | — |
-| `evidence_param/3`: `evidence_param(E, Prop, Value)` | each of its `params` | `lift.lp` (declined) |
-| `activation/2`: `activation(Key, I)` | each entry of `activation`: an instance key or rule IRI, and its instant | `lift.lp` (declined) |
+| `evidence/4`: `evidence(E, OccurredAt, Actor, Action)` | each `evidence` record, `E` its `id` | `lift.lp`, `operand.lp` (`actionTime` in `wit(E)`), `duty.lp` |
+| `evidence_object/2`, `evidence_issuer/2` | its optional `object` and `issuer` | `duty.lp` |
+| `evidence_discharges/3`: `evidence_discharges(E, Duty, Ref)` | its optional `discharges` | `duty.lp` |
+| `evidence_param/3`: `evidence_param(E, Prop, Value)` | each of its `params` | `lift.lp`, `operand.lp` (`witness`) |
+| `activation/2`: `activation(Key, Lit)` | each entry of `activation`: an instance key or rule IRI, and its instant. `duty.lp` reads a key that is a duty's IRI, the key of a non-recurring instance (`conformance/README.md`, SOTW) | `lift.lp`, `duty.lp` |
 | `sotw_closure/3`: `sotw_closure(Pred, Lo, Hi)` | each `closure` triple, `Pred` expanded | `lift.lp`: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`; any other relation declines |
 
 **Config** (`due2-workflows.md` §3.4).
@@ -222,10 +223,10 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 | Fact | From | Read by |
 |---|---|---|
 | `config_combination/1`, `config_violations/1` | `combination` (a string) and `violations` (`ignore` or `deny`) | `lift.lp` |
-| `signer/2`: `signer(Duty, Issuer)` | each `signers` entry | `lift.lp` (declined) |
+| `signer/2`: `signer(Duty, Issuer)` | each `signers` entry | `duty.lp` |
 | `unread/1`: `unread(Field)` | `preference`, `admit_source`, `admit_age`: the case format defines no shape for them (`conformance/README.md`), so their presence is recorded and declined | `lift.lp` (declined) |
 
-**Values** (`values.py`, § Values): `value/3`, read by `operand.lp` and `compare.lp`; `unplaceable/2`, read by `lift.lp` and `constraint.lp`; and `plus/3`, which no file reads (relative deadlines belong to duties, #49).
+**Values** (`values.py`, § Values): `value/3`, read by `operand.lp`, `compare.lp`, and `duty.lp`; `unplaceable/2`, read by `lift.lp` and `constraint.lp`; and `plus/3`, read by `duty.lp` for a relative deadline.
 
 A field the case format does not define, a missing required field (`action`; an evidence record's `id`, `occurred_at`, `actor`, `action`), a duplicate evidence `id`, or an unknown status is an `error`: the vector is malformed, and nothing is guessed.
 
@@ -256,11 +257,11 @@ These are the value spaces of `due2-profiles.md` §4. The first five are ordered
 | Fact | Meaning |
 |---|---|
 | `value(Lit, Space, N)` | `Lit` lies in `Space`, at position `N` |
-| `plus(I, D, N)` | instant `I` plus duration `D` lies at position `N` in the `instant` space |
+| `plus(Start, Lit, N)` | instant `Start` plus duration `Lit` lies at position `N` in the `instant` space |
 | `unplaceable(Lit, Reason)` | `Lit` has a datatype the driver must place, but it cannot place it |
 
 - **Positions.** In the `numeric` space, if every value is an integer within 32 bits, `N` is the value itself. Otherwise, and in every other space, `N` is the dense rank `0..k−1` of the space's distinct values in the vector. Equal values get equal ranks. A rank means nothing across vectors; within one, `N₁ < N₂` exactly when the values are so ordered.
-- **Sums.** A relative deadline is `A + duration` (`due2-workflows.md` §5.3). `plus` is given for every `instant` literal and every `daytime` or `yearmonth` literal among the facts. The sum is XSD 1.1 Part 2 Appendix E: add the months in the instant's own timezone, clamp the day to the end of the month, then add the seconds. The sums join the `instant` ranking.
+- **Sums.** A relative deadline is the activation plus a duration (`due2-workflows.md` §5.3). `plus` is given for every `instant` literal and every `daytime` or `yearmonth` literal among the facts. The sum is XSD 1.1 Part 2 Appendix E: add the months in the instant's own timezone, clamp the day to the end of the month, then add the seconds. The sums join the `instant` ranking.
 - **Unplaceable values.** Nothing is truncated, rounded, or guessed. `Reason` is one of:
   - `value: xsd:double` or `value: xsd:float`: due2 has no floats (`due2-profiles.md` §4);
   - `value: dateTime without timezone`: an instant must be on the UTC timeline;
@@ -289,7 +290,7 @@ Shaped like `due2-workflows.md` §3.1, under `odrl-compound-to-atomic-normalizat
 | Relation | `due2-workflows.md` §3.1 counterpart |
 |---|---|
 | `policy(P)`, `conflict(P, Strat)` | `policy(policy_id \| conflict, …)` |
-| `atom(X)`, `atom_effect(X, E)`, `atom_policy(X, P)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, policy_id, source_rule)` |
+| `atom(X)`, `atom_effect(X, Eff)`, `atom_policy(X, P)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, policy_id, source_rule)` |
 | `atom_party(X, F, Party)` | `atom_party`, match keys only |
 | `duty_atom(Y)`, `atom_effect(Y, oblige)`, `duty_action(Y, A)`, `duty_relation(Y, T)` | `atom`, for an `Oblige` atom |
 | `duty_of(Y, Duty)`, `duty_scope(Y, InstScope)`, `duty_deadline(Y, Lit)` | `duty(atom_id \| source_duty, scope, binding_key, deadline?, recurrence?)` |
@@ -364,35 +365,37 @@ The binding gives:
 
 **Range conformance** (`conforms/2`, the defaults of `due2-profiles.md` §3). Without a range, or with `rdfs:Resource`, every value conforms. Otherwise a value conforms when its kind is the range's: an IRI to a class, an `xsd:dateTimeStamp` to `xsd:dateTime`. A `numeric` range also needs the literal placed in the numeric space, so `5` and `5.00` both conform to `xsd:decimal`, but an ill-typed number does not, nor an `xsd:double`, which has no exact equality (`due2-profiles.md` §4). `rdfs:Literal` takes any literal. A right operand value that does not conform is `reject("OperatorTypeMismatch", C)`.
 
-**Reads.** `read_value(Op, Term)` is what the source gives, and `read_resolved(Op)` says the source answered:
+**Reads.** An operand is read once in each world that evaluates a leaf on it (`read_in(W, Op)`): world `k`, and the witness world `wit(E)` of each piece of evidence `E` (`read_world/1`, § `duty.lp`). The completion worlds read nothing, because their leaves take a variable's value (§ `completion.lp`). `read_value(W, Op, Term)` is what the source gives in world `W`, and `read_resolved(W, Op)` says the source answered:
 
 | Source | Answered when | Values |
 |---|---|---|
 | `request` | the request has the parameter, or gives it as a list, even an empty one | the parameter's values |
 | `state` | the SOTW fact has status `resolved` | the fact's values |
+| `witness`, in `wit(E)` only | the evidence `E` has the parameter | its values |
 | `context`, `agent` | the request names an assignee | the assignee |
 | `context`, `clock` | the SOTW has `effective_at` | that instant |
-| `context`, `actionTime` | the request has `at` | that instant |
+| `context`, `actionTime`, in `k` | the request has `at` | that instant |
+| `context`, `actionTime`, in `wit(E)` | always | `E`'s `occurred_at` (`due2-workflows.md` §5.3) |
 
-A fact with any other status (`missing`, `invalid`, `conflict`, `unresolved`), no fact at all, or an absent parameter or context value leaves the read unanswered, so `read_resolved/1` fails. Then:
+A fact with any other status (`missing`, `invalid`, `conflict`, `unresolved`), no fact at all, or an absent parameter or context value leaves the read unanswered, so `read_resolved/2` fails. A `witness` read in world `k` is never answered, but no world-`k` leaf makes one: a witness leaf lies in a witness condition, which world `k` does not evaluate, and a rule's leaf on the witness source is rejected (§ `operand.lp`, `WitnessOutsideDuty`). Then, in each world:
 
-- `card_ok(Op)`: a `set` operand takes any number of values, none included; a `one` operand takes exactly one. Two or more for `one` is `MultipleValues`, and none is no value (`due2-profiles.md` §3).
-- `nonconforming(Op)`: some read value is outside the range, `TypeMismatch` (`due2-profiles.md` §3), or is an IRI in none of the operand's schemes by any membership, the SOTW's included (`read_concept/2`, `decisions/0015` #4).
-- `read_ok(Op)` when the read is resolved, its count fits, and every value conforms; `read_u(Op)` otherwise. A `u` read makes every leaf on it `u`, never `f` (`ways-of-working.md` §5.1). `integrity.lp` checks that every used operand is exactly one of the two.
-- `read_status(Op, S)`, for a `u` read, the status of `decisions/0016`: a state fact's own status; `unresolved` for no fact; `missing` for an unanswered request, witness, or context read, or a resolved `one` read with no value; `conflict` for a resolved `one` read with several; `invalid` when a value is outside the range or its schemes. `integrity.lp` checks that each `u` read has exactly one.
+- `card_ok(W, Op)`: a `set` operand takes any number of values, none included; a `one` operand takes exactly one. Two or more for `one` is `MultipleValues`, and none is no value (`due2-profiles.md` §3).
+- `nonconforming(W, Op)`: some read value is outside the range, `TypeMismatch` (`due2-profiles.md` §3), or is an IRI in none of the operand's schemes by any membership, the SOTW's included (`read_concept/2`, `decisions/0015` #4).
+- `read_ok(W, Op)` when the read is resolved, its count fits, and every value conforms; `read_u(W, Op)` otherwise. A `u` read makes every leaf on it `u`, never `f` (`ways-of-working.md` §5.1). `integrity.lp` checks that every read is exactly one of the two.
+- `read_status(W, Op, S)`, for a `u` read, the status of `decisions/0016`: a state fact's own status; `unresolved` for no fact; `missing` for an unanswered request, witness, or context read, or a resolved `one` read with no value; `conflict` for a resolved `one` read with several; `invalid` when a value is outside the range or its schemes. `integrity.lp` checks that each `u` read has exactly one.
 
 ### `compare.lp`
 
-Gives every constraint node its rank in the Kleene world, `crank(k, C, N)`, and every node item its truth value, `holds(c(C), V)`. The connective rules serve every world: `evaluates(W, C)` says which nodes world `W` evaluates with them, every node for `k`, and the open nodes for a completion world (§ `completion.lp`).
+Gives every constraint node its rank in each world that evaluates it, `crank(W, C, N)`, and every node item its truth value, `holds(c(C), V)`, its rank in world `k`. `evaluates(W, C)` says which nodes world `W` evaluates: for `k`, every node but the witness-only ones of a duty (`witness_only/1`, § `duty.lp`); for a witness world `wit(E)`, the nodes of the witness conditions; and for a completion world, the open nodes (§ `completion.lp`). The leaf rules serve `k` and the witness worlds, which read operands, and the connective rules serve every world.
 
-**Leaves.** A leaf on a `u` read has rank 1. On an `ok` read, `cpair(C, Lv, Rv)` pairs each read value with each right operand value, and the pair is compared on its own:
+**Leaves.** A leaf on a `u` read has rank 1. On an `ok` read, `cpair(W, C, Lv, Rv)` pairs each value read in world `W` with each right operand value, and the pair is compared on its own. The comparisons below read only the two values, so they carry no world:
 
 - **Equality**, `eqr(Lv, Rv, N)`. Two IRIs by identity. Two placed literals by position, if they lie in one space. Two unplaced literals by identity, if they have the same datatype (and, for `rdf:langString`, the same tag): that is "strings by code point" (`due2-profiles.md` §4). Every other pair is a misfit, rank 1: an IRI against a literal, a blank node, two spaces, a placed against an unplaced literal, two unplaced datatypes.
 - **Order**, `cmpr(Lv, Rv, Rel)`: `lt`, `eq`, or `gt` within one ordered space, and `u` otherwise. `order_rank(O, Rel, N)` reads `lt`, `lteq`, `gt`, and `gteq` off the relation, and `u` gives rank 1.
 - **Concepts**, `ceqr(C, Lv, Rv, N)`. On a leaf whose operand has a scheme, two IRIs are a concept pair (`concept_pair/3`), and `Lv = Rv` reads as `Lv ⊑ Rv`: `t` when `Lv` is `Rv`, or a chain of `skos:broader` edges (`above/2`, the transitive closure) leads from `Lv` to `Rv`; `f` otherwise (`decisions/0015` #3, #5). A read concept outside the schemes never gets here, since its read is `invalid`. Every other pair, a literal on either side included, has its `eqr/3` rank, so a string against a concept is a misfit.
 - **Hierarchies.** `isPartOf` and `hasPart` ask `Lo ⊑ Hi` (`ler/3`): two IRIs by identity or the typed `partOf` closure `le_k/3`, and anything else a misfit. `isA` asks whether the read IRI is an instance of the class (`inst/2`): one `rdf:type` edge, then `rdfs:subClassOf` edges, all from `closure/3`.
 
-**The operators** combine the pairs (`due2-profiles.md` §4). `eq`, `neq`, and the order operators compare the one read value with the one right value; `neq` is the negation of `eq`. `any_eq(C, Rv, N)` is the disjunction, over the read values, of `= Rv`. Each `=` is `ceqr/4`, so on a concept-scheme operand `neq` and `isNoneOf` exclude every concept below a right value. `isAnyOf` is the greatest `any_eq` over the right values, and `isNoneOf` its negation. `isAllOf` is the least `any_eq` over the right values: every right value is read. `isPartOf` is the least, over the read values, of "part of some right value", and `hasPart` the least, over the right values, of "part of some read value"; with no read values `isPartOf` holds vacuously. `isA` is the least over the listed classes. The aggregates carry their identities (`#max { 0; … }`, `#min { 2; … }`), so an empty set has the value the operator's quantifier gives it.
+**The operators** combine the pairs (`due2-profiles.md` §4). `eq`, `neq`, and the order operators compare the one read value with the one right value; `neq` is the negation of `eq`. `any_eq(W, C, Rv, N)` is the disjunction, over the values read in world `W`, of `= Rv`. Each `=` is `ceqr/4`, so on a concept-scheme operand `neq` and `isNoneOf` exclude every concept below a right value. `isAnyOf` is the greatest `any_eq` over the right values, and `isNoneOf` its negation. `isAllOf` is the least `any_eq` over the right values: every right value is read. `isPartOf` is the least, over the read values, of "part of some right value", and `hasPart` the least, over the right values, of "part of some read value"; with no read values `isPartOf` holds vacuously. `isA` is the least over the listed classes. The aggregates carry their identities (`#max { 0; … }`, `#min { 2; … }`), so an empty set has the value the operator's quantifier gives it.
 
 **Connectives.** `and` is the least rank of its members, `or` the greatest, `dprod:not` maps rank `N` to `2 − N`, and `xone` is the disjunction of its terms `xone_term(W, C, D, N)`: member `D` and the negation of every other member, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ). Strong Kleene logic gives the tree the same value as its NNF and its DNF, because De Morgan's laws, double negation, and distributivity hold in it, so these rules realise the structural rules of normalisation stage 2 without rewriting. `xone` uses its expansion, not "exactly one is `t`", so that `t xone u` is `u`, as the expansion gives, and not `t`.
 
@@ -416,7 +419,7 @@ ex:count dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:coun
 |---|---|---|---|---|
 | purpose `ex:marketing` | `read_ok(ex:purpose)`, `read_u(ex:count)` | `eqr(ex:marketing, ex:research, 0)` and `eqr(ex:marketing, ex:teaching, 0)`, so `any_eq` is 0 for both and `crank(k, ex:c1, 0)`; `crank(k, ex:c2, 1)` | 0 | `NotApplicable` |
 | purpose `ex:research` | as above | `eqr(ex:research, ex:research, 2)`, so `crank(k, ex:c1, 2)`; `crank(k, ex:c2, 1)` | 1 | `Indeterminate`, from `NotApplicable` to `Permit` |
-| purpose `ex:research`, count `3` | both `ok` | `cpair(ex:c2, lit("3", xsd:integer), lit("5", xsd:integer))`, `crank(k, ex:c2, 2)` | 2 | `Permit` |
+| purpose `ex:research`, count `3` | both `ok` | `cpair(k, ex:c2, lit("3", xsd:integer), lit("5", xsd:integer))`, `crank(k, ex:c2, 2)` | 2 | `Permit` |
 | purpose `ex:research`, count `7` | both `ok` | `crank(k, ex:c2, 0)` | 0 | `NotApplicable` |
 
 The first row is the point of Kleene evaluation: `ex:count` is unknown, but `f ∧ u` is `f`, so the unknown does not matter, and the atom does not apply. In the second row `t ∧ u` is `u`, the constraint part is `u`, and so is the atom's finding. Completion decides it (§ `completion.lp`): `ex:c` and `ex:c2` are open, and `ex:c1` keeps its `t`. `ex:c2` reads one variable, so there are two completions. The permission applies when the variable is `t`, which gives `Permit`, and not when it is `f`, which gives `NotApplicable`. The reply names `ex:r` with role `unknown`.
@@ -437,18 +440,70 @@ These are the values before completion. `completion.lp` gives each world's value
 
 `due2-workflows.md` §5.2. A duty's conditions are its constraint roots and the refinement roots of its action terms (`duty_root/2`); a root obligation that takes the policy's action takes its refinements too. They split into guards, which decide whether the duty is owed, and witness conditions, which decide whether a piece of evidence fulfils it:
 
-- a leaf is a *witness leaf* when its left operand is bound to `due2:witnessSource`, or reads the context property `due2:actionTime`, the evidence's `occurred_at` (`witness_leaf/1`);
+- a leaf is a *witness leaf* when its left operand is bound to `due2:witnessSource`, or reads the context property `due2:actionTime`, the evidence's `occurred_at` (`witness_leaf/1`, `due2-workflows.md` §5.3);
 - a conjunction splits into its members, recursively (`duty_part/2`), and each conjunct that is not a conjunction is a *split part* (`split_part/2`);
-- a split part with no witness leaf is a guard (`guard(Duty, C)`), and one whose leaves are all witness leaves is a witness condition (`witness_cond(Duty, C)`);
+- `has_witness(C)` and `has_guard(C)` say that the tree under `C` has a witness leaf, or a leaf that is not one;
+- a split part with no witness leaf is a guard (`guard(Y, C)`), and one whose leaves are all witness leaves is a witness condition (`witness_cond(Y, C)`);
 - a split part with both, an `or`, `xone`, or `dprod:not` over a guard leaf and a witness leaf, is `reject("MixedDutyConstraint", C)` (`due2-diagnostics.md`). A guard is read once, in world `k`, before any evidence, and a witness condition once per piece of evidence, so a node that mixes them has no single place to be read.
 
 For example, take a duty whose constraint is `ex:g eq ex:v and ex:w eq ex:v and ex:t eq ex:v`, with `ex:g` bound to the state, `ex:w` to `due2:witnessSource`, and `ex:t` to the context property `due2:actionTime`. The `and` splits into three parts: one guard, the `ex:g` leaf, and two witness conditions (`test_conjunction_splits_into_guard_and_witness`).
+
+**The worlds of the witness conditions.** A witness condition has no value against the request: its leaves read the evidence, and world `k` has none. So world `k` skips the nodes that lie in a witness condition (`in_witness/1`), and the conjunctions of a duty's conditions with a witness condition below them, since the findings take the guards one by one. These are the witness-only nodes (`witness_only/1`). A node that also lies in a rule's tree (`rule_node/1`) is not one: world `k` evaluates it for the rule. That happens to a `due2:actionTime` leaf that a rule and a duty share, which reads the request's `at` in `k` and the evidence's `occurred_at` in `wit(E)` (§ `operand.lp`). Each piece of evidence `E` has its world `wit(E)`, which evaluates every node of every witness condition (`evaluates(wit(E), C)`), so `compare.lp` gives each one a rank `crank(wit(E), C, N)` from what `E` records. One algebra serves the request and the evidence: the same leaf and connective rules, in another world.
+
+**Owed and in force** (`due2-workflows.md` §5.2), in world `k`:
+
+- `owed(Y)`, for a precondition duty atom: the Kleene conjunction of its guards, `t` when it has none. `due2-workflows.md` §5.2 makes an unguarded duty owed whenever its parent applies. The finding does not read the parent: W3 reads it only for a parent candidate (`due2-workflows.md` §6.1).
+- `in_force(Y)`, for a root obligation atom: the Kleene conjunction of `policy_match(Y, N)` and its guards. `policy_match` is the Kleene disjunction, `f` when there are none, over the `Permit` and `Forbid` atoms of the obligation's policy (`obligation_policy/2`) of `matched(X, N)`: the conjunction of the atom's action, target, and party parts (`match_part/2`), its constraint parts left out (`cons_part/1`). An obligation is in force when its policy matches the request, not when its own action does: in the worked example below, the request plays and the duty is to delete.
+- `instance(Y)` when `owed(Y)` or `in_force(Y)` is `t` or `u`. Only an instance is tested against the evidence. A `u` instance is tested too, so that its `fulfilled` finding has a value whatever the guard turns out to be.
+
+**The witness test** (`due2-workflows.md` §5.3). Each instance is paired with each piece of evidence (`witness_pair(Y, E)`), and each pair has seven checks, `check(Y, E, K)` for each `check_kind(K)`, each an item. `occurred_pos(E, N)` and `effective_pos(N)` place the evidence's `occurred_at` and the SOTW's `effective_at` in the `instant` space:
+
+| Check `K` | `t` when | `f` when | `u` when |
+|---|---|---|---|
+| `effective` | `occurred_at` ≤ the SOTW's `effective_at` | `occurred_at` is later | the SOTW has no `effective_at` |
+| `deadline` | the duty has no deadline, or `occurred_at` ≤ the deadline (`deadline_at/2`) | `occurred_at` is later | never: an unplaceable deadline declines |
+| `action` | the evidence's action is the duty's, or included in it (`ev_reaches/2`) | otherwise | never: the closure is closed-world |
+| `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
+| `actor` | the actor is the bearer; for bearer `none`, the actor is the request subject (`subject/1`) | the actor is someone else | the bearer is `none` and the request names no subject |
+| `signer` | the config lists no signer for the duty (`signed/1`), or lists the evidence's issuer (`admitted/2`) | it lists signers, and not the issuer | never |
+| `discharges` | the instance is not keyed on the request (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is keyed, and the evidence does not | never |
+
+The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the corpus gives a non-recurring instance, or `effective_at` when the SOTW has none (`due2-workflows.md` §5.3). An instance is keyed when its scope is `grant` and the request has a `reference`; without one, a `grant` duty falls back to `member`.
+
+**Fulfilled and status.** `witness(Y, E)` is the Kleene conjunction of the seven checks and of the ranks of `Y`'s witness conditions in world `wit(E)`. `fulfilled(Y)` is the Kleene disjunction of the witnesses, `f` when there is no evidence. `passed(Y)` holds when the deadline is earlier than `effective_at`. It is fixed per evaluation, since both instants are inputs, so it is a fact about the vector, not a finding. The duty status `status(k, Y, S)` is the table of `due2-workflows.md` §5.3:
+
+| `fulfilled(Y)` | `passed(Y)` | Duty status |
+|---|---|---|
+| `t` | either | `fulfilled` |
+| `f` | no | `outstanding` |
+| `f` | yes | `violated` |
+| `u` | either | `unknown` |
+
+A duty with no deadline never passes, so it is never `violated`. The table has no row for a deadline it cannot place against `effective_at`, so a duty whose deadline has no position, or a vector with a deadline and no `effective_at`, declines as `duty: deadline not comparable`.
+
+**Worked example.** This is the vector of `test_late_witness_is_not_timely`, with the relations copied from a run. A permission to use `ex:a` travels with an obligation to delete it by 1 May:
+
+```turtle
+ex:p a odrl:Set ; odrl:profile dprod: ; odrl:target ex:a ;
+    odrl:permission ex:perm ; odrl:obligation ex:o .
+ex:perm a odrl:Permission ; odrl:action odrl:use .
+ex:o a odrl:Duty ; odrl:action odrl:delete ;
+    dprod:deadline "2026-05-01T00:00:00Z"^^xsd:dateTime .
+```
+
+The request asks `ex:alice` to play `ex:a` at 1 June, with `reference` `req-1`. The SOTW is effective at 1 June, and records one piece of evidence, `ex:e1`: `ex:alice` deleted `ex:a` on 15 May. With `O` the obligation's atom `a("ex:o", "odrl:delete", "ex:a", none)`:
+
+1. `matched(a("ex:perm", "odrl:use", "ex:a", none), 2)`: `odrl:play` is included in `odrl:use`, and the target is `ex:a`. So `policy_match(O, 2)`, and with no guard `holds(in_force(O), t)` and `instance(O)`.
+2. `witness_pair(O, "ex:e1")`. Six checks are `t`: `effective`, `action`, `object`, `actor` (the bearer is `none` and `ex:alice` is the subject), `signer`, and `discharges`. `deadline` is `f`, since 15 May is after 1 May. So `holds(witness(O, "ex:e1"), f)`, and `holds(fulfilled(O), f)`.
+3. `deadline_at(O, 0)`, since 1 May is the earliest instant of the vector and positions are dense ranks from 0 (§ Values). `effective_at` is later, so `passed(O)`, and `status(k, O, violated)`.
+
+Evidence that came too late is no witness: the duty was violated on 1 May, and deleting the asset afterwards does not undo that.
 
 ### `completion.lp`
 
 `due2-workflows.md` §6.4, `decisions/0012`, `decisions/0016`. `u_atom(X)` holds for an atom whose finding is `u`. A `u` atom reads completion variables, and `reads(X, L)` collects them per atom. A `u` part of an `f` atom reads none, because the atom is `f` in every completion. A choice gives each variable `t` or `f` in world `c`, so solve 2's answer sets are exactly the completions. In each world an atom that is not `u` keeps its finding. For a `u` atom, its parts are re-derived in the world (`part_in/3`), their Kleene conjunction is taken (`pre_in/3`), and `applies` is that conjunction when it is `t` or `f`, and the value of `fin(X)` when it is `u`. `completed_item/1` lists what must have a value in every world: every finding.
 
-**Statuses.** Each `u` leaf has one status (`leaf_status/2`): its operand's read status from `operand.lp` (`read_status/2`), or `misfit` when the read is `ok` and the leaf is still `u`, which only a misfit comparison makes it. A leaf whose status is not `unresolved` is opaque (`opaque_leaf/1`). An unresolved value exists and fits its operator, so of a leaf and its complement exactly one holds, and pairing them is sound. A missing, invalid, conflicting, or misfit value gives no such guarantee: for `"abc"`, neither `lt 5` nor `gteq 5` holds (`decisions/0016`, § Question).
+**Statuses.** Each `u` leaf has one status (`leaf_status/2`): its operand's read status in world `k` from `operand.lp` (`read_status/3`), or `misfit` when the read is `ok` and the leaf is still `u`, which only a misfit comparison makes it. A leaf whose status is not `unresolved` is opaque (`opaque_leaf/1`). An unresolved value exists and fits its operator, so of a leaf and its complement exactly one holds, and pairing them is sound. A missing, invalid, conflicting, or misfit value gives no such guarantee: for `"abc"`, neither `lt 5` nor `gteq 5` holds (`decisions/0016`, § Question).
 
 **Opaque parts.** A `u` target part, a `u` party part, and an opaque leaf in an opened tree make the atom opaque (`opaque_atom/1`), and the atom gets the variable `fin(X)`. In each world an opaque target or party part keeps rank 1, and so does an opaque leaf. A connective above it is re-evaluated under strong Kleene logic, so the tree, and the atom's conjunction, can stay `u` in the world. Then `fin(X)` decides the atom. When the paired leaves settle the tree anyway, `fin(X)` is read but moves nothing: a `t` member of an `or` makes it `t`, and an `f` conjunct makes the atom `f`. An opaque part therefore shares a variable with no other part, its complement included, as `decisions/0016` #2 asks. Two atoms on one absent target are completed separately, and so are a leaf on a missing operand and its complement.
 
@@ -525,11 +580,12 @@ A paired `neg` leaf, or a `dprod:not` or an `xone` over a paired leaf, breaks st
 The integrity constraints over every earlier file, in solves 2 and 3:
 
 - every item has exactly one truth value, and only a ranked one;
-- every used left operand is exactly one of `read_ok` and `read_u`, and every compared pair has exactly one equality rank;
+- in every world that reads it (`read_in/2`), every left operand is exactly one of `read_ok` and `read_u`, and every compared pair has exactly one equality rank;
 - every `u` read, and every `u` leaf, has exactly one status;
 - every open leaf that is not opaque reads exactly one variable;
 - in every completion world, every variable and every completed item has exactly one value, `f` or `t`;
 - in every world, `k` included, every node the world evaluates has exactly one rank;
+- every duty instance has exactly one duty status;
 - every world has exactly one verdict.
 
 They are why a rule deleted from the program fails loudly. Without its rule, some item has no value, some read no outcome or status, or some world no verdict, so the solve has no model and the reply is an `error`, never a verdict standing on the missing part (§ Tests).
@@ -586,12 +642,13 @@ Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)` (`due2-
 `not` never turns a missing truth value into `f`. Each use reads something that is complete by construction:
 
 - the declared hierarchy edges (`not action_matches`, `not target_matches`, `not party_matches`, `not le_k`, `not inst`), which are closed-world (`due2-profiles.md` §6);
-- input syntax and what `lift.lp`, `structure.lp`, `constraint.lp`, and `duty.lp` derive from it: whether a family is stated, a predicate consumed, a function named, a duty inheriting or with a bearer, a node a list, a leaf or a connective, or a leaf a witness leaf;
+- input syntax and what `lift.lp`, `structure.lp`, `constraint.lp`, and `duty.lp` derive from it: whether a family is stated, a predicate consumed, a function named, a duty inheriting or with a bearer, a node a list, a leaf or a connective, a leaf a witness leaf, a tree with a witness or a guard leaf (`has_witness`, `has_guard`), a node in a rule's tree (`rule_node`) or in a witness condition, or a duty with a deadline or a relation value. `witness_only/1`, which `evaluates(k, C)` negates, reads only these, never a rank, so the ground program has no cycle through it;
 - the value table and the term shapes (`not placed`, `not kind`, `not same_type`), which decide only that a pair is a misfit, and a misfit is `u`;
 - the reads: `not read_resolved`, `not card_ok`, and `not conforms` make a read `u`, never `f`;
 - in `completion.lp`, over relations fixed before the choice. `not complement`, `not leaf_attr`, and `not attr_apart` decide only which variable a leaf reads and with which polarity. `not open` picks the members of an open node that keep their rank, and these are `t` or `f`, because a `u` member of an open node is open itself. `open/1` reads the ranks of world `k`, and no rule for world `k` reads another world, so the ground program has no cycle through `not open`, although `crank/3` holds the ranks of every world;
 - inside one world in `resolve.lp`, where every value is already `t` or `f`;
-- in `explain.lp`, over `elim` rows derived from findings (a `forbid` its own policy did not remove). A `u` finding gives no row, and the rows are only ever read as "no remover", never as a truth value.
+- in `explain.lp`, over `elim` rows derived from findings (a `forbid` its own policy did not remove). A `u` finding gives no row, and the rows are only ever read as "no remover", never as a truth value;
+- in `duty.lp`'s witness test, over input records, which are complete: an evidence record lists every field it has, and the config every signer. So `not evidence_object` and an actor that is not the bearer make a check `f`. For the object this is the spike's reading of the equality `e.object = d.relation_value` of `due2-workflows.md` §5.3, where `object` is optional: evidence that records no object does not record the duty's relation value, so the equality does not hold. `not signed`, `not admitted`, `not keyed`, `not discharged`, and `not activated` read the config, the request, and the SOTW the same way. `not ev_reaches` reads the declared `includedIn` edges, which are closed-world. Where an input that the test needs is absent, the check is `u`, not `f`: `not effective_pos` makes `effective` `u`, and `not subject` makes `actor` `u` for a duty whose bearer is the subject. The activation is the one exception, and it takes the default the spec gives it, `effective_at`. `not passed` cannot hide an undecided deadline, because a deadline that has no position declines the vector.
 
 A missing truth value has no `holds` fact. Then an integrity constraint fails, instead of the value defaulting to `f`.
 
@@ -638,6 +695,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (§ `completion.lp`) |
 | `constraint: set-valued operand on a single-value operator` | `operand.lp` | no reading in `due2-profiles.md` §4 |
 | `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |
+| `duty: deadline not comparable` | `duty.lp` | a deadline with no position in the `instant` space, or a deadline and no `effective_at`: the status table of `due2-workflows.md` §5.3 has no row for a deadline it cannot place (§ `duty.lp`) |
 | `duty: bearer from two functions` | `structure.lp` | two functions that play the bearer role disagree on a duty, both stated by it or both interiorised from the policy level: two bearers for one performance, which the spec does not settle |
 | `duty: parent with two bearers` | `structure.lp` | a parent atom that passes two bearers to an inheriting duty |
 | `duty: instance scope` | `structure.lp` | a `due2:instanceScope` other than `due2:member` or `due2:grant`, or two; no diagnostic covers it |
@@ -645,13 +703,15 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `profile-conflict-defaults` | `structure.lp` | two profile defaults, and no rule for which wins |
 | `recurrence` | `structure.lp` | a duty's `dprod:recurrence` needs occurrences, which the spike does not compute (`decisions/0009` #7) |
 
+`odrl:duty` and `odrl:obligation` are not consumed (#49), so a reply declines a policy with a duty on one of them, and the `duty:` and `recurrence` reasons show in the program's relations, which the tests read (§ Tests).
+
 **In the input** (`lift.lp`). The driver flattens every field, and `unsupported_input(Field)` names each field the program does not read:
 
-- any record of `sotw.evidence` or `sotw.activation`, and a `sotw.closure` edge of a relation other than `includedIn`, `partOf`, `rdf:type`, `rdfs:subClassOf`, `skos:broader`, and `skos:inScheme`;
-- `config.combination` other than `"prohibit-overrides"`, any `config.violations`, any `config.signers`;
+- a `sotw.closure` edge of a relation other than `includedIn`, `partOf`, `rdf:type`, `rdfs:subClassOf`, `skos:broader`, and `skos:inScheme`;
+- `config.combination` other than `"prohibit-overrides"`, and any `config.violations`;
 - each `unread(Field)` (§ Input facts).
 
-`request.params`, `sotw.facts`, and the context values are read by `operand.lp`. An empty field gives no facts, so it is not declined. When several fields hold, the smallest name wins: `config.*` before `request.*` before `sotw.*`.
+`request.params`, `sotw.facts`, and the context values are read by `operand.lp`; `sotw.evidence` by `operand.lp` and `duty.lp`; and `sotw.activation` and `config.signers` by `duty.lp`. An empty field gives no facts, so it is not declined. When several fields hold, the smallest name wins: `config.*` before `request.*` before `sotw.*`.
 
 **In the values.** `unsupported_value(Reason)`, read after the input declines: an unplaceable compared literal (§ Values), or `value: derived string datatypes` (§ `compare.lp`).
 
@@ -690,14 +750,20 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
 - **The completed basis** (`test_completed_basis`). The two shapes of § `resolve.lp`, a `Permit` whose basis names a `u` permission and a `Deny` with an empty basis, and the `Permit` with an empty basis of the example in § `completion.lp`. They pin the basis `decisions/0016` #4 settled.
 - **The cap** (`test_variable_cap`). An `or` of `n` leaves on one unresolved operand, each with its own right operand, each leaf written twice: `n` variables. `n = 64` answers and `n = 65` declines as `variable-cap`. The repeated leaves leave ground `var/1` atoms that no model makes true, so a count of the ground atoms would decline both.
 - **Rejections and declines** (`test_constraint_rejections`, `test_constraint_declines`, `test_datatypes_differ_without_a_range`, `test_derived_strings_decline`, `test_node_in_two_scopes`). Each code and reason of § Declines and § Errors that a constraint or a binding produces, on a minimal policy, so a check that is deleted or never fires is caught.
-- **Declines.** A feature the spike does not read must decline, never be ignored. A policy with both `odrl:duty` and `odrl:remedy` declines naming `odrl:duty`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
-- **Duties** (`test_duty.py`), on solve 1's program, which shows the duty relations before `odrl:duty` and `odrl:obligation` are consumed:
+- **Declines.** A feature the spike does not read must decline, never be ignored, and one it reads must not decline: `sotw.evidence`, `sotw.activation`, and `config.signers` give a `Permit` on a policy without duties (`test_duty_inputs_are_read`). A policy with both `odrl:duty` and `odrl:remedy` declines naming `odrl:duty`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
+- **Duties** (`test_duty.py`), on solve 1's program. A reply declines a policy with `odrl:duty` or `odrl:obligation` (#49), so these tests read the duty relations from the program, not a reply:
   - **Inheritance.** The duty of a permission with two assignees is two duty atoms, each the precondition of the parent atom with its bearer. Shared by two permissions with one assignee, it is one atom, and a parent with no assignee passes `none`. A program that dropped the bearer from the id, or gave each parent atom every duty atom, fails a row. A duty that names its own party keeps it under every parent atom. A root obligation takes the policy's target and parties, and a precondition duty takes neither.
   - **Bearers.** A root obligation with `dprod:subjectOfDuty` and a different policy-level `odrl:assignee` has the stated party as its only bearer; without `states_bearer/1` it would decline as `duty: bearer from two functions`, as the three DPROD contract cases did. A duty that states both functions with different parties declines, and with the same party it does not.
   - **The split.** An `and` of a state leaf, a witness leaf, and an `actionTime` leaf gives one guard and two witness conditions. A witness refinement of a duty's action is a witness condition. An `or`, an `xone`, or a `dprod:not` over a guard leaf and a witness leaf is `MixedDutyConstraint`, and an `or` of witness leaves alone is not. Without the conjunction rule, the first row's `and` is one part with both kinds of leaf, and is rejected.
   - **Relations and timing.** A stated `odrl:output` is the relation, and the policy's target is not taken. Each deadline kind, each instance scope with `member` the default, and an unknown scope declines.
   - **Rejections.** `InvalidTiming` (two deadlines, and a deadline of another type), `TimingOutsideDuty`, `TargetAndOutput`, `MissingAction`, `RuleReferenceCycle`, and `WitnessOutsideDuty` for a witness refinement of a permission's action: without the action branch of `node_tree/2`, the last one passes.
   - **Recurrence.** A `dprod:recurrence` declines the vector as `recurrence`.
+- **Duty findings** (`test_duty.py`), on one model of solve 2's program, integrity constraints included, so a finding or check that a rule forgets has no value and fails the solve:
+  - **Owed** (`test_unguarded_duty_without_evidence_is_outstanding`, `test_guard_decides_owed`). A duty with no guard is owed and, with no evidence, `outstanding`: without the identity 2 in `owed`'s `#min`, it would have no `owed` value. A guard on a missing fact makes `owed` `u`, and the duty still has an instance; only an `f` guard removes it.
+  - **The witness test** (`test_matching_evidence_fulfils`, `test_each_failing_check_fails_the_witness`, `test_admitted_issuer_and_discharged_reference_pass`, `test_no_named_subject_leaves_the_actor_unknown`). Matching evidence fulfils the duty. Then each of six checks fails on its own, the actor, the action, `effective`, the signer, the discharge, and the object, and each makes the witness `f`: a check that answered `t` regardless would leave the duty `fulfilled`. An admitted issuer and a discharge under the request's reference pass. A request that names no subject makes the actor check `u` and the duty status `unknown`, where a two-valued reading would say `outstanding`.
+  - **The witness worlds** (`test_witness_condition_is_read_from_the_evidence`, `test_witness_only_nodes_are_not_world_k_items`, `test_action_time_is_the_evidence_time`). A witness leaf reads the evidence's params in `wit(E)`: matching, it is `t`; different, `f`; absent, `u`, and the duty status `unknown`. Read in world `k`, it would be `u` for every piece of evidence. In an `and` of a guard and a witness leaf, only the guard is a world-`k` item, and only the witness leaf is evaluated in `wit(E)`; without `witness_only/1`, world `k` would give the witness leaf a value, `u`, although it has no evidence to read. `due2:actionTime` `lteq` 10 May is `t` for evidence of 1 May and `f` for 20 May; read from the request's 1 June, both would be `f`.
+  - **Deadlines** (`test_deadline_decides_outstanding_or_violated`, `test_late_witness_is_not_timely`). An absolute deadline before `effective_at` makes an unfulfilled obligation `violated`, and one after it `outstanding`. A relative one counts from the activation, and from `effective_at` without one, so `P1D` is `violated` from an activation in May and `outstanding` without one. Evidence after the deadline is no witness: without the deadline check, it would fulfil the duty. This is the worked example of § `duty.lp`.
+  - **In force** (`test_obligation_without_a_matching_rule_is_not_in_force`). A root obligation in a policy with no permission or prohibition is not in force, so it has no instance, although the request asks for the obligation's own action on its target. A program that matched the obligation itself would find it in force.
 - **Protocol.** `main.py` answers `init` with `ready`, declaring `interpret`, and echoes the request `id`.
 
 **The brute-force differential** (`test_brute_force.py`, Hypothesis, `correctness-strategy.md` §4.1):

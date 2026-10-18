@@ -6,34 +6,38 @@
 % operands do not fit, such as an IRI against a literal or values of two spaces, is `u` (rank
 % 1), never `f`. Then the connectives combine their members' values: `and` is the least rank,
 % `or` the greatest, `dprod:not` the involution, and `xone` the value of its expansion
-% (DESIGN.md § `compare.lp`). The connective rules serve every world: the Kleene world `k`,
-% before completion, and the completion worlds of completion.lp. Ranks are those of kleene.lp.
+% (DESIGN.md § `compare.lp`). The leaf rules serve the worlds that read operands: the Kleene
+% world `k`, before completion, and the witness worlds of duty.lp. The connective rules serve
+% those and the completion worlds of completion.lp. Ranks are those of kleene.lp.
 % Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
 %   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `op/2`,
-%   `right/2` (constraint.lp); `read_ok/1`, `read_u/1`, `read_value/2`, `has_scheme/1`
-%   (operand.lp).
-% - **Provides:** `cpair/3`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
+%   `right/2` (constraint.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`
+%   (operand.lp); `witness_only/1` (duty.lp).
+% - **Provides:** `cpair/4`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
 %   `above/2`, `ceqr/4`, `ordered/1`,
 %   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
-%   `any_eq/3`, `any_le/3`, `crank/3`, `evaluates/2`, `xone_term/4`; extends `item/1`, `holds/2`
+%   `any_eq/4`, `any_le/4`, `crank/3`, `evaluates/2`, `xone_term/4`; extends `item/1`, `holds/2`
 %   (applies.lp) and `unsupported_value/1` (lift.lp).
 
 %## Pairs
 
-%*! cpair(C, Lv, Rv)
+%*! cpair(W, C, Lv, Rv)
 
-Leaf `C` compares the read value `Lv` with the right operand value `Rv`. A `u` read gives no
-pairs: the leaf is `u` whatever its values.
+In world `W`, leaf `C` compares the read value `Lv` with the right operand value `Rv`. A `u`
+read gives no pairs: the leaf is `u` whatever its values.
 *%
-cpair(C, Lv, Rv) :- left(C, Op), read_ok(Op), read_value(Op, Lv), right(C, Rv).
+% Gated on `evaluates/2`: an operand that a rule leaf and a witness leaf share (`due2:actionTime`)
+% is read in both worlds, and only the witness leaf is evaluated in `wit(E)`.
+cpair(W, C, Lv, Rv) :- evaluates(W, C), left(C, Op), read_ok(W, Op), read_value(W, Op, Lv),
+    right(C, Rv).
 
 %*! pair(Lv, Rv)
 
 Some leaf compares `Lv` with `Rv`. The comparisons below depend only on the two values.
 *%
-pair(Lv, Rv) :- cpair(_, Lv, Rv).
+pair(Lv, Rv) :- cpair(_, _, Lv, Rv).
 
 %*! placed(Term)
 
@@ -90,7 +94,7 @@ eqr(Lv, Rv, 1) :- pair(Lv, Rv), kind(Lv, lit), not placed(Lv), kind(Rv, lit), no
 Leaf `C` compares the IRIs `Lv` and `Rv` as concepts: its left operand has a concept scheme.
 Only IRIs are concepts, so a literal on either side is compared by `eqr/3` (decisions/0015 #7).
 *%
-concept_pair(C, Lv, Rv) :- cpair(C, Lv, Rv), left(C, Op), has_scheme(Op), kind(Lv, iri),
+concept_pair(C, Lv, Rv) :- cpair(_, C, Lv, Rv), left(C, Op), has_scheme(Op), kind(Lv, iri),
     kind(Rv, iri).
 
 %*! above(Lv, Hi)
@@ -112,7 +116,7 @@ Every other pair has its `eqr/3` rank.
 ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), Lv = Rv.
 ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), above(Lv, Rv).
 ceqr(C, Lv, Rv, 0) :- concept_pair(C, Lv, Rv), Lv != Rv, not above(Lv, Rv).
-ceqr(C, Lv, Rv, N) :- cpair(C, Lv, Rv), not concept_pair(C, Lv, Rv), eqr(Lv, Rv, N).
+ceqr(C, Lv, Rv, N) :- cpair(_, C, Lv, Rv), not concept_pair(C, Lv, Rv), eqr(Lv, Rv, N).
 
 %## Order
 
@@ -148,8 +152,8 @@ order_rank(O, u, 1) :- order_rank(O, lt, _).
 
 `isPartOf` or `hasPart` asks whether `Lo ⊑ Hi`, for a pair in either orientation.
 *%
-part_pair(Lv, Rv) :- cpair(C, Lv, Rv), op(C, isPartOf).
-part_pair(Rv, Lv) :- cpair(C, Lv, Rv), op(C, hasPart).
+part_pair(Lv, Rv) :- cpair(_, C, Lv, Rv), op(C, isPartOf).
+part_pair(Rv, Lv) :- cpair(_, C, Lv, Rv), op(C, hasPart).
 
 %*! ler(Lo, Hi, N)
 
@@ -166,7 +170,7 @@ ler(Lo, Hi, 1) :- part_pair(Lo, Hi), kind(Lo, iri), not kind(Hi, iri).
 
 `isA` asks about the classes of the read value `Lv`.
 *%
-isa_left(Lv) :- cpair(C, Lv, _), op(C, isA).
+isa_left(Lv) :- cpair(_, C, Lv, _), op(C, isA).
 
 %*! inst(Lv, Cls)
 
@@ -180,67 +184,73 @@ inst(Lv, Sup) :- inst(Lv, Cls), closure(subclass, Cls, Sup).
 
 `Lv` is an instance of `Cls` with rank `N`. Only an IRI is compared with a class.
 *%
-isar(Lv, Cls, 2) :- cpair(C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri), inst(Lv, Cls).
-isar(Lv, Cls, 0) :- cpair(C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri), not inst(Lv, Cls).
-isar(Lv, Cls, 1) :- cpair(C, Lv, Cls), op(C, isA), not kind(Lv, iri).
-isar(Lv, Cls, 1) :- cpair(C, Lv, Cls), op(C, isA), kind(Lv, iri), not kind(Cls, iri).
+isar(Lv, Cls, 2) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri),
+    inst(Lv, Cls).
+isar(Lv, Cls, 0) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri),
+    not inst(Lv, Cls).
+isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), not kind(Lv, iri).
+isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), not kind(Cls, iri).
 
 %## The operators
 
-%*! any_eq(C, Rv, N)
+%*! any_eq(W, C, Rv, N)
 
-Some value leaf `C` reads equals its right value `Rv`, with rank `N`: the Kleene disjunction over
-the read values, under `skos:broader` for concepts (`ceqr/4`).
+In world `W`, some value leaf `C` reads equals its right value `Rv`, with rank `N`: the Kleene
+disjunction over the read values, under `skos:broader` for concepts (`ceqr/4`).
 *%
-any_eq(C, Rv, N) :- right(C, Rv), left(C, Op), read_ok(Op),
-    N = #max { 0; M, Lv : ceqr(C, Lv, Rv, M) }.
+any_eq(W, C, Rv, N) :- evaluates(W, C), right(C, Rv), left(C, Op), read_ok(W, Op),
+    N = #max { 0; M, Lv : cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, M) }.
 
-%*! any_le(C, Lo, N)
+%*! any_le(W, C, Lo, N)
 
-For `isPartOf`, the read value `Lo` is part of some right value; for `hasPart`, the right value
-`Lo` is part of some read value. `N` is the rank of that Kleene disjunction.
+In world `W`, for `isPartOf`, the read value `Lo` is part of some right value; for `hasPart`,
+the right value `Lo` is part of some read value. `N` is the rank of that Kleene disjunction.
 *%
-any_le(C, Lv, N) :- op(C, isPartOf), left(C, Op), read_value(Op, Lv), read_ok(Op),
-    N = #max { 0; M, Rv : cpair(C, Lv, Rv), ler(Lv, Rv, M) }.
-any_le(C, Rv, N) :- op(C, hasPart), right(C, Rv), left(C, Op), read_ok(Op),
-    N = #max { 0; M, Lv : cpair(C, Lv, Rv), ler(Rv, Lv, M) }.
+any_le(W, C, Lv, N) :- op(C, isPartOf), evaluates(W, C), left(C, Op), read_value(W, Op, Lv),
+    read_ok(W, Op), N = #max { 0; M, Rv : cpair(W, C, Lv, Rv), ler(Lv, Rv, M) }.
+any_le(W, C, Rv, N) :- op(C, hasPart), evaluates(W, C), right(C, Rv), left(C, Op),
+    read_ok(W, Op), N = #max { 0; M, Lv : cpair(W, C, Lv, Rv), ler(Rv, Lv, M) }.
 
 %*! crank(W, C, N)
 
 In world `W`, node `C` has rank `N`. World `k` is the Kleene world: the ranks before
-completion, under strong Kleene logic, which this file derives for every node. completion.lp
-adds the ranks of the completion worlds `c` and `flip`. In world `k` a leaf whose read is `u`
-has rank 1. Otherwise its operator decides
-(due2-profiles.md §4): `eq` and the order operators compare the one read value with the one
-right value; `isAnyOf` is the greatest `eq` over the right values, and `isNoneOf` its negation;
-`isAllOf` is the least, over right values, of `any_eq`; `isPartOf` and `hasPart` are the least
-of `any_le`, and an empty read set holds vacuously; `isA` is the least over the listed classes.
-Each `eq`, on a concept-scheme operand, is `⊑` (`ceqr/4`).
+completion, under strong Kleene logic. A witness world `wit(E)` gives the nodes of a duty's
+witness conditions their ranks against the evidence `E` (duty.lp). completion.lp adds the ranks
+of the completion worlds `c` and `flip`. In a world that reads, a leaf whose read is `u` has
+rank 1. Otherwise its operator decides (due2-profiles.md §4): `eq` and the order operators
+compare the one read value with the one right value; `isAnyOf` is the greatest `eq` over the
+right values, and `isNoneOf` its negation; `isAllOf` is the least, over right values, of
+`any_eq`; `isPartOf` and `hasPart` are the least of `any_le`, and an empty read set holds
+vacuously; `isA` is the least over the listed classes. Each `eq`, on a concept-scheme operand,
+is `⊑` (`ceqr/4`).
 *%
-crank(k, C, 1) :- leaf(C), left(C, Op), read_u(Op).
-crank(k, C, N) :- op(C, eq), ceqr(C, _, _, N).
-crank(k, C, 2 - N) :- op(C, neq), ceqr(C, _, _, N).
-crank(k, C, N) :- op(C, O), cpair(C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
-crank(k, C, N) :- op(C, isAnyOf), left(C, Op), read_ok(Op),
-    N = #max { 0; M, Rv : any_eq(C, Rv, M) }.
-crank(k, C, 2 - N) :- op(C, isNoneOf), left(C, Op), read_ok(Op),
-    N = #max { 0; M, Rv : any_eq(C, Rv, M) }.
-crank(k, C, N) :- op(C, isAllOf), left(C, Op), read_ok(Op),
-    N = #min { 2; M, Rv : any_eq(C, Rv, M) }.
-crank(k, C, N) :- op(C, O), O = (isPartOf; hasPart), left(C, Op), read_ok(Op),
-    N = #min { 2; M, Lo : any_le(C, Lo, M) }.
-crank(k, C, N) :- op(C, isA), left(C, Op), read_ok(Op),
-    N = #min { 2; M, Lv, Cls : cpair(C, Lv, Cls), isar(Lv, Cls, M) }.
+crank(W, C, 1) :- evaluates(W, C), leaf(C), left(C, Op), read_u(W, Op).
+crank(W, C, N) :- op(C, eq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N).
+crank(W, C, 2 - N) :- op(C, neq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N).
+crank(W, C, N) :- op(C, O), cpair(W, C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
+crank(W, C, N) :- op(C, isAnyOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
+    N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
+crank(W, C, 2 - N) :- op(C, isNoneOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
+    N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
+crank(W, C, N) :- op(C, isAllOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
+    N = #min { 2; M, Rv : any_eq(W, C, Rv, M) }.
+crank(W, C, N) :- op(C, O), O = (isPartOf; hasPart), evaluates(W, C), left(C, Op),
+    read_ok(W, Op), N = #min { 2; M, Lo : any_le(W, C, Lo, M) }.
+crank(W, C, N) :- op(C, isA), evaluates(W, C), left(C, Op), read_ok(W, Op),
+    N = #min { 2; M, Lv, Cls : cpair(W, C, Lv, Cls), isar(Lv, Cls, M) }.
 
 %## Connectives
 
 %*! evaluates(W, C)
 
-World `W` evaluates node `C` with the connective rules below. World `k` evaluates every node.
-A completion world evaluates only the open nodes (completion.lp): every other node keeps its
-world-`k` rank there, so one set of connective rules serves every world.
+World `W` evaluates node `C` with the leaf and connective rules of this file. World `k`
+evaluates every node but those of a duty's witness conditions, which the witness worlds evaluate
+(duty.lp). A completion world evaluates only the open nodes (completion.lp): every other node
+keeps its world-`k` rank there, so one set of connective rules serves every world.
 *%
-evaluates(k, C) :- cnode(C).
+% A node of a duty's witness conditions has no world-`k` value: it reads the evidence, which
+% world `k` does not have. duty.lp gives those nodes the worlds `wit(E)` instead.
+evaluates(k, C) :- cnode(C), not witness_only(C).
 
 % Kleene conjunction and disjunction as #min and #max with their identities (⋀∅ = t,
 % ⋁∅ = f); `dprod:not` maps rank N to 2 - N. The identities only seed the aggregates: a
@@ -265,6 +275,6 @@ xone_term(W, C, D, N) :- evaluates(W, C), conn(C, xone), member(C, D), crank(W, 
 
 %## Values
 
-% Every constraint node `c(C)` is an item, so a node without a rank fails integrity.lp.
-item(c(C)) :- cnode(C).
+% Every node world `k` evaluates is an item `c(C)`, so a node without a rank fails integrity.lp.
+item(c(C)) :- evaluates(k, C).
 holds(c(C), V) :- crank(k, C, N), rank(V, N).

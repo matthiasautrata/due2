@@ -20,7 +20,7 @@
 
 % Each atom has one effect, one policy, and one source rule, so that a row names exactly one
 % of each (formalisation-review.md §3 #2).
-:- atom(X), #count { E : atom_effect(X, E) } != 1.
+:- atom(X), #count { Eff : atom_effect(X, Eff) } != 1.
 :- atom(X), #count { P : atom_policy(X, P) } != 1.
 :- atom(X), #count { R : atom_rule(X, R) } != 1.
 

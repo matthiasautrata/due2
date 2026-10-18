@@ -9,11 +9,10 @@
 % - **Consumes:** the driver's facts (DESIGN.md § Input facts): the graphs (`triple/3`,
 %   `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
 %   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`,
-%   `fact_value/2`, `evidence/4`, `evidence_param/3`, `signer/2`, `activation/2`,
-%   `sotw_closure/3`), the config (`config_combination/1`, `config_violations/1`), and the
-%   driver's own findings (`unread/1`, `unplaceable/2`); `policy/1`, `rule/1`,
-%   `structure_node/1`, `action_term/1`, `duty_node/1`, and `node_deadline/2` (structure.lp);
-%   `right/2` (constraint.lp).
+%   `fact_value/2`, `evidence/4`, `evidence_param/3`, `activation/2`, `sotw_closure/3`), the
+%   config (`config_combination/1`, `config_violations/1`), and the driver's own findings
+%   (`unread/1`, `unplaceable/2`); `policy/1`, `rule/1`, `structure_node/1`, `action_term/1`,
+%   `duty_node/1`, and `node_deadline/2` (structure.lp); `right/2` (constraint.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
 %   `match_key/1`, `bearer_fn/1`, `vocab_ns/1`, `annotation/1`, `annotation_ns/1`, `operator/2`,
 %   `set_based/1`, `connective/1`, `binding_key/1`, `source_kind/2`, `context_property/2`,
@@ -387,9 +386,9 @@ A selected module states `Cls rdfs:subClassOf Super`. Only declared, direct edge
 *%
 subclass(Cls, Super) :- module(_, Cls, Pred, Super), voc(subclass, Pred).
 
-%*! has_rule(P, R, E)
+%*! has_rule(P, R, Eff)
 
-Node `P` links rule `R` with effect `E`: `permit` for `odrl:permission`, `forbid` for
+Node `P` links rule `R` with effect `Eff`: `permit` for `odrl:permission`, `forbid` for
 `odrl:prohibition`. `P` is any node; structure.lp keeps the policy's.
 *%
 has_rule(P, R, permit) :- triple(P, Pred, R), voc(permission, Pred).
@@ -438,8 +437,8 @@ kind(Term, iri) :- term(Term), not kind(Term, lit), not kind(Term, blank).
 
 %*! term(Term)
 
-`Term` occurs in the policy graph, a selected module, a request value, or a fact value: the
-domain of `kind/2`.
+`Term` occurs in the policy graph, a selected module, a request value, a fact value, or an
+evidence value: the domain of `kind/2`.
 *%
 term(Term) :- triple(Term, _, _).
 term(Term) :- triple(_, _, Term).
@@ -450,6 +449,8 @@ term(Term) :- request_party(_, Term).
 term(Term) :- fact_value(_, Term).
 term(Term) :- sotw_effective_at(Term).
 term(Term) :- request_at(Term).
+term(Term) :- evidence(_, Term, _, _).
+term(Term) :- evidence_param(_, _, Term).
 
 %*! list_cell(Head, Cell)
 
@@ -738,12 +739,9 @@ closure_relation(Pred) :- voc(Key, Pred), closure_key(Key).
 The input field `Field` has content the spike does not read, so the vector is declined, naming
 the smallest `Field`. An empty field gives no facts, so it declines nothing.
 *%
-unsupported_input("sotw.evidence") :- evidence(_, _, _, _).
-unsupported_input("sotw.activation") :- activation(_, _).
 unsupported_input("sotw.closure") :- sotw_closure(Pred, _, _), not closure_relation(Pred).
 unsupported_input("config.combination") :- config_combination(Comb), Comb != "prohibit-overrides".
 unsupported_input("config.violations") :- config_violations(_).
-unsupported_input("config.signers") :- signer(_, _).
 unsupported_input(Field) :- unread(Field).
 
 %## The values the program compares

@@ -16,8 +16,8 @@
 %
 % - **Consumes:** `operator/2` (lift.lp); `atom/1`, `atom_party/3` (structure.lp);
 %   `scope/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2` (constraint.lp);
-%   `src/2`, `prop/2`, `read_ok/1`, `read_status/2` (operand.lp); `crank/3` (compare.lp);
-%   `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp).
+%   `src/2`, `prop/2`, `read_ok/2`, `read_status/3` (operand.lp); `crank/3`, `evaluates/2`
+%   (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp).
 % - **Provides:** `u_atom/1`, `leaf_status/2`, `opaque_leaf/1`, `opened/2`, `open/1`,
 %   `opaque_atom/1`, `complement/2`, `op_literal/3`, `leaf_key/5`, `leaf_attr/2`,
 %   `attr_apart/2`, `same_key/2`, `leaf_lit/3`, `var/1`, `reads/2`, `world/1`, `assigned/3`,
@@ -34,13 +34,14 @@ u_atom(X) :- holds(applies(X), u).
 
 %*! leaf_status(C, S)
 
-Leaf `C` is `u` with status `S`: its operand's read status, or `misfit` when the read is `ok` but a
-value does not fit the operator. A misfit is due2-workflows.md §5.4 step 3. Every `u` leaf has
-exactly one status (integrity.lp).
+Leaf `C` is `u` in world `k` with status `S`: its operand's read status there, or `misfit` when
+the read is `ok` but a value does not fit the operator. A misfit is due2-workflows.md §5.4 step
+3. Every `u` leaf has exactly one status (integrity.lp).
 *%
-leaf_status(C, S) :- leaf(C), left(C, Op), read_status(Op, S).
+leaf_status(C, S) :- evaluates(k, C), leaf(C), left(C, Op), read_status(k, Op, S).
 % A leaf whose read is ok has rank 1 only when some comparison is a misfit (compare.lp).
-leaf_status(C, misfit) :- leaf(C), left(C, Op), read_ok(Op), crank(k, C, 1).
+leaf_status(C, misfit) :- evaluates(k, C), leaf(C), left(C, Op), read_ok(k, Op),
+    crank(k, C, 1).
 
 %*! opaque_leaf(C)
 
