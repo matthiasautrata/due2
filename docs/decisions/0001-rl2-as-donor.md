@@ -41,6 +41,8 @@ The rewrite tested that claim directly:
   None of these is needed by a real policy yet.
 - **DPROD.** All 16 policies in DPROD's example files pass the corpus checker unchanged, with the DPROD profile selected by their own `odrl:profile`; since 2026-10-10 the four example files are vendored unmodified under `profiles/vendor/dprod/examples/`, so this is reproducible locally, and all 16 policies are covered by corpus cases (`conformance/cases/dprod-*`, together with the constructed `dprod-divergences` and `dprod-not-negated-purpose`). Of the 88 scenarios that state a DPROD outcome, 66 agree. The other 22 fall under the six exceptions and DPROD's duty-collection rule: 10 are `Failure`-to-decision refinements (missing values that due2 completes rather than fails on), and 12 are verdict divergences — six of them a violated duty denying under `violations = deny` where DPROD never collects the duty for the requested action.
 
+**Note (2026-10-18):** the counts above still hold, re-derived from the corpus's `dprod_expected` and `rl2_expected` at 126 cases, but the reason given for the 10 `Failure` scenarios is out of date. Since `decisions/0016`, due2 completes only an `unresolved` value, and a missing one is opaque. 7 of the 10 are `Indeterminate`, due2's counterpart of DPROD's `Failure`. In the other 3 the missing value cannot change the rule's finding under Kleene logic: F ∧ U = F twice (`NotApplicable`) and U ∨ T = T once (`Permit`).
+
 ## Consequences
 
 - RL2's evaluation ideas are available to due2 without a second vocabulary or a translator to maintain.
