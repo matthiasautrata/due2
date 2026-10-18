@@ -20,13 +20,14 @@
 %   (operand.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
 %   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`,
 %   `evidence_discharges/3`, `activation/2`, `signer/2`, `sotw_effective_at/1`,
-%   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver).
+%   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver); `le_k/3` (lift.lp).
 % - **Provides:** `duty_root/2`, `duty_part/2`, `split_part/2`, `witness_leaf/1`,
 %   `has_witness/1`, `has_guard/1`, `guard/2`, `witness_cond/2`, `in_witness/1`, `rule_node/1`,
 %   `witness_only/1`, `cons_part/1`, `match_part/2`, `matched/2`, `obligation_policy/2`,
 %   `policy_match/2`, `instance/1`, `witness_pair/2`, `check_kind/1`, `effective_pos/1`,
 %   `occurred_pos/2`, `activated/1`, `activation_at/2`, `deadline_at/2`, `passed/1`,
-%   `ev_reaches/2`, `subject/1`, `signed/1`, `admitted/2`, `keyed/1`, `discharged/2`,
+%   `ev_reaches/2`, `subject/1`, `member_bearer/2`, `has_member_bearer/1`, `performer/2`,
+%   `open_actor/2`, `signed/1`, `admitted/2`, `keyed/1`, `discharged/2`,
 %   `status/3`; extends `evaluates/2` (compare.lp), `item/1`, `holds/2` (applies.lp),
 %   `reject/2` (structure.lp), and `unsupported/1` (lift.lp).
 
@@ -300,16 +301,46 @@ due2-workflows.md §3.2's.
 *%
 subject(Party) :- request_party(F, Party), voc(assignee, F).
 
-% The actor must be the bearer. A duty whose bearer is the request subject, in a request that
-% names none, cannot be told: u, never f.
-holds(check(Y, E, actor), t) :- witness_pair(Y, E), bearer(Y, Party), Party != none,
-    evidence(E, _, Party, _).
-holds(check(Y, E, actor), f) :- witness_pair(Y, E), bearer(Y, Party), Party != none,
-    not evidence(E, _, Party, _).
-holds(check(Y, E, actor), t) :- witness_pair(Y, E), bearer(Y, none), evidence(E, _, Party, _),
-    subject(Party).
-holds(check(Y, E, actor), f) :- witness_pair(Y, E), bearer(Y, none), subject(_),
-    evidence(E, _, Actor, _), not subject(Actor).
+%*! member_bearer(Y, Party)
+
+The request subject `Party` is a member of duty atom `Y`'s bearer, a party collection, so it
+bears `Y` for this request: each member of a collection bears its duty (decisions/0018).
+*%
+member_bearer(Y, Party) :- bearer(Y, Coll), subject(Party), le_k(Party, Coll, party).
+
+%*! has_member_bearer(Y)
+
+The request subject bears duty atom `Y` as a member of its bearer.
+*%
+has_member_bearer(Y) :- member_bearer(Y, _).
+
+%*! performer(Y, Party)
+
+`Party` is the one actor whose act can witness duty atom `Y`: the request subject when it is a
+member of `Y`'s bearer, else the bearer, or the subject when the bearer is `none`. A duty with
+no performer has a bearer that the request leaves open (`open_actor/2`).
+*%
+performer(Y, Party) :- member_bearer(Y, Party).
+performer(Y, Party) :- bearer(Y, Party), Party != none, not has_member_bearer(Y).
+performer(Y, Party) :- bearer(Y, none), subject(Party).
+
+%*! open_actor(Y, Actor)
+
+An act by `Actor` may witness duty atom `Y`, and the request cannot tell: it names no subject,
+and `Actor` is a member of `Y`'s bearer, so `Actor` may be the subject (decisions/0018).
+*%
+open_actor(Y, Actor) :- bearer(Y, Coll), not subject(_), evidence(_, _, Actor, _),
+    le_k(Actor, Coll, party).
+
+% The actor must be the performer. An actor the request cannot tell apart from the subject is u,
+% never f: a member of a collection bearer, or anyone when the bearer is `none` and the request
+% names no subject, which leaves the duty with no performer.
+holds(check(Y, E, actor), t) :- witness_pair(Y, E), evidence(E, _, Actor, _),
+    performer(Y, Actor).
+holds(check(Y, E, actor), f) :- witness_pair(Y, E), evidence(E, _, Actor, _), performer(Y, _),
+    not performer(Y, Actor), not open_actor(Y, Actor).
+holds(check(Y, E, actor), u) :- witness_pair(Y, E), evidence(E, _, Actor, _),
+    open_actor(Y, Actor).
 holds(check(Y, E, actor), u) :- witness_pair(Y, E), bearer(Y, none), not subject(_).
 
 %*! signed(Duty)
@@ -335,8 +366,8 @@ holds(check(a(Duty, Term, T, Party), E, signer), f) :- witness_pair(a(Duty, Term
 %*! keyed(Y)
 
 The instance of duty atom `Y` is keyed on the request: its scope is `grant` and the request has
-a `reference`. Without a reference, a `grant` duty falls back to `member` (due2-workflows.md
-§5.3).
+a `reference`. Without a reference, a `grant` duty falls back to scope `member`, as
+due2-workflows.md §5.3 says.
 *%
 keyed(Y) :- duty_scope(Y, grant), request_reference(_).
 
@@ -385,3 +416,9 @@ status(k, Y, fulfilled) :- holds(fulfilled(Y), t).
 status(k, Y, outstanding) :- holds(fulfilled(Y), f), not passed(Y).
 status(k, Y, violated) :- holds(fulfilled(Y), f), passed(Y).
 status(k, Y, unknown) :- holds(fulfilled(Y), u).
+
+% A `u` duty finding needs a completion variable of its own (due2-workflows.md §6.4), and
+% completion.lp completes only the findings of atoms (#49), so solve 1 declines the vector.
+unsupported("duty: unknown finding") :- holds(owed(_), u).
+unsupported("duty: unknown finding") :- holds(in_force(_), u).
+unsupported("duty: unknown finding") :- holds(fulfilled(_), u).

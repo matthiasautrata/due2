@@ -5,7 +5,9 @@ output is a mismatch, and so is an answer that changes between repeats). `error`
 reported an error, crashed, or broke the protocol. `unsupported`: the task was not declared in
 `ready`, or the backend declined the vector and named the feature (`{"unsupported": "recurrence"}`,
 the same on every repeat), or every repeat matches but lacks an explanation field the scenario
-states (`verdict_basis`, `eliminated`, `verdict_range`, `unknown_parts`); never a pass.
+states (`verdict_basis`, `eliminated`, `verdict_range`, `unknown_parts`); never a pass. A scenario
+stating `exact: false` asserts the beyond-`max_mixed` fallback (`conformance/README.md`), which a
+backend declaring `exact_only` never runs, so it is unsupported there without a call.
 """
 
 from __future__ import annotations
@@ -22,6 +24,10 @@ def run_interpret(session: Session, vector: Vector, repeat: int = 1) -> Result:
     session.ensure_started()
     if "interpret" not in session.tasks:
         return Result("interpret", vector.id, "unsupported", None, "")
+    if session.spike.exact_only and vector.expected.get("exact") is False:
+        return Result(
+            "interpret", vector.id, "unsupported", None, "unsupported: max_mixed fallback"
+        )
     replies = [session.call("interpret", vector.id, vector.input) for _ in range(repeat)]
     ms = statistics.median(r.ms for r in replies)
     declined = {r.unsupported for r in replies}

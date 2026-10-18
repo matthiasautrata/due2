@@ -17,11 +17,12 @@
 % - **Consumes:** `operator/2` (lift.lp); `atom/1`, `atom_party/3` (structure.lp);
 %   `scope/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2` (constraint.lp);
 %   `src/2`, `prop/2`, `read_ok/2`, `read_status/3` (operand.lp); `crank/3`, `evaluates/2`
-%   (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp).
+%   (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp);
+%   `pre/2`, `obligation/1` (structure.lp); `instance/1` (duty.lp).
 % - **Provides:** `u_atom/1`, `leaf_status/2`, `opaque_leaf/1`, `opened/2`, `open/1`,
 %   `opaque_atom/1`, `complement/2`, `op_literal/3`, `leaf_key/5`, `leaf_attr/2`,
 %   `attr_apart/2`, `same_key/2`, `leaf_lit/3`, `var/1`, `reads/2`, `world/1`, `assigned/3`,
-%   `part_in/3`, `pre_in/3`, `completed/3`, `completed_item/1`; extends `crank/3` and
+%   `part_in/3`, `pre_in/3`, `duty_item/1`, `completed/3`, `completed_item/1`; extends `crank/3` and
 %   `evaluates/2` (compare.lp).
 
 %*! u_atom(X)
@@ -203,19 +204,31 @@ that an opaque part leaves the finding `u`.
 *%
 pre_in(W, X, N) :- world(W), u_atom(X), N = #min { M, I : part_of(X, I), part_in(W, I, M) }.
 
+%*! duty_item(I)
+
+`I` is a duty finding: `owed(Y)`, `in_force(Y)`, or `fulfilled(Y)`. duty.lp derives each.
+*%
+duty_item(owed(Y)) :- pre(_, Y).
+duty_item(in_force(Y)) :- obligation(Y).
+duty_item(fulfilled(Y)) :- instance(Y).
+
 %*! completed(W, I, V)
 
-In world `W`, the item `I`, which is `applies(X)`, has value `V`, `t` or `f`. An atom that is not
-`u` keeps its finding. A `u` atom takes the conjunction of its parts in the world, and when that is
-`u`, the value of its variable `fin(X)`.
+In world `W`, the item `I`, which is `applies(X)` or a duty finding, has value `V`, `t` or `f`. An
+atom that is not `u` keeps its finding. A `u` atom takes the conjunction of its parts in the
+world, and when that is `u`, the value of its variable `fin(X)`. A duty finding keeps its value:
+solve 1 declines a `u` one (duty.lp).
 *%
 completed(W, applies(X), V) :- world(W), holds(applies(X), V), V != u.
+completed(W, I, V) :- world(W), duty_item(I), holds(I, V), V != u.
 completed(W, applies(X), V) :- pre_in(W, X, N), N != 1, rank(V, N).
 completed(W, applies(X), V) :- pre_in(W, X, 1), assigned(W, fin(X), V).
 
 %*! completed_item(I)
 
-`I` has a completed value in every world: `applies(X)` for each atom. The constraint is in
-integrity.lp.
+`I` has a completed value in every world: `applies(X)` for each atom, and each duty finding that
+is not `u`. The constraint is in integrity.lp.
 *%
 completed_item(applies(X)) :- atom(X).
+% Solve 1 declines a vector with a `u` duty finding (duty.lp), so solve 2 never completes one.
+completed_item(I) :- duty_item(I), not holds(I, u).

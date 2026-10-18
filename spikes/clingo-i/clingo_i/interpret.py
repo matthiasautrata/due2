@@ -7,7 +7,7 @@ everything else, in three solves (DESIGN.md § Data flow):
 
 1. the declines and rejections, over `lift.lp` to `duty.lp`;
 2. every completion of the unknown variables, cautious: the verdict, the basis, the
-   eliminations, and the unknown parts;
+   eliminations, the listed frontier, the obligations, and the unknown parts;
 3. for an `Indeterminate` only, every completion and one flipped variable, brave: the
    `unknown` atoms and the range.
 
@@ -22,7 +22,7 @@ from pathlib import Path
 from clingo import Control, Function, MessageCode, Model, String, Symbol, SymbolType
 
 from clingo_i import flatten, values
-from clingo_i.json_types import Obj, as_list, as_obj, as_str
+from clingo_i.json_types import Json, Obj, as_list, as_obj, as_str
 
 LP = Path(__file__).resolve().parents[1] / "lp"
 # The program, in load order. Each file's header names the files whose relations it reads.
@@ -86,8 +86,27 @@ def _input(sym: Symbol) -> str:
 
 
 def _rule(atom: Symbol) -> str:
-    """An atom id `a(R, A, T, Party)` as its source rule `R` (due2-workflows.md §3.7)."""
+    """An atom id `a(R, A, T, Party)` as its source rule `R`, or its source duty for a duty atom.
+
+    See due2-workflows.md §3.7.
+    """
     return _text(atom.arguments[0])
+
+
+def _frontier(shown: list[Symbol]) -> list[Json]:
+    """The listed frontier: one sorted list of duty IRIs per alternative, sorted.
+
+    Candidates whose outstanding duties have one set of IRIs are one alternative
+    (due2-workflows.md §6.3), so the sets are collapsed here.
+    """
+    duties: dict[str, set[str]] = {
+        str(s.arguments[0]): set() for s in shown if s.match("listed_front", 1)
+    }
+    for s in shown:
+        if s.match("front_duty", 2):
+            duties[str(s.arguments[0])].add(_rule(s.arguments[1]))
+    routes = sorted({tuple(sorted(d)) for d in duties.values()}, key=lambda a: (len(a), a))
+    return [list(a) for a in routes]
 
 
 class Interpreter:
@@ -149,7 +168,17 @@ class Interpreter:
         basis = {
             (_rule(s.arguments[1]), _text(s.arguments[2])) for s in shown if s.match("basis", 3)
         }
-        out: Obj = {"verdict": verdict, "frontier": [], "obligations": [], "exact": True}
+        rows = {
+            (_rule(s.arguments[0]), _text(s.arguments[1]))
+            for s in shown
+            if s.match("obligation_row", 2)
+        }
+        out: Obj = {
+            "verdict": verdict,
+            "frontier": _frontier(shown) if verdict == "Pending" else [],
+            "obligations": [{"duty": d, "status": status} for d, status in sorted(rows)],
+            "exact": True,
+        }
         reached: set[str] = set()
         if verdict == "Indeterminate":
             pivots = self._solve(text, PROGRAM_FILES, "brave")
@@ -159,6 +188,8 @@ class Interpreter:
                 for s in pivots
                 if s.match("verdict", 2) and _text(s.arguments[0]) == "c"
             }
+        # Every obligation in force has role `obligation`, under any verdict (DESIGN.md § Output).
+        basis |= {(d, "obligation") for d, _ in rows}
         out["verdict_basis"] = [{"ref": r, "role": role} for r, role in sorted(basis)]
         out["eliminated"] = [
             {"ref": ref, "by": by, "rule": rule}

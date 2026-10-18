@@ -1,6 +1,7 @@
 # spikes/README.md: how the harness runs and checks this spike.
 command = ["uv", "run", "--quiet", "python", "main.py"]
 sources = ["main.py", "clingo_i/*.py", "lp/*.lp"]
+exact_only = true
 
 [[check]]
 name = "basedpyright"

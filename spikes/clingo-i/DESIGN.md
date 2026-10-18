@@ -4,7 +4,7 @@ clingo-i is the semantics program of `decisions/0009`. It is a generic clingo pr
 
 ## Vocabulary
 
-The spec defines most terms: atom, part, finding, candidate, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.4); duty, precondition, root obligation, bearer, guard, witness condition, evidence, instance, witness, and deadline (`due2-workflows.md` §3.1, §3.3, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
+The spec defines most terms: atom, part, finding, candidate, outstanding set, open value, alternative, frontier, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.3, §6.4); duty, precondition, root obligation, bearer, guard, witness condition, evidence, instance, witness, and deadline (`due2-workflows.md` §3.1, §3.3, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
 
 - **Driver.** `flatten.py` and `values.py`: the Python that turns a vector into facts. It is syntactic, and decides nothing.
 - **Duty atom.** A duty node expanded like a rule, to one action term, one relation value, and one bearer: `a(Duty, A, T, Party)`, with the sentinel `none` for a missing relation or bearer (§ `structure.lp`). It is not an `atom/1`, because it is matched against evidence, not against the request.
@@ -19,6 +19,10 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 - **Completion variable.** What a `u` atom reads (`due2-workflows.md` §6.4): `cons(D)` for a class of paired leaves with one key, `D` a leaf that names the class, and `fin(X)` for an atom `X` with an opaque part, which completes the finding the opaque part leaves `u`. The spec calls the variable with a polarity a *literal*. "Literal" alone, in this note, means an RDF literal, `lit(Lex, Datatype)`.
 - **Polarity.** How a paired leaf reads its variable: `pos`, or `neg` for a complement operator such as `neq`, which reads the variable of `eq` negated (§ `completion.lp`). `fin(X)` is read `pos`.
 - **Open node.** A constraint node that is `u` and lies on a path of `u` nodes from a `u` root of an atom whose finding is `u`. Completion re-evaluates exactly the open nodes (§ `completion.lp`).
+- **Closed.** A permission is closed in a world when it applies and one of its preconditions is owed and violated: the route can no longer be taken, so it is no candidate (`due2-workflows.md` §6.1, § `resolve.lp`).
+- **Contender.** An atom that takes part in conflict in a world: a candidate, or a `forbid` that applies. A *sure* contender is one in every completion, and a *may* contender one in some (§ `explain.lp`).
+- **Performer.** The one party whose act can witness a duty atom: the request subject when it is a member of a party-collection bearer, else the bearer, or the subject when the bearer is `none` (`decisions/0018`, § `duty.lp`).
+- **Listed frontier.** The frontier the reply lists: read in world `k` from the findings, not from a completion, over the candidates whose state is `ready` or `pending` (§ `explain.lp`).
 - **Unknown part.** A row of `unknown_part(X, Input, S)`: atom `X` has a `u` part that reads `Input` with status `S` (§ `explain.lp`).
 - **Scope.** What a constraint node refines: `rule`, under a rule's `odrl:constraint`, or `action`, under an action term's `odrl:refinement` (`due2-workflows.md` §3.1). It is part of the completion key.
 - **Completion.** One assignment of `t` or `f` to every variable. With `n` variables there are `2^n`.
@@ -42,7 +46,7 @@ The spec defines most terms: atom, part, finding, candidate, completion, and ver
 | `Duty` | a duty node: a precondition duty, a root obligation, or both |
 | `E` | a piece of evidence: an evidence record's `id` |
 | `Eff` | an effect, `permit` or `forbid` |
-| `Strat` | a conflict strategy (`prohibit`, `perm`, `invalid`), or the cross-policy combination in an elimination row |
+| `Strat` | a conflict strategy (`prohibit`, `perm`, `invalid`), or the cross-policy combination in an elimination row, or `violated_precondition` in a closure row |
 | `I` | an item |
 | `V` | a truth value |
 | `N`, `M`, `M2` | a rank of a truth value, or a position in a value space |
@@ -464,9 +468,11 @@ For example, take a duty whose constraint is `ex:g eq ex:v and ex:w eq ex:v and 
 | `deadline` | the duty has no deadline, or `occurred_at` ≤ the deadline (`deadline_at/2`) | `occurred_at` is later | never: an unplaceable deadline declines |
 | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/2`) | otherwise | never: the closure is closed-world |
 | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
-| `actor` | the actor is the bearer; for bearer `none`, the actor is the request subject (`subject/1`) | the actor is someone else | the bearer is `none` and the request names no subject |
+| `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
 | `signer` | the config lists no signer for the duty (`signed/1`), or lists the evidence's issuer (`admitted/2`) | it lists signers, and not the issuer | never |
 | `discharges` | the instance is not keyed on the request (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is keyed, and the evidence does not | never |
+
+The collection rows are `decisions/0018`: each member bears a duty whose bearer is a party collection, so the subject's own act witnesses it, and another member's does not. With no subject, a member's act is `u`, since that member may be the subject, and a non-member's is `f`.
 
 The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the corpus gives a non-recurring instance, or `effective_at` when the SOTW has none (`due2-workflows.md` §5.3). An instance is keyed when its scope is `grant` and the request has a `reference`; without one, a `grant` duty falls back to `member`.
 
@@ -480,6 +486,8 @@ The deadline is the absolute one, or the activation plus a relative one (`plus/3
 | `u` | either | `unknown` |
 
 A duty with no deadline never passes, so it is never `violated`. The table has no row for a deadline it cannot place against `effective_at`, so a duty whose deadline has no position, or a vector with a deadline and no `effective_at`, declines as `duty: deadline not comparable`.
+
+A `u` duty finding, `owed`, `in_force`, or `fulfilled`, declines the vector as `duty: unknown finding` (§ Declines). W3 would need a completion variable for it, which `completion.lp` does not give (#49).
 
 **Worked example.** This is the vector of `test_late_witness_is_not_timely`, with the relations copied from a run. A permission to use `ex:a` travels with an obligation to delete it by 1 May:
 
@@ -501,7 +509,7 @@ Evidence that came too late is no witness: the duty was violated on 1 May, and d
 
 ### `completion.lp`
 
-`due2-workflows.md` §6.4, `decisions/0012`, `decisions/0016`. `u_atom(X)` holds for an atom whose finding is `u`. A `u` atom reads completion variables, and `reads(X, L)` collects them per atom. A `u` part of an `f` atom reads none, because the atom is `f` in every completion. A choice gives each variable `t` or `f` in world `c`, so solve 2's answer sets are exactly the completions. In each world an atom that is not `u` keeps its finding. For a `u` atom, its parts are re-derived in the world (`part_in/3`), their Kleene conjunction is taken (`pre_in/3`), and `applies` is that conjunction when it is `t` or `f`, and the value of `fin(X)` when it is `u`. `completed_item/1` lists what must have a value in every world: every finding.
+`due2-workflows.md` §6.4, `decisions/0012`, `decisions/0016`. `u_atom(X)` holds for an atom whose finding is `u`. A `u` atom reads completion variables, and `reads(X, L)` collects them per atom. A `u` part of an `f` atom reads none, because the atom is `f` in every completion. A choice gives each variable `t` or `f` in world `c`, so solve 2's answer sets are exactly the completions. In each world an atom that is not `u` keeps its finding. For a `u` atom, its parts are re-derived in the world (`part_in/3`), their Kleene conjunction is taken (`pre_in/3`), and `applies` is that conjunction when it is `t` or `f`, and the value of `fin(X)` when it is `u`. `completed_item/1` lists what must have a value in every world: every atom's finding, and every duty finding (`duty_item/1`: `owed`, `in_force`, and `fulfilled`) that is not `u`. A duty finding keeps its value in every world. Solve 1 declines a vector with a `u` one (§ `duty.lp`), so in solve 2 every duty finding is `t` or `f`.
 
 **Statuses.** Each `u` leaf has one status (`leaf_status/2`): its operand's read status in world `k` from `operand.lp` (`read_status/3`), or `misfit` when the read is `ok` and the leaf is still `u`, which only a misfit comparison makes it. A leaf whose status is not `unresolved` is opaque (`opaque_leaf/1`). An unresolved value exists and fits its operator, so of a leaf and its complement exactly one holds, and pairing them is sound. A missing, invalid, conflicting, or misfit value gives no such guarantee: for `"abc"`, neither `lt 5` nor `gteq 5` holds (`decisions/0016`, § Question).
 
@@ -551,29 +559,34 @@ In both cases the variables stay independent, so the completions remain a supers
 
 ### `resolve.lp`
 
-`due2-workflows.md` §6.1, §6.2, §6.4. Every relation carries the world `W`, and within a world every value is `t` or `f`:
+The four steps of `due2-workflows.md` §6.1–§6.4, in order. Every relation carries the world `W`, and within a world every completed value, the duty findings included, is `t` or `f`:
 
-- A candidate is a `permit` atom that applies. Duties are declined (#49), so every surviving candidate is ready, and `Pending` does not occur.
-- **Conflict within the policy** (`due2-workflows.md` §6.2 #1):
-  - `prohibit`: an applying `forbid` eliminates the policy's candidates;
-  - `perm`: an applying candidate eliminates the policy's `forbid` atoms;
-  - `invalid`: an applying candidate and an applying `forbid` together eliminate everything in the policy.
-- **Across policies** (`due2-workflows.md` §6.2 #2): a surviving `forbid` eliminates every candidate (prohibit-overrides).
-- **Verdict**, per the table of `due2-workflows.md` §6.4: `Deny` if a `forbid` survives; otherwise `Permit` if a candidate survives; otherwise `NotApplicable`.
-- **Basis of one world**: `basis(W, X, prohibition)` for each surviving `forbid` of a `Deny`, and `basis(W, X, permission)` for each surviving candidate of a `Permit`.
+1. **Candidates** (`due2-workflows.md` §6.1). An instance is violated when it is not fulfilled and its deadline has passed (`violated/2`). A permission that applies is closed when one of its preconditions is owed and violated (`closed/2`), and every other permission that applies is a candidate (`candidate/2`). A candidate's outstanding set is its preconditions that are owed and not fulfilled (`outstanding/3`). Closure comes before conflict (`due2-workflows.md` §6), so a closed permission removes no prohibition, under either value of `config.violations`.
+2. **Conflict** (`due2-workflows.md` §6.2), among the candidates and the prohibitions that apply. Within the policy, by its strategy (`due2-workflows.md` §6.2 #1):
+   - `prohibit`: an applying `forbid` eliminates the policy's candidates;
+   - `perm`: a candidate eliminates the policy's `forbid` atoms;
+   - `invalid`: a candidate and an applying `forbid` together eliminate everything in the policy that applies.
+
+   Across policies (`due2-workflows.md` §6.2 #2), something denies (`deny/1`) when a `forbid` survives, or when `config.violations` is `deny` and an obligation in force is violated (`due2-workflows.md` §6.4). Either eliminates every candidate (prohibit-overrides), so a candidate survives (`survives/2`) when conflict does not remove it and nothing denies. Under `ignore`, the default, whether stated or absent, `config_violations(deny)` does not hold, and obligations never change the verdict.
+3. **The frontier** (`due2-workflows.md` §6.3). A surviving candidate is dominated when another's outstanding set is a strict subset of its own (`not_within/3`, `dominated/2`), and the frontier is the surviving candidates that are not dominated (`frontier/2`). The program compares candidates, not sets: two candidates with one set are both in the frontier, and `interpret.py` collapses them into one alternative (§ Output).
+4. **Verdict**, by the table of `due2-workflows.md` §6.4, the first that holds: `Deny` if something denies; `Permit` if a frontier candidate has no outstanding duty (`ready/1`); `Pending` if the frontier is not empty (`pending/1`); otherwise `NotApplicable`. The empty set is a strict subset of every other, so under `Permit` the frontier holds only candidates with no outstanding duty.
+
+**Basis of one world** (`basis/3`, `due2-workflows.md` §6.4): role `prohibition` for each surviving `forbid`; `permission` for each frontier candidate; under `Pending`, `duty` for each outstanding duty of a frontier candidate; and under `NotApplicable`, `closed` for each closed permission. A violated obligation that denies has no role here: `interpret.py` gives every obligation in force role `obligation`, under any verdict, from the rows of `explain.lp` (§ Output).
 
 **The cautious basis.** Solve 2 reports a basis row only if it holds in every completion: an atom that carries a definite verdict whatever the unknowns are. An `Indeterminate` has no such row, and its basis comes from solve 3 instead. When no single atom carries a definite verdict in every completion, the basis is empty, and `unknown_parts` names what was unknown (`decisions/0016` #4). The brute-force oracle computes the same basis. Two shapes show where it differs from "the atoms with finding `t` that survive" (`test_completed_basis`):
 
 - **An empty basis.** Prohibitions `ex:x eq 5` and `ex:x neq 5`, with `ex:x` unresolved, read one variable with opposite polarities. Each completion applies one of them, so the verdict is `Deny` in both, and no prohibition survives in both. The basis is empty.
 - **A `u` atom in the basis.** A permission under `ex:x eq 5 or ex:x neq 5` has finding `u`, but its tree is `t` in every completion, so it carries the `Permit` in every completion and is in the basis.
 
-**When the basis is not empty.** The cautious basis of a definite verdict is not empty when the completion that makes every variable `f`, the all-`f` completion, applies only the atoms whose finding is `t`. That holds when every open paired leaf is `pos` and every open connective is an `and` or an `or`, and so whenever no leaf is paired, whatever the connectives. The argument has three steps:
+**When the basis is not empty.** The basis of a definite `Deny` or `Permit` is not empty when the completion that makes every variable `f`, the all-`f` completion, applies only the atoms whose finding is `t`. That holds when every open paired leaf is `pos` and every open connective is an `and` or an `or`, and so whenever no leaf is paired, whatever the connectives. The argument has three steps:
 
-1. Under the premise, the all-`f` completion gives every open node rank 0 or 1. A paired leaf is 0 by its variable, and an opaque leaf is 1. An open `and` has an open member, which is at most 1. An open `or` has no `t` member, since it would be `t`, so its members are `f` or open, and all are at most 1. With no paired leaf, every open node keeps rank 1 whatever its connective, since nothing it reads has changed. So the conjunction of a `u` atom's parts is at most 1, and the atom is `f`: by that conjunction, or by `fin(X)`, which is `f`. The atoms that apply are exactly those with finding `t`, and these apply in every completion.
-2. Take a `Deny`. In the all-`f` completion some `forbid` `Y` with finding `t` survives. Within one policy, only a candidate removes `Y` (`perm`, or `invalid` together with a forbid). But then no forbid of the policy survives under `perm`, and the policy is void under `invalid`, so the verdict would not be `Deny`. So `Y` survives in every completion, and it is in the cautious basis.
-3. Take a `Permit`. In the all-`f` completion some candidate `X` with finding `t` survives. Only a surviving `forbid` (under `prohibit`, or across policies) or a void policy (under `invalid`) removes `X`, and each of these also removes every other candidate, so the verdict would not be `Permit`. So `X` survives in every completion.
+1. Under the premise, the all-`f` completion gives every open node rank 0 or 1. A paired leaf is 0 by its variable, and an opaque leaf is 1. An open `and` has an open member, which is at most 1. An open `or` has no `t` member, since it would be `t`, so its members are `f` or open, and all are at most 1. With no paired leaf, every open node keeps rank 1 whatever its connective, since nothing it reads has changed. So the conjunction of a `u` atom's parts is at most 1, and the atom is `f`: by that conjunction, or by `fin(X)`, which is `f`. The atoms that apply are exactly those with finding `t`, and these apply in every completion. The duty findings are `t` or `f` (§ `completion.lp`) and the same in every completion, so for a permission with finding `t` whether it is closed, and its outstanding set, are the same in every completion, and so is whether a violated obligation in force denies.
+2. Take a `Deny`. If a violated obligation in force denies, it denies in every completion, by step 1. It has no `basis/3` row, but it is in force, so the reply gives it role `obligation` (§ Output). Otherwise no obligation denies in any completion, and in the all-`f` completion some `forbid` `Y` with finding `t` survives. Suppose some completion removes `Y`. Within the policy only a candidate removes a `forbid` (`perm`, or `invalid` together with a forbid), and that candidate applies in that completion. Under `perm` it then removes every `forbid` of the policy, and under `invalid` the policy is void. `structure.lp` admits one policy, so nothing denies in that completion, and its verdict is not `Deny`, against the definite `Deny`. So `Y` survives in every completion, and it is in the cautious basis.
+3. Take a `Permit`. In the all-`f` completion some candidate `X` with finding `t` survives with no outstanding duty. By step 1, `X` is a candidate with no outstanding duty in every completion. `perm` removes no candidate, and a `forbid` that removes one under `prohibit` survives, since nothing removes a `forbid` there. So only something that denies (a surviving `forbid`, under `prohibit` or across policies, or a violated obligation) or a void policy (under `invalid`) removes `X`, and each of these also removes every other candidate, so the verdict would not be `Permit`. So `X` survives in every completion, and no set is a strict subset of its empty one, so it is in every frontier and in the cautious basis.
 
-A paired `neg` leaf, or a `dprod:not` or an `xone` over a paired leaf, breaks step 1: the all-`f` completion can make an atom apply whose finding is `u`, as `ex:x neq 5` does in the first shape above, and as `t xone u` does. So an empty basis under a definite verdict needs an `unresolved` unknown part, which `tools/check_corpus.py` asks a scenario to list.
+A paired `neg` leaf, or a `dprod:not` or an `xone` over a paired leaf, breaks step 1: the all-`f` completion can make an atom apply whose finding is `u`, as `ex:x neq 5` does in the first shape above, and as `t xone u` does. So an empty basis under a definite `Deny` or `Permit` needs an `unresolved` unknown part, which `tools/check_corpus.py` asks a scenario to list.
+
+**`Pending` is the exception.** Dominance is not monotone: a candidate whose finding is `u` can dominate a `t` one in the completions where it applies, and not in the others. In `test_pending_basis_under_an_uncertain_route` (`tests/test_duty.py`), `ex:perm` has finding `t` and needs `ex:d` and `ex:d2`, and `ex:perm2` has finding `u`, on a missing request parameter, and needs `ex:d`. Where `ex:perm2` applies, its set `{ex:d}` dominates, and where it does not, `ex:perm` is the frontier. Each completion is `Pending`, so the verdict is a definite `Pending`, but no permission is in the frontier of both, and the basis holds only `ex:d`, outstanding in both. The listed frontier is `[[ex:d, ex:d2]]`, because `ex:perm2` is uncertain in world `k` (§ `explain.lp`). The only unknown part is `missing`, so `tools/check_corpus.py` would reject this reply as a scenario on two counts of its `Pending` checks: the basis has no permission, and its duties are not the frontier's. What still holds is that the basis is cautious: each `duty` row is outstanding in the frontier of every completion, and each `permission` row is in every frontier. Issue #75 records the alternatives.
 
 ### `integrity.lp`
 
@@ -592,14 +605,26 @@ They are why a rule deleted from the program fails loudly. Without its rule, som
 
 ### `explain.lp`
 
-`due2-workflows.md` §3.5, §6.2, `decisions/0011` #4. Elimination is read from the findings, not from a world, so `elim(X, Y, Strat)` carries no world and is the same in every completion. A remover `Y` has finding `t`. A removed atom `X` has finding `t` or `u`: `u` atoms eliminate nothing (`due2-workflows.md` §6.2), but they can be removed.
+`due2-workflows.md` §3.5, §6.2, `decisions/0011` #4. Elimination is read from the findings, not from a world, so `elim(X, Y, Strat)` carries no world and is the same in every completion. A precondition closes first (`due2-workflows.md` §6.1), then conflict removes. A remover in conflict takes part in it in every completion (`sure_contender/1`): a `forbid` with finding `t`, or a permission with finding `t` that no completion closes (`sure_candidate/1`, `maybe_closed/1`). A removed atom takes part in some completion (`may_contend/1`): its finding is `t` or `u`, and a permission is one no precondition surely closes (`may_candidate/1`, `surely_closed/1`). `u` atoms eliminate nothing (`due2-workflows.md` §6.2), but they can be removed.
 
-- `prohibit`: each `t` `forbid` of the policy removes each of its candidates;
-- `perm`: each `t` candidate removes each of the policy's `forbid` atoms;
-- `invalid`: a policy with a `t` candidate and a `t` `forbid` is void. Each of its `t` or `u` atoms is removed by each other `t` atom of the policy;
+- `violated_precondition`: each permission with finding `t` or `u` is removed by each of its preconditions that is owed `t` and violated (`closed_by/2`), which closes it in every completion where it applies;
+- `prohibit`: each `t` `forbid` of the policy removes each permission that may be a candidate;
+- `perm`: each sure candidate removes each of the policy's `forbid` atoms that may apply;
+- `invalid`: a policy with a sure candidate and a `t` `forbid` is void (`void/1`). Each of its contenders is removed by each other sure contender of the policy;
 - the combination (`prohibit-overrides`, the only one read): each `t` `forbid` that its own policy did not remove removes each candidate of every other policy. `structure.lp` admits one policy, so no vector reaches this rule. It is there because `due2-workflows.md` §3.5 records cross-policy eliminations as rows (`formalisation-review.md` §3 #3), and `test_combination_rows_on_facts` runs it on hand-written facts.
 
-**One row per remover.** An atom removed by two `forbid` atoms has two rows (`due2-workflows.md` §3.5, #57). Each row is a complete reason: whenever `X` applies, `Y` applies too, because `Y` is `t`, and `Y` removes it. A reader can check each row against the policy alone. A single row naming the first remover would hide the others, and which one is "first" would depend on the order of the facts. A `u` remover gives no row, because it removes `X` only in some completions, and that is not a reason that holds whatever the unknowns are.
+**One row per remover.** An atom removed by two `forbid` atoms has two rows (`due2-workflows.md` §3.5, #57). Each row is a complete reason. In a conflict row, whenever `X` applies, `Y` applies too, because `Y` is `t`, and `Y` removes it. In a `violated_precondition` row, `Y` is the duty atom, owed `t` and violated, so it closes `X` wherever `X` applies. A reader can check each row against the policy alone. A single row naming the first remover would hide the others, and which one is "first" would depend on the order of the facts. A `u` remover gives no row, because it removes `X` only in some completions, and that is not a reason that holds whatever the unknowns are.
+
+**The listed frontier** (`due2-workflows.md` §6.1, §6.3). The reply's `frontier` is read in world `k`, so it does not depend on the completion. A precondition whose instance is not violated has an open value (`open_k/2`): the Kleene conjunction of `owed` and the negation of `fulfilled`. Each permission that may be a candidate has one state (`candidate_state/2`), by the table of `due2-workflows.md` §6.1:
+
+- `uncertain` when its finding is `u`, a precondition's open value is `u`, or a violated precondition's `owed` is `u` (`uncertain/1`);
+- otherwise `pending` when some precondition's open value is `t`, so that it is in the outstanding set (`listed_out/2`), and `ready` when none is.
+
+While solve 1 declines a `u` duty finding (§ `duty.lp`, #49), only the first reason for `uncertain` can hold. The others are the table's, and are kept for when the decline goes.
+
+A ready or pending candidate that conflict does not remove (`conflicted/1`) is listed (`listed/1`). The listed frontier is the listed candidates that no other listed candidate dominates (`listed_apart/2`, `listed_dominated/1`, `listed_front/1`), with their outstanding duties (`front_duty/2`). An uncertain candidate is not listed: it reaches the reply only through the verdict, which the completions decide. So under a definite `Pending` the listed frontier can differ from the frontier of a completion (§ `resolve.lp`, #75).
+
+**Obligations** (`due2-workflows.md` §6.1). `obligation_row(Y, S)` names each root obligation in force `t` with its duty status, and each whose `in_force` is `u` as `unknown`. An obligation that is not in force is not reported. The `unknown` row cannot occur while solve 1 declines a `u` duty finding (#49).
 
 **Unknown parts** (`decisions/0016` #3 and its amendment). `unknown_part(X, Input, S)` holds for every `u` part of every atom whose finding is `t` or `u`: `target` and `party(F)` when the request field is absent, status `missing`, and `prop(Prop)` for each `u` leaf anywhere in the atom's trees (`in_tree/2`), with its `leaf_status/2`. The rows read the finding, not a world, so they do not depend on the completion. An `f` atom is not reported, for two reasons. First, none of its `u` parts can change it: its finding is the Kleene conjunction of its parts, and an `f` part makes it `f` in every completion. Second, `due2-workflows.md` §5.5 lets an index skip an atom that is certainly `f`, so its rows would depend on the index. A `u` leaf under a node that another member decides is still reported, in a `t` atom as in a `u` one. The reply then names everything that was unknown in the rules that can apply, whether or not it mattered, and a renderer may show less. Under a status the same for every rule, as an absent target is, every atom carries the row, so `interpret.py` projects them to the rule, and the reply has one row per rule, input, and status.
 
@@ -629,13 +654,17 @@ Conversely, `c` in every model is a completion. So the brave `verdict(c, _)` ato
 
 `interpret` replies with:
 
-- `verdict`, `frontier: []`, `obligations: []`, and `exact: true`. The reply enumerates every completion, which is the definition itself, so it is exact. A vector it cannot enumerate within the variable cap is declined instead;
-- `verdict_basis`: the rows of solve 2 for a definite verdict, or role `unknown` for each `unknown(X)` of solve 3;
-- `eliminated`: each `elim(X, Y, Strat)`, with `Strat` the conflict strategy or the combination;
+- `verdict` and `exact: true`. The reply enumerates every completion, which is the definition itself, so it is exact. A vector it cannot enumerate within the variable cap is declined instead;
+- `frontier`: under `Pending`, the listed frontier of § `explain.lp`, and `[]` under any other verdict. Each alternative is a sorted list of duty IRIs, and the alternatives are sorted by size, then by their IRIs. Candidates whose outstanding duties have one set of IRIs are one alternative (`due2-workflows.md` §6.3), so `interpret.py` collapses them. A duty atom is named by its node (`due2-workflows.md` §3.7), so two sets that differ only in which atom of one node they hold collapse too, where `due2-workflows.md` §6.3, comparing by duty id, keeps them apart: the reply could not tell the two apart;
+- `obligations`: each `obligation_row(Y, S)` as `{"duty", "status"}`;
+- `verdict_basis`: the rows of solve 2 for a definite verdict, or role `unknown` for each `unknown(X)` of solve 3; and, under any verdict, role `obligation` for each obligation the reply lists;
+- `eliminated`: each `elim(X, Y, Strat)`, with `Strat` the conflict strategy, the combination, or `violated_precondition`;
 - `unknown_parts`: each `unknown_part(X, Input, S)` as `{"ref", "input", "status"}`, under any verdict. `input` is `odrl:target`, the party function's IRI, or the property's IRI. The rows are sorted by their full IRIs;
 - `verdict_range` `{"low", "high"}`, for an `Indeterminate` only.
 
-Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)` (`due2-workflows.md` §3.7). So the atoms of one rule are one entry. An elimination whose `ref` and `by` come from the same rule (under `invalid`, two atoms of one rule) is dropped, because at the authored level the rule would remove itself, and `invalid` says "other than itself".
+Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)`, and duty atoms to their duty node (`due2-workflows.md` §3.7). So the atoms of one rule are one entry. An elimination whose `ref` and `by` come from the same rule (under `invalid`, two atoms of one rule) is dropped, because at the authored level the rule would remove itself, and `invalid` says "other than itself".
+
+The spike has no beyond-`max_mixed` fallback (`decisions/0009` #5), so `backend.toml` sets `exact_only` (`spikes/README.md`). The harness reports a scenario that states `exact: false` as `unsupported: max_mixed fallback` without asking the spike.
 
 ## Negation as failure
 
@@ -646,9 +675,9 @@ Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)` (`due2-
 - the value table and the term shapes (`not placed`, `not kind`, `not same_type`), which decide only that a pair is a misfit, and a misfit is `u`;
 - the reads: `not read_resolved`, `not card_ok`, and `not conforms` make a read `u`, never `f`;
 - in `completion.lp`, over relations fixed before the choice. `not complement`, `not leaf_attr`, and `not attr_apart` decide only which variable a leaf reads and with which polarity. `not open` picks the members of an open node that keep their rank, and these are `t` or `f`, because a `u` member of an open node is open itself. `open/1` reads the ranks of world `k`, and no rule for world `k` reads another world, so the ground program has no cycle through `not open`, although `crank/3` holds the ranks of every world;
-- inside one world in `resolve.lp`, where every value is already `t` or `f`;
-- in `explain.lp`, over `elim` rows derived from findings (a `forbid` its own policy did not remove). A `u` finding gives no row, and the rows are only ever read as "no remover", never as a truth value;
-- in `duty.lp`'s witness test, over input records, which are complete: an evidence record lists every field it has, and the config every signer. So `not evidence_object` and an actor that is not the bearer make a check `f`. For the object this is the spike's reading of the equality `e.object = d.relation_value` of `due2-workflows.md` §5.3, where `object` is optional: evidence that records no object does not record the duty's relation value, so the equality does not hold. `not signed`, `not admitted`, `not keyed`, `not discharged`, and `not activated` read the config, the request, and the SOTW the same way. `not ev_reaches` reads the declared `includedIn` edges, which are closed-world. Where an input that the test needs is absent, the check is `u`, not `f`: `not effective_pos` makes `effective` `u`, and `not subject` makes `actor` `u` for a duty whose bearer is the subject. The activation is the one exception, and it takes the default the spec gives it, `effective_at`. `not passed` cannot hide an undecided deadline, because a deadline that has no position declines the vector.
+- inside one world in `resolve.lp`, where every completed value, the duty findings included, is already `t` or `f`, and over `passed/1` and `config_violations/1`, which are facts about the vector;
+- in `explain.lp`, over relations derived from the world-`k` findings and duty statuses: the `elim` rows (a `forbid` its own policy did not remove), the closure (`not surely_closed`, `not maybe_closed`), and the listed frontier (`not uncertain`, `not conflicted`, `not listed_out`, `not listed_apart`, `not listed_dominated`). A `u` finding gives no `elim` row, and the rows are only ever read as "no remover", never as a truth value. `not holds(owed(Y), f)` and `not holds(fulfilled(Y), t)` read a finding that has exactly one value (`kleene.lp`), so they mean "`t` or `u`" and "`f` or `u`";
+- in `duty.lp`'s witness test, over input records, which are complete: an evidence record lists every field it has, and the config every signer. So `not evidence_object`, and an actor that is not the performer (`not performer`) and that the request does not leave open (`not open_actor`), make a check `f`. For the object this is the spike's reading of the equality `e.object = d.relation_value` of `due2-workflows.md` §5.3, where `object` is optional: evidence that records no object does not record the duty's relation value, so the equality does not hold. `not signed`, `not admitted`, `not keyed`, `not discharged`, and `not activated` read the config, the request, and the SOTW the same way. `not ev_reaches` reads the declared `includedIn` edges, and `not has_member_bearer` the party closure, which are closed-world. Where an input that the test needs is absent, the check is `u`, not `f`: `not effective_pos` makes `effective` `u`, and `not subject` makes `actor` `u` for a duty whose bearer is `none`, or a collection the actor is a member of. The activation is the one exception, and it takes the default the spec gives it, `effective_at`. `not passed` cannot hide an undecided deadline, because a deadline that has no position declines the vector.
 
 A missing truth value has no `holds` fact. Then an integrity constraint fails, instead of the value defaulting to `f`.
 
@@ -662,10 +691,11 @@ A vector is declined, never guessed at, when it uses something the spike does no
 |---|---|
 | `rdf:type` | anywhere |
 | `odrl:uid` | when it names `S` itself |
-| `odrl:profile`, `odrl:conflict`, `odrl:permission`, `odrl:prohibition` | the policy |
-| `odrl:action`, `odrl:target`, and the function predicates | anywhere: they are read on the policy, its rules, and its duties, and elsewhere they hang under a declined link (`odrl:duty`) or off the policy, so declining on them would hide the feature |
+| `odrl:profile`, `odrl:conflict`, `odrl:permission`, `odrl:prohibition`, `odrl:obligation` | the policy |
+| `odrl:action`, `odrl:target`, and the function predicates | anywhere: they are read on the policy, its rules, and its duties, and elsewhere they hang under a declined link (`odrl:remedy`, `odrl:consequence`) or off the policy, so declining on them would hide the feature |
 | `odrl:includedIn`, `odrl:partOf`, `odrl:source`, `odrl:leftOperand`, `odrl:operator`, `odrl:rightOperand`, `odrl:unit`, the connectives, the binding attributes, `due2:conceptScheme`, `skos:broader`, `skos:narrower`, `skos:inScheme`, `skos:topConceptOf`, and `skos:hasTopConcept` | anywhere |
 | `odrl:constraint` | a rule or a duty |
+| `odrl:duty` | a permission, as its precondition duty |
 | `odrl:output`, `due2:instanceScope` | a duty |
 | `dprod:deadline`, `dprod:recurrence` | the policy, a rule, or a duty, with DPROD selected; on the policy or a rule they are rejected |
 | `odrl:refinement` | an action term, or a collection (where it is rejected) |
@@ -680,7 +710,7 @@ A predicate is on the annotation allowlist when it is:
 
 `unsupported(P)` holds for a predicate that is neither consumed nor allowlisted, when either:
 
-- it is in a vocabulary namespace: `odrl:`, `due2:`, or a selected profile's IRI. Such a predicate means something, so ignoring it could change the verdict. Examples are `odrl:duty`, `odrl:remedy`, and `odrl:constraint` on a node that is not a rule; or
+- it is in a vocabulary namespace: `odrl:`, `due2:`, or a selected profile's IRI. Such a predicate means something, so ignoring it could change the verdict. Examples are `odrl:remedy`, `odrl:inheritFrom`, and `odrl:constraint` on a node that is not a rule or a duty; or
 - it sits on a structure node (the policy, one of its rules, or one of its duties), whatever its namespace. An unknown predicate there may be a semantic extension (`odrl-compound-to-atomic-normalization.md` §3: "MUST NOT introduce additional … semantics").
 
 Elsewhere, on asset, party, and action nodes, a predicate from another vocabulary is data the spike never reads, and it is ignored. Issue #53 adds a W1 warning for an unevaluated predicate on a structure node. The allowlist is the spike's version of that line.
@@ -695,6 +725,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (§ `completion.lp`) |
 | `constraint: set-valued operand on a single-value operator` | `operand.lp` | no reading in `due2-profiles.md` §4 |
 | `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |
+| `duty: unknown finding` | `duty.lp` | an `owed`, `in_force`, or `fulfilled` finding that is `u`, which `completion.lp` gives no variable (§ `duty.lp`, #49) |
 | `duty: deadline not comparable` | `duty.lp` | a deadline with no position in the `instant` space, or a deadline and no `effective_at`: the status table of `due2-workflows.md` §5.3 has no row for a deadline it cannot place (§ `duty.lp`) |
 | `duty: bearer from two functions` | `structure.lp` | two functions that play the bearer role disagree on a duty, both stated by it or both interiorised from the policy level: two bearers for one performance, which the spec does not settle |
 | `duty: parent with two bearers` | `structure.lp` | a parent atom that passes two bearers to an inheriting duty |
@@ -703,15 +734,13 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `profile-conflict-defaults` | `structure.lp` | two profile defaults, and no rule for which wins |
 | `recurrence` | `structure.lp` | a duty's `dprod:recurrence` needs occurrences, which the spike does not compute (`decisions/0009` #7) |
 
-`odrl:duty` and `odrl:obligation` are not consumed (#49), so a reply declines a policy with a duty on one of them, and the `duty:` and `recurrence` reasons show in the program's relations, which the tests read (§ Tests).
-
 **In the input** (`lift.lp`). The driver flattens every field, and `unsupported_input(Field)` names each field the program does not read:
 
 - a `sotw.closure` edge of a relation other than `includedIn`, `partOf`, `rdf:type`, `rdfs:subClassOf`, `skos:broader`, and `skos:inScheme`;
-- `config.combination` other than `"prohibit-overrides"`, and any `config.violations`;
+- `config.combination` other than `"prohibit-overrides"`;
 - each `unread(Field)` (§ Input facts).
 
-`request.params`, `sotw.facts`, and the context values are read by `operand.lp`; `sotw.evidence` by `operand.lp` and `duty.lp`; and `sotw.activation` and `config.signers` by `duty.lp`. An empty field gives no facts, so it is not declined. When several fields hold, the smallest name wins: `config.*` before `request.*` before `sotw.*`.
+`request.params`, `sotw.facts`, and the context values are read by `operand.lp`; `sotw.evidence` by `operand.lp` and `duty.lp`; `sotw.activation` and `config.signers` by `duty.lp`; and `config.violations` by `resolve.lp`. An empty field gives no facts, so it is not declined. When several fields hold, the smallest name wins: `config.*` before `request.*` before `sotw.*`.
 
 **In the values.** `unsupported_value(Reason)`, read after the input declines: an unplaceable compared literal (§ Values), or `value: derived string datatypes` (§ `compare.lp`).
 
@@ -750,8 +779,8 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
 - **The completed basis** (`test_completed_basis`). The two shapes of § `resolve.lp`, a `Permit` whose basis names a `u` permission and a `Deny` with an empty basis, and the `Permit` with an empty basis of the example in § `completion.lp`. They pin the basis `decisions/0016` #4 settled.
 - **The cap** (`test_variable_cap`). An `or` of `n` leaves on one unresolved operand, each with its own right operand, each leaf written twice: `n` variables. `n = 64` answers and `n = 65` declines as `variable-cap`. The repeated leaves leave ground `var/1` atoms that no model makes true, so a count of the ground atoms would decline both.
 - **Rejections and declines** (`test_constraint_rejections`, `test_constraint_declines`, `test_datatypes_differ_without_a_range`, `test_derived_strings_decline`, `test_node_in_two_scopes`). Each code and reason of § Declines and § Errors that a constraint or a binding produces, on a minimal policy, so a check that is deleted or never fires is caught.
-- **Declines.** A feature the spike does not read must decline, never be ignored, and one it reads must not decline: `sotw.evidence`, `sotw.activation`, and `config.signers` give a `Permit` on a policy without duties (`test_duty_inputs_are_read`). A policy with both `odrl:duty` and `odrl:remedy` declines naming `odrl:duty`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
-- **Duties** (`test_duty.py`), on solve 1's program. A reply declines a policy with `odrl:duty` or `odrl:obligation` (#49), so these tests read the duty relations from the program, not a reply:
+- **Declines.** A feature the spike does not read must decline, never be ignored, and one it reads must not decline: `sotw.evidence`, `sotw.activation`, `config.signers`, and `config.violations` give a `Permit` on a policy without duties (`test_duty_inputs_are_read`). A policy with both `odrl:inheritFrom` and `odrl:remedy` declines naming `odrl:inheritFrom`, the smaller IRI, and gives the same reason on a repeat. An unknown predicate on a rule declines. An allowlisted annotation does not. An unknown predicate on an asset node outside the vocabulary namespaces is ignored. Each input-side decline names its field, and an unplaceable input value declines naming its reason.
+- **Duties** (`test_duty.py`), on solve 1's program, whose relations show what a reply would hide behind a decline or a verdict:
   - **Inheritance.** The duty of a permission with two assignees is two duty atoms, each the precondition of the parent atom with its bearer. Shared by two permissions with one assignee, it is one atom, and a parent with no assignee passes `none`. A program that dropped the bearer from the id, or gave each parent atom every duty atom, fails a row. A duty that names its own party keeps it under every parent atom. A root obligation takes the policy's target and parties, and a precondition duty takes neither.
   - **Bearers.** A root obligation with `dprod:subjectOfDuty` and a different policy-level `odrl:assignee` has the stated party as its only bearer; without `states_bearer/1` it would decline as `duty: bearer from two functions`, as the three DPROD contract cases did. A duty that states both functions with different parties declines, and with the same party it does not.
   - **The split.** An `and` of a state leaf, a witness leaf, and an `actionTime` leaf gives one guard and two witness conditions. A witness refinement of a duty's action is a witness condition. An `or`, an `xone`, or a `dprod:not` over a guard leaf and a witness leaf is `MixedDutyConstraint`, and an `or` of witness leaves alone is not. Without the conjunction rule, the first row's `and` is one part with both kinds of leaf, and is rejected.
@@ -764,6 +793,13 @@ The spike's own tests (`uv run pytest` in this directory) cover what the corpus 
   - **The witness worlds** (`test_witness_condition_is_read_from_the_evidence`, `test_witness_only_nodes_are_not_world_k_items`, `test_action_time_is_the_evidence_time`). A witness leaf reads the evidence's params in `wit(E)`: matching, it is `t`; different, `f`; absent, `u`, and the duty status `unknown`. Read in world `k`, it would be `u` for every piece of evidence. In an `and` of a guard and a witness leaf, only the guard is a world-`k` item, and only the witness leaf is evaluated in `wit(E)`; without `witness_only/1`, world `k` would give the witness leaf a value, `u`, although it has no evidence to read. `due2:actionTime` `lteq` 10 May is `t` for evidence of 1 May and `f` for 20 May; read from the request's 1 June, both would be `f`.
   - **Deadlines** (`test_deadline_decides_outstanding_or_violated`, `test_late_witness_is_not_timely`). An absolute deadline before `effective_at` makes an unfulfilled obligation `violated`, and one after it `outstanding`. A relative one counts from the activation, and from `effective_at` without one, so `P1D` is `violated` from an activation in May and `outstanding` without one. Evidence after the deadline is no witness: without the deadline check, it would fulfil the duty. This is the worked example of § `duty.lp`.
   - **In force** (`test_obligation_without_a_matching_rule_is_not_in_force`). A root obligation in a policy with no permission or prohibition is not in force, so it has no instance, although the request asks for the obligation's own action on its target. A program that matched the obligation itself would find it in force.
+  - **A collection bearer** (`test_each_member_bears_a_collection_duty`, `decisions/0018`). With `ex:alice` and `ex:bob` members of the bearer `ex:coll`, and `ex:alice` the subject, her act is a witness and `ex:bob`'s is not. With `ex:coll` the subject, its own act is. With no subject, a member's act is `u` and a non-member's `f`. Read as equality with the bearer, `ex:alice`'s act would be `f`, as `force-21` was; read as membership, `ex:bob`'s would discharge her duty.
+- **W3** (`test_duty.py`), on replies:
+  - **Routes** (`test_outstanding_precondition_is_pending`, `test_fulfilled_precondition_permits`). An outstanding precondition gives `Pending`, with the duty as the route and in role `duty`; fulfilled, it gives `Permit`. Without `outstanding/3`, the first would be `Permit`.
+  - **Closure** (`test_violated_precondition_closes_the_route`). A precondition owed and violated gives `NotApplicable`, an `eliminated` row with rule `violated_precondition`, and the permission in role `closed`. Without `closed/2`, `Pending` would offer a route that can no longer be taken.
+  - **The frontier** (`test_frontier_keeps_the_least_duty_sets`, `test_ready_route_beats_a_pending_one`). Of two routes, one whose duties strictly contain the other's is dropped, two incomparable ones are both listed, and two with one duty set are one alternative. Without `dominated/2` the first would list both; without the collapse the last would list one set twice. A route with no outstanding duty gives `Permit`, and no frontier.
+  - **An uncertain route** (`test_pending_basis_under_an_uncertain_route`). The `Pending` exception of § `resolve.lp`: frontier `[[ex:d, ex:d2]]`, basis `ex:d` only, and the missing parameter as the unknown part. Read from the completions instead, the frontier would depend on the variable. The test pins the reply #75 decides on.
+  - **A violated obligation** (`test_violated_obligation_denies_only_under_violations_deny`). An obligation in force whose deadline passed unwitnessed is listed `violated`, in role `obligation`, under `Permit` with `config.violations` `ignore` and under `Deny` with `deny`. Without the obligation rule of `deny/1`, the second would be `Permit`.
 - **Protocol.** `main.py` answers `init` with `ready`, declaring `interpret`, and echoes the request `id`.
 
 **The brute-force differential** (`test_brute_force.py`, Hypothesis, `correctness-strategy.md` §4.1):

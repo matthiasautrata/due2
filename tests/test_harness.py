@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -195,6 +196,7 @@ def test_backend_toml(tmp_path: Path) -> None:
     assert list(discover(tmp_path / "spikes")) == ["demo"]
     s = load_spike(d)
     assert s.command == ["python3", "main.py"]
+    assert not s.exact_only
     assert [(c.name, c.command, c.count) for c in s.checks] == [
         ("lint", ["ruff", "check", "."], r"^\S+:\d+:")
     ]
@@ -209,6 +211,25 @@ def test_echo_backend_passes_every_vector(tmp_path: Path, vectors: list[Vector],
         session.close()
     assert [r for r in results if r.status != "pass"] == []
     assert len(session.startup_ms) == 1
+
+
+def test_exact_only_backend_is_not_asked_for_the_fallback(
+    tmp_path: Path, vectors: list[Vector], init: Obj
+) -> None:
+    # Without the flag, a slow-mode backend fails the beyond-max_mixed scenario that its exact
+    # answer contradicts (due2-max-mixed, scenario 1), though it computes what the spec defines.
+    session = Session(replace(fake(tmp_path, "echo"), exact_only=True), init)
+    try:
+        results = {v.id: run_interpret(session, v) for v in vectors}
+    finally:
+        session.close()
+    fallback = {v.id for v in vectors if v.expected.get("exact") is False}
+    assert fallback
+    for vid, r in results.items():
+        if vid in fallback:
+            assert (r.status, r.detail) == ("unsupported", "unsupported: max_mixed fallback")
+        else:
+            assert r.status == "pass"
 
 
 def test_empty_backend_fails_every_vector(tmp_path: Path, vectors: list[Vector], init: Obj) -> None:

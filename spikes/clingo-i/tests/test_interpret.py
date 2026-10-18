@@ -75,7 +75,10 @@ DELETIONS = [
     ("kleene.lp", "rank(u, 1)."),
     ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
     ("completion.lp", "completed(W, applies(X), V) :- pre_in(W, X, 1), assigned(W, fin(X), V)."),
-    ("resolve.lp", 'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W).'),
+    (
+        "resolve.lp",
+        'verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W), not pending(W).',
+    ),
 ]
 
 
@@ -1144,15 +1147,15 @@ def test_decline_names_smallest_unsupported_iri(interpreter: Interpreter) -> Non
     policy = (
         PREFIXES
         + """
-ex:p a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:perm .
+ex:p a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:perm ;
+    odrl:inheritFrom ex:q .
 ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;
-    odrl:remedy [ odrl:action odrl:compensate ] ;
-    odrl:duty [ odrl:action odrl:compensate ] .
+    odrl:remedy [ odrl:action odrl:compensate ] .
 """
     )
-    # odrl:duty < odrl:remedy in code-point order.
+    # odrl:inheritFrom < odrl:remedy in code-point order.
     first = interpreter.reply(vector(policy))
-    assert first == {"unsupported": ODRL + "duty"}
+    assert first == {"unsupported": ODRL + "inheritFrom"}
     assert interpreter.reply(vector(policy)) == first
 
 
@@ -1191,24 +1194,26 @@ EVIDENCE: Obj = {
     ("changes", "reason"),
     [
         ({"sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]}}, "sotw.closure"),  # not a hierarchy
-        ({"config": {"violations": "deny"}}, "config.violations"),
         ({"config": {"combination": "permit-overrides"}}, "config.combination"),
         ({"config": {"preference": "ex:p"}}, "config.preference"),
         # The smallest field wins, whatever the section order.
         (
             {
                 "sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]},
-                "config": {"violations": "deny"},
+                "config": {"combination": "permit-overrides"},
             },
-            "config.violations",
+            "config.combination",
         ),
         # A value the program compares, and cannot place (DESIGN.md § Values).
         ({"request": {"at": "2026-06-01T00:00:00"}}, "value: dateTime without timezone"),
         ({"sotw": {"effective_at": "2026-13-01T00:00:00Z"}}, "value: ill-typed xsd:dateTime"),
         # The input declines come first.
         (
-            {"request": {"at": "2026-06-01T00:00:00"}, "config": {"violations": "deny"}},
-            "config.violations",
+            {
+                "request": {"at": "2026-06-01T00:00:00"},
+                "config": {"combination": "permit-overrides"},
+            },
+            "config.combination",
         ),
     ],
 )
@@ -1227,18 +1232,19 @@ def test_empty_fields_are_not_declined(interpreter: Interpreter) -> None:
         {"sotw": {"evidence": [EVIDENCE]}},
         {"sotw": {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}},
         {"config": {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}},
+        {"config": {"violations": "deny"}},
     ],
 )
 def test_duty_inputs_are_read(interpreter: Interpreter, changes: dict[str, Obj]) -> None:
-    # The fields duty.lp reads are not declined, and without a duty they change nothing. Had
-    # lift.lp kept their declines, each would reply `unsupported`.
+    # The fields duty.lp and resolve.lp read are not declined, and without a duty they change
+    # nothing. Had lift.lp kept their declines, each would reply `unsupported`.
     assert verdict(interpreter.reply(vector(**changes))) == "Permit"
 
 
 def test_policy_declines_come_first(interpreter: Interpreter) -> None:
-    policy = PREFIXES + POLICY_BODY + "ex:perm odrl:duty [ odrl:action odrl:compensate ] .\n"
+    policy = PREFIXES + POLICY_BODY + "ex:forbid odrl:remedy [ odrl:action odrl:compensate ] .\n"
     v = vector(policy, sotw={"closure": [["ex:knows", "ex:a", "ex:b"]]})
-    assert interpreter.reply(v) == {"unsupported": ODRL + "duty"}
+    assert interpreter.reply(v) == {"unsupported": ODRL + "remedy"}
 
 
 def test_uncompared_unplaceable_literal(interpreter: Interpreter) -> None:

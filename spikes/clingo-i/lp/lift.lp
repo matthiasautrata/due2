@@ -10,9 +10,9 @@
 %   `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
 %   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`,
 %   `fact_value/2`, `evidence/4`, `evidence_param/3`, `activation/2`, `sotw_closure/3`), the
-%   config (`config_combination/1`, `config_violations/1`), and the driver's own findings
+%   config (`config_combination/1`), and the driver's own findings
 %   (`unread/1`, `unplaceable/2`); `policy/1`, `rule/1`, `structure_node/1`, `action_term/1`,
-%   `duty_node/1`, and `node_deadline/2` (structure.lp); `right/2` (constraint.lp).
+%   `duty_node/1`, `pre_rule/2`, and `node_deadline/2` (structure.lp); `right/2` (constraint.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
 %   `match_key/1`, `bearer_fn/1`, `vocab_ns/1`, `annotation/1`, `annotation_ns/1`, `operator/2`,
 %   `set_based/1`, `connective/1`, `binding_key/1`, `source_kind/2`, `context_property/2`,
@@ -649,7 +649,7 @@ reject("UnsupportedConstruct", Node) :- triple(Node, Pred, _), voc(refinement, P
 
 `Key` names a predicate the spike reads on the policy node only.
 *%
-policy_predicate(profile; conflict; permission; prohibition).
+policy_predicate(profile; conflict; permission; prohibition; obligation).
 
 %*! family_predicate(Key)
 
@@ -688,13 +688,14 @@ consumed(Node, Pred) :- triple(Node, Pred, _), voc(type, Pred).
 consumed(Node, Pred) :- triple(Node, Pred, Node), voc(uid, Pred).
 consumed(Node, Pred) :- triple(Node, Pred, _), policy(Node), voc(Key, Pred), policy_predicate(Key).
 % The families are consumed on every node, not only on the policy and its rules. Anywhere else
-% they hang under a link that is itself declined (odrl:duty, odrl:refinement) or off the policy,
-% so declining on them would name the family instead of the feature.
+% they hang under a link that is itself declined (odrl:duty on a duty, odrl:refinement) or off
+% the policy, so declining on them would name the family instead of the feature.
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(Key, Pred), family_predicate(Key).
 consumed(Node, Pred) :- triple(Node, Pred, _), function(Pred).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(Key, Pred), anywhere_predicate(Key).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(constraint, Pred), rule(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(constraint, Pred), duty_node(Node).
+consumed(Node, Pred) :- pre_rule(Node, Duty), triple(Node, Pred, Duty), voc(duty, Pred).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc((output; instanceScope), Pred), duty_node(Node).
 % Timing is read on the policy and its rules too, where it is rejected (structure.lp).
 consumed(Node, Pred) :- triple(Node, Pred, _), timing_predicate(Pred), structure_node(Node).
@@ -741,7 +742,6 @@ the smallest `Field`. An empty field gives no facts, so it declines nothing.
 *%
 unsupported_input("sotw.closure") :- sotw_closure(Pred, _, _), not closure_relation(Pred).
 unsupported_input("config.combination") :- config_combination(Comb), Comb != "prohibit-overrides".
-unsupported_input("config.violations") :- config_violations(_).
 unsupported_input(Field) :- unread(Field).
 
 %## The values the program compares

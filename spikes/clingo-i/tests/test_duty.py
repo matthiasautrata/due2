@@ -1,9 +1,9 @@
-"""Duty atoms, the guard/witness split, and the duty findings (DESIGN.md § Tests).
+"""Duty atoms, the guard/witness split, the duty findings, and W3 over them (DESIGN.md § Tests).
 
-`odrl:duty` and `odrl:obligation` decline the vector (DESIGN.md § Declines), so these tests
-ground the program files directly: solve 1's for the atoms and the split, which `rows` reads,
-and solve 2's, integrity constraints included, for the findings and statuses, which
-`findings` reads.
+The atoms and the split are read from solve 1's model, which `rows` grounds directly; the
+findings and statuses from one model of solve 2's files, integrity constraints included,
+which `findings` grounds; and the verdict, frontier, obligations, and explanation from the
+reply, which `output` asks for.
 """
 
 from __future__ import annotations
@@ -71,10 +71,8 @@ def pick(found: set[str], name: str) -> set[str]:
 
 
 def declines(found: set[str]) -> set[str]:
-    """The `unsupported` rows other than the duty properties, which still decline every vector."""
-    return pick(found, "unsupported") - {
-        'unsupported("odrl:duty")', 'unsupported("odrl:obligation")',
-    }  # fmt: skip
+    """The `unsupported` rows: the features for which solve 1 declines the vector."""
+    return pick(found, "unsupported")
 
 
 PERM = 'a("ex:perm","odrl:use","ex:a",'
@@ -622,3 +620,171 @@ def test_action_time_is_the_evidence_time(
         sotw={"evidence": [PAID | {"occurred_at": f"{occurred}T00:00:00Z"}]},
     )
     assert value_of(found, f'witness({D},"ex:e1")') == witness
+
+
+# --- the bearer of a collection's duty -----------------------------------------------------
+
+COLL = 'a("ex:d","odrl:compensate",none,"ex:coll")'  # ex:d under a permission for ex:coll
+COLL_PRE = (
+    permission(" ; odrl:assignee ex:coll ; odrl:duty ex:d")
+    + "ex:d a odrl:Duty ; odrl:action odrl:compensate .\nex:coll a odrl:PartyCollection .\n"
+)
+MEMBERS: Obj = {"closure": [["odrl:partOf", "ex:alice", "ex:coll"],
+                            ["odrl:partOf", "ex:bob", "ex:coll"]]}  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("actor", "parties", "check"),
+    [("ex:alice", {"odrl:assignee": "ex:alice"}, "t"),
+     ("ex:bob", {"odrl:assignee": "ex:alice"}, "f"),
+     ("ex:coll", {"odrl:assignee": "ex:coll"}, "t"),
+     ("ex:alice", {}, "u"),
+     ("ex:carol", {}, "f")],
+)  # fmt: skip
+def test_each_member_bears_a_collection_duty(
+    duty_interpreter: Interpreter, actor: str, parties: Obj, check: str
+) -> None:
+    # decisions/0018: the subject bears the duty as a member, so only its own act is a witness,
+    # and another member's is not. With no subject, a member's act is u, since the member may
+    # be the subject, and a non-member's is f. Read as equality with the bearer, alice's act
+    # would be f (force-21); read as membership, bob's would discharge alice's duty.
+    found = findings(
+        duty_interpreter,
+        COLL_PRE,
+        sotw={**MEMBERS, "evidence": [{**PAID, "actor": actor}]},
+        request={"parties": parties},
+    )
+    assert value_of(found, f'check({COLL},"ex:e1",actor)') == check
+
+
+# --- W3: candidates, the frontier, and the verdict ----------------------------------------
+
+EX = "https://example.org/"
+PAST = '"2026-05-01T00:00:00Z"^^xsd:dateTime'  # before effective_at, so passed
+
+
+def output(interp: Interpreter, body: str, profile: bool = False, **sections: Obj) -> Obj:
+    """The output of the reply for `ex:p` with `body`; an error or a decline fails the test."""
+    head = f"ex:p a odrl:Set{' ; odrl:profile dprod:' if profile else ''} ;\n"
+    reply = interp.reply(vector(HEAD + head + body, **sections))
+    out = reply.get("output")
+    assert isinstance(out, dict), reply
+    return out
+
+
+def refs(out: Obj, key: str) -> set[tuple[str, ...]]:
+    """`out[key]`, a list of objects, as tuples of their values with `ex:` shortened."""
+    rows = out[key]
+    assert isinstance(rows, list)
+    return {
+        tuple(str(v).replace(EX, "ex:") for v in row.values())
+        for row in rows
+        if isinstance(row, dict)
+    }
+
+
+def routes(out: Obj) -> list[list[str]]:
+    frontier = out["frontier"]
+    assert isinstance(frontier, list)
+    return [[str(d).replace(EX, "ex:") for d in alt] for alt in frontier if isinstance(alt, list)]
+
+
+def test_outstanding_precondition_is_pending(duty_interpreter: Interpreter) -> None:
+    # The only candidate has an outstanding duty, so the verdict is Pending with the duty as its
+    # route (due2-workflows.md §6.3). Without outstanding/3 the permission would be ready and
+    # the verdict Permit, as it was before W3 read duties.
+    out = output(duty_interpreter, PRE)
+    assert (out["verdict"], routes(out)) == ("Pending", [["ex:d"]])
+    assert refs(out, "verdict_basis") == {("ex:perm", "permission"), ("ex:d", "duty")}
+
+
+def test_fulfilled_precondition_permits(duty_interpreter: Interpreter) -> None:
+    out = output(duty_interpreter, PRE, sotw={"evidence": [PAID]})
+    assert (out["verdict"], routes(out)) == ("Permit", [])
+    assert refs(out, "verdict_basis") == {("ex:perm", "permission")}
+
+
+def test_violated_precondition_closes_the_route(duty_interpreter: Interpreter) -> None:
+    # An owed precondition whose deadline passed unfulfilled removes the candidate before
+    # conflict (due2-workflows.md §6.1): NotApplicable, the removal recorded with rule
+    # violated_precondition and the permission named closed. Without closed/2, Pending would
+    # offer a route that can no longer be taken.
+    body = PRE.replace("odrl:compensate .", f"odrl:compensate ; dprod:deadline {PAST} .")
+    out = output(duty_interpreter, body, profile=True)
+    assert (out["verdict"], routes(out)) == ("NotApplicable", [])
+    assert refs(out, "eliminated") == {("ex:perm", "ex:d", "violated_precondition")}
+    assert refs(out, "verdict_basis") == {("ex:perm", "closed")}
+
+
+def two_routes(duties2: str) -> str:
+    """ex:perm needs ex:d; ex:perm2 on the same action and target needs `duties2`."""
+    return (
+        "    odrl:permission ex:perm, ex:perm2 .\n"
+        + "ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d .\n"
+        + "ex:perm2 a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + f" odrl:duty {duties2} .\n"
+        + "ex:d a odrl:Duty ; odrl:action odrl:compensate .\n"
+        + "ex:d2 a odrl:Duty ; odrl:action odrl:inform .\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("duties2", "frontier"),
+    [("ex:d, ex:d2", [["ex:d"]]),
+     ("ex:d2", [["ex:d"], ["ex:d2"]]),
+     ("ex:d", [["ex:d"]])],
+)  # fmt: skip
+def test_frontier_keeps_the_least_duty_sets(
+    duty_interpreter: Interpreter, duties2: str, frontier: list[list[str]]
+) -> None:
+    # A route whose outstanding duties strictly contain another's is dominated; incomparable
+    # routes are both listed; two routes with one duty set are one alternative (due2-workflows.md
+    # §6.3). Without dominated/2 the first case would list {d, d2} too; without the collapse by
+    # duty set the third would list {d} twice.
+    out = output(duty_interpreter, two_routes(duties2))
+    assert (out["verdict"], sorted(routes(out))) == ("Pending", frontier)
+
+
+def test_ready_route_beats_a_pending_one(duty_interpreter: Interpreter) -> None:
+    # One candidate needs nothing outstanding: Permit, and the frontier is not reported.
+    out = output(duty_interpreter, two_routes("ex:d2"), sotw={"evidence": [PAID]})
+    assert (out["verdict"], routes(out)) == ("Permit", [])
+    assert refs(out, "verdict_basis") == {("ex:perm", "permission")}
+
+
+def test_pending_basis_under_an_uncertain_route(duty_interpreter: Interpreter) -> None:
+    # ex:perm2's finding is u (a missing parameter), and its {d} dominates ex:perm's {d, d2}
+    # when it applies, so the Pending holds by dominance, with one variable. The frontier is
+    # world k's, where ex:perm2 is uncertain; the basis is what holds in every completion: d,
+    # and no permission. check_corpus.py would reject this as a scenario (#75). Read from the
+    # completions instead, the frontier would be [[d]] or [[d, d2]] by the variable.
+    body = (
+        "    odrl:permission ex:perm, ex:perm2 .\n"
+        + "ex:x dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:x .\n"
+        + "ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + " odrl:duty ex:d, ex:d2 .\n"
+        + "ex:perm2 a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d ;\n"
+        + "    odrl:constraint [ odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand 5 ] .\n"
+        + "ex:d a odrl:Duty ; odrl:action odrl:compensate .\n"
+        + "ex:d2 a odrl:Duty ; odrl:action odrl:inform .\n"
+    )
+    out = output(duty_interpreter, body, profile=True)
+    assert (out["verdict"], routes(out)) == ("Pending", [["ex:d", "ex:d2"]])
+    assert refs(out, "verdict_basis") == {("ex:d", "duty")}
+    assert refs(out, "unknown_parts") == {("ex:perm2", "ex:x", "missing")}
+
+
+OBLIGED = root_obligation(PAST)  # ex:o, in force, its deadline passed with no witness
+
+
+@pytest.mark.parametrize(("violations", "verdict"), [("ignore", "Permit"), ("deny", "Deny")])
+def test_violated_obligation_denies_only_under_violations_deny(
+    duty_interpreter: Interpreter, violations: str, verdict: str
+) -> None:
+    # A violated obligation in force is reported under every verdict, with role obligation,
+    # and turns the verdict to Deny only when config.violations is deny (due2-workflows.md
+    # §6.4). Without the second deny/1 rule, DPROD-aligned evaluation would permit.
+    out = output(duty_interpreter, OBLIGED, profile=True, config={"violations": violations})
+    assert out["verdict"] == verdict
+    assert refs(out, "obligations") == {("ex:o", "violated")}
+    assert ("ex:o", "obligation") in refs(out, "verdict_basis")

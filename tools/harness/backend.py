@@ -46,6 +46,8 @@ class Spike:
     command: list[str]
     checks: tuple[Check, ...]
     sources: tuple[str, ...]  # globs, relative to the spike: the code that counts as its size
+    # Completes unknowns exactly and has no beyond-max_mixed fallback (decisions/0009 #5).
+    exact_only: bool = False
 
 
 def load_spike(directory: Path) -> Spike:
@@ -65,6 +67,7 @@ def load_spike(directory: Path) -> Spike:
         command=[as_str(x, "command") for x in as_list(cfg["command"], "command")],
         checks=checks,
         sources=tuple(as_str(x, "sources") for x in as_list(cfg.get("sources", []), "sources")),
+        exact_only=cfg.get("exact_only", False) is True,
     )
 
 

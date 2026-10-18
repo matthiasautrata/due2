@@ -132,3 +132,14 @@
 {"at": "2026-10-18T11:43:44Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff"}
 {"at": "2026-10-18T11:43:44Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}
 {"at": "2026-10-18T11:44:08Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 647.77, "p50_ms": 40.59, "p95_ms": 58.14, "p99_ms": 376.92, "pass": 245, "revision": "db0b2f7", "task": "interpret", "total_ms": 12006.4, "unsupported": 187, "vectors": 432}
+{"at": "2026-10-18T12:35:56Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 300, "summary": "#49 step 3: W3 — closure by a violated precondition, outstanding sets, frontier by dominance, Pending, deny under config.violations; the listed frontier and obligations in world k; member bears a collection duty (decisions/0018); harness exact_only; DESIGN.md and a second Sonnet cold read"}
+{"at": "2026-10-18T12:35:56Z", "by": "claude-opus-5-5", "kind": "attempt", "summary": "#49 step 3: W3 with duties; 1569 spike tests pass; corpus 372 pass, 0 fail, 60 unsupported"}
+{"at": "2026-10-18T12:35:57Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "open_k/2 as one #min over owed and not-fulfilled made clingo report an info message; rewritten as two rules"}
+{"at": "2026-10-18T12:35:57Z", "by": "claude-opus-5-5", "kind": "bug", "summary": "cold read: the 'basis not empty' argument skipped a violated obligation that denies (no basis/3 row; the reply's obligation role carries it) and left the one-policy premise unstated; both now argued"}
+{"at": "2026-10-18T12:35:57Z", "by": "claude-opus-5-5", "kind": "note", "summary": "a definite Pending can have a basis without a permission, and duties that differ from the listed frontier (test_pending_basis_under_an_uncertain_route): dominance is not monotone in the completions. Open decision #75"}
+{"at": "2026-10-18T12:35:58Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1193, "name": "basedpyright"}
+{"at": "2026-10-18T12:35:58Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 26, "name": "ruff"}
+{"at": "2026-10-18T12:35:58Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
+{"at": "2026-10-18T12:36:06Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1188, "name": "basedpyright"}
+{"at": "2026-10-18T12:36:06Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 24, "name": "ruff"}
+{"at": "2026-10-18T12:36:06Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff format"}

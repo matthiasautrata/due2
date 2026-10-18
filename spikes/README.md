@@ -28,6 +28,7 @@ spikes/<name>/
 ```toml
 command = ["uv", "run", "python", "main.py"]   # run with spikes/<name>/ as working directory
 sources = ["src/**/*.py"]                      # globs: the code that counts as the spike's size
+exact_only = true                              # optional: no beyond-max_mixed fallback (below)
 
 [[check]]                                      # one per compiler, type checker, or linter
 name = "basedpyright"
@@ -38,6 +39,8 @@ count = ' - (error|warning): '                 # regex; each matching output lin
 Match the checker's own diagnostic form, not a bare `warning:`: the tool's own warnings (uv's `VIRTUAL_ENV` mismatch, for one) would count too.
 
 Without `count`, a nonzero exit counts as one diagnostic.
+
+A backend that completes unknowns only exactly, slow mode with no beyond-`max_mixed` fallback (`decisions/0009` #5), declares `exact_only = true`. A scenario stating `exact: false` asserts the fallback's answer (`conformance/README.md`), so the harness reports it `unsupported: max_mixed fallback` for that backend, without calling it.
 
 ## Protocol
 
