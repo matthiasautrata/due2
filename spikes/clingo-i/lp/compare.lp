@@ -230,7 +230,8 @@ crank(C, N) :- op(C, isA), left(C, Op), read_ok(Op),
 %## Connectives
 
 % Kleene conjunction and disjunction as #min and #max with their identities (⋀∅ = t,
-% ⋁∅ = f); `dprod:not` maps rank N to 2 - N. Strong Kleene logic gives a tree the value of its
+% ⋁∅ = f); `dprod:not` maps rank N to 2 - N. The identities only seed the aggregates: a
+% connective with no member is rejected in constraint.lp (decisions/0017). Strong Kleene logic gives a tree the value of its
 % NNF and DNF, so these rules realise the structural rules of normalisation stage 2 without
 % rewriting.
 crank(C, N) :- conn(C, and), N = #min { 2; M, D : member(C, D), crank(D, M) }.

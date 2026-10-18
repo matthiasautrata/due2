@@ -312,7 +312,7 @@ Reads the constraint trees the policy authored (`due2-profiles.md` §4, §5), an
 
 | Code | When |
 |---|---|
-| `MalformedConstraint` | a node that is neither a leaf nor a connective; a leaf without exactly one left operand, exactly one operator, and a right operand; several right operand values under a scalar operator; a list beside other values; the empty list under a set-based operator (`decisions/0013`, amendment) |
+| `MalformedConstraint` | a node that is neither a leaf nor a connective; a leaf without exactly one left operand, exactly one operator, and a right operand; several right operand values under a scalar operator; a list beside other values; the empty list under a set-based operator (`decisions/0013`, amendment); a connective over the empty list (`decisions/0017`) |
 | `UnsupportedOperator` | an operator IRI outside the 12 core operators |
 | `UnsupportedConnective` | `odrl:andSequence` |
 | `FloatingPointOperand` | an `xsd:double` or `xsd:float` right operand |
@@ -603,7 +603,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 |---|---|---|
 | `action: blank node without rdf:value`, `action: several rdf:value` | `structure.lp` | the action term names no single action |
 | `binding: cardinality`, `binding: range` | `operand.lp` | a cardinality or range the spike cannot read, or two of them |
-| `constraint: cycle`, `constraint: dprod:not without one member`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
+| `constraint: cycle`, `constraint: dprod:not with several members`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (§ `completion.lp`) |
 | `constraint: set-valued operand on a single-value operator` | `operand.lp` | no reading in `due2-profiles.md` §4 |
 | `odrl:partOf: cross-kind edge`, `odrl:partOf: untyped collection` | `lift.lp` | a hierarchy the spike does not trust |

@@ -134,7 +134,8 @@ unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
 % operator, and a right operand; several values on a scalar operator; a list with other values,
 % or two lists; the empty list on a set-based operator, which ODRL gives no meaning and which
 % would make the leaf's value independent of the request (due2-diagnostics.md,
-% MalformedConstraint; decisions/0013, amendment).
+% MalformedConstraint; decisions/0013, amendment); a connective over the empty list, for the
+% same reasons (decisions/0017).
 reject("MalformedConstraint", C) :- cnode(C), not leaf(C), not conn(C, _).
 reject("MalformedConstraint", C) :- leaf(C), #count { Op : left(C, Op) } != 1.
 reject("MalformedConstraint", C) :- leaf(C), #count { Iri : c_operator(C, Iri) } != 1.
@@ -144,6 +145,9 @@ reject("MalformedConstraint", C) :- op(C, O), not set_based(O),
 reject("MalformedConstraint", C) :- right_value(C, List), is_list(List), right_value(C, Term),
     Term != List.
 reject("MalformedConstraint", C) :- op(C, O), set_based(O), right_value(C, List), voc(nil, List).
+% Without this rule, the connective rules of compare.lp and completion.lp would give such a node
+% the identities they start from: `and ()` would be `t`, and `or ()` and `xone ()` would be `f`.
+reject("MalformedConstraint", C) :- conn(C, K), triple(C, Pred, List), voc(K, Pred), voc(nil, List).
 reject("UnsupportedOperator", C) :- c_operator(C, Iri), not operator(Iri, _).
 reject("UnsupportedConnective", C) :- conn(C, andSequence).
 reject("FloatingPointOperand", C) :- right(C, Term), unplaceable(Term, "value: xsd:double").
@@ -155,8 +159,9 @@ reject("MixedDuration", C) :- right(C, Term), unplaceable(Term, "value: mixed xs
 % A node with readings the spec does not settle, or none at all.
 unsupported("constraint: leaf with a connective") :- leaf(C), conn(C, _).
 unsupported("constraint: two connectives") :- conn(C, K), conn(C, K2), K != K2.
-unsupported("constraint: dprod:not without one member") :- conn(C, negation),
-    #count { D : member(C, D) } != 1.
+% With no member, `dprod:not` is over the empty list, which the rejections cover.
+unsupported("constraint: dprod:not with several members") :- conn(C, negation),
+    #count { D : member(C, D) } > 1.
 unsupported("constraint: cycle") :- reach_c(C, C).
 % A node shared by a rule's constraint and an action's refinement would need two completion
 % variables, one per scope, for one value (completion.lp).

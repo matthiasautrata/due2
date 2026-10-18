@@ -93,3 +93,8 @@
 {"at": "2026-10-18T01:52:07Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff"}
 {"at": "2026-10-18T01:52:07Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff format"}
 {"at": "2026-10-18T01:52:29Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 432.98, "p50_ms": 32.34, "p95_ms": 46.45, "p99_ms": 262.37, "pass": 245, "revision": "8963561", "task": "interpret", "total_ms": 9223.9, "unsupported": 187, "vectors": 432}
+{"at": "2026-10-18T02:09:51Z", "by": "claude-opus-5-5", "kind": "bug", "minutes": 40, "summary": "A connective over the empty list took its aggregate's identity: and () was t (Permit on a permission, Deny on a prohibition), or () and xone () were f, and not () was declined. constraint.lp now rejects it with MalformedConstraint (decisions/0017, #74); the not decline is narrowed to several members."}
+{"at": "2026-10-18T02:09:51Z", "by": "claude-opus-5-5", "kind": "note", "minutes": 10, "summary": "Completion key: right operands compare as written terms, so 5 and 5.0 are two variables (test_completion_key pins it); due2-workflows.md v0.27 6.4 now says so instead of listing datatype separately."}
+{"at": "2026-10-18T02:09:52Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1138, "name": "basedpyright"}
+{"at": "2026-10-18T02:09:52Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff"}
+{"at": "2026-10-18T02:09:52Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff format"}

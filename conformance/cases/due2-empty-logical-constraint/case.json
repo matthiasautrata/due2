@@ -1,0 +1,17 @@
+{
+  "case": "due2-empty-logical-constraint",
+  "source": "due2-native: logical constraints over the empty list (decisions/0017; issue #74)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Authored for due2. Not valid ODRL 2.2: IM §2.5.2 gives a logical constraint a list of the existing Constraint instances, and odrl22-shape.ttl asks the list for an rdf:first. Read with the empty-set identities, and () is T and or () and xone () are F, so ex:readAnything would permit and ex:noReadAtAll would deny every read of ex:Report, while ex:readNever and ex:readExactlyNone would never apply; dprod:not () in ex:readNotNothing has no operand to negate. Contrast due2-empty-right-operand, where the shape accepts () and the rejection is due2's own.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "Each rule's constraint is an odrl:and, odrl:or, odrl:xone, or dprod:not over the empty list (), which has no reading. due2-profiles.md §5 rejects it with MalformedConstraint, in stage 2."
+  }
+}

@@ -1,0 +1,41 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native negative case: logical constraints over the empty list
+# (decisions/0017, due2-profiles.md §5). In RDF, () is rdf:nil. Read with
+# the empty-set identities, and () is T, so ex:readAnything would permit and
+# ex:noReadAtAll would deny every read of ex:Report; or () and xone () are F,
+# so ex:readNever and ex:readExactlyNone would never apply. dprod:not ()
+# has no operand to negate (ex:readNotNothing).
+
+ex:emptyConnectives a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readAnything, ex:readNever, ex:readExactlyNone, ex:readNotNothing ;
+    odrl:prohibition ex:noReadAtAll .
+
+ex:readAnything a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [ a odrl:LogicalConstraint ; odrl:and () ] .
+
+ex:readNever a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [ a odrl:LogicalConstraint ; odrl:or () ] .
+
+ex:readExactlyNone a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [ a odrl:LogicalConstraint ; odrl:xone () ] .
+
+ex:readNotNothing a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [ a odrl:LogicalConstraint ; dprod:not () ] .
+
+ex:noReadAtAll a odrl:Prohibition ;
+    odrl:action odrl:read ;
+    odrl:target ex:Report ;
+    odrl:constraint [ a odrl:LogicalConstraint ; odrl:and () ] .

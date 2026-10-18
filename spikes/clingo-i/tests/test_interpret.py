@@ -786,6 +786,28 @@ def test_constraint_rejections(
     assert "error" in reply and code in str(reply["error"]), reply
 
 
+@pytest.mark.parametrize("rule", ["Permission", "Prohibition"])
+@pytest.mark.parametrize(
+    "constraint",
+    [
+        "[ odrl:and () ]",
+        "[ odrl:or () ]",
+        "[ odrl:xone () ]",
+        "[ dprod:not () ]",
+        f"[ odrl:and ( {leaf('eq', 'ex:v')} ), () ]",
+    ],
+)
+def test_empty_connective_rejected(interpreter: Interpreter, constraint: str, rule: str) -> None:
+    """A connective over the empty list is malformed (decisions/0017).
+
+    Without the rejection, `and ()` took the identity `t` and the rule applied to every request
+    (`Permit`, or `Deny` for a prohibition), `or ()` and `xone ()` took `f` and the rule never
+    applied, and `not ()` was declined.
+    """
+    reply = interpreter.reply(vector(constrained(constraint, bound("x"), rule=rule)))
+    assert "error" in reply and "MalformedConstraint" in str(reply["error"]), reply
+
+
 @pytest.mark.parametrize(
     ("constraint", "binding", "reason"),
     [
@@ -794,7 +816,7 @@ def test_constraint_rejections(
         (f"[ odrl:and ( {leaf('eq', 'ex:v')} ) ; odrl:or ( {leaf('eq', 'ex:w')} ) ]", "",
          "constraint: two connectives"),
         (f"[ dprod:not ( {leaf('eq', 'ex:v')} {leaf('eq', 'ex:w')} ) ]", "",
-         "constraint: dprod:not without one member"),
+         "constraint: dprod:not with several members"),
         ("ex:c . ex:c odrl:or ( ex:c ex:d ) . ex:d " + leaf("eq", "ex:v")[1:-1], "",
          "constraint: cycle"),
         (leaf("eq", "()"), "", "constraint: list on a scalar operator"),

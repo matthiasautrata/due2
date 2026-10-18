@@ -451,6 +451,12 @@ def check_constraint(
     if conns:
         for p in conns:
             for o in g.objects(c, p):
+                if o == RDF.nil:
+                    r.diag(
+                        "MalformedConstraint",
+                        f"{q(g, c)}: {q(g, p)} over the empty list "
+                        f"(due2-profiles.md 5, decisions/0017)",
+                    )
                 for m in members(g, o):
                     check_constraint(g, m, b, r, used, in_duty)
         return
