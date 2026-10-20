@@ -1,0 +1,6 @@
+{
+  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/print",
+  "http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/media": "Plastic",
+  "http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/system": "Radio",
+  "http://www.w3.org/ns/odrl/2/Asset": "http://example.com/document:1234"
+}

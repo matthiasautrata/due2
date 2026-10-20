@@ -47,7 +47,8 @@ The following parameters can be used:
 * `semantics_by_default` Values 1 (permit-by-default), 0 (unspecified-by-default) or -1 (prohibit-by-default) optionally specifies the default semantics. If omitted, the default value of -1 is used.
 * `test_description` is an optional description of the test that will show in the logs if the test fails
 * `test_tag` is an optional keyword used to group similar tests together. The test output will show a breakdown for each tag. If no tag is specified, the test is placed in the "others" category.
-
+* `expected_conditional_permissions` optional parameter. If set as a list of conditions, it checks whether each element X in this list can be found in a permission that would match if such condition were to hold. For example, if a permission to print at a resolution of 1024 is given, but the access request does not specify the resolution, the evaluation report is expeccted to say that a permission rule can be matched if the request specifies that the resolution is 1024. For examples, see the `logic_with_nulls` tests in the `access_control` test folder.  
+* `expected_conditional_prohibitions` optional parameter, like above but for prohibitions.
 ### How to Add Monitoring Evaluation Tests
 
 To add an evaluation test, create the following files, where X is a filename of your choosing 

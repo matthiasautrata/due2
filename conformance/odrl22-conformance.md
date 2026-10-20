@@ -94,6 +94,12 @@ OVAL policies                                      110 checked, 52 failing  (und
 
 Upstream fixed the assigners and targets. The four `listRightOperand` files now fail only on the undeclared left operand `ex:page`.
 
+Re-run 2026-10-20, after the OVAL refresh to `532db7c`:
+
+```text
+OVAL policies                                      119 checked, 52 failing  (the same 52; the nine new logic_with_nulls files are valid)
+```
+
 ## 6. Reproducing
 
 ```bash
