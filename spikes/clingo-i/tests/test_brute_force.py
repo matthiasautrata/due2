@@ -22,6 +22,11 @@ opaque: it stays `u` in every completion. Under a completion, a tree takes its s
 with its paired leaves set, and an atom whose parts still leave it `u` takes the value of a
 variable of its own.
 
+The unknown parts are read from an explicit DNF of each rule's trees, unsimplified, whose
+disjuncts are W1's atoms (due2-profiles.md §5): a `u` leaf is named only when it lies in a
+disjunct that is not `f`. The program finds the same leaves by walking the tree (`live/4`), so
+the generator plants, in a quarter of the cases, a branch that is `f` whatever its subtree.
+
 The duty differential extends the generated policies with duties (due2-workflows.md §5.3, §6;
 decisions/0018, decisions/0019). Each permission may require some of three duties, and the
 policy may carry a root obligation, with `violations` set to `ignore` or `deny`. A duty may
@@ -131,7 +136,7 @@ TREES = trees(2)
 
 
 @st.composite
-def cases(draw: st.DrawFn) -> Case:
+def cases(draw: st.DrawFn, dead: bool = False) -> Case:
     rules = [
         Rule(
             f"r{i}",
@@ -151,7 +156,7 @@ def cases(draw: st.DrawFn) -> Case:
         # about one Indeterminate in a hundred.
         rules.append(Rule(f"r{len(rules)}", True, "use", "a", None))
         target, assignee = "a", None
-    return Case(
+    case = Case(
         draw(st.sampled_from(("prohibit", "perm", "invalid"))),
         tuple(rules),
         draw(st.sampled_from(ACTIONS)),
@@ -165,6 +170,45 @@ def cases(draw: st.DrawFn) -> Case:
         if draw(st.booleans())
         else tuple(draw(st.booleans()) for _ in range(OPERANDS)),
     )
+    # With `dead`, a quarter of the cases get a branch that only f atoms read: drawn freely, a
+    # u leaf in such a branch is rare. The duty generator draws without it.
+    return dead_branch(draw, case) if dead and draw(st.integers(0, 3)) == 0 else case
+
+
+def dead_branch(draw: st.DrawFn, case: Case) -> Case:
+    """`case` with one rule's first constraint `keep` replaced by `or(dead, keep)`.
+
+    `dead` is `f` whatever its subtree `sub` is: `and(lf, sub)`, `not(or(lt, sub))`, or
+    `xone(lt, lt, sub)`, where `lf` and `lt` are leaves, on an operand with a value, that are
+    `f` and `t`. Each DNF disjunct that holds a leaf of `sub` is then `f`, so a `u` leaf of
+    `sub` that `keep` does not also read is not an unknown part (due2-workflows.md §3.5).
+    """
+    known = [k for k, p in enumerate(case.params) if p is not None]
+    if not known:
+        return case
+    k = draw(st.sampled_from(known))
+    value = case.params[k]
+    assert value is not None
+    false, true = (
+        Leaf(k, draw(st.sampled_from([op for op, f in OPERATORS.items() if f(value, 1) is b])))
+        for b in (False, True)
+    )
+    sub = draw(TREES)
+    dead = draw(
+        st.sampled_from(
+            (
+                Node("and", (false, sub), False),
+                Node("not", (Node("or", (true, sub), True),), False),
+                Node("xone", (true, true, sub), True),
+            )
+        )
+    )
+    i = draw(st.integers(0, len(case.rules) - 1))
+    rule = case.rules[i]
+    rest = rule.constraints or (draw(TREES),)
+    tree = Node("or", (dead, rest[0]), draw(st.booleans()))
+    rules = (*case.rules[:i], replace(rule, constraints=(tree, *rest[1:])), *case.rules[i + 1 :])
+    return replace(case, rules=rules)
 
 
 def turtle(tree: Tree) -> str:
@@ -450,12 +494,64 @@ def unknown(case: Case) -> list[str]:
     return sorted(n for n, p in ps.items() if reads(n, p) & pivotal)
 
 
+type Disjunct = frozenset[tuple[Leaf, bool]]
+
+
+def dnf(tree: Tree, positive: bool = True) -> set[Disjunct]:
+    """The tree's disjunctive normal form, as W1 makes it (due2-workflows.md §4 stage 2).
+
+    Each disjunct is a set of leaves, each read positively or negated. Negation is pushed in by
+    De Morgan, and an `xone` is the disjunction, over its members, of that member conjoined
+    with the negation of every other; a negated `xone` is expanded first (due2-profiles.md §5).
+    The product is distributed in full: a disjunct that holds a leaf and its negation is kept,
+    because strong Kleene logic does not make it `f`.
+    """
+
+    def product(*parts: set[Disjunct]) -> set[Disjunct]:
+        return {frozenset().union(*ds) for ds in itertools.product(*parts)}
+
+    match tree:
+        case Leaf():
+            return {frozenset({(tree, positive)})}
+        case Node("not", (m,), _):
+            return dnf(m, not positive)
+        case Node("xone", members, _):
+            terms = [
+                [dnf(m, (m_i == d_i) == positive) for m_i, m in enumerate(members)]
+                for d_i in range(len(members))
+            ]
+            if positive:
+                return set[Disjunct]().union(*(product(*t) for t in terms))
+            return product(*(set[Disjunct]().union(*t) for t in terms))
+        case Node(conn, members, _):
+            each = [dnf(m, positive) for m in members]
+            if (conn == "and") == positive:
+                return product(*each)
+            return set[Disjunct]().union(*each)
+
+
+def disjunct_value(case: Case, d: Disjunct) -> Truth:
+    """The Kleene conjunction of the disjunct's leaves, each read with its polarity."""
+    values: list[Truth] = []
+    for leaf, positive in d:
+        p = case.params[leaf.operand]
+        values.append(None if p is None else OPERATORS[leaf.op](p, 1) == positive)
+    if False in values:
+        return False
+    return None if None in values else True
+
+
 def unknown_parts(case: Case) -> list[Json]:
     """Every `u` part of every rule whose finding is not `f` (decisions/0016 #3, amendment).
 
     An absent target or party is `missing`, and so is a leaf whose parameter is absent; a leaf
-    whose property has no fact is `unresolved`. A `u` leaf of a `t` rule, under a node another
-    member decides, is a row too. The rows are sorted by full IRI, as the reply's are.
+    whose property has no fact is `unresolved`. A rule's atoms are the disjuncts of its trees'
+    DNF (`dnf`), so a `u` leaf is a row when it lies in a disjunct that is not `f`
+    (due2-workflows.md §3.5). A rule's target, party, and trees are conjoined, and none is `f`
+    when the rule is not, so each tree has a disjunct that is not `f`, and that disjunct
+    combines with one from each other tree into an atom that is not `f`. A `u` leaf of a `t`
+    rule, under a node another member decides, is a row too, as long as its disjunct is not
+    `f`. The rows are sorted by full IRI, as the reply's are.
     """
     rows: set[tuple[str, str, str]] = set()
     for r in case.rules:
@@ -465,7 +561,8 @@ def unknown_parts(case: Case) -> list[Json]:
             rows.add((EX + r.name, ODRL + "target", "missing"))
         if r.assignee is not None and case.assignee is None:
             rows.add((EX + r.name, ODRL + "assignee", "missing"))
-        for leaf in (x for t in r.constraints for x in leaves(t)):
+        live = (d for t in r.constraints for d in dnf(t) if disjunct_value(case, d) is not False)
+        for leaf, _ in (x for d in live for x in d):
             if case.params[leaf.operand] is None:
                 status = "unresolved" if case.state[leaf.operand] else "missing"
                 rows.add((EX + r.name, f"{EX}o{leaf.operand}", status))
@@ -597,6 +694,27 @@ EXAMPLES = [
         None,
         None,
     ),
+    # A u leaf that only f atoms read, in each shape: under an f and, under a negated or with
+    # a t member, under an xone with two t members, and under the negation of an xone that is t
+    # (a t member beside an f and). The t leaf beside it decides the rule, and the u leaf is not
+    # named (#81).
+    *(
+        Case(
+            "prohibit",
+            (Rule("r0", True, "use", "a", None, (Node("or", (dead, eq(0)), False),)),),
+            "use",
+            "a",
+            None,
+            (1, 2, None),
+            PAIRED,
+        )
+        for dead in (
+            Node("and", (eq(1), eq(2)), False),
+            Node("not", (Node("or", (eq(0), eq(2)), False),), False),
+            Node("xone", (eq(0), eq(0), eq(2)), True),
+            Node("not", (Node("xone", (eq(0), Node("and", (eq(1), eq(2)), False)), True),), False),
+        )
+    ),
     # A u leaf under a t node, beside an open leaf with the same variable: only the open leaf
     # is read.
     Case(
@@ -630,7 +748,7 @@ def differential(interp: Interpreter, config: settings) -> Callable[[], None]:
     """The differential against `interp`, on the examples and then on generated cases."""
 
     @config
-    @given(cases())
+    @given(cases(dead=True))
     def run(case: Case) -> None:
         check(interp, case)
 
@@ -767,6 +885,47 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
             )
         ],
     ),
+    # Every u leaf of a reported finding named, as before #81: a leaf that only f atoms read is
+    # named too.
+    "u-leaf-of-f-atom-named": (
+        "explain.lp",
+        [
+            (
+                "conj(K, P), member(C, D),\n    not polar(W, D2, P, 0) : member(C, D2), D2 != D.",
+                "conj(K, P), member(C, D).",
+            )
+        ],
+    ),
+    # A negation passes liveness on without flipping the polarity.
+    "live-ignores-negation": (
+        "explain.lp",
+        [
+            (
+                "conn(C, negation), member(C, D), flip(P, Q).",
+                "conn(C, negation), member(C, D), Q = P.",
+            )
+        ],
+    ),
+    # An xone term passes liveness on whatever its other members are.
+    "live-xone-ignores-term": (
+        "explain.lp",
+        [
+            (
+                "xone_pol(C, D, G, Q),\n    not polar(W, H, R, 0) : xone_pol(C, D, H, R), H != G.",
+                "xone_pol(C, D, G, Q).",
+            )
+        ],
+    ),
+    # A negated xone passes liveness on whatever its other negated terms are.
+    "live-negated-xone-ignores-terms": (
+        "explain.lp",
+        [
+            (
+                "flip(R, Q),\n    not xone_term(W, C, D2, 2) : member(C, D2), D2 != D.",
+                "flip(R, Q).",
+            )
+        ],
+    ),
     # One variable per leaf: leaves with the same key become independent.
     "variable-per-leaf": (
         "completion.lp",
@@ -880,13 +1039,21 @@ def shapes(case: Case) -> Iterator[str]:
         for t in r.constraints
     ):
         yield "u leaf under a deciding connective"
+    for r in case.rules:
+        if finding(parts(case, r)) is False:
+            continue
+        for t in r.constraints:
+            forms = dnf(t)
+            live = {x for d in forms if disjunct_value(case, d) is not False for x, _ in d}
+            if any(case.params[x.operand] is None and x not in live for d in forms for x, _ in d):
+                yield "u leaf that only f atoms read"
 
 
 def test_generator_reaches_each_shape() -> None:
     seen: Counter[str] = Counter()
 
     @settings(max_examples=400, deadline=None, database=None, derandomize=True)
-    @given(cases())
+    @given(cases(dead=True))
     def tally(case: Case) -> None:
         seen.update(shapes(case))
 
@@ -900,6 +1067,7 @@ def test_generator_reaches_each_shape() -> None:
         "an f atom on an absent target",
         "constraint parts sharing a key",
         "u leaf under a deciding connective",
+        "u leaf that only f atoms read",
     }
     assert {s: seen[s] for s in wanted if seen[s] == 0} == {}, seen
 

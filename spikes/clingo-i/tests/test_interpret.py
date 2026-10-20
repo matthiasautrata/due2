@@ -1113,7 +1113,7 @@ def test_unknown_parts(
 
 def test_decided_leaf_is_reported(interpreter: Interpreter) -> None:
     # A t atom whose or has a t member and a u leaf: the u leaf decides nothing, and is
-    # reported (decisions/0016 #3). Reporting only u atoms would drop it.
+    # reported (due2-workflows.md §3.5). Reporting only u atoms would drop it.
     y = "[ odrl:leftOperand ex:y ; odrl:operator odrl:eq ; odrl:rightOperand ex:w ]"
     pol = constrained(
         f"[ odrl:or ( {leaf('eq', 'ex:v')} {y} ) ]", bound("x"), bound("y", "stateSource")
@@ -1121,6 +1121,37 @@ def test_decided_leaf_is_reported(interpreter: Interpreter) -> None:
     reply = interpreter.reply(vector(pol, request={"params": {"ex:x": iri("ex:v")}}))
     assert outcome(reply) == "Permit"
     assert unknown_parts(reply) == [("ex:r", "ex:y", "unresolved")]
+
+
+XT, XF = leaf("eq", "ex:v"), leaf("eq", "ex:w")  # with ex:x = ex:v, t and f
+Y, Z = (leaf("eq", "ex:v").replace("ex:x", f"ex:{op}") for op in ("y", "z"))
+
+
+# A u leaf is named iff it lies in a disjunct of the rule's DNF that is not f
+# (due2-workflows.md §3.5): through not, and, or, and both polarities of xone
+# (due2-profiles.md §5). Each row joins
+# z, always live, by or, so the rule stays u. In the first five, ex:y lies only in f disjuncts;
+# in the last two, it lies in a u one. Named by tree membership, the first five would name
+# ex:y too; read without the flip of polarity at not, the second and fifth would.
+@pytest.mark.parametrize(
+    ("dead", "named"),
+    [(f"[ odrl:and ( {XF} {Y} ) ]", ["z"]),
+     (f"[ dprod:not ( [ odrl:or ( {XT} {Y} ) ] ) ]", ["z"]),
+     (f"[ dprod:not ( [ dprod:not ( [ odrl:and ( {XF} {Y} ) ] ) ] ) ]", ["z"]),
+     (f"[ odrl:xone ( {XT} {XT} {Y} ) ]", ["z"]),
+     (f"[ dprod:not ( [ odrl:xone ( {XT} [ odrl:and ( {XF} {Y} ) ] ) ] ) ]", ["z"]),
+     (f"[ odrl:and ( {XT} {Y} ) ]", ["y", "z"]),
+     (f"[ dprod:not ( [ odrl:xone ( {XT} {Y} ) ] ) ]", ["y", "z"])],
+)  # fmt: skip
+def test_leaf_in_f_disjuncts_only_is_not_reported(
+    interpreter: Interpreter, dead: str, named: list[str]
+) -> None:
+    pol = constrained(
+        f"[ odrl:or ( {dead} {Z} ) ]", bound("x"), bound("y", "stateSource"),
+        bound("z", "stateSource"),
+    )  # fmt: skip
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": iri("ex:v")}}))
+    assert unknown_parts(reply) == [("ex:r", f"ex:{op}", "unresolved") for op in named]
 
 
 def test_invalid_read_is_reported(interpreter: Interpreter) -> None:

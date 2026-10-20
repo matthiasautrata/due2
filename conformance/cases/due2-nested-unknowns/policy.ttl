@@ -1,0 +1,107 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native, after the three nested cases reported to OVAL on DIPS-Tools/ODRL-Engine#9
+# (2026-10-19), plus one under negation. Each rule nests one logical constraint in another, with
+# some members decided and some unknown. The verdicts test Kleene logic through the nesting. The
+# unknown parts test which unknown leaves are named: only those in a DNF disjunct that is not F
+# (workflows §3.5). Each rule has its own target, so a request selects one rule.
+#
+# printXone: OVAL's logic_with_nulls5.ttl, as a permission.
+# printOrOfAnd: or(and(F, x), y). Only y is named.
+# printAndOfOr: and(or(T, x), y). Both are named.
+# printNotOr: or(not(or(T, x)), y). The negated or is F, so only y is named.
+
+ex:printPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:printXone, ex:printOrOfAnd, ex:printAndOfOr, ex:printNotOr .
+
+ex:printXone a odrl:Permission ;
+    odrl:action odrl:print ;
+    odrl:target ex:DocA ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:xone (
+            [ a odrl:Constraint ; odrl:leftOperand ex:resolution ;
+              odrl:operator odrl:eq ; odrl:rightOperand 1024 ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:resolution ;
+              odrl:operator odrl:eq ; odrl:rightOperand 2048 ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:media ;
+              odrl:operator odrl:eq ; odrl:rightOperand "Poster" ]
+        )
+    ] .
+
+ex:printOrOfAnd a odrl:Permission ;
+    odrl:action odrl:print ;
+    odrl:target ex:DocB ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:or (
+            [ a odrl:LogicalConstraint ;
+              odrl:and (
+                  [ a odrl:Constraint ; odrl:leftOperand ex:resolution ;
+                    odrl:operator odrl:eq ; odrl:rightOperand 1024 ]
+                  [ a odrl:Constraint ; odrl:leftOperand ex:media ;
+                    odrl:operator odrl:eq ; odrl:rightOperand "Poster" ]
+              ) ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:system ;
+              odrl:operator odrl:eq ; odrl:rightOperand "PC" ]
+        )
+    ] .
+
+ex:printAndOfOr a odrl:Permission ;
+    odrl:action odrl:print ;
+    odrl:target ex:DocC ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:and (
+            [ a odrl:LogicalConstraint ;
+              odrl:or (
+                  [ a odrl:Constraint ; odrl:leftOperand ex:resolution ;
+                    odrl:operator odrl:eq ; odrl:rightOperand 600 ]
+                  [ a odrl:Constraint ; odrl:leftOperand ex:media ;
+                    odrl:operator odrl:eq ; odrl:rightOperand "Poster" ]
+              ) ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:system ;
+              odrl:operator odrl:eq ; odrl:rightOperand "PC" ]
+        )
+    ] .
+
+ex:printNotOr a odrl:Permission ;
+    odrl:action odrl:print ;
+    odrl:target ex:DocD ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:or (
+            [ a odrl:LogicalConstraint ;
+              dprod:not [
+                  a odrl:LogicalConstraint ;
+                  odrl:or (
+                      [ a odrl:Constraint ; odrl:leftOperand ex:resolution ;
+                        odrl:operator odrl:eq ; odrl:rightOperand 600 ]
+                      [ a odrl:Constraint ; odrl:leftOperand ex:media ;
+                        odrl:operator odrl:eq ; odrl:rightOperand "Poster" ]
+                  ) ] ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:system ;
+              odrl:operator odrl:eq ; odrl:rightOperand "PC" ]
+        )
+    ] .
+
+ex:resolution a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:resolution ;
+    rdfs:range xsd:integer .
+
+ex:media a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:media ;
+    rdfs:range xsd:string .
+
+ex:system a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:system ;
+    rdfs:range xsd:string .

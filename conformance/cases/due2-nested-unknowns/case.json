@@ -1,0 +1,269 @@
+{
+  "case": "due2-nested-unknowns",
+  "source": "due2-native, after the nested cases reported to OVAL on DIPS-Tools/ODRL-Engine#9",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2: the three nested cases reported to OVAL on DIPS-Tools/ODRL-Engine#9 (2026-10-19), and a fourth under negation. No origin result: the vendored OVAL suite (40b8ac6) predates them. OVAL at 596f10c, given the same values in the request, accepts scenario 1 as a full match, because its first pass reads the missing resolution as false. It asks for `media eq Poster or system eq PC` in scenario 2, where only `system eq PC` can help, and for `media eq Poster and system eq PC` in scenario 3, where `system eq PC` is enough. due2 answers Indeterminate in all four. It names the unknown parts of every atom that is not F (workflows §3.5), so scenarios 2 and 4 do not name media, which lies only in an F atom, and scenario 3 names media, which decides nothing. Scenario 1 is due2-xone-unknown's first trap with three members.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "xone: poster, resolution unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:DocA",
+        "at": "2026-10-19T12:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-19T12:00:00Z",
+        "facts": {
+          "ex:resolution": {
+            "status": "unresolved",
+            "values": []
+          },
+          "ex:media": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "Poster",
+                "@type": "xsd:string"
+              }
+            ]
+          },
+          "ex:system": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:printXone",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:printXone",
+            "input": "ex:resolution",
+            "status": "unresolved"
+          }
+        ],
+        "why": "Of W1's three xone atoms, the two that need media ≠ Poster are F, and the third, media eq Poster with both resolution literals negated, is U. Completing either resolution literal T gives NotApplicable and both F gives Permit, so Indeterminate."
+      }
+    },
+    {
+      "name": "or of and: resolution 600, media and system unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:DocB",
+        "at": "2026-10-19T12:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-19T12:00:00Z",
+        "facts": {
+          "ex:resolution": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "600",
+                "@type": "xsd:integer"
+              }
+            ]
+          },
+          "ex:media": {
+            "status": "unresolved",
+            "values": []
+          },
+          "ex:system": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:printOrOfAnd",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:printOrOfAnd",
+            "input": "ex:system",
+            "status": "unresolved"
+          }
+        ],
+        "why": "W1's atom resolution eq 1024 and media eq Poster is F, since 600 ≠ 1024, and the atom system eq PC is U, so only system is named. Completing it gives Permit or NotApplicable, so Indeterminate."
+      }
+    },
+    {
+      "name": "and of or: resolution 600, media and system unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:DocC",
+        "at": "2026-10-19T12:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-19T12:00:00Z",
+        "facts": {
+          "ex:resolution": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "600",
+                "@type": "xsd:integer"
+              }
+            ]
+          },
+          "ex:media": {
+            "status": "unresolved",
+            "values": []
+          },
+          "ex:system": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:printAndOfOr",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:printAndOfOr",
+            "input": "ex:media",
+            "status": "unresolved"
+          },
+          {
+            "ref": "ex:printAndOfOr",
+            "input": "ex:system",
+            "status": "unresolved"
+          }
+        ],
+        "why": "The DNF has two atoms, resolution eq 600 and system eq PC (T and U), and media eq Poster and system eq PC (U and U). Both are U, so media is named although it decides nothing, and completing system gives Permit or NotApplicable."
+      }
+    },
+    {
+      "name": "not of or: resolution 600, media and system unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:DocD",
+        "at": "2026-10-19T12:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-10-19T12:00:00Z",
+        "facts": {
+          "ex:resolution": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "600",
+                "@type": "xsd:integer"
+              }
+            ]
+          },
+          "ex:media": {
+            "status": "unresolved",
+            "values": []
+          },
+          "ex:system": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:printNotOr",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:printNotOr",
+            "input": "ex:system",
+            "status": "unresolved"
+          }
+        ],
+        "why": "Pushing the negation inward gives the atom resolution neq 600 and media neq Poster, which is F, so only the atom system eq PC is U and only system is named. Completing it gives Permit or NotApplicable, so Indeterminate."
+      }
+    }
+  ]
+}

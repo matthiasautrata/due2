@@ -12,7 +12,7 @@ import pytest
 from clingo import Control
 
 from clingo_i.interpret import SOLVE_1, SOLVE_2, Interpreter, load_programs
-from clingo_i.json_types import Obj
+from clingo_i.json_types import Json, Obj
 from tests.conftest import DPROD, DUE2, PREFIXES, vector
 
 HEAD = (
@@ -854,6 +854,36 @@ def test_unknown_fulfilled_is_its_own_variable(
     assert out["verdict_range"] == {"low": "Pending", "high": "Permit"}
     assert refs(out, "verdict_basis") == {("ex:d", "unknown")}
     assert refs(out, "unknown_parts") == {part}
+
+
+def witnessed(op: str) -> str:
+    return WITNESS.replace("ex:w ", f"ex:{op} ").replace("ex:w .", f"ex:{op} .")
+
+
+OTHER: Obj = {"@id": "ex:other"}
+V: Obj = {"@id": "ex:v"}
+
+
+@pytest.mark.parametrize(
+    ("condition", "evidence", "named"),
+    [(f"[ odrl:or ( [ odrl:and ( {leaf('w1')} {leaf('w2')} ) ] {leaf('w3')} ) ]",
+      [PAID | {"params": {"ex:w1": OTHER}}], {"ex:w3"}),
+     (f"[ odrl:and ( {leaf('w1')} {leaf('w2')} ) ]",
+      [PAID | {"actor": "ex:bob", "params": {"ex:w2": V}},
+       PAID | {"id": "ex:e2", "params": {"ex:w1": V}}], {"ex:w2"})],
+)  # fmt: skip
+def test_witness_parts_name_only_live_leaves(
+    duty_interpreter: Interpreter, condition: str, evidence: list[Json], named: set[str]
+) -> None:
+    # A u witness makes fulfilled u, and its parts name only the leaves that can still decide
+    # it (due2-workflows.md §3.5). In the first case ex:w1 is f, so the and is f and its u
+    # ex:w2 cannot change the or: only ex:w3 is named. In the second, ex:e1's actor check is
+    # f, so its witness pair is f and its missing ex:w1 is not named; ex:e2's ex:w2 is. Named
+    # by tree membership, either case would also name the leaf that cannot decide anything.
+    body = duty_with(condition, witnessed("w1"), witnessed("w2"), witnessed("w3"))
+    out = output(duty_interpreter, body, profile=True, sotw={"evidence": evidence})
+    assert out["verdict_range"] == {"low": "Pending", "high": "Permit"}
+    assert refs(out, "unknown_parts") == {("ex:d", op, "missing") for op in named}
 
 
 def guarded_obligation() -> str:

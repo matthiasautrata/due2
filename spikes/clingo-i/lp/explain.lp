@@ -23,9 +23,10 @@
 % Variable letters: DESIGN.md § Vocabulary; in an `elim` row `X` is removed and `Y` removes it.
 %
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
-%   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2` (applies.lp); `member/2`,
-%   `leaf/1`, `left/2` (constraint.lp); `prop/2`, `read_ok/2`, `read_status/3` (operand.lp);
-%   `crank/3`, `evaluates/2` (compare.lp); `rank/2` (kleene.lp); `voc/2` (lift.lp);
+%   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2` (applies.lp); `conn/2`,
+%   `member/2`, `leaf/1`, `left/2` (constraint.lp); `prop/2`, `read_ok/2`, `read_status/3`
+%   (operand.lp); `crank/3`, `evaluates/2`, `xone_term/4` (compare.lp); `rank/2` (kleene.lp);
+%   `voc/2` (lift.lp);
 %   `witness_cond/2`, `obligation_policy/2`, `instance/1`, `passed/1`, `status/3` (duty.lp);
 %   `duty_item/1`, `finding_atom/2`, `item_root/2`, `leaf_status/2` (completion.lp).
 % - **Provides:** `may_apply/1`, `surely_applies/1`, `same_policy/3`, `closed_by/2`,
@@ -33,7 +34,8 @@
 %   `sure_contender/1`, `elim_within/3`, `void/1`, `removed_within/1`, `elim/3`, `open_k/2`,
 %   `uncertain/1`, `conflicted/1`, `candidate_state/2`, `listed/1`, `listed_out/2`,
 %   `listed_apart/2`, `listed_dominated/1`, `listed_front/1`, `front_duty/2`,
-%   `obligation_row/2`, `reported/1`, `in_tree/2`, `witness_status/2`, `unknown_part/3`.
+%   `obligation_row/2`, `reported/1`, `polar/4`, `flip/2`, `conj/2`, `disj/2`,
+%   `xone_pol/4`, `live/4`, `witness_status/3`, `unknown_part/3`.
 
 %## Integrity
 
@@ -276,22 +278,91 @@ would make the reply depend on the index (decisions/0016, amendment).
 reported(applies(X)) :- atom(X), not holds(applies(X), f).
 reported(I) :- duty_item(I), not holds(I, f).
 
-%*! in_tree(I, C)
+%*! polar(W, C, P, N)
 
-Constraint node `C` is in a tree of finding `I`: one of its roots, or a member of a node in one.
-The roots of `fulfilled(Y)` are the witness conditions of `Y`.
+In world `W`, node `C` read with polarity `P` has rank `N`: its own rank for `pos`, and its
+negation's for `neg`.
 *%
-in_tree(I, C) :- item_root(I, C).
-in_tree(fulfilled(Y), C) :- duty_item(fulfilled(Y)), witness_cond(Y, C).
-in_tree(I, D) :- in_tree(I, C), member(C, D).
+polar(W, C, pos, N) :- crank(W, C, N).
+polar(W, C, neg, 2 - N) :- crank(W, C, N).
 
-%*! witness_status(C, S)
+%*! flip(P, Q)
 
-The witness leaf `C` is `u` in some world `wit(E)` with status `S`, as `leaf_status/2` gives it
-for world `k`: its operand's read status there, or `misfit`.
+Polarity `Q` is the opposite of `P`. A negation reads its member with the opposite polarity.
 *%
-witness_status(C, S) :- evaluates(wit(E), C), leaf(C), left(C, Op), read_status(wit(E), Op, S).
-witness_status(C, misfit) :- evaluates(wit(E), C), leaf(C), left(C, Op), read_ok(wit(E), Op),
+flip(pos, neg).
+flip(neg, pos).
+
+%*! conj(K, P)
+
+A node with connective `K`, read with polarity `P`, is a conjunction of its members, each read
+with `P`: an `and` read positively, or an `or` read negatively (De Morgan).
+*%
+conj(and, pos).
+conj(or, neg).
+
+%*! disj(K, P)
+
+A node with connective `K`, read with polarity `P`, is a disjunction of its members, each read
+with `P`: an `or` read positively, or an `and` read negatively.
+*%
+disj(or, pos).
+disj(and, neg).
+
+%*! xone_pol(C, D, G, Q)
+
+In the term of the `xone` node `C` for its member `D`, member `G` is read with polarity `Q`:
+`pos` for `D` itself and `neg` for each other member. W1 expands an `xone` into one such
+conjunction per member (due2-workflows.md §6.4 and §4, its stage 2).
+*%
+xone_pol(C, D, D, pos) :- conn(C, xone), member(C, D).
+xone_pol(C, D, G, neg) :- conn(C, xone), member(C, D), member(C, G), G != D.
+
+%*! live(W, I, C, P)
+
+Node `C`, read with polarity `P`, lies in a disjunct of finding `I`'s DNF whose value, in world
+`W`, is not `f`. W1 makes that DNF, and each disjunct is an atom (due2-workflows.md §3.1, §4
+stage 2), so a `u` leaf is named exactly when it is live (due2-workflows.md §3.5). The
+disjunct may be a contradiction, such as `a and not a`: W1's rewrites are strong Kleene
+equivalences, which do not drop it.
+
+The roots are the trees of a reported finding in world `k`, and the witness conditions of a
+witness pair that is not `f`, in its world `wit(E)`. Each is a conjunct of its finding with every
+other part, so it is live. Liveness passes from a node to its members as follows:
+
+- A disjunction passes it to every member.
+- A conjunction passes it to a member when no other member is `f` under its polarity
+  (`polar/4` rank 0). Under strong Kleene logic a node's value is the greatest of its
+  disjuncts' values, so each such sibling has a disjunct that is not `f`, and the member's
+  disjuncts combine with those into disjuncts that are not `f` either. When a sibling is `f`,
+  every disjunct through the conjunction is `f`.
+- A negation passes it to its member, read with the opposite polarity.
+- An `xone` read positively is the disjunction of its terms (`xone_pol/4`). A term passes
+  liveness to a member when no other member of the term is `f` under its polarity there.
+- An `xone` read negatively is the conjunction of its negated terms, because due2-profiles.md §5
+  expands an `xone` before pushing a negation in. A negated term is the disjunction of its
+  members, each read with the opposite polarity, and it is `f` exactly when its term is `t`
+  (`xone_term/4` rank 2). It passes liveness to its members when no other negated term is `f`.
+*%
+live(k, I, C, pos) :- reported(I), item_root(I, C).
+live(wit(E), witness(Y, E), C, pos) :- witness_cond(Y, C), holds(witness(Y, E), V), V != f.
+live(W, I, D, P) :- live(W, I, C, P), conn(C, K), disj(K, P), member(C, D).
+live(W, I, D, P) :- live(W, I, C, P), conn(C, K), conj(K, P), member(C, D),
+    not polar(W, D2, P, 0) : member(C, D2), D2 != D.
+live(W, I, D, Q) :- live(W, I, C, P), conn(C, negation), member(C, D), flip(P, Q).
+live(W, I, G, Q) :- live(W, I, C, pos), conn(C, xone), xone_pol(C, D, G, Q),
+    not polar(W, H, R, 0) : xone_pol(C, D, H, R), H != G.
+live(W, I, G, Q) :- live(W, I, C, neg), conn(C, xone), xone_pol(C, D, G, R), flip(R, Q),
+    not xone_term(W, C, D2, 2) : member(C, D2), D2 != D.
+
+%*! witness_status(E, C, S)
+
+The witness leaf `C` is `u` in world `wit(E)` with status `S`, as `leaf_status/2` gives it for
+world `k`: its operand's read status there, or `misfit`.
+*%
+witness_status(E, C, S) :- evaluates(wit(E), C), leaf(C), left(C, Op),
+    read_status(wit(E), Op, S).
+witness_status(E, C, misfit) :- evaluates(wit(E), C), leaf(C), left(C, Op), read_ok(wit(E), Op),
     crank(wit(E), C, 1).
 
 %*! unknown_part(X, Input, S)
@@ -300,12 +371,12 @@ Atom or duty atom `X` has a `u` part, in a finding that is `t` or `u`, that read
 status `S`. The relation is the `unknown_part` of due2-workflows.md §3.5 and decisions/0016 #3.
 `Input` is `target` for the request's target, `party(F)` for its party under function `F`, and
 `prop(Prop)` for a `u` leaf whose left operand reads the property `Prop`. An absent target or
-party is `missing`, and a leaf has its status. Every `u` leaf of a reported finding's trees is
-named, whether or not it decides its node: the reply names what was missing even where it did
-not matter. The parts of a duty's findings are its guards for `owed` and `in_force`; the match
-parts of its policy's rules for `in_force`, under the obligation; and for `fulfilled`, its
-witness conditions in each evidence's world and a `u` actor check, which reads the request's
-assignee (duty.lp).
+party is `missing`, and a leaf has its status. A `u` leaf is named when it is live
+(`live/4`), whether or not it decides its node: the reply names what was missing even where it
+did not matter, but not a leaf that only an `f` atom reads. The parts of a duty's findings are
+its guards for `owed` and `in_force`; the match parts of its policy's rules for `in_force`,
+under the obligation; and for `fulfilled`, the witness conditions and a `u` actor check, which
+reads the request's assignee (duty.lp), of each witness pair that is not `f`.
 *%
 unknown_part(X, target, missing) :- reported(applies(X)), holds(part(X, target), u).
 unknown_part(X, party(F), missing) :- reported(applies(X)), atom_party(X, F, _),
@@ -314,11 +385,11 @@ unknown_part(Y, target, missing) :- reported(in_force(Y)), obligation_policy(Y, 
     atom_policy(X, P), holds(part(X, target), u).
 unknown_part(Y, party(F), missing) :- reported(in_force(Y)), obligation_policy(Y, P),
     atom_policy(X, P), atom_party(X, F, _), holds(part(X, party(F)), u).
-unknown_part(X, prop(Prop), S) :- reported(I), finding_atom(I, X), in_tree(I, C),
-    leaf_status(C, S), left(C, Op), prop(Op, Prop).
-unknown_part(Y, prop(Prop), S) :- reported(fulfilled(Y)), in_tree(fulfilled(Y), C),
-    witness_status(C, S), left(C, Op), prop(Op, Prop).
-unknown_part(Y, party(F), missing) :- reported(fulfilled(Y)), holds(check(Y, _, actor), u),
-    voc(assignee, F).
+unknown_part(X, prop(Prop), S) :- live(k, I, C, _), finding_atom(I, X), leaf_status(C, S),
+    left(C, Op), prop(Op, Prop).
+unknown_part(Y, prop(Prop), S) :- live(wit(E), witness(Y, E), C, _), witness_status(E, C, S),
+    left(C, Op), prop(Op, Prop).
+unknown_part(Y, party(F), missing) :- holds(check(Y, E, actor), u), holds(witness(Y, E), V),
+    V != f, voc(assignee, F).
 
 #show unknown_part/3.
