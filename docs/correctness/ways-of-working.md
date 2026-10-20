@@ -3,15 +3,7 @@
 **Status:** Draft v0.4
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it.
-
-**Changes, 2026-10-16:** new §14 — the development cycle (design, docs, test, code, verify), the backlog's structure (sub-issues, milestones), branches, and CI; §12 step 9 is done. §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11. New §7.4: one shared suite for every spike (`spikes/README.md`); §11's basedpyright scope extended to `tests/`.
-
-**Changes in v0.3:** new §2.4 — RDF at the boundary: parse and emit at the edges, plain frozen structures everywhere between.
-
-**Coherence updates, 2026-10-10:** §9's blocker resolved — Dafny is installable here, and `decisions/0002` records the track (register #9, #12); §7.1's preservation property restated as the refinement of `due2-workflows.md` §8 L9, whose L9 oracle is a direct interpreter over the lifted (authored) form.
-
-**Changes in v0.2:** §2.3 (where exhaustiveness actually pays), new §5.1 (absent / unknown / false), §7.1 (semantic-preservation property), §9 (verification retargeted at the normaliser), §10 (rewritten around the two-stage split; Rego/OPA added), §11 (generated-code rule generalised), §13 (register extended). Companion document: `due2-architecture.md`.
+**Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 

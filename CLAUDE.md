@@ -13,7 +13,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 - **Corpus cases** (`conformance/cases/<origin>-<name>/`, format in `conformance/README.md`):
   - every rule is named;
   - every left operand is bound;
-  - every expected verdict carries a one- or two-sentence `why` derived from workflows §5–§6;
+  - every expected verdict carries a one- or two-sentence `why` derived from `due2-workflows.md` §5–§6;
   - a translated case keeps its origin's answer (`force_expected`, `oval_expected`, `w3c_expected`, …) and explains any difference in `notes`;
   - external suites under `conformance/external/` are vendored unmodified — never edit them;
   - re-derive the coverage-gap list in `conformance/README.md` (and issue #2) when cases change.
@@ -27,12 +27,12 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 | Question | Section |
 |---|---|
 | What a request, SOTW, corpus, and trace contain | `due2-workflows.md` §3 |
-| When an atom applies; guards (`owed`) vs witness conditions | workflows §5.2 |
-| Fulfilment, deadlines, recurrence, instances | workflows §5.3 |
-| Candidates, conflict, frontier, verdict, completion over literals | workflows §6 (§6.4 has the monotonicity proof) |
-| Laws L1–L10 (property-test targets) | workflows §8 |
-| What explains a verdict; what a trace must let a reader re-derive | workflows §3.7, L10 (`decisions/0010`) |
-| Which `U` atoms an `Indeterminate` names; its `verdict_range` | workflows §6.4 (`decisions/0011`) |
+| When an atom applies; guards (`owed`) vs witness conditions | `due2-workflows.md` §5.2 |
+| Fulfilment, deadlines, recurrence, instances | `due2-workflows.md` §5.3 |
+| Candidates, conflict, frontier, verdict, completion over literals | `due2-workflows.md` §6 (§6.4 has the monotonicity proof) |
+| Laws L1–L10 (property-test targets) | `due2-workflows.md` §8 |
+| What explains a verdict; what a trace must let a reader re-derive | `due2-workflows.md` §3.7, L10 (`decisions/0010`) |
+| Which `U` atoms an `Indeterminate` names; its `verdict_range` | `due2-workflows.md` §6.4 (`decisions/0011`) |
 | Normalisation stage 1 (normative) | `odrl-compound-to-atomic-normalization.md` |
 | Every rejection and warning code; which stage emits it | `due2-diagnostics.md` |
 | Operand bindings, profiles, DPROD compatibility | `due2-profiles.md` |
@@ -42,4 +42,9 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 ## Next
 
-The correctness strategy is adopted (`correctness-strategy.md` §9); its one open item (register #10, the enumeration bounds, issue #42) is set when the enumerator exists (§8 step 6). Issue #9 (milestone "clingo-i: corpus runner", increments #45, #46, #59, #47–#50; #45, the walking skeleton, #46, the complete driver, #59, the explanation with `verdict_range` and the pivotal `unknown` atoms of `decisions/0011`, #47, constraints under strong Kleene logic, #48, constraint completion variables, #72, opaque parts and `unknown_part` (`decisions/0016`), #69, concept-scheme operands under `skos:broader` (`decisions/0015`), #49, duties (`decisions/0018`, `decisions/0019`), and #50, the corpus gate, are done; #9 is closed): the semantics program (`decisions/0009`) — a generic clingo program over flattened ODRL — built as the first spike against the shared suite (`spikes/README.md`; journal sessions, attempts, bugs, and checker runs as you go), in `spikes/clingo-i/`, implementing `interpret`: the driver makes a syntactic flatten of the vector's authored policy to facts (no expansion, no DNF — those are the program's rules); slow mode first — one answer set per completion of the unknown literals, a verdict definite iff cautious-entailed, declining above a variable cap (correctness-strategy §3); every runnable scenario is the first gate (occurrence-dependent scenarios report `unsupported: recurrence`; the 19 negative cases wait for W1). Next, the formalisation review (`formalisation-review.md`, issue #70): counterexamples first, the empty-basis generator (#77) among them — Alloy and bounded-exhaustive testing of L1–L10 — and the prover choice by decision record. Then the W2/W3 backend bakeoff (`decisions/0006`, milestone "W2/W3 bakeoff") on relation-level vectors (#36), against the brute-force W3 (#38): Clingo (#41) and Elixir (#40) first; Python (#39) is deferred, not withdrawn, until the production evaluator is written. Then #8, the Dafny `Den` oracle (`decisions/0002`). Implementation-start tooling picks still open: issue #23 (#4, #8).
+1. **Formalisation (#70).** Restate the claims: theorems M, K, and F, the empty-basis waiver (#77), and the `Pending` frontier under unknowns (#75). Search for counterexamples with small Alloy models and bounded-exhaustive testing over clingo-i (#42, #44, #77), and triage what they find. Spike Lean on M; Isabelle is optional. Record the prover choice and the plan in a decision record: the Cedar pattern of an executable model, proofs, and differential testing, with no extraction. Dafny is out, and the chosen prover takes over `Den` (#8).
+2. **Documentation house-cleaning (#83)**, interleaved with #70.
+3. **The W2/W3 bakeoff** (`decisions/0006`, milestone "W2/W3 bakeoff"): relation-level vectors (#36, #37) and the brute-force W3 (#38), then Clingo (#41) and Elixir (#40). Python (#39) is deferred until the production evaluator is written.
+4. **W1**, the normaliser, whose 19 negative cases wait for it.
+
+Open beside these: the enumeration bounds (#42, `correctness-strategy.md` §9 #10), set when the enumerator exists; recurrence in clingo-i (#80); the implementation-start tooling picks (#23).

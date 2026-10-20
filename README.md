@@ -1,8 +1,12 @@
 # due2
 
-Specifications for due2, an ODRL policy evaluation runtime.
+due2 is the specification of a runtime for evaluating ODRL 2.2 policies. ODRL is the W3C language for saying who may, must, or must not do what with an asset. Given a policy, an access request, and a frozen snapshot of the state of the world (SOTW), due2 is to answer with one of five verdicts: `Permit`, `Deny`, `Pending` (permitted once listed duties are done, with every alternative route), `NotApplicable`, or `Indeterminate`. Evaluation is three-valued (Kleene logic). A fact that is missing, invalid, or in conflict is unknown, never false, and the verdict is `Indeterminate` exactly when settling the unknowns could change it (`decisions/0011`). Every decision is to carry the reasons that produced it, so that it can be replayed (`decisions/0010`).
 
-**Source of truth.** All due2 artefacts live in this git repository (`github.com/matthiasautrata/due2`); clone it anywhere. No other copy is maintained — the claude.ai project holds only a pointer here. Change files here and commit.
+This repository holds the specification, a conformance corpus with hand-derived expected verdicts, the checkers that keep both consistent, and one spike that runs the corpus. There is no production evaluator yet. Start with `docs/design/due2-architecture.md` §0, which gives the reading order and a glossary.
+
+This repository is the only copy of due2's artefacts: change them here and commit.
+
+## Layout
 
 | Path | Covers |
 |---|---|
@@ -16,15 +20,14 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `docs/spec/due2-diagnostics.md` | The diagnostic registry: every code W1 rejects or warns with, its stage, and its defining section |
 | **`docs/design/`** | **What due2 is, why, and the alternatives weighed** |
 | `docs/design/due2-architecture.md` | What due2 is and why; reading order and glossary (§0) |
-| `docs/design/implementation-alternatives.md` | The 2026-10-10 W1 alternatives review: Python+Dafny, Lean, Clingo, OCaml+Why3 — what each buys, why the documented path stands, what triggers revisiting |
-| `docs/design/implementation-alternatives-ii.md` | The 2026-10-16 host comparison: the standing Python path vs an Elixir/BEAM host with a rented Rust door — decision rule and flip triggers |
 | `docs/design/references.md` | The annotated bibliography: what was read, why, what was learned, and where it is used |
 | `docs/design/mds-vendor-contracts.md` | Turning MDS vendor contracts into internal policies: approach and decisions (parked, issue #24) |
 | **`docs/correctness/`** | **How we know it is right** |
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded |
 | `docs/correctness/formalisation-review.md` | Review input, not adopted (2026-10-17): which obligations are provable, which theorems (monotonicity, the completion key, frontier relevance), which vehicles, in what order; deficits found in clingo-i |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
-| `docs/decisions/` | Decision records: 0001 RL2 as donor · 0002 W1 in Python with a Dafny oracle · 0003 duty guards stay on the duty · 0004 `frontier_complete` by bounded enumeration · 0005 set-based operators read after Salas–Pareti · 0006 W2/W3 backend bakeoff · 0007 collections are JCS JSON · 0008 the ledger: one case per request · 0009 the semantics live in a clingo program (the L9 oracle and generator) · 0010 the trace is the explanation · 0011 an `Indeterminate` is explained by its pivotal literals and its range · 0012 the same read is one completion variable · 0013 repeated right-operand values on a set-based operator are the same set as a list · 0014 an operand's type belongs to the layer that declares it · 0015 an operand may compare concepts under a SKOS hierarchy · 0016 only an unresolved value is completed, and every `U` part is reported |
+| `docs/decisions/` | Decision records: each settles one question the specification depends on; `docs/decisions/README.md` lists them with their standing |
+| `docs/archive/` | Documents no longer current, kept as history, with an index in its `README.md`: the implementation-alternatives reviews and the documents' earlier **Changes** entries |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus — RL2 use cases, DPROD examples, translations of other evaluators' suites (`force-`, `oval-`, `w3c-fs-`), and due2-native cases (`due2-`) — with scenarios and hand-derived expected verdicts; coverage gaps in its `README.md` |
 | `conformance/odrl22-shape.ttl` | due2's SHACL encoding of the ODRL Information Model 2.2 — validates authored policies (compact and compound forms included), every constraint cited to its IM section |
@@ -38,7 +41,7 @@ Specifications for due2, an ODRL policy evaluation runtime.
 | `tools/spike_journal.py` | A spike's journal (effort, attempts, rewrites, bugs, checker diagnostics) and the cross-spike comparison table |
 | `tools/check_completion.py` | Randomised check of the workflows §6.4 completion algorithm against brute force: canonical literals (v0.6), the `max_mixed` fallback, guarded duties (`decisions/0003`), deadlines with `violations = deny`, and `frontier_complete` by bounded enumeration (`decisions/0004`) |
 
-Documents cite each other by file name (`due2-workflows.md` §5) and decision records as `decisions/NNNN`; names are unique under `docs/`.
+Documents cite each other by file name (`due2-workflows.md` §5) and decision records as `decisions/NNNN`. Every file name under `docs/` is unique except `README.md`, which is cited with its path (`docs/decisions/README.md`).
 
 ## Verify
 
@@ -48,11 +51,11 @@ Managed with `uv` and Python 3.14+ (`.python-version`, `pyproject.toml`, which a
 uv run python tools/check_corpus.py conformance/cases                      # admissibility + case format
 uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # vendored DPROD policies
 uv run python tools/check_odrl22.py --all                                  # ODRL 2.2 validity (SHACL)
-uv run python tools/check_completion.py                                    # workflows §6.4 completion vs brute force
-uv run pytest                                                              # the spike harness's own tests (spikes/README.md)
+uv run python tools/check_completion.py                                    # due2-workflows.md §6.4: completion vs brute force
+uv run pytest                                                              # the spike harness's tests (spikes/README.md); cited documents resolve
 uv run basedpyright                                                        # strict typing (ways-of-working.md §4)
-uv run ruff check . && uv run ruff format --check .                        # Python lint and format (§11)
-uv run rumdl check .                                                       # Markdown lint (§11)
+uv run ruff check . && uv run ruff format --check .                        # Python lint and format (ways-of-working.md §11)
+uv run rumdl check .                                                       # Markdown lint (ways-of-working.md §11)
 (cd spikes/clingo-i && uv run pytest && uv run basedpyright \
   && uv run ruff check . && uv run ruff format --check . \
   && uv run --group docs mkdocs build --strict)                            # spike clingo-i's own tests, checks, and generated reference
@@ -61,4 +64,8 @@ uv run pytest --backend=clingo-i                                           # the
 
 ## Status
 
-Specification and corpus only — no evaluator yet; every expected verdict is hand-derived. Open items are GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), each pointing at the section that holds its source of truth. The first runner of the corpus is the semantics program (issue #9, `decisions/0009`) — a generic clingo program over flattened ODRL, the L9 oracle and the test generator, run first over the corpus's authored policies (the correctness strategy is adopted; the enumeration bounds remain open, #42). Its spike, `spikes/clingo-i/`, was built in increments (#45, #46, #59, #47–#50): the walking skeleton (#45), the complete driver (#46), the explanation (#59: `verdict_basis`, `eliminated`, and an `Indeterminate`'s pivotal `unknown` atoms and `verdict_range`, `decisions/0011`), constraints (#47: the authored trees under strong Kleene logic, bindings, reads, refinements, and typed `partOf`), the layered operand bindings of `decisions/0014` (#68), the constraint completion variables of `due2-workflows.md` §6.4 (#48), the opaque parts and `unknown_parts` of `decisions/0016` (#72), concept-scheme operands under `skos:broader` (#69, `decisions/0015`), and duties (#49: closure before conflict, deadlines, the frontier, `Pending`, and `unknown` duty findings, `decisions/0018`, `decisions/0019`) are done. It passes 400 of the corpus's 438 scenarios and declines the other 38, naming the feature: 37 depend on occurrences (`unsupported: recurrence`), and one states `exact: false`, past the `max_mixed` bound, for which the spike has no fallback (`decisions/0009`). The corpus gate (#50) closes #9: every scenario it runs agrees with its hand-derived answer, and the one disagreement found, a corpus error, is triaged (#76). Next, the formalisation review (#70). Then the W2/W3 bakeoff on relation-level vectors — Clingo and Elixir first, Python deferred (`decisions/0006`) — then W1 with the Dafny `Den` oracle (#8).
+- **Specification and corpus.** The corpus has 127 cases. Every expected verdict is hand-derived. `tools/check_corpus.py` checks each case's format and that its policy stays within the admitted profile. The 19 negative cases are policies that W1 must reject, and they wait for W1.
+- **The semantics program.** `spikes/clingo-i/` evaluates the corpus's authored policies with a generic clingo program (`decisions/0009`), which serves as the oracle for the evaluator to come. It passes 400 of the 438 scenarios it is given and declines the other 38, naming the feature: 37 depend on the occurrences of a recurring duty (`unsupported: recurrence`, #80), and one is past the `max_mixed` bound, for which the spike has no fallback.
+- **Next.** Formalisation (#70): counterexample search and a prover spike. Then the W2/W3 bakeoff (`decisions/0006`), then W1.
+
+Open items are GitHub issues, labelled `open-decision`, `corpus`, `verification`, `work-item`, or `parked`. Each names the section that holds its source of truth.

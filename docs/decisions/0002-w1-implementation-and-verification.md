@@ -1,6 +1,6 @@
 # 0002 — W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline
 
-**Status:** Decided, 2026-10-10
+**Status:** Decided, 2026-10-10; superseded in part by `decisions/0003` (hoisting) and `decisions/0009` (item 7, the L9 oracle)
 **Context documents:** `implementation-alternatives.md` (the full review this records) · `ways-of-working.md` §9–§10 · `due2-architecture.md` §9–§10, §11 · `odrl-compound-to-atomic-normalization.md` §8.1 · `mds-vendor-contracts.md`
 
 ## Question

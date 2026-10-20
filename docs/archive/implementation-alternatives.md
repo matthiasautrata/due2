@@ -1,5 +1,7 @@
 # due2 — Implementation Alternatives: W1 and the Verification Track
 
+> **Archived.** This review was current on 2026-10-10. It is kept as history (`docs/archive/README.md`); its outcome is `decisions/0002`, as later amended and superseded in part (`docs/decisions/README.md`).
+
 **Status:** Record of the 2026-10-10 alternatives review; normative decisions live in `decisions/0002-w1-implementation-and-verification.md`
 **Companions:** `due2-architecture.md` (§2, §9–§10) · `due2-workflows.md` (§4, §8) · `odrl-compound-to-atomic-normalization.md` (§5, §8.1) · `ways-of-working.md` (§5.1, §9–§10) · `implementation-alternatives-ii.md` (the sequel: the host question, 2026-10-16)
 

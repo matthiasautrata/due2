@@ -2,20 +2,7 @@
 
 **Status:** v0.9, 2026-10-17 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
 
-**Changes in v0.9** (2026-10-17, `decisions/0016`): §4.3's properties pair only completed parts; an opaque part is a variable of its own. **v0.8** (2026-10-17, #48): slow `I`'s variable cap is set by measurement, at 64 (§3).
-
-**Changes in v0.7** (2026-10-17, `decisions/0011`): an `Indeterminate`'s pivotal `unknown` atoms and its `verdict_range` are checked against brute force over the completions, in clingo-i (§4.1) and in W3 (§4.5).
-
-**Changes in v0.6** (2026-10-16, `decisions/0010`): the explanation is checked as the verdict is. L10 (explicability) joins the trace properties (§4.6). The corpus asserts `verdict_basis` and `eliminated` at the authored level, and clingo-i returns them (§4.1; #57, #59). W1 stage 2's lineage gives every atom its authored source (§4.3).
-
-**Changes in v0.5** (2026-10-16, `decisions/0009`): the L9 oracle and the generator are a clingo program over flattened ODRL, in place of a Python direct interpreter; the production evaluator is unchanged (`decisions/0002` #1, the `decisions/0006` bakeoff); §3, §4.1, §5, §8 rewire; RRULE recurrence deferred (occurrence-dependent scenarios report `unsupported: recurrence`).
-
-**Changes in v0.4** (2026-10-16): §8 step 1 restated — the strategy is adopted, and the one open item (#10) is set at step 6; the register-tracking convention is stated once in `due2-architecture.md` §11.
-
-**Changes in v0.3:** `I` comes in two modes, slow first (§3); the disagreement protocol (§6) and the generator coverage check (§5) adopted.
-
-**Changes in v0.2:** critical features and the three testing modes decided (§1.1): atomization, evaluation, and case history get bounded-exhaustive, generated, and differential testing. Case history added as a component (§4.7, risk R10). Parser sharing decided (§4.1). Invalid-input twins for every generator (§5).
-**Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L10) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
+**Changes in v0.9** (2026-10-17, `decisions/0016`): §4.3's properties pair only completed parts; an opaque part is a variable of its own. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 

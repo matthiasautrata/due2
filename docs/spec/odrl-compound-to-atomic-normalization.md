@@ -5,7 +5,9 @@ Version: 0.13
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged. Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
+Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged. Earlier changes are in `docs/archive/changes.md`.
+
+The profile version stays `1` until an artefact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
 ## 1. Goal
 

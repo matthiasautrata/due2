@@ -1,5 +1,7 @@
 # due2 — Implementation Alternatives II: The Host — Python vs the BEAM
 
+> **Archived.** This comparison was current on 2026-10-16. It is kept as history (`docs/archive/README.md`); the W2/W3 bakeoff of `decisions/0006` took up its question.
+
 **Status:** Record of the 2026-10-16 host comparison, prompted by the Pentad Labs "Gleam and Zig" post (§9) and a changed-assumptions hypothetical. Not normative: the standing path (`decisions/0002`) holds until a trigger in §8 fires. **Revised the same day** after review inputs: persistence decoupled from host (Postgres is a deployment consequence either host shares); Elixir's contract mechanisms (guards, Bond, typespecs) and RDF.ex corrected in; LLM codability split into fluency and structural-safety dimensions, then re-benched twice — AutoCodeBench (arXiv:2508.09101) carries the Elixir column whose numbers run Elixir's way (caveated, §3), and MultiPL-E's dataset carries an Elixir track (`humaneval-elixir`, `mbpp-elixir`) that the paper's original 18 did not include. Two claims made en route were wrong and are withdrawn: "no benchmarked Elixir column" and "MultiPL-E has no Elixir track" — the second was verified against the README's stale language count instead of the dataset's config list.
 
 **Companions:** `implementation-alternatives.md` (the W1 and verification-track review; this is its sequel) · `due2-architecture.md` (§9, §10) · `ways-of-working.md` (§2.2, §10) · `decisions/0002`
