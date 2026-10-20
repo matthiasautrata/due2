@@ -1,0 +1,13 @@
+ODRL22.ttl is the ODRL 2.2 vocabulary (W3C Recommendation), downloaded from
+https://www.w3.org/ns/odrl/2/ODRL22.ttl on 2026-10-10. due2 added only the
+three-line comment at its top, which names the source; the rest is unmodified,
+and was still identical to the source on 2026-10-19.
+
+Copyright World Wide Web Consortium (W3C); the file states no year. Its
+dct:license names W3C's 2002 IPR notice
+(https://www.w3.org/Consortium/Legal/2002/ipr-notice-20021231#Copyright),
+which now leads to W3C's licence index (https://www.w3.org/copyright/). W3C
+licenses software and documents under the W3C Software and Document License
+(https://www.w3.org/copyright/software-license-2023/), which permits copying,
+modifying, and distributing the work, provided that copies include a link to
+the licence and W3C's copyright notice.
