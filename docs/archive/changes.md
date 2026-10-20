@@ -49,6 +49,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.12** (2026-10-17, `decisions/0017`, #74): §5 rejects a logical constraint over the empty list.
+
 **v0.11** (2026-10-17, `decisions/0013` amendment, #69): §4 rejects an empty list as a set right operand. **v0.10** (2026-10-17, `decisions/0016`): §3 says that only an `unresolved` value is completed. **v0.9** (2026-10-17, #68): §3 *Kinds* says what `rdfs:Literal` and `rdfs:Resource` admit. **v0.8** (2026-10-17, `decisions/0014`, `decisions/0015`, #52, #65): §2 gives an operand's type to the lowest layer that declares it, lets higher layers rebind only its source and property, and drops the order of profile modules; §3 defines kinds, compares values by kind when there is no range, and checks a binding's range against the read property's; §4 and §6 compare concepts under a declared SKOS concept scheme. **v0.7** (2026-10-17, `decisions/0013`, #64): §4 admits a set right operand written as repeated values as well as an RDF list, and rejects the forms with no reading. **v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context table names `dprod:agent`, the `dprod:EvaluationContext` property (`dprod-contracts.ttl`) that the left operand `dprod:currentAgent` reads through `dprod:operandProperty` — the table lists properties, as its `dprod:clock` row does; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
 
 ## `due2-diagnostics.md`
