@@ -18,6 +18,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.10** (2026-10-19, `decisions/0021`): §4.8, the formal model, states the claims M, K, F, W, and P, with their evidence and instruments; the formal model replaces the Dafny `Den` in §1.1, §3, §4.2, and §7; §8 builds the enumerator first and adds the formal model as step 6; §9 #11.
+
 **Changes in v0.9** (2026-10-17, `decisions/0016`): §4.3's properties pair only completed parts; an opaque part is a variable of its own.
 
 **v0.8** (2026-10-17, #48): slow `I`'s variable cap is set by measurement, at 64 (§3).
@@ -37,9 +39,9 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `ways-of-working.md`
 
-**Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it.
-
 **Changes in v0.5, 2026-10-19** (`decisions/0021`): §9 follows Cedar's pattern, an executable model, proofs, and differential testing, in place of Dafny extraction; §6, §10, §11, and §12 drop their Dafny mentions.
+
+**Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it.
 
 **Changes, 2026-10-16:** new §14 — the development cycle (design, docs, test, code, verify), the backlog's structure (sub-issues, milestones), branches, and CI; §12 step 9 is done. §13's tracking narrowed to the picks still open (#4, #8); the register-tracking convention is stated once in `due2-architecture.md` §11. New §7.4: one shared suite for every spike (`spikes/README.md`); §11's basedpyright scope extended to `tests/`.
 
@@ -57,9 +59,9 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
-**v0.4** (2026-10-17, `decisions/0013` amendment, #69): `MalformedConstraint` covers an empty list as a set right operand. **v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
-
 **Changes in v0.5** (2026-10-17, `decisions/0017`, #74): `MalformedConstraint` covers a logical constraint over the empty list.
+
+**v0.4** (2026-10-17, `decisions/0013` amendment, #69): `MalformedConstraint` covers an empty list as a set right operand. **v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
 
 ## `due2-architecture.md`
 
@@ -69,10 +71,10 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `odrl-compound-to-atomic-normalization.md`
 
+Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged.
+
 Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
 
 ## README § Status, as it stood on 2026-10-19
-
-Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged.
 
 Specification and corpus only — no evaluator yet; every expected verdict is hand-derived. Open items are GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), each pointing at the section that holds its source of truth. The first runner of the corpus is the semantics program (issue #9, `decisions/0009`) — a generic clingo program over flattened ODRL, the L9 oracle and the test generator, run first over the corpus's authored policies (the correctness strategy is adopted; the enumeration bounds remain open, #42). Its spike, `spikes/clingo-i/`, was built in increments (#45, #46, #59, #47–#50): the walking skeleton (#45), the complete driver (#46), the explanation (#59: `verdict_basis`, `eliminated`, and an `Indeterminate`'s pivotal `unknown` atoms and `verdict_range`, `decisions/0011`), constraints (#47: the authored trees under strong Kleene logic, bindings, reads, refinements, and typed `partOf`), the layered operand bindings of `decisions/0014` (#68), the constraint completion variables of `due2-workflows.md` §6.4 (#48), the opaque parts and `unknown_parts` of `decisions/0016` (#72), concept-scheme operands under `skos:broader` (#69, `decisions/0015`), and duties (#49: closure before conflict, deadlines, the frontier, `Pending`, and `unknown` duty findings, `decisions/0018`, `decisions/0019`) are done. It passes 400 of the corpus's 438 scenarios and declines the other 38, naming the feature: 37 depend on occurrences (`unsupported: recurrence`), and one states `exact: false`, past the `max_mixed` bound, for which the spike has no fallback (`decisions/0009`). The corpus gate (#50) closes #9: every scenario it runs agrees with its hand-derived answer, and the one disagreement found, a corpus error, is triaged (#76). Next, the formalisation review (#70). Then the W2/W3 bakeoff on relation-level vectors — Clingo and Elixir first, Python deferred (`decisions/0006`) — then W1 with the Dafny `Den` oracle (#8).

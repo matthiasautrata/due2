@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.10, 2026-10-19 — adopted (§9 #1); §9 #10 and #11 remain open. Every item that is new here is marked **[O]** until adopted.
+**Status:** v0.11 (2026-10-20). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.10** (2026-10-19, `decisions/0021`): §4.8, the formal model, states the claims M, K, F, W, and P, with their evidence and instruments; the formal model replaces the Dafny `Den` in §1.1, §3, §4.2, and §7; §8 builds the enumerator first and adds the formal model as step 6; §9 #11. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.11** (2026-10-20, #83): a cold read. Cross-document references name their document; status markers and struck-through items leave §3, §4.2, §4.5, §4.7, §7, and §8; §3 restates why `I` running the corpus checks R5; §9 lists the open rows with their issues and states rows 1–9 below the table, keeping the row numbers. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -37,7 +37,7 @@ Three features carry the weight of the system, and each gets the strongest treat
 |---|---|---|
 | **Atomization** | W1 stage 1 (normaliser) and stage 2 (builder) | Every semantically interesting rewrite happens here, and a mistake is silent (R1) |
 | **Evaluation** | W2 and W3 | Where `U` is preserved or lost (R2) and where completion decides (R3) |
-| **Case history** | The ledger: recording, replay, re-evaluation (architecture §7, workflows §7) | The audit answer — what was decided, when, on which inputs, and why — must be reproducible years later (R6, R10) |
+| **Case history** | The ledger: recording, replay, re-evaluation (`due2-architecture.md` §7, `due2-workflows.md` §7) | The audit answer — what was decided, when, on which inputs, and why — must be reproducible years later (R6, R10) |
 
 The three testing modes are:
 
@@ -67,10 +67,10 @@ The ranking is by how silent the defect is, not how likely it is.
 |---|---|---|---|
 | R1 | **Silent meaning change in W1.** A mis-normalised policy still evaluates cleanly; it just means something else. | No crash, no `Indeterminate`; only a preservation check sees it | W1 stages 1–2 |
 | R2 | **`U` collapse.** Unknown treated as false (or true) somewhere between a fact and the verdict. | Every external evaluator does this (`conformance/external/README.md`); it is the most natural bug to write | W2 parts, Kleene connectives, W3 completion |
-| R3 | **Completion error.** Wrong variable sharing (the canonical-literal key), wrong uniform/mixed classification, unsound `max_mixed` fallback. | Turns a correct `Indeterminate` into a definite verdict, or the reverse | W3 §6.4 |
+| R3 | **Completion error.** Wrong variable sharing (the canonical-literal key), wrong uniform/mixed classification, unsound `max_mixed` fallback. | Turns a correct `Indeterminate` into a definite verdict, or the reverse | W3, `due2-workflows.md` §6.4 |
 | R4 | **Spec error.** The prose is wrong or underspecified, and the implementation copies it faithfully. | Every oracle derived from the same prose shares it | All |
 | R5 | **Corpus error.** A hand-derived expected verdict is wrong. | Every implementation is judged against the corpus, so a wrong answer there passes a wrong implementation and fails a right one | `conformance/cases/` |
-| R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (workflows §7) and the ledger | W1 identity, trace serialisation |
+| R6 | **Nondeterminism and identity drift.** Output depends on tuple order, hash seed, locale, or unrelated edits. | Breaks replay (`due2-workflows.md` §7) and the ledger | W1 identity, trace serialisation |
 | R7 | **Boundary leak.** W2 reads another atom's finding; W3 reads the request or SOTW. | Invalidates the parallelism and the completion argument | W2, W3 |
 | R8 | **Unexplained divergence from an origin evaluator.** | Undermines the compatibility claims | Translated cases |
 | R10 | **Case-history corruption.** An earlier decision is edited instead of superseded; an evaluation does not pin enough to replay; a normaliser upgrade silently changes old answers; an as-of query answers from today's policy. | The audit question gets a plausible wrong answer | The ledger, re-evaluation |
@@ -84,23 +84,23 @@ An oracle is only as useful as it is independent. The question for each one is w
 
 | Oracle | Decides | Independent of | Shares (common-mode risk) | Status |
 |---|---|---|---|---|
-| Hand-derived corpus (positive and negative cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
-| External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
-| L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts now; the pipeline's verdict (L9) once W1 exists | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
-| `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | That document's §6 algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
-| The formal model (§4.8): a small executable model in a prover | The claims of workflows §6.4, by proof; the verdict of every input it covers, by running | clingo-i's encoding and the algorithms of W1–W3 | The prose of workflows §5–§6 and the formaliser's reading of it (R4); the reader that turns a vector into its input, chosen at the spike | **[D]** (`decisions/0021`), issue #70 |
-| `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]**, exists |
+| Hand-derived corpus (positive and negative cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]** |
+| External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]** |
+| L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts; with W1, the pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of `due2-workflows.md` §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
+| `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | Its §6 algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
+| The formal model (§4.8): a small executable model in a prover | The claims of `due2-workflows.md` §6.4, by proof; the verdict of every input it covers, by running | clingo-i's encoding and the algorithms of W1–W3 | The prose of `due2-workflows.md` §5–§6 and the formaliser's reading of it (R4); the reader that turns a vector into its input, chosen at the spike | **[D]** (`decisions/0021`), issue #70 |
+| `tools/check_completion.py` | `due2-workflows.md` §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]** |
 | Laws L1–L10, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
 **Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
 - `I` is the clingo semantics program (`decisions/0009`); it has two modes over one program, differing only in how they complete unknowns.
-  - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of workflows §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals it declines rather than falling back. The cap is 64, set by measurement in clingo-i (#48): at 64 variables the slowest measured shape, an `and` of tautologies (`x eq i or x neq i`), takes about 1.1 s, and at 128 about 7 s; the corpus needs at most 3. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
-  - **Fast, later.** It uses §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on authored policies.
-- The `Den` oracle has no memoization or fan-out bookkeeping, as §8.1 already requires.
+  - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of `due2-workflows.md` §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals it declines rather than falling back. The cap is 64, set by measurement in clingo-i (#48): at 64 variables the slowest measured shape, an `and` of tautologies (`x eq i or x neq i`), takes about 1.1 s, and at 128 about 7 s; the corpus needs at most 3. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
+  - **Fast, later.** It uses `due2-workflows.md` §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on authored policies.
+- The `Den` oracle has no memoization or fan-out bookkeeping, as `odrl-compound-to-atomic-normalization.md` §8.1 requires.
 - A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.
 
-**When oracles disagree** (§6), the corpus is not automatically right. `I` running the corpus is the first second derivation the corpus's hand-derived verdicts have ever had, which makes it as much a check on R5 as on any code.
+**When oracles disagree** (§6), the corpus is not automatically right. `I` running the corpus derives its hand-derived verdicts a second time from the same prose, so a disagreement exposes R5, a misreading, as readily as a defect in code.
 
 ---
 
@@ -112,7 +112,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation. R9 when it generates its own vectors.
 - **Encoding obligations** (`decisions/0009`): `U` is data — fact statuses, deadline comparisons, and witness timeliness arrive as facts; every part carries exactly one of `t/f/u`, enforced by an integrity constraint; Kleene connectives are min/max over `f < u < t`; no negation-as-failure anywhere a status can be unknown; the evaluation layer is stratified Datalog, with choice rules only in the completion and the generator. The 2026-10-10 audit encoding failed all of these.
-- **Oracles for the program.** The corpus's positive cases, with disagreements triaged per §6 — its verdicts, and its `verdict_basis` and `eliminated` where a scenario asserts them (workflows §3.7, #57, #59); the external suites' own answers. For an `Indeterminate`, the corpus asserts little, so the pivotal `unknown` atoms and the `verdict_range` (`decisions/0011`) are checked by a brute-force differential: a Hypothesis test that enumerates the completions in Python, flips each literal alone, and compares the result with the program's. It reads the generated rules, not the driver's facts, and shares only the spec's literal key (workflows §6.4) with the program (`spikes/clingo-i/tests/test_brute_force.py`). Its own laws: L4 and L5 on generated inputs; the status matrix and Kleene tables as ASP facts, with the one-value integrity constraint making a forgotten rule a loud failure.
+- **Oracles for the program.** The corpus's positive cases, with disagreements triaged per §6 — its verdicts, and its `verdict_basis` and `eliminated` where a scenario asserts them (`due2-workflows.md` §3.7, #57, #59); the external suites' own answers. For an `Indeterminate`, the corpus asserts little, so the pivotal `unknown` atoms and the `verdict_range` (`decisions/0011`) are checked by a brute-force differential: a Hypothesis test that enumerates the completions in Python, flips each literal alone, and compares the result with the program's. It reads the generated rules, not the driver's facts, and shares only the spec's literal key (`due2-workflows.md` §6.4) with the program (`spikes/clingo-i/tests/test_brute_force.py`). Its own laws: L4 and L5 on generated inputs; the status matrix and Kleene tables as ASP facts, with the one-value integrity constraint making a forgotten rule a loud failure.
 - **Driver.** **[D]** (2026-10-16, `decisions/0009`) The Python driver parses the Turtle and makes a purely syntactic flatten of the authored graph to facts — no lifting, no expansion, no DNF, which are the program's rules — and ranks compared values (32-bit integers; `decisions/0009` #4). It is not an evaluator. Because L9 cannot see a driver bug, it is tested on its own: round trip (facts back to a graph isomorphic to the input), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts, over the corpus, the vendored policies, and the external suites. Agreement is checked as follows: the driver parses the same files the checkers parse; it flattens and places every file that parses, which is a superset of what either checker accepts; and no file the checkers admit holds a literal the driver cannot place (`spikes/clingo-i/DESIGN.md` § Tests, #46). The driver reads lexical forms as written. The checkers read rdflib's normalised forms, which are lossy, so register #3's shared reader is shared up to that setting.
 - **Golden vectors.** The corpus. Occurrence-dependent scenarios (8 cases use recurrence) report `unsupported: recurrence` loudly, not as passes; every other scenario is runnable.
 - **Generators.** Coverage targets as choice rules plus constraints, `#minimize` for the smallest witness (§5). Self-generated vectors test other implementations, never the program itself.
@@ -121,8 +121,8 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 ### 4.2 W1 stage 1: the normaliser
 
 - **Risks.** R1, R6.
-- **Before code.** ~~The case format needs negative cases.~~ Done 2026-10-11: `expected_rejection` (`conformance/README.md`), with codes from `due2-diagnostics.md`. `force-01` … `force-07` and `due2-witness-outside-duty` are the first; the rest of normalisation §10's negative vectors are a coverage gap.
-- **Oracles.** `Den` through the lineage bijection (invariant 3). Golden vectors from normalisation §10.
+- **Before code.** Negative cases in the case format: `expected_rejection` (`conformance/README.md`), with codes from `due2-diagnostics.md`. The rejection codes with no negative case are listed in `conformance/README.md` § Coverage gaps; `odrl-compound-to-atomic-normalization.md` §10 names the stage-1 vectors.
+- **Oracles.** `Den` through the lineage bijection (invariant 3). Golden vectors from `odrl-compound-to-atomic-normalization.md` §10.
 - **Properties.** Invariants 6 (determinism over permuted triples, JSON-LD order, and blank-node labels), 7 (idempotence), and 10 (locality: an unrelated edit changes no output IRI). Invariant 8 as exact-limit success and limit-plus-one failure.
 - **Done.** The minimum suite of `odrl-compound-to-atomic-normalization.md` §10 passes, `Den` agrees on every positive vector and on generated policies, and the formal model's `Den` (§4.8, issue #8) follows as the second, machine-checked oracle.
 
@@ -130,15 +130,15 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 
 - **Risks.** R1 (DNF, `xone`, `dprod:not` pushed inward, instantiation), R3 (the canonical-literal key is derived here).
 - **Oracles.** `I`, through L9 on generated policies.
-- **Properties.** L9. Complement pairs (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`) map to one variable with opposite polarity, and identical parts map to one variable, when the parts are completed. An opaque part maps to a variable of its own (workflows §6.4, `decisions/0016`). The atom-count limit fails before any output.
-- **Lineage.** Every atom's lineage names its authored rule, its stage-1 selection tuple, its constraint disjunct, and its parameter binding (workflows §3.6), which L10 needs.
+- **Properties.** L9. Complement pairs (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`) map to one variable with opposite polarity, and identical parts map to one variable, when the parts are completed. An opaque part maps to a variable of its own (`due2-workflows.md` §6.4, `decisions/0016`). The atom-count limit fails before any output.
+- **Lineage.** Every atom's lineage names its authored rule, its stage-1 selection tuple, its constraint disjunct, and its parameter binding (`due2-workflows.md` §3.6), which L10 needs.
 - **Done.** L9 holds on the `fast` and `nightly` Hypothesis profiles (`ways-of-working.md` §7.2), and the corpus runs through W1 without rejections other than expected ones.
 
 ### 4.4 W2: evaluate
 
 - **Risks.** R2 above all, then R7.
-- **Golden vectors.** The **status matrix**: for every operator and every fact status (`resolved`, `missing`, `invalid`, `conflict`, `unresolved`), the part's truth value, enumerated exhaustively. A non-`resolved` status gives `U`, with no exceptions (`ways-of-working.md` §5.1). This is the primary defence against R2 and is cheap to make complete. The same for request parameters (absent means `missing`) and for absent parties and targets (workflows §3.2).
-- **Properties.** L2 (an atom's finding is unchanged by other atoms), L3 (prefetch neutrality), L8 (skip soundness). Plan coverage: W2's `read` is within `plan(corpus, request)` for every generated and corpus evaluation (workflows §3.3). Duty instances and statuses against the workflows §5.3 table, over generated deadlines and recurrences.
+- **Golden vectors.** The **status matrix**: for every operator and every fact status (`resolved`, `missing`, `invalid`, `conflict`, `unresolved`), the part's truth value, enumerated exhaustively. A non-`resolved` status gives `U`, with no exceptions (`ways-of-working.md` §5.1). This is the primary defence against R2 and is cheap to make complete. The same for request parameters (absent means `missing`) and for absent parties and targets (`due2-workflows.md` §3.2).
+- **Properties.** L2 (an atom's finding is unchanged by other atoms), L3 (prefetch neutrality), L8 (skip soundness). Plan coverage: W2's `read` is within `plan(corpus, request)` for every generated and corpus evaluation (`due2-workflows.md` §3.3). Duty instances and statuses against the `due2-workflows.md` §5.3 table, over generated deadlines and recurrences.
 - **Done.** The status matrix is complete and passing, the properties hold, and the corpus's `obligations` agree.
 
 ### 4.5 W3: resolve
@@ -146,13 +146,13 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 - **Risks.** R3, R7.
 - **Oracles.** A brute-force W3 over every completion of the actual findings (§3), capped by variable count. `I` end to end.
 - **Properties.** L4–L7. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`). For an `Indeterminate` (`decisions/0011`): the `unknown` atoms are exactly those with a pivotal literal, and `verdict_range` equals the least and greatest completion verdict, wherever `exact` is true; past the bound, every `U` atom is named and the range contains brute force's.
-- **Abstract model extended.** **[D]** `check_completion.py` now models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` waits for the brute-force W3 differential. Nested constraints are left to the brute-force W3 differential and slow `I`.
+- **Abstract model extended.** **[D]** `check_completion.py` models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` is left to the brute-force W3 differential. Nested constraints are left to the brute-force W3 differential and slow `I`.
 - **Done.** The differential against brute-force W3 is clean on both profiles; the corpus passes, including `frontier`, `verdict_basis` and `verdict_range`.
 
 ### 4.6 Trace and replay
 
 - **Risks.** R6.
-- **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded evaluation gives the same digests (workflows §7). L10 on every generated and corpus evaluation (workflows §3.7):
+- **Properties.** L1: identical trace bytes across tuple-order permutations, `PYTHONHASHSEED` values, and locales, run as a matrix in the PR tier. Replay of every recorded evaluation gives the same digests (`due2-workflows.md` §7). L10 on every generated and corpus evaluation (`due2-workflows.md` §3.7):
   - every reference in the trace resolves in the trace, the evaluation's inputs, or the lineage;
   - each finding is re-derived from its `basis`;
   - every atom in `verdict_basis` and `eliminated` has its findings and an authored source.
@@ -163,8 +163,8 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 ### 4.7 Case history: the ledger
 
 - **Risks.** R10, R6.
-- **Before code.** ~~A ledger data model at the level of workflows §3.~~ Done 2026-10-16: workflows §7.1 (`decisions/0008`). One case per request; facts, evidence, activations, and evaluations are append-only events on it; an evaluation's SOTW is the case's facts as of `effective_at`; earlier decisions are answered from their recorded evaluation. Exercise events (access taken under a permit) stay out of scope.
-- **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (architecture §7, issue #14), must agree with it.
+- **Before code.** A ledger data model at the level of `due2-workflows.md` §3: it is `due2-workflows.md` §7.1 (`decisions/0008`). One case per request; facts, evidence, activations, and evaluations are append-only events on it; an evaluation's SOTW is the case's facts as of `effective_at`; earlier decisions are answered from their recorded evaluation. Exercise events (access taken under a permit) stay out of scope.
+- **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (`due2-architecture.md` §7, issue #14), must agree with it.
 - **Properties.**
   - *Replay.* Every recorded evaluation, re-run under its pinned normaliser versions, gives byte-identical traces.
   - *Pinning suffices.* Re-running with the SOTW cut down to the evaluation's recorded reads gives the same trace (a consequence of L3); an evaluation that needs more than it pinned is a defect.
@@ -183,11 +183,11 @@ The formal model is a small, executable model of due2's semantics, written in a 
 
   | Claim | Statement and source | Evidence |
   |---|---|---|
-  | **M**, monotonicity | Under all three strategies and the default combination, "the verdict is monotone in every finding", so the two extreme completions bound every completion's verdict (`due2-workflows.md` §6.4). The proof's last case extends this to `violations = deny` | The proof by cases in §6.4. `check_completion.py`'s first, third, and fourth phases, 50,000 cases each, against its abstract model rather than the semantics clingo-i implements |
-  | **K**, the completion key | Identical completed parts share one variable, and complementary ones share it with opposite polarity; an opaque part is a variable of its own (§6.4, `decisions/0012`, `decisions/0016`). Two claims: the key never merges parts whose truth values can differ under a value that fits (soundness), and the parts it leaves independent can only widen a verdict to `Indeterminate`, never make it a wrong definite one (one-sidedness). The key is not complete: `x ≤ 5` and `x > 7` stay independent (#25) | The argument in §6.4 and `decisions/0012`; corpus cases such as `due2-xone-unknown`. clingo-i's brute-force differential shares the key, so it is no evidence for it |
-  | **F**, frontier relevance | For a definite `Pending`, only the unknowns of uncertain candidates and of `U` prohibitions can change the frontier: "no other unknown can move the frontier while the verdict stands" (§6.4, `decisions/0004`) | `check_completion.py`'s fifth phase: 942 definite `Pending` instances of 50,000, against the same abstract model |
+  | **M**, monotonicity | Under all three strategies and the default combination, "the verdict is monotone in every finding", so the two extreme completions bound every completion's verdict (`due2-workflows.md` §6.4). The proof's last case extends this to `violations = deny` | The proof by cases in `due2-workflows.md` §6.4. `check_completion.py`'s first, third, and fourth phases, 50,000 cases each, against its abstract model rather than the semantics clingo-i implements |
+  | **K**, the completion key | Identical completed parts share one variable, and complementary ones share it with opposite polarity; an opaque part is a variable of its own (`due2-workflows.md` §6.4, `decisions/0012`, `decisions/0016`). Two claims: the key never merges parts whose truth values can differ under a value that fits (soundness), and the parts it leaves independent can only widen a verdict to `Indeterminate`, never make it a wrong definite one (one-sidedness). The key is not complete: `x ≤ 5` and `x > 7` stay independent (#25) | The argument in `due2-workflows.md` §6.4 and `decisions/0012`; corpus cases such as `due2-xone-unknown`. clingo-i's brute-force differential shares the key, so it is no evidence for it |
+  | **F**, frontier relevance | For a definite `Pending`, only the unknowns of uncertain candidates and of `U` prohibitions can change the frontier: "no other unknown can move the frontier while the verdict stands" (`due2-workflows.md` §6.4, `decisions/0004`) | `check_completion.py`'s fifth phase: 942 definite `Pending` instances of 50,000, against the same abstract model |
   | **W**, the basis waiver | A definite `Permit` or `Deny` with an empty basis has a `U` finding that reads a paired leaf, whose operand is `unresolved` and is listed as an unknown part; so `tools/check_corpus.py` may waive the basis check exactly then (`spikes/clingo-i/DESIGN.md` § `resolve.lp`) | The argument in `DESIGN.md` and one explicit case. A search of 6,000 cases never reached the shape (#77) |
-  | **P**, the listed frontier under unknowns | An open question, not a claim: the listed frontier (`due2-workflows.md` §6.3) can omit a route that every completion offers, because no single permission gives it. Should §6.3 list such a route? (`decisions/0019`) | Two clingo-i tests, named in `decisions/0019` |
+  | **P**, the listed frontier under unknowns | An open question, not a claim: the listed frontier (`due2-workflows.md` §6.3) can omit a route that every completion offers, because no single permission gives it. Should `due2-workflows.md` §6.3 list such a route? (`decisions/0019`) | Two clingo-i tests, named in `decisions/0019` |
 
   The laws L1–L10 (`due2-workflows.md` §8) also get Alloy models, as a test of adequacy rather than of the model (`decisions/0021` #6).
 - **Before code.** The claims above. Each is restated in the model's terms and pinned to the spec version it states: a proof that outlives its spec version proves the previous one.
@@ -236,7 +236,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 | Tier | Runs |
 |---|---|
-| Every commit (today) | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
+| Every commit | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
 | PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L10 and the stage-1 invariants; the L1 determinism matrix |
 | Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the formal model's proofs and its differential (§4.8). Results feed the ratchet, not the gate |
 
@@ -244,32 +244,37 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 ## 8. Sequence
 
-1. ~~Settle the open items of §9.~~ Adopted 2026-10-11; the remaining item, #10, is set at step 5 by measurement.
-2. ~~Case-format extension for negative cases~~ (done 2026-10-11).
+1. The open items of §9. Row 10 is set by measurement at step 5, and row 11 by the prover spike at step 6.
+2. The case-format extension for negative cases (`expected_rejection`, §4.2).
 3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
-4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (§6.4's computation) follows, differentially against enumeration.
+4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (`due2-workflows.md` §6.4's computation) follows, differentially against enumeration.
 5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram, first over clingo-i (#42, #44).
 6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and the bounded-exhaustive search over clingo-i, then the prover spike on M.
 7. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written (`decisions/0009`).
 8. W1 stage 1 with the Python `Den` oracle; the formal model's `Den` follows (issue #8).
 9. W1 stage 2, gated by L9 against `I`.
 10. The surviving W2/W3 backends on the full corpus through W1, completing the §4.4 and §4.5 gates.
-11. The ledger (data model decided, §4.7), gated by the stateful machine.
+11. The ledger (data model in §4.7), gated by the stateful machine.
 
 ---
 
 ## 9. Open decisions register
 
-| # | Decision | Section | Recommendation |
-|---|---|---|---|
-| 1 | Strategy before code, as a standing rule | §1 | **Resolved 2026-10-11:** adopted (CLAUDE.md) |
-| 2 | Oracles implement definitions; `I` completes by enumeration with a cap | §3 | **Resolved 2026-10-11:** slow `I` (enumeration, capped) first, fast `I` (§6.4's computation) later, differentially tested against each other. Vehicle changed 2026-10-16 (`decisions/0009`): the clingo program — slow mode is answer-set enumeration under the variable cap |
-| 3 | `I` and W1 share the parser | §4.1 | **Resolved 2026-10-11:** shared, and tested on its own. Narrowed 2026-10-16 (`decisions/0009`): only the Turtle reading is shared — the driver's flatten is syntactic and the lifting is the program's; the driver is tested on its own |
-| 4 | Negative cases in the case format | §4.2 | **Resolved 2026-10-11:** `expected_rejection` plus the diagnostic registry (`due2-diagnostics.md`); 8 cases |
-| 5 | `check_completion.py` scope (`violations = deny`, `frontier_complete`) vs relying on the brute-force W3 | §4.5 | **Resolved 2026-10-11:** extend it now for both (done); brute-force W3 differential later; nested constraints via that and slow `I` |
-| 6 | Generator coverage histogram as a failing check | §5 | **Resolved 2026-10-11:** adopted |
-| 7 | The disagreement protocol | §6 | **Resolved 2026-10-11:** adopted |
-| 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
-| 9 | A ledger data model in `due2-workflows.md` | §4.7 | **Resolved 2026-10-16:** workflows §7.1 (`decisions/0008`) |
-| 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists (issue #42) |
-| 11 | The prover for the formal model | §4.8 | Chosen by spike, Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4); the result is an amendment to that record |
+Rows keep their numbers, because issues and other documents cite them. Each open row has an issue; a resolved row leaves the table and is stated below it.
+
+| # | Decision | Section | Issue | Blocked on |
+|---|---|---|---|---|
+| 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | #42 | Measurement, once the enumerator exists |
+| 11 | The prover for the formal model | §4.8 | #70 | A spike: Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4); the result is an amendment to that record |
+
+Rows 1–9 are resolved, each where its section states it:
+
+- **1.** Strategy before code is a standing rule (§1; `CLAUDE.md`).
+- **2.** Oracles implement definitions, and `I` completes unknowns by enumeration under a cap (§3). Slow `I` comes first and fast `I` (`due2-workflows.md` §6.4's computation) later, the two differentially tested. The vehicle is the clingo program, whose slow mode is answer-set enumeration under the variable cap (`decisions/0009`).
+- **3.** `I` and W1 share only the Turtle reading (§4.1, `decisions/0009`). The driver's flatten is syntactic, the lifting is the program's, and the driver is tested on its own.
+- **4.** Negative cases are `expected_rejection` with codes from the diagnostic registry (§4.2, `due2-diagnostics.md`).
+- **5.** `check_completion.py` covers `violations = deny` and `frontier_complete` (§4.5). Multi-policy conflict under `invalid` is left to the brute-force W3 differential, and nested constraints to it and slow `I`.
+- **6.** The generator coverage histogram is a failing check (§5).
+- **7.** The disagreement protocol is §6.
+- **8.** The critical features are atomization, evaluation, and case history, tested bounded-exhaustively, by generation, and differentially (§1.1).
+- **9.** The ledger data model is `due2-workflows.md` §7.1 (§4.7, `decisions/0008`).
