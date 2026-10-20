@@ -167,3 +167,8 @@
 {"at": "2026-10-18T14:22:29Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 23, "name": "ruff"}
 {"at": "2026-10-18T14:22:29Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}
 {"at": "2026-10-18T17:18:13Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 604.86, "p50_ms": 41.02, "p95_ms": 59.66, "p99_ms": 76.02, "pass": 396, "revision": "41bdf52", "task": "interpret", "total_ms": 18290.2, "unsupported": 38, "vectors": 434}
+{"at": "2026-10-20T01:22:15Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 620.49, "p50_ms": 43.23, "p95_ms": 64.46, "p99_ms": 81.13, "pass": 400, "revision": "f5ee62a", "task": "interpret", "total_ms": 19572.7, "unsupported": 38, "vectors": 438}
+{"at": "2026-10-20T01:22:21Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 150, "summary": "#81: unknown_part names a u leaf only where a non-f DNF disjunct reads it. live/4 walks the authored tree with node polarity (and, or, not, both polarities of xone) and the witness conditions of non-f witness pairs; workflows v0.29 clarifies §3.5. Corpus case due2-nested-unknowns (Paolo's three nested cases from ODRL-Engine#9 and one under negation); unit tests; the brute-force oracle reads an explicit DNF, plants dead branches, and kills four liveness mutants. Cold read by Sonnet: citations and DESIGN wording fixed."}
+{"at": "2026-10-20T01:22:22Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1454, "name": "basedpyright"}
+{"at": "2026-10-20T01:22:22Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 62, "name": "ruff"}
+{"at": "2026-10-20T01:22:22Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 25, "name": "ruff format"}
