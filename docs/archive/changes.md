@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.29** (2026-10-19, #81): §3.5 says which `U` leaves of a nested constraint `unknown_part` names: those that some `T` or `U` atom reads, which follows from atoms being the disjuncts of the constraint DNF; nothing else changes.
+
 **Changes in v0.28** (2026-10-18, `decisions/0018`, #49): §5.3 says that each member bears a duty whose bearer is a party collection, so the witness's actor is the request subject when the subject is a member; §6's opening says that the one duty finding W3 reads before conflict is a violated precondition, which closes its route (§6.1).
 
 **Changes in v0.27** (2026-10-17): §6.4 says that the completion key compares right operands as written terms, so the datatype is part of the key through them, and that two terms with one value are two variables.

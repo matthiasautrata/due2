@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.29
+**Status:** Draft v0.30
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.29** (2026-10-19, #81): §3.5 says which `U` leaves of a nested constraint `unknown_part` names: those that some `T` or `U` atom reads, which follows from atoms being the disjuncts of the constraint DNF; nothing else changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.30** (2026-10-20, #83): a cold read. Cross-document references name their document; history markers leave the reference text; §6.4 cites `tools/check_completion.py` for the two-extremes check in place of an unrecorded one; §9 lists the open rows with their issues and states rows 1 and 8 as resolved, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -33,7 +33,7 @@ This document fixes *what* each workflow consumes and produces and what it must 
          Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 ```
 
-- **W1 — Normalise.** Turns authored policies into a flat corpus of atoms. Runs once per policy version. Every semantically interesting rewrite happens here (architecture §2, §4).
+- **W1 — Normalise.** Turns authored policies into a flat corpus of atoms. Runs once per policy version. Every semantically interesting rewrite happens here (`due2-architecture.md` §2, §4).
 - **W2 — Evaluate.** Given a request and a frozen SOTW, gives every relevant atom a three-valued truth value and the parts that determined it. A *map*: an atom's finding depends on that atom, the request, the SOTW, and the configuration — **never on another atom's finding**.
 - **W3 — Resolve.** Folds the findings into one verdict: forms candidates, applies conflict strategies, collapses and orders duty alternatives, derives the verdict. Reads the corpus and the findings — **never the request or the SOTW**.
 
@@ -41,7 +41,7 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 
 **The boundary that is not a workflow.** Assembling and freezing the SOTW is impure — it fetches, retries, waits — and sits outside all three workflows. W2 reports which state properties it read (§5.4); those with no fact in the SOTW are the shell's cue to resolve them, record the answers in the case, and run W2–W3 again. That loop is orchestration, not semantics. By L3 (§8) it can change a verdict only by supplying missing information.
 
-**One question here, two in the architecture.** Architecture §6.3 separates the access question (*may this request proceed?*) from the monitoring question (*what does this party owe now?*). Both consume W1's corpus and reuse W2's matching, constraint, and fulfilment machinery. They differ in the predicate W2 applies to root atoms and in the reduction W3 performs. This document specifies the access question. Monitoring is **[O]** (§9).
+**One question here, two in the architecture.** `due2-architecture.md` §6.3 separates the access question (*may this request proceed?*) from the monitoring question (*what does this party owe now?*). Both consume W1's corpus and reuse W2's matching, constraint, and fulfilment machinery. They differ in the predicate W2 applies to root atoms and in the reduction W3 performs. This document specifies the access question. Monitoring is **[O]** (§9).
 
 ---
 
@@ -49,7 +49,7 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 
 **Relations.** All data is held as collections of tuples. Each relation declares a key, written before `|`; set semantics apply to the key only. A relation written without `|` is keyed by all of its fields; one with an empty key holds exactly one tuple. Optional fields are written `field?`.
 
-**Identity.** Occurrence identity lives in ids. Two tuples with equal content and different ids never merge — the property a naïve set-of-tuples model loses (architecture §3.1).
+**Identity.** Occurrence identity lives in ids. Two tuples with equal content and different ids never merge — the property a naïve set-of-tuples model loses (`due2-architecture.md` §3.1).
 
 **Collections.** Data comes in five collections — Corpus, Request, SOTW, Config, Trace. Each is identified by the digest of its canonical form, and tuples inside a collection do not repeat its id.
 
@@ -57,19 +57,19 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 
 | Type | Meaning |
 |---|---|
-| `Id` | IRI, compared by equality only. Generated ids are UUID IRIs (normalisation spec §5). |
+| `Id` | IRI, compared by equality only. Generated ids are UUID IRIs (`odrl-compound-to-atomic-normalization.md` §5). |
 | `Term` | An `Id`, or a literal `(lexical, datatype[, language])`. Exact numbers are lexical forms with a numeric datatype; there is no floating-point domain. Instants are `xsd:dateTime` in UTC. |
 | `Truth` | `T`, `F`, `U` — Kleene strong three-valued logic. |
 | `Enum` | A closed set, listed with the field. |
 
-**Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. **[D]** (`decisions/0007`, was §9 #1):
+**Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. **[D]** (`decisions/0007`):
 
 - **Encoding.** A collection is a JSON array of tuples, serialised by RFC 8785 (JCS) to UTF-8. A tuple is a JSON object keyed by field name; absent optional fields are omitted.
 - **Order.** Tuples are sorted by key, field by field in declaration order, each field by Unicode code-point order of its serialised value. A relation with an empty key holds one tuple.
 - **Values.** An `Id`, `Truth`, or `Enum` is a JSON string. A literal is the object `{"v": lexical, "t": datatype}` plus `"l": language` when present; an `Id` is never an object, so the two cannot collide. A number is never a JSON number — it is a literal with a numeric datatype. A field declared as a count or bound is a JSON integer within ±2^53. A flag is a JSON boolean. No floating point.
 - **Digest.** The collection id is `sha256:` followed by the lowercase hex SHA-256 of the canonical bytes.
 
-Canonical N-Quads remain the artifact of W1 stage 1, which carries a graph (normalisation spec §4); nothing downstream of stage 2 reads them.
+Canonical N-Quads remain the artifact of W1 stage 1, which carries a graph (`odrl-compound-to-atomic-normalization.md` §4); nothing downstream of stage 2 reads them.
 
 ---
 
@@ -92,8 +92,8 @@ diagnostic        (policy_id, code, ref)
 
 | Field | Meaning |
 |---|---|
-| `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (normalisation spec §3); W1 makes the result explicit. |
-| `atom.effect` | `Enum {Permit, Forbid, Oblige}` — one required field (architecture §3). |
+| `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); W1 makes the result explicit. |
+| `atom.effect` | `Enum {Permit, Forbid, Oblige}` — one required field (`due2-architecture.md` §3). |
 | `atom.action` | The atom's single action, unrefined. Refinements are constraints with scope `action`. |
 | `atom.relation`, `relation_value` | At most one relation, `odrl:target` or `odrl:output`, and its value. |
 | `atom.policy_id`, `source_rule` | Required provenance. `policy_id` drives the per-source conflict fold in W3; `source_rule` drives explanation. Full lineage is a separate collection (§3.6). |
@@ -113,7 +113,7 @@ diagnostic        (policy_id, code, ref)
 Derived, not stored:
 
 - **guard / witness condition** of a duty's constraint, from its bindings (§5.2).
-- **role(d)** of a child follows from its parent's effect: `Permit` → precondition, `Forbid` → remedy, `Oblige` → consequence (architecture §3).
+- **role(d)** of a child follows from its parent's effect: `Permit` → precondition, `Forbid` → remedy, `Oblige` → consequence (`due2-architecture.md` §3).
 
 Invariants, established by W1 and trusted downstream: `edge` is acyclic; every child is an `Oblige` atom; every `Permit` and `Forbid` atom is a root; every `atom.policy_id` names a `policy`; `Permit` and `Forbid` atoms carry `relation = odrl:target`.
 
@@ -160,9 +160,9 @@ plan : Corpus × Request → Reads
 
 `Reads` holds each state property a state-source binding names, each request parameter a request-source binding names, and each world module the corpus's hierarchy comparisons use, with the request entities whose edges it needs. The shell fetches what the case lacks, records the answers, and calls W2 only once every planned item is in the case. A lookup that fails is recorded as `unresolved`, and one that finds no value as `missing`, so "never looked up" cannot reach W2. W2's `read` is always within the plan; a read outside it is a defect. Evidence is not planned: it reaches the case when it is submitted, and evidence the case does not hold is not yet performed (§5.3).
 
-**Answers, not extensions [D].** The case records the answer to the question an evaluation asks — a property's value, the edges above an entity — never the dataset the source computed it from. Membership of a group with a billion members is one fact. A source that can only answer in bulk is queried by the shell, which records the answer and the version of the source it came from, as the ledger pins normaliser versions (architecture §7); the bulk data is a cache, not part of the case. A positive hierarchy answer may carry its path as justification; a negative one has none shorter than the closure, and needs none. Several cases may read the same fact: each records it as it read it, and storage may share it.
+**Answers, not extensions [D].** The case records the answer to the question an evaluation asks — a property's value, the edges above an entity — never the dataset the source computed it from. Membership of a group with a billion members is one fact. A source that can only answer in bulk is queried by the shell, which records the answer and the version of the source it came from, as the ledger pins normaliser versions (`due2-architecture.md` §7); the bulk data is a cache, not part of the case. A positive hierarchy answer may carry its path as justification; a negative one has none shorter than the closure, and needs none. Several cases may read the same fact: each records it as it read it, and storage may share it.
 
-**Read limit [O].** The plan's size is fixed by the corpus and the request — the bound properties, plus the edges above the request's entities — and is known before any fetch, as W1's limits are known before expansion (architecture §4). A shell limit, `max_reads`, bounds it. What exceeding it yields is open: refuse the request before a case is created, or create the case and evaluate with the excess `unresolved`, so those parts are `U` (§9 #9, issue #34).
+**Read limit [O].** The plan's size is fixed by the corpus and the request — the bound properties, plus the edges above the request's entities — and is known before any fetch, as W1's limits are known before expansion (`due2-architecture.md` §4). A shell limit, `max_reads`, bounds it. What exceeding it yields is open: refuse the request before a case is created, or create the case and evaluate with the excess `unresolved`, so those parts are `U` (§9 #9, issue #34).
 
 An evaluation's SOTW is frozen once W2 runs. The case evolves: a fact that changes in the world is a new event with a later `valid_at`, and the next evaluation reads it (§7.1). Two sources that disagree about the same fact at the same time are a `conflict`.
 
@@ -175,7 +175,7 @@ admit_source  (property, source)
 admit_age     (property | max_age)
 ```
 
-Parameters that are not policy content: the cross-policy `combination` (§6.2), an optional declared `preference` among frontier alternatives (§6.3), and `signer`, the admissibility record for evidence. When a duty has `signer` entries, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2 Model §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` and `admit_age` are the admissibility record for facts: a value whose `attribution` source is not listed for its property, or that was observed longer than `max_age` before `effective_at`, is treated as absent — `missing` (`due2-profiles.md` §3).
+Parameters that are not policy content: the cross-policy `combination` (§6.2), an optional declared `preference` among frontier alternatives (§6.3), and `signer`, the admissibility record for evidence. When a duty has `signer` entries, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2's `spec/RL2_Model.md` §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` and `admit_age` are the admissibility record for facts: a value whose `attribution` source is not listed for its property, or that was observed longer than `max_age` before `effective_at`, is treated as absent — `missing` (`due2-profiles.md` §3).
 
 ### 3.5 Trace — output of W2 and W3
 
@@ -202,7 +202,7 @@ diagnostic     (policy_id, code, ref)
 | `finding` | W2 | One truth value per evaluated atom and predicate — `applies`, `in_force`, `owed`, or `fulfilled` (§5.1). |
 | `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
 | `unknown_part` | W2 | Every `U` part of every finding W2 produces whose value is `T` or `U`, determining or not: its atom, the finding's predicate, the part's `kind` and `ref` as in `basis`, the `input` it reads (`target`, a party function, or an operand's property), and that input's `status`: `missing`, `invalid`, `conflict`, `unresolved`, or `misfit`, a `resolved` value that does not fit the operator (§5.4). An `unresolved` part is completed, and every other part is opaque (§6.4). An `F` finding's `U` parts are not named: none of them can change it, and an index may skip a certainly-`F` atom (§5.5), so naming them would make the relation depend on the index. Atoms are the disjuncts of the constraint DNF, unsimplified, with negation pushed to the leaves and `xone` expanded (§3.1, §4 stage 2, §6.4), so a `U` leaf of the authored tree is named exactly when some atom that reads it is `T` or `U`, even if the node above it is decided: in `or(a, u)` with `a` true, `u` is named; in `and(a, u)` with `a` false, it is not. **[D]** (`decisions/0016` and its amendment) |
-| `read` | W2 | Every state property consulted, determining or not. What the ledger pins (architecture §7); also the dependency index re-evaluation may use. |
+| `read` | W2 | Every state property consulted, determining or not. What the ledger pins (`due2-architecture.md` §7); also the dependency index re-evaluation may use. |
 | `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), and its status `Enum {fulfilled, outstanding, violated, unknown}`. The instance key is the key under which a case records what is owed and evidence is submitted. |
 | `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied: the policy's `conflict` value within a policy, the `combination` across policies (§6.2), or `violated_precondition`. **[D]** (#57) `by_atom` is one tuple per remover: under `prohibit` and a prohibit-overrides combination, each `T` `Forbid` that eliminates the candidate; under `perm`, each `T` candidate that eliminates the `Forbid`; under `invalid`, each `T` candidate and `T` `Forbid` of the void policy other than the atom itself; under `violated_precondition`, the violated duty. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. |
@@ -214,7 +214,7 @@ diagnostic     (policy_id, code, ref)
 
 ### 3.6 Lineage
 
-Which authored rule, which expansion selection, and which parameter binding produced each atom is a separate collection, produced by W1 and referenced by digest from the corpus. W2 and W3 never read it. Explanation and audit do (§3.7). Stage 1's part is normative (normalisation spec §7). Stage 2 adds, for each atom, the constraint disjunct and the parameter binding it came from (§4).
+Which authored rule, which expansion selection, and which parameter binding produced each atom is a separate collection, produced by W1 and referenced by digest from the corpus. W2 and W3 never read it. Explanation and audit do (§3.7). Stage 1's part is normative (`odrl-compound-to-atomic-normalization.md` §7). Stage 2 adds, for each atom, the constraint disjunct and the parameter binding it came from (§4).
 
 ### 3.7 Explanation **[D]** (2026-10-16, `decisions/0010`)
 
@@ -261,23 +261,23 @@ Reading it needs the trace, the evaluation's four input collections, and the lin
 W1 : authored policies → (Corpus × Lineage) | Diagnostics
 ```
 
-A policy W1 cannot normalise is rejected with diagnostics, never accepted and approximated (architecture §1). Every code is in `due2-diagnostics.md`.
+A policy W1 cannot normalise is rejected with diagnostics, never accepted and approximated (`due2-architecture.md` §1). Every code is in `due2-diagnostics.md`.
 
 Two stages, both pure, each with its own preservation obligation:
 
 | Stage | Does | Specified in |
 |---|---|---|
 | **1. Atomise** | Compact interiorisation; expansion of multi-valued action, relation, and party axes; identity and skolemisation; lineage. Structure-preserving: shared duties stay shared. | `odrl-compound-to-atomic-normalization.md` |
-| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation; party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (normalisation spec §6.2); projection into §3.1 — a duty's guards stay on its atom (`decisions/0003`); provenance from stage-1 lineage. | architecture §4–§5 |
+| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation; party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (`odrl-compound-to-atomic-normalization.md` §6.2); projection into §3.1 — a duty's guards stay on its atom (`decisions/0003`); provenance from stage-1 lineage. | `due2-architecture.md` §4–§5 |
 
-**Two forms carry a policy through W1.** Stage 1 parses the authored graph into a **lifted tree** — a forest of trees hanging from named rules (normalisation spec §3) — and transforms that; RDF is a boundary format, read at the parse and written at the emit (ways-of-working §2.4). Its artifact is canonical N-Quads. Stage 2 projects the lifted form into the **relations** of §3.1 — collections of tuples whose fields are the terms of §2 — and the relations are all W2 and W3 ever see.
+**Two forms carry a policy through W1.** Stage 1 parses the authored graph into a **lifted tree** — a forest of trees hanging from named rules (`odrl-compound-to-atomic-normalization.md` §3) — and transforms that; RDF is a boundary format, read at the parse and written at the emit (`ways-of-working.md` §2.4). Its artifact is canonical N-Quads. Stage 2 projects the lifted form into the **relations** of §3.1 — collections of tuples whose fields are the terms of §2 — and the relations are all W2 and W3 ever see.
 
 **Position decides conjunction.** Expanding a root rule yields independent root atoms — any one may match a request, which is disjunction. Expanding a nested duty fans out the parent's edges — every resulting duty is owed, which is conjunction. Neither stage declares which fields are disjunctive; it follows from where the value sits.
 
 Obligations on the output:
 
-- **Stage 1 preserves structure.** It preserves the denotation `Den` — the set of ground atomic rules with identity-bearing duty edges — up to a bijection its lineage records (normalisation spec §8.1).
-- **Stage 2 preserves meaning.** DNF changes how many atoms there are, so no bijection exists. Its obligation is L9, checked against a direct interpreter (architecture §10).
+- **Stage 1 preserves structure.** It preserves the denotation `Den` — the set of ground atomic rules with identity-bearing duty edges — up to a bijection its lineage records (`odrl-compound-to-atomic-normalization.md` §8.1).
+- **Stage 2 preserves meaning.** DNF changes how many atoms there are, so no bijection exists. Its obligation is L9, checked against a direct interpreter (`due2-architecture.md` §10).
 - **Sufficiency.** Stage 2 depends on its input only through `Den` — never on node IRIs, triple order, or annotations — and W2 and W3 depend on a policy only through its corpus. So every evaluation depends on an authored policy only through its denotation, which is what lets stage 1's structural guarantee carry through to verdicts.
 - **Determinism and bounds.** Isomorphic inputs give identical canonical outputs. A limit breach fails the whole run before any output.
 - **Well-formedness.** The §3.1 invariants hold.
@@ -309,7 +309,7 @@ Duty status reuses the same three values: `T` fulfilled, `F` outstanding, `U` un
 An atom applies when all of its parts hold, combined by Kleene conjunction (`F ∧ U = F`):
 
 - **action:** `request.action ⊑ atom.action` under the `odrl:includedIn` closure. A request for a narrower action matches an atom on a broader one, never the reverse.
-- **relation:** `request.target ⊑ atom.relation_value` under the profile's target closure — collection membership, `isPartOf`. If the request names no target, the part is `U`: absent is not false, as for parties (decided 2026-10-11, was §9 #8). An index may therefore not skip atoms on target for such a request (§5.5).
+- **relation:** `request.target ⊑ atom.relation_value` under the profile's target closure — collection membership, `isPartOf`. If the request names no target, the part is `U`: absent is not false, as for parties (§9 #8). An index may therefore not skip atoms on target for such a request (§5.5).
 - **party:** for each `atom_party(a, f, p)` where the profile declares `f` a match key, `request_party(f) ⊑ p` under the party closure. If the request does not name `f`, the part is `U` — absent is not false. Function predicates that are not match keys are carried, not matched. In v1 only `assignee` is a match key.
 - **constraint:** each of the atom's constraints, at its scope (§5.4).
 
@@ -412,7 +412,7 @@ Root obligations in force are reported in `verdict_basis` with role `obligation`
 
 ### 6.2 Conflict
 
-1. **Within a source policy**, by its `conflict`. Under `prohibit`, a `T` `Forbid` eliminates that policy's candidates. Under `perm`, a `T` candidate eliminates that policy's `Forbid` atoms. Under `invalid`, a `T` candidate and a `T` `Forbid` together void the policy: all of its atoms are eliminated, with rule `invalid`. **[D]** (2026-10-11) — a void policy contributes nothing; `Indeterminate` with a cause stays parked (architecture §6.2).
+1. **Within a source policy**, by its `conflict`. Under `prohibit`, a `T` `Forbid` eliminates that policy's candidates. Under `perm`, a `T` candidate eliminates that policy's `Forbid` atoms. Under `invalid`, a `T` candidate and a `T` `Forbid` together void the policy: all of its atoms are eliminated, with rule `invalid`. **[D]** (2026-10-11) — a void policy contributes nothing; `Indeterminate` with a cause stays parked (`due2-architecture.md` §6.2).
 2. **Across source policies**, by `config.combination` **[O]**. Default: prohibit-overrides — any surviving `T` `Forbid` eliminates every candidate. Alternatives: permit-overrides; priority-ordered first-applicable on `atom.priority`.
 
 `U` atoms eliminate nothing; they make the verdict uncertain (§6.4). Every elimination is recorded with its rule. Duties play no part.
@@ -454,15 +454,15 @@ Under `deny`, a violated obligation in force acts as a surviving prohibition. DP
 - **A prohibition `f` of policy `P`.** Under `prohibit`, `f` survives. Under `perm`, `f` is eliminated if `P` has a `T` candidate and survives otherwise. Under `invalid`, if `P` has a `T` candidate, `P` is voided: its candidates go, and so do its prohibitions — which were all `F`, or `P` would already have been void. Candidates are only removed and prohibitions only added. The verdict stays or falls.
 - **Under `violations = deny`, an obligation's `in_force` finding, or a duty's `fulfilled` finding.** A violated instance of an obligation in force acts as a surviving prohibition. The status is computed by W2 from the `fulfilled` finding and the deadline, which the evaluation fixes (§5.3); it is not itself a finding, so it does not vary between completions — within a completion, the violated instances are exactly the `F` duties whose deadline has passed (for a precondition, those also owed). Making `in_force` more true can only add a violated obligation, and making `fulfilled` more true can only remove one — a violated precondition also restores its candidate. So `in_force` is completed like a prohibition, and `fulfilled` like any duty. ∎
 
-The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and `fulfilled` findings `F`; prohibitions, `owed`, and under `deny` `in_force` `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. A randomised check — 20,000 instances, every completion of each enumerated — found no counterexample. Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative — parked, architecture §6.2 — would need its own argument.
+The verdict is therefore a monotone map from completions — ordered with prohibitions reversed — into a chain. Every completion's verdict lies between that of the most restrictive completion (permissions and `fulfilled` findings `F`; prohibitions, `owed`, and under `deny` `in_force` `T`) and that of the most permissive one (the reverse). If the two agree, every completion agrees, so the definition costs two evaluations, not exponentially many. `tools/check_completion.py` checks the two-extremes computation against brute force over every completion (below). Reading `invalid` as `Indeterminate` instead would add a value outside the chain, so that alternative — parked, `due2-architecture.md` §6.2 — would need its own argument.
 
 **Completions range over literals [D].** A finding is `U` because some of its parts are (§5.2). A `U` part whose value exists but is not known, one that reads a state property that is `unresolved` or has no fact, is **completed**. Every other `U` part is **opaque** (`decisions/0016`): its value is `missing` (an absent target or party included), `invalid`, in `conflict`, or a misfit (§5.4). Nothing says that its input has one value that fits, so an operator and its complement need not have opposite truth values there, and the pairing below does not hold for it. An opaque part is a variable of its own, shared with no other part. In an authored constraint tree it stays `U` under strong Kleene logic, and the finding it leaves `U` is completed instead. W1's rewrites are strong Kleene equivalences, so a tree and its DNF atoms are `U` together (L9). Each completed `U` part is a *variable*, with one exception that makes the definition exact for parts the policy correlates: two constraint parts with the same scope, operand binding (source and property, `due2-profiles.md` §3 — not the left-operand IRI, which two policies may bind differently), unit, and right operand(s) are one variable — the same polarity when their operators are equal, opposite polarities when they are complements (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`). The key is derived from the corpus's `constraint` and `constraint_value` tuples, so nothing is stored. Right operands are compared as written terms (§2 `Term`), each a lexical form with its datatype, so the datatype is part of the key through them. Two terms with one value, such as `5` and `5.0`, are then two variables: like the parts below whose relation is not worked out, that can cost a definite verdict, never produce a wrong one. Relation and party parts are keyed the same way: two that test the same request field against the same value with the same relation (the target, or one function's party) are one variable, so the atoms that W1's expansion copies from one rule, or that two rules give the same party, share it (`decisions/0011` #2, `decisions/0012`). A request field has no `unresolved` status, so an absent target or party is opaque, and shares nothing (`decisions/0016`). Parts that are not the same expression or its complement stay separate variables, even over one field (target `ex:a` and target `ex:b`; `eq 0` and `lteq 2`): whether one implies or excludes the other is not worked out. That keeps completions no request produces, so the cost is an `Indeterminate`, or a wider `verdict_range`, never a wrong definite verdict (§9, open decision 6). A duty's `fulfilled` finding, a disjunction over witnesses, is one variable of its own. A completion assigns `T` or `F` to every variable, and each `U` finding is re-derived from its parts by Kleene conjunction (§5.2) under that assignment.
 
-This matters wherever one fact is read in both directions. `xone` expands into disjuncts that carry the others' negations. Authors write complements across rules ("home lending may read; everyone else must petition first" as two permissions, `dept = HL` and `dept ≠ HL`). A guard literal may also appear in a rule's constraint. With the fact unknown, completing those parts independently admits combinations no value produces — both `dept = HL` and `dept ≠ HL` `F` — and the verdict widens to `Indeterminate` where the authored policy decides. In `due2-xone-unknown`, single-domicile clients are permitted by an `xone` and dual-domicile clients by a separate rule with an attestation duty; with one domicile known, the other unknown, and the attestation on file, every value of the unknown fact permits. Sharing one variable excludes the impossible combinations, and the verdict is `Permit`. (Until `decisions/0003` W1's conditional-duty hoisting was the main source of such pairs; guards now stay on the duty, where they move the verdict one way only.)
+This matters wherever one fact is read in both directions. `xone` expands into disjuncts that carry the others' negations. Authors write complements across rules ("home lending may read; everyone else must petition first" as two permissions, `dept = HL` and `dept ≠ HL`). A guard literal may also appear in a rule's constraint. With the fact unknown, completing those parts independently admits combinations no value produces — both `dept = HL` and `dept ≠ HL` `F` — and the verdict widens to `Indeterminate` where the authored policy decides. In `due2-xone-unknown`, single-domicile clients are permitted by an `xone` and dual-domicile clients by a separate rule with an attestation duty; with one domicile known, the other unknown, and the attestation on file, every value of the unknown fact permits. Sharing one variable excludes the impossible combinations, and the verdict is `Permit`.
 
-*Computing it.* A variable is **uniform** when each of its occurrences moves the verdict the same way — upward for a positive occurrence in a permission's `applies` or a duty's `fulfilled`, or a negative one in a prohibition's `applies`, a precondition's `owed`, or an obligation's `in_force` under `deny`; downward for the reverse — and **mixed** otherwise. By the monotonicity argument above, applied per occurrence, uniform variables are bounded by the two extreme completions. Mixed variables are enumerated: for each of the `2^k` assignments to the `k` mixed variables, complete the uniform ones at both extremes. The verdict is definite when all `2^(k+1)` completion verdicts agree. `k` counts only unknown literals that occur with both directions in the evaluation at hand — zero unless a fact is read both ways, as above; a duty's guards alone never raise it. Beyond `max_mixed` (a W3 limit, like W1's limits; default 8) the mixed variables are completed independently, as the pre-v0.6 reading did: sound, erring only towards `Indeterminate`, and recorded as `verdict.exact = false`. Either way, a definite verdict is invariant over every real value of every unresolved fact, and over both truth values of every opaque part. A randomised check (`tools/check_completion.py`: 50,000 instances across the three strategies, brute force over every assignment) found no mismatch, and 2.5% of the instances are definite under v0.6 where the pre-v0.6 reading said `Indeterminate`; a second phase drives nine to ten mixed variables so the fallback runs, and in 1,000 instances it was never wrong — `Indeterminate` in 84 of the 111 where it ran, each an instance the exact reading decides; a third phase gives precondition duties guards that share variables with rule constraints in either polarity (`decisions/0003`), and in 50,000 instances found no mismatch; a fourth adds deadlines, violated preconditions, and obligations under `violations = deny`, and in 50,000 instances found no mismatch.
+*Computing it.* A variable is **uniform** when each of its occurrences moves the verdict the same way — upward for a positive occurrence in a permission's `applies` or a duty's `fulfilled`, or a negative one in a prohibition's `applies`, a precondition's `owed`, or an obligation's `in_force` under `deny`; downward for the reverse — and **mixed** otherwise. By the monotonicity argument above, applied per occurrence, uniform variables are bounded by the two extreme completions. Mixed variables are enumerated: for each of the `2^k` assignments to the `k` mixed variables, complete the uniform ones at both extremes. The verdict is definite when all `2^(k+1)` completion verdicts agree. `k` counts only unknown literals that occur with both directions in the evaluation at hand — zero unless a fact is read both ways, as above; a duty's guards alone never raise it. Beyond `max_mixed` (a W3 limit, like W1's limits; default 8) the mixed variables are completed independently, each occurrence its own variable: sound, erring only towards `Indeterminate`, and recorded as `verdict.exact = false`. Either way, a definite verdict is invariant over every real value of every unresolved fact, and over both truth values of every opaque part. A randomised check (`tools/check_completion.py`: 50,000 instances across the three conflict strategies, brute force over every assignment) found no mismatch, and 2.5% of the instances are definite where completing every occurrence independently says `Indeterminate`; a second phase drives nine to ten mixed variables so the fallback runs, and in 1,000 instances it was never wrong — `Indeterminate` in 84 of the 111 where it ran, each an instance the exact reading decides; a third phase gives precondition duties guards that share variables with rule constraints in either polarity (`decisions/0003`), and in 50,000 instances found no mismatch; a fourth adds deadlines, violated preconditions, and obligations under `violations = deny`, and in 50,000 instances found no mismatch.
 
-*What stays approximate.* Parts that read one fact but are neither identical nor complementary remain independent: `x ≤ 5` and `x > 7` both `F` is still a completion, though no value of `x` produces it, and two permissions on `x = "a"` and `x = "b"` over an enumerated `x` are still `Indeterminate` when `x` is unknown. Exactness there needs each operand's value domain and is not bounded in general. RL2 makes the same approximation for all shared facts (Semantics §Conflict Resolution). **[O]** — domain-aware completion for enumerated facts (§9 #6).
+*What stays approximate.* Parts that read one fact but are neither identical nor complementary remain independent: `x ≤ 5` and `x > 7` both `F` is still a completion, though no value of `x` produces it, and two permissions on `x = "a"` and `x = "b"` over an enumerated `x` are still `Indeterminate` when `x` is unknown. Exactness there needs each operand's value domain and is not bounded in general. RL2 makes the same approximation for all shared facts (RL2's `spec/RL2_Semantics.md` § Conflict Resolution). **[O]** — domain-aware completion for enumerated facts (§9 #6).
 
 `frontier_complete` is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but the listed alternatives may not be all of them. "Change" includes removal: an uncertain candidate whose outstanding set is smaller can dominate a listed alternative.
 
@@ -476,7 +476,7 @@ This matters wherever one fact is read in both directions. `xone` expands into d
 
 ## 7. Replay **[D]**
 
-A case is created when a request is made, and accumulates its history: the evidence submitted to it, the facts its evaluations read, and what they derived. Its SOTW at any time is that record (§3.3). An evaluation is one run of W2 and W3 over the case, and is its four input collection ids. W2 and W3 are pure, so the trace is a function of the evaluation: replay re-runs them and compares digests, and calls no resolver. The ledger (architecture §7) records every case and its evolution: each evaluation, the reads with their values, and the verdict. Re-evaluation is a new evaluation of the same case, over a new SOTW — never an edit to an old trace.
+A case is created when a request is made, and accumulates its history: the evidence submitted to it, the facts its evaluations read, and what they derived. Its SOTW at any time is that record (§3.3). An evaluation is one run of W2 and W3 over the case, and is its four input collection ids. W2 and W3 are pure, so the trace is a function of the evaluation: replay re-runs them and compares digests, and calls no resolver. The ledger (`due2-architecture.md` §7) records every case and its evolution: each evaluation, the reads with their values, and the verdict. Re-evaluation is a new evaluation of the same case, over a new SOTW — never an edit to an old trace.
 
 **Crashes [D]** (2026-10-11). A failure that should never happen, such as a violated contract, a broken invariant, or an I/O fault in the shell, is not a verdict. The shell answers `Error(cause)`. The verdict set stays the five values of §1, and `Indeterminate` keeps its one meaning: the data could not decide. What the caller does with an error is the caller's default, as it is for `Indeterminate`. A crashed evaluation produces no trace. The ledger stores the evaluation and the cause. W2 and W3 are pure, so replaying that evaluation reproduces the crash: the evaluation is the bug report. W1 is the same: a crash in normalisation is an error, not diagnostics, and builds no corpus (`ways-of-working.md` §2.2).
 
@@ -506,7 +506,7 @@ evaluation  (case_id, seq | corpus, sotw, config, pins, trace?, verdict?, error?
 
 ## 8. Laws
 
-Acceptance criteria for any implementation, checked by property tests over generated inputs (ways-of-working §7).
+Acceptance criteria for any implementation, checked by property tests over generated inputs (`ways-of-working.md` §7).
 
 | | Law |
 |---|---|
@@ -518,28 +518,28 @@ Acceptance criteria for any implementation, checked by property tests over gener
 | **L6** | **Duty neutrality.** Conflict resolution (§6.2) never looks at duties: its eliminations are unchanged by adding, removing, or fulfilling them. (The `violated_precondition` eliminations of §6.1 are duty-driven by design and outside this law.) |
 | **L7** | **Readiness.** If some candidate is ready after §6.2 and no surviving `Forbid` is `T` or `U`, the verdict is `Permit`. |
 | **L8** | **Skip soundness.** Evaluating more root atoms that are certainly `F` leaves the trace unchanged. |
-| **L9** | **Preservation.** For a direct interpreter `I` over authored policies (architecture §10), which completes the authored policy's unknown literals by the same rule (§6.4): `W3(W2(W1(p), r, s), c) = I(p, r, s, c)` whenever `verdict.exact` holds. The parts W1 rewrites — DNF disjuncts, including `xone`'s negated operands and `dprod:not` pushed inward — are identical or complementary to authored ones, so they denote the same variables, and the two sides enumerate the same completions. Opaque parts (§6.4) are variables of their own on the pipeline side and stay `U` in `I`'s tree. W1's rewrites are strong Kleene equivalences, so the tree is `U` exactly when its atoms' disjunction is, and both sides offer W3 the same choices (`decisions/0016`). Duty guards are not rewritten (`decisions/0003`). With `exact = false` the law weakens to refinement: a definite pipeline verdict equals `I`'s, and the pipeline may return `Indeterminate` where `I` decides. (Restated as a refinement on 2026-10-10; equality restored by v0.6.) |
-| **L10** | **Explicability** (§3.7, v0.17). Every atom, part, fact, and evidence id the trace names resolves in the trace, the evaluation's inputs, or the lineage. Every finding's truth is its predicate's connective over its `basis` truths (§5.1–§5.2). Every atom in `verdict_basis` or `eliminated` has its findings and an authored source. |
+| **L9** | **Preservation.** For a direct interpreter `I` over authored policies (`due2-architecture.md` §10), which completes the authored policy's unknown literals by the same rule (§6.4): `W3(W2(W1(p), r, s), c) = I(p, r, s, c)` whenever `verdict.exact` holds. The parts W1 rewrites — DNF disjuncts, including `xone`'s negated operands and `dprod:not` pushed inward — are identical or complementary to authored ones, so they denote the same variables, and the two sides enumerate the same completions. Opaque parts (§6.4) are variables of their own on the pipeline side and stay `U` in `I`'s tree. W1's rewrites are strong Kleene equivalences, so the tree is `U` exactly when its atoms' disjunction is, and both sides offer W3 the same choices (`decisions/0016`). Duty guards are not rewritten (`decisions/0003`). With `exact = false` the law weakens to refinement: a definite pipeline verdict equals `I`'s, and the pipeline may return `Indeterminate` where `I` decides. |
+| **L10** | **Explicability** (§3.7, `decisions/0010`). Every atom, part, fact, and evidence id the trace names resolves in the trace, the evaluation's inputs, or the lineage. Every finding's truth is its predicate's connective over its `basis` truths (§5.1–§5.2). Every atom in `verdict_basis` or `eliminated` has its findings and an authored source. |
 
 ---
 
 ## 9. Open decisions
 
-Scope decisions — which ODRL constructs are admitted, including `invalid` — are registered in the architecture (§11).
+Scope decisions — which ODRL constructs are admitted, including `invalid` — are registered in `due2-architecture.md` §11. Each row is tracked by the issue it names, and keeps its number when it is resolved, because issues and decision records cite rows by number.
 
-| # | Decision | Section | Blocked on |
-|---|---|---|---|
-| 1 | Concrete canonical encoding of collections | §2 | **Resolved 2026-10-16:** JCS JSON arrays, SHA-256 ids (`decisions/0007`). Canonical N-Quads stay the stage-1 artifact |
-| 2 | Cross-policy combination default | §6.2 | A real multi-policy corpus |
-| 3 | Declared preference among frontier alternatives | §6.3 | First incomparable frontier in practice |
-| 4 | Monitoring question — duties currently owed by a party, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements |
-| 5 | Request match keys beyond `assignee` | §5.2 | Survey of real policies |
-| 6 | Domain-aware completion over parts that read one fact or request field but are neither identical nor complementary (enumerated values, overlapping ranges, distinct values of a single-valued field such as the target). Complementary parts are exact since v0.6; identical relation and party parts since v0.20 (`decisions/0012`) | §6.4 | A real policy where the remaining over-approximation matters |
-| 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension |
-| 8 | A request without a target | §3.2, §5.2 | **Resolved 2026-10-11:** the relation part is `U`, as for an absent party; rejecting the request was the alternative. Cases `oval-no-target-permission`, `oval-no-target-prohibition` |
-| 9 | Outcome of exceeding the read limit `max_reads`: refuse before a case is created, or evaluate with the excess `unresolved` | §3.3 | A real policy and request that approach it (issue #34) |
+| # | Decision | Section | Blocked on | Issue |
+|---|---|---|---|---|
+| 2 | Cross-policy combination default | §6.2 | A real multi-policy corpus | #4 |
+| 3 | Declared preference among frontier alternatives | §6.3 | First incomparable frontier in practice | #5 |
+| 4 | Monitoring question — the duties a party owes at a given time, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements | #6 |
+| 5 | Request match keys beyond `assignee` | §5.2 | Survey of real policies | #7 |
+| 6 | Domain-aware completion over parts that read one fact or request field but are neither identical nor complementary (enumerated values, overlapping ranges, distinct values of a single-valued field such as the target). Identical parts that make the same read, and complementary constraint parts, already share a variable (§6.4, `decisions/0012`) | §6.4 | A real policy where the remaining over-approximation matters | #25 |
+| 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension | #1 |
+| 9 | Outcome of exceeding the read limit `max_reads`: refuse before a case is created, or evaluate with the excess `unresolved` | §3.3 | A real policy and request that approach it | #34 |
 
-Deadline windows and the `violated` status, open as #5 until v0.4, are decided in §5.3: timing is in the corpus, W2 computes the effective deadline and the per-instance status, and a violated precondition removes its candidate. What stays open is the *not-yet-owed* state of an instance whose occurrence or window is in the future (`due2-profiles.md` §9).
+Rows 1 and 8 are resolved. Row 1, the concrete canonical encoding of collections, is JCS JSON arrays with SHA-256 ids (§2, `decisions/0007`); canonical N-Quads stay the stage-1 artifact. Row 8, a request without a target, makes the relation part `U`, as for an absent party, rather than rejecting the request (§5.2, decided 2026-10-11; cases `oval-no-target-permission` and `oval-no-target-prohibition`).
+
+Deadline windows and the `violated` status are decided in §5.3: timing is in the corpus, W2 computes the effective deadline and the per-instance status, and a violated precondition removes its candidate. What stays open is the *not-yet-owed* state of an instance whose occurrence or window is in the future (`due2-profiles.md` §9, #18).
 
 ---
 
@@ -550,7 +550,7 @@ Three representations were credible.
 | | W2 (map) | W3 (join, group, fold) | Occurrence identity | Note |
 |---|---|---|---|---|
 | **Typed relations** | an atom is a row | native | explicit keys | Chosen. The model is the interface; any language or store can hold it. |
-| RDF graph | an atom is a subgraph | SPARQL | skolem IRIs | Already the stage-1 form. A finding with truth and basis is n-ary and needs reification, and SPARQL filter semantics turn evaluation errors into false — the collapse ways-of-working §5.1 forbids. |
+| RDF graph | an atom is a subgraph | SPARQL | skolem IRIs | Already the stage-1 form. A finding with truth and basis is n-ary and needs reification, and SPARQL filter semantics turn evaluation errors into false — the collapse `ways-of-working.md` §5.1 forbids. |
 | Nested documents | natural | joins in application code | natural | Fits one policy; fights the cross-policy fold and the grouping into alternatives. |
 
-The builder projects the lifted stage-1 form into relations. RDF is a boundary format, not a working representation (ways-of-working §2.4): stage 1 parses the authored graph into a tree, transforms the tree, and emits canonical N-Quads as its artifact; stage 2 consumes the lifted form, and nothing downstream of the parse sees RDF.
+The builder projects the lifted stage-1 form into relations. RDF is a boundary format, not a working representation (`ways-of-working.md` §2.4): stage 1 parses the authored graph into a tree, transforms the tree, and emits canonical N-Quads as its artifact; stage 2 consumes the lifted form, and nothing downstream of the parse sees RDF.
