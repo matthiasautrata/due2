@@ -172,3 +172,7 @@
 {"at": "2026-10-20T01:22:22Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1454, "name": "basedpyright"}
 {"at": "2026-10-20T01:22:22Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 62, "name": "ruff"}
 {"at": "2026-10-20T01:22:22Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 25, "name": "ruff format"}
+{"at": "2026-10-20T01:46:02Z", "by": "claude-opus-5-5", "kind": "session", "minutes": 40, "summary": "#82: the spike's tests run in parallel (pytest-xdist, -n auto --dist loadgroup in addopts); the three brute-force differentials run as four seeded copies each. Suite 88 s serial at 1x draws, 25 s parallel at 1x, 49 s parallel at 4x, on a 10-core arm64 Mac. The default --dist load queued the slow tests on one worker (70 s). Corpus runner and scorecard stay serial."}
+{"at": "2026-10-20T01:46:04Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1273, "name": "basedpyright"}
+{"at": "2026-10-20T01:46:04Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff"}
+{"at": "2026-10-20T01:46:04Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 22, "name": "ruff format"}

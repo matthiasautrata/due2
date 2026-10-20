@@ -16,6 +16,7 @@ dev = [
     "basedpyright>=1.40.2",
     "hypothesis>=6.170.1",
     "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.17.0",
 ]
 docs = [
@@ -45,4 +46,6 @@ extend-select = ["ANN", "B", "S", "RUF", "C4", "SIM"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "../../tools"]
-addopts = ["-p", "no:cacheprovider"]
+# The suite runs on every core; `loadgroup` spreads the three slow differentials over
+# workers, where the default `load` queued them on one (#82). `-n 0` runs it serially.
+addopts = ["-p", "no:cacheprovider", "-n", "auto", "--dist", "loadgroup"]

@@ -40,6 +40,10 @@ basis, and the duties named `unknown`. Half the generated cases make every findi
 that a definite Pending, a frontier of two alternatives, and a Deny by the obligation occur
 often enough to be tested.
 
+Each differential runs as `COPIES` parametrized copies, each with its own random seed, so
+that pytest-xdist runs them on separate workers (#82); a run makes `COPIES` times each draw
+count.
+
 The mutation tests run the same differentials against programs with one rule changed, and
 assert that they fail (#47, #49). The duty examples alone kill each duty mutant. The
 measurement tests assert that the generators reach each shape the differentials rely on.
@@ -67,6 +71,7 @@ XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer"
 ACTIONS = ("use", "play")  # play ⊑ use in the test core (conftest.INIT)
 PARTIES = ("alice", "bob")
 OPERANDS = 3  # ex:o0 to ex:o2, each read from the request parameter or state property ex:oK
+COPIES = 4  # parametrized copies of each differential, with a random seed each
 ODRL = "http://www.w3.org/ns/odrl/2/"
 # Every leaf compares its operand with the right operand 1.
 OPERATORS: dict[str, Callable[[int, int], bool]] = {
@@ -757,7 +762,9 @@ def differential(interp: Interpreter, config: settings) -> Callable[[], None]:
     return run
 
 
-def test_matches_brute_force(interpreter: Interpreter) -> None:
+@pytest.mark.parametrize("copy", range(COPIES))
+def test_matches_brute_force(interpreter: Interpreter, copy: int) -> None:
+    del copy
     differential(interpreter, settings(max_examples=400, deadline=None))()
 
 
@@ -776,7 +783,8 @@ def shown_sets(program: str, mode: str = "auto") -> list[frozenset[str]]:
     return models
 
 
-def test_enumeration_matches_fixed_solves(interpreter: Interpreter) -> None:
+@pytest.mark.parametrize("copy", range(COPIES))
+def test_enumeration_matches_fixed_solves(interpreter: Interpreter, copy: int) -> None:
     """One answer set per completion, and the cautious reply is the fold of fixed solves.
 
     Without it, the differential could pass while the choice rule admits a model that is not a
@@ -784,6 +792,7 @@ def test_enumeration_matches_fixed_solves(interpreter: Interpreter) -> None:
     clingo's cautious enumeration wrongly. The brute force solves the evaluation layer once per
     assignment, with every variable a fact and no choice rule.
     """
+    del copy
     programs = load_programs()
     assert CHOICE in programs["completion.lp"]
     program = "\n".join(programs[f] for f in SOLVE_2)
@@ -1524,7 +1533,9 @@ def duty_differential(interp: Interpreter, config: settings) -> Callable[[], Non
     return run
 
 
-def test_duties_match_brute_force(duty_interpreter: Interpreter) -> None:
+@pytest.mark.parametrize("copy", range(COPIES))
+def test_duties_match_brute_force(duty_interpreter: Interpreter, copy: int) -> None:
+    del copy
     duty_differential(duty_interpreter, settings(max_examples=300, deadline=None))()
 
 
