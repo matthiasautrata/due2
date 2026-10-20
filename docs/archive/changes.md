@@ -1,6 +1,6 @@
 # Earlier changes
 
-Each specification and design document opens with a **Changes** line for its latest version. The entries it replaced are kept here, newest first, verbatim as they stood. Section numbers in an entry refer to the document as it was then. Git has the full history: every commit names the sections it touched. The last section keeps README's Status paragraph as it stood before it was rewritten to describe only the present.
+Each specification and design document opens with a **Changes** line for its latest version. The entries it replaced are kept here, newest first, verbatim as they stood. Section numbers in an entry refer to the document as it was then. Git has the full history: every commit names the sections it touched. The section before the last keeps the coverage-gap list's earlier re-derivations. The last section keeps README's Status paragraph as it stood before it was rewritten to describe only the present.
 
 ## `due2-workflows.md`
 
@@ -74,6 +74,10 @@ Each specification and design document opens with a **Changes** line for its lat
 Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged.
 
 Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
+
+## `conformance/README.md` § Coverage gaps
+
+Earlier re-derivations: 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
 
 ## README § Status, as it stood on 2026-10-19
 
