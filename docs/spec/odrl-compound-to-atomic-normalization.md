@@ -1,13 +1,13 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.13  
+Version: 0.14  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.14 (2026-10-20, #83): a cold read, spelling `artifact`. §3 lists the constructs outside the fragment that `due2-diagnostics.md` rejects as `UnsupportedConstruct`, with the reason for each; §5.2 and §6.1 no longer say that §3 requires Rules to be named, which §3 does not; §6.2 says whose phrase “each Rule in the Policy” is and where DPROD's rule is compared; §8.1 names `ways-of-working.md` and says where `Den` is formalised (`correctness-strategy.md` §4.8). Admitted input, as the registry and `tools/check_corpus.py` already drew it, and generated identity are unchanged. Earlier changes are in `docs/archive/changes.md`.
 
-The profile version stays `1` until an artefact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
+The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
 ## 1. Goal
 
@@ -61,7 +61,7 @@ A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy
 - have an identity: be an IRI node, or carry exactly one `odrl:uid` (the ODRL JSON-LD context maps `uid` to `@id`, so in RDF the IRI is usually the uid);
 - have at least one `odrl:permission`, `odrl:prohibition`, or `odrl:obligation`;
 - have at most one `odrl:conflict`, whose value is `odrl:prohibit`, `odrl:perm`, or `odrl:invalid`; and
-- be fully materialized and contain no `odrl:inheritFrom`.
+- be fully materialized, and use none of the constructs outside the fragment: `odrl:inheritFrom`; `odrl:rightOperandReference`, whose right operand is fetched by dereferencing an IRI, an input that is neither the policy nor the request; `odrl:implies`, which action matching does not read (it reads `odrl:includedIn`, `due2-workflows.md` §5.2); and `odrl:source` anywhere but on a collection (`due2-profiles.md` §8.1). Each is rejected with `UnsupportedConstruct`, never approximated (`due2-architecture.md` §1).
 
 An absent term takes the conflict default a selected profile declares with `odrl:conflict` on its profile resource — DPROD declares `odrl:prohibit` — and otherwise means `odrl:invalid` (ODRL IM §2.10). Either way it is made explicit on every output Atomic Policy. All three values survive decomposition. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids the source Policy when one of its Permissions and one of its Prohibitions both apply, and the source Policy remains identifiable: one `N(P0)` artifact derives from exactly one source Policy, and every downstream atom carries its source Policy (`due2-workflows.md` §3.1).
 
@@ -165,7 +165,7 @@ anon_node_uid = H(frame(
 
 `parent_effective_uid` is the effective identity of the node's single parent, assigned top-down from the anchor. `duplicate_index` numbers, from 0, the siblings that share parent, predicate, and local digest. Such siblings are indistinguishable, so any assignment of indices yields the same output graph; their descendants differ through their parents.
 
-An anonymous node's identity therefore depends only on its own content, its parent, and the predicate that reaches it. Editing triples anywhere else — an annotation, a different Rule — leaves it unchanged. That is deliberate: an anonymous node is a value, and content is the only identity a value has. Anything whose identity must survive an edit to its content is a Rule, and §3 requires Rules to be named.
+An anonymous node's identity therefore depends only on its own content, its parent, and the predicate that reaches it. Editing triples anywhere else — an annotation, a different Rule — leaves it unchanged. That is deliberate: an anonymous node is a value, and content is the only identity a value has. Anything whose identity must survive an edit to its content should be a named Rule (§3).
 
 **Generated Rules, Policies, and the Activity.**
 
@@ -197,7 +197,7 @@ These UUIDs are stable names with 122 retained digest bits. They are not signatu
 
 The implementation MUST run these phases in order:
 
-1. parse, bound, and validate the fixed input profile, including Rule naming, anonymous-node shape, and the conflict term (§3);
+1. parse, bound, and validate the fixed input profile, including the unsupported constructs, anonymous-node shape, and the conflict term (§3);
 2. assign effective identities and skolemize every anonymous node (§5.2);
 3. compute the source digest of the skolemized graph;
 4. interiorize compact Policy properties;
@@ -212,9 +212,9 @@ The implementation MUST run these phases in order:
 
 Policy-level values fill in what a root Rule leaves unstated, and are then removed from the Policy level. They are grouped in families: the actions; the relations (`odrl:target`, `odrl:output`); and each function predicate separately. A root Rule that states any value of a family keeps its own values for that family. A root Rule that states none receives all the Policy-level values of that family, which may form a compound axis (§6.3).
 
-ODRL IM §2.7.1 says shared properties are "replicated" into Rules but does not say what happens when a Rule already has the property. Filling only unstated families reads the Policy level as a default, which is what authors mean when they override it on one Rule — and what DPROD Contracts specifies ("inherited from policy if absent").
+ODRL IM §2.7.1 says shared properties are "replicated" into Rules but does not say what happens when a Rule already has the property. Filling only unstated families reads the Policy level as a default, which is what authors mean when they override it on one Rule — and what DPROD Contracts specifies ("inherited from policy if absent"; `due2-profiles.md` §8.1).
 
-For this profile, “each Rule in the Policy” means each root Rule directly linked from `P0`. Nested Duties retain their own properties and do not inherit Policy-level shortcuts.
+For this profile, the IM's “each Rule in the Policy” (§2.7.1) means each root Rule directly linked from `P0`. Nested Duties retain their own properties and do not inherit Policy-level shortcuts.
 
 The transformer MUST record in lineage which values came from Policy-level interiorization; stage 2 needs it to resolve party roles (`due2-workflows.md` §4). Because relations form one family, a Rule that states `odrl:output` never receives a Policy-level `odrl:target`, so interiorization cannot create a Rule with both.
 
@@ -297,7 +297,7 @@ Let `P` be a valid input graph after skolemization (§5.2) and compact interiori
 
 In `N(P0)` every Rule is atomic, so `Den(N(P0))` reads directly off the graph. Invariant 3 holds when the lineage records map the atoms of `Den(P0)` one-to-one onto those of `Den(N(P0))`, preserving class, selected values, non-axis properties, roots, and edges.
 
-The definition has no memoization, no fan-out bookkeeping, and no Atomic Policy construction — the parts of §6 most likely to be wrong — which is what makes it an independent oracle. It is a pure function over a finite structure, the kind of target ways-of-working §9 names for machine-checked verification.
+The definition has no memoization, no fan-out bookkeeping, and no Atomic Policy construction — the parts of §6 most likely to be wrong — which is what makes it an independent oracle. It is a pure function over a finite structure, the kind of target `ways-of-working.md` §9 names for machine-checked verification. `correctness-strategy.md` §4.8 states it again in the formal model (issue #8).
 
 ## 9. Evaluator boundary and non-goals
 
