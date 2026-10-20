@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.4
+**Status:** Draft v0.5
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.5, 2026-10-19** (`decisions/0021`): §9 follows Cedar's pattern, an executable model, proofs, and differential testing, in place of Dafny extraction; §6, §10, §11, and §12 drop their Dafny mentions. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -163,7 +163,7 @@ Design-by-contract is a first-class part of this discipline, not an optional ext
 - Class invariants on any type with a non-trivial well-formedness condition.
 - Not trivial type restatements — the checker already does that. Contract the things types *cannot* express: ordering, non-emptiness under conditions, relationships between arguments, idempotence, monotonicity.
 
-**Why contracts earn their place here:** they are the connective tissue between layers. `icontract-hypothesis` derives property-test strategies directly from preconditions, so a contract generates tests for free. CrossHair reads the same contracts and attempts to refute them symbolically. And if we ever get Dafny (§9), the contracts are already the specification, written down and reviewed. One artefact, four consumers.
+**Why contracts earn their place here:** they are the connective tissue between layers. `icontract-hypothesis` derives property-test strategies directly from preconditions, so a contract generates tests for free. CrossHair reads the same contracts and attempts to refute them symbolically. One artefact, three consumers: the runtime check, the test generator, and the symbolic refuter.
 
 **Runtime cost:** contracts are enabled in dev and test unconditionally. **[D]** (2026-10-11, provisional) In production, preconditions stay on and postconditions and invariants are off. A wrong policy decision costs more than the check.
 
@@ -220,30 +220,22 @@ Placement is *tool × scope*. Scope is the cheaper lever: mutation testing is un
 
 ---
 
-## 9. Verification track **[D]** (Dafny confirmed installable 2026-10-10; see `decisions/0002`)
+## 9. Verification track **[D]** (`decisions/0021`)
 
-Everything above reduces defect probability. None of it produces a proof. Where a control function needs the word "verified", the route is a verification-aware language with extraction.
+Everything above reduces the probability of a defect. None of it produces a proof. Where a claim needs one, due2 follows Cedar's verification-guided development (`decisions/0021`). It has three parts: a small, executable model of the semantics, written in a prover; proofs of the claims about that model; and differential testing of every implementation against it. No production code is extracted from the model. `correctness-strategy.md` §4.8 states the claims, the oracles, and the gate.
 
-**Dafny** is the candidate. Specifications are written as pre/postconditions in the language itself, checked by Z3, then compiled to a target language.
+**What to point it at.** Verification effort follows the case analysis. Once a policy has been rewritten into a flat normal form, the decision function is a filter and a fold, small enough to review by eye and cheap to test exhaustively. The case analysis lives in two other places, and those are the targets:
 
-**What to point it at.** The instinct is to verify the decision function. In a two-stage pipeline that instinct is wrong. Once inputs have been rewritten into a flat normal form, the decision function is a filter and a fold — small enough to review by eye and cheap to test exhaustively over a generated corpus. The transformation that produced the normal form is where the case analysis lives, where changes land, and where a defect is silent rather than loud, because a mis-normalised policy still evaluates cleanly and simply means something else. **Verification effort follows the case analysis.** The highest-value specification target is the semantic-preservation property of §7.1, not the evaluator.
+- **The completion algebra** (`due2-workflows.md` §6.4). Its claims make W3's two-extreme computation equal to the definition over every completion. A flaw in one makes a definite verdict wrong (`correctness-strategy.md` R3).
+- **Semantic preservation in W1** (§7.1; `odrl-compound-to-atomic-normalization.md` §8.1). A mis-normalised policy still evaluates cleanly and simply means something else (R1). The `Den` oracle becomes part of the model (issue #8).
 
-Three usage modes, ranked by value/cost:
-
-1. **Oracle only (recommended entry point).** Extract to Python, never deploy it. Use it as the reference implementation in differential Hypothesis tests against the production implementation. Machine-checked ground truth with zero interop, runtime, or performance cost; the generated code lives in the test tree. Reversible, and it reveals the true proof cost before any architectural commitment.
-2. **Ship extracted Go.** Go is a well-supported backend and an admissible language here. Python becomes a client over a process boundary.
-3. **Ship extracted Python.** Viable but the weakest backend (still officially "under development"). Generated code needs the Dafny Python runtime on `PYTHONPATH`; `seq`/`map`/`set` arrive as runtime wrapper types, not `list`/`dict`; names mangle without `{:extern}` pinning. Requires a hand-written typed adapter. Treat the generated package as a vendored binary artefact — never edited, regenerated only.
-
-**Also to price:** the Rust backend. Extracted Rust + PyO3 gives far better in-process Python interop and performance than the Python backend. Relevant to our crate-approval constraint: we need the toolchain, and if serialisation stays on the Python side the dependency surface is roughly `dafny_runtime` + `pyo3`/`maturin` rather than a serde tree. **[O]** — confirm current Rust-backend maturity.
-
-**What to extract:** pure total functions over inductive datatypes. Not parsing, not I/O, nothing effectful. Subset types (`type Nat = x: int | x >= 0`) are where we get the refinement types Python cannot express.
+**Counterexamples first.** Each claim gets a small Alloy 6 model and a bounded-exhaustive search over clingo-i before anyone tries to prove it (`decisions/0021` #3). A small-scope search finds a false claim in minutes, and a failed proof finds it slowly.
 
 **Operational cautions:**
 
-- Cost is in the proofs, not the codegen. Loop invariants and quantifier triggers dominate. Budget 3–10× on the verified portion, front-loaded.
-- Pin Z3 and use resource limits (`--resource-limit`) rather than wall-clock timeouts, or verification becomes machine-dependent and CI goes flaky in a way that is very hard to defend to a control function.
-
-**Resolved 2026-10-10** (`decisions/0002`, with the full alternatives review in `implementation-alternatives.md`): Dafny is installable here — Homebrew ships Apple-Silicon bottles (4.11.0, .NET 8 + Z3) — so the oracle mode below is unblocked. The recommendation stands: oracle only, scoped to the `Den` oracle and the stage-1 expansion functions, with OCaml+Why3 as the designated upgrade and Lean as the recorded fallback for the preservation metatheorem.
+- The cost is in the proofs, not in the model: Cedar's proofs are about 3.4 times the size of its models (`references.md` §7). The prover spike measures it (`decisions/0021` #4) before anything depends on it.
+- Pin the prover and its libraries in the repository, and use the prover's deterministic limits (Lean's heartbeats, for one) rather than wall-clock timeouts. Otherwise a proof checks on one machine and fails on another, and CI goes flaky.
+- Pin each proof to the spec version it states. A proof that outlives its spec version proves the previous one.
 
 ---
 
@@ -279,7 +271,7 @@ With these, a later port is a contained piece of work. Without them it is a rewr
 |---|---|---|---|
 | Indexed in-memory Python | Most of the available speedup, since the win is in not evaluating irrelevant records. Same language, same tests, available now. | Ceiling is real but unmeasured | None |
 | Rego / OPA | A Go binary from a CNCF project; generation from flat ground records is near-trivial. Partial evaluation returns a residual condition, which is the right shape for entitlement-scale queries. | A third semantics to keep in sync; `undefined` collapses per §5.1; policy-plus-data-in-memory model does not suit a large event corpus | Low |
-| Rust via PyO3 | In-process, best latency, keeps a Dafny extraction path open | Toolchain in the build image; `abi3` from the start or the ABI matrix explodes | Medium — framed as a Python library with Rust inside (pydantic-core, polars, ruff, uv as precedent) |
+| Rust via PyO3 | In-process, best latency | Toolchain in the build image; `abi3` from the start or the ABI matrix explodes | Medium — framed as a Python library with Rust inside (pydantic-core, polars, ruff, uv as precedent) |
 | Compiled to SQL | Pushes the scan to the store | Relocates the trusted computing base into the query generator and the engine's three-valued logic; explanation becomes hard | Low technically, high semantically |
 
 **Ordering rule:** exhaust indexing and measurement before adopting a second semantics. Adding a target adds a synchronisation obligation that never goes away.
@@ -299,7 +291,7 @@ If a backend is ever adopted for the **verified** property rather than for speed
 - **rumdl** — Markdown lint. **[D]** (2026-10-12) Every Markdown file outside the vendored suites (`conformance/external/`, `profiles/vendor/`) is lint-clean. `MD013` (line length) is off, because a paragraph is one line. rumdl rather than markdownlint-cli2 keeps the toolchain uv-only; the two differ slightly (markdownlint's `MD060` table style and `MD029` list numbering), and rumdl is the gate.
 - **uv** — dependency management with hashed lockfiles. Reproducibility and supply-chain provenance are not optional in this environment.
 - **pip-audit** — dependency vulnerability scan in the slow tier.
-- **Generated artefacts are vendored, never hand-edited, and regenerated by a documented command recorded in the repo.** This applies to every generation target without exception — extracted Dafny (§9), generated Rego, generated SQL, and any compiled wheel. A generated policy artefact that someone patches in place destroys the traceability from source to decision, which is the property the whole discipline exists to defend. Where the artefact is a build output rather than source, it is separately versioned and its CI runs the conformance suite against the built artefact, not against the generator.
+- **Generated artefacts are vendored, never hand-edited, and regenerated by a documented command recorded in the repo.** This applies to every generation target without exception — generated Rego, generated SQL, and any compiled wheel. A generated policy artefact that someone patches in place destroys the traceability from source to decision, which is the property the whole discipline exists to defend. Where the artefact is a build output rather than source, it is separately versioned and its CI runs the conformance suite against the built artefact, not against the generator.
 
 ---
 
@@ -317,7 +309,7 @@ Each step is independently valuable. Stop wherever marginal cost exceeds the def
 8. Backend-parameterised conformance suite, single backend (§10.2)
 9. Tiering formalised in CI (§8) — done 2026-10-16 for the PR tier (§14.3)
 10. CrossHair on pure predicates; mutation gate on the kernel
-11. Dafny investigation — oracle mode only, targeting semantic preservation (§9)
+11. The formal model: counterexamples first, then proofs, then the differential (§9)
 
 Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. Steps 10–11 are for the parts where being wrong is expensive.
 
@@ -339,10 +331,10 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 | 6 | Contracts in production: preconditions-only or off | §6 | Resolved 2026-10-11 (provisional): preconditions only |
 | 7 | `icontract` vs `deal` | §6 | Resolved 2026-10-11 (provisional): `icontract`; trial on the Kleene tables |
 | 8 | Slow tier: nightly vs merge-queue | §8 | Observed merge frequency |
-| 9 | Dafny availability | §9 | Resolved 2026-10-10 (`decisions/0002`): installable — Homebrew Apple-Silicon bottle 4.11.0, .NET 8 + Z3 |
+| 9 | Dafny availability | §9 | Resolved 2026-10-10 (`decisions/0002`): installable — Homebrew Apple-Silicon bottle 4.11.0, .NET 8 + Z3. Moot since 2026-10-19: `decisions/0021` withdraws Dafny |
 | 10 | Rust toolchain in the build image | §10.3 | Platform team conversation |
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume |
-| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus. Amended 2026-10-16 by `decisions/0009`: the direct interpreter is a clingo program, not Python; the §7.1 principle — maintain a direct rendering of the semantics — is unchanged |
+| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus. Amended 2026-10-16 by `decisions/0009`: the direct interpreter is a clingo program, not Python; the §7.1 principle — maintain a direct rendering of the semantics — is unchanged. Superseded in part 2026-10-19 by `decisions/0021`: `Den` moves into the formal model |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option |
 
 ---

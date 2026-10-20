@@ -621,7 +621,7 @@ They are why a rule deleted from the program fails loudly. Without its rule, som
 - `prohibit`: each `t` `forbid` of the policy removes each permission that may be a candidate;
 - `perm`: each sure candidate removes each of the policy's `forbid` atoms that may apply;
 - `invalid`: a policy with a sure candidate and a `t` `forbid` is void (`void/1`). Each of its contenders is removed by each other sure contender of the policy;
-- the combination (`prohibit-overrides`, the only one read): each `t` `forbid` that its own policy did not remove removes each candidate of every other policy. `structure.lp` admits one policy, so no vector reaches this rule. It is there because `due2-workflows.md` §3.5 records cross-policy eliminations as rows (`formalisation-review.md` §3 #3), and `test_combination_rows_on_facts` runs it on hand-written facts.
+- the combination (`prohibit-overrides`, the only one read): each `t` `forbid` that its own policy did not remove removes each candidate of every other policy. `structure.lp` admits one policy, so no vector reaches this rule. It is there because `due2-workflows.md` §3.5 records every elimination with its rule, cross-policy ones included, and `test_combination_rows_on_facts` runs it on hand-written facts.
 
 **One row per remover.** An atom removed by two `forbid` atoms has two rows (`due2-workflows.md` §3.5, #57). Each row is a complete reason. In a conflict row, whenever `X` applies, `Y` applies too, because `Y` is `t`, and `Y` removes it. In a `violated_precondition` row, `Y` is the duty atom, owed `t` and violated, so it closes `X` wherever `X` applies. A reader can check each row against the policy alone. A single row naming the first remover would hide the others, and which one is "first" would depend on the order of the facts. A `u` remover gives no row, because it removes `X` only in some completions, and that is not a reason that holds whatever the unknowns are.
 
@@ -649,7 +649,7 @@ W1's atoms are the disjuncts of the DNF of each authored tree (`due2-workflows.m
 
 Under a status the same for every rule, as an absent target is, every atom carries the row, so `interpret.py` projects them to the rule or duty node, and the reply has one row per rule, input, and status.
 
-The same file holds the structure's one-value constraints: every atom has exactly one `atom_effect`, `atom_policy`, and `atom_rule`, so a row names exactly one of each (`formalisation-review.md` §3 #2).
+The same file holds the structure's one-value constraints: every atom has exactly one `atom_effect`, `atom_policy`, and `atom_rule`, so a row names exactly one of each, as `due2-workflows.md` §3.1 requires.
 
 ### `pivot.lp`
 

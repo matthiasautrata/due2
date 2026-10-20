@@ -23,11 +23,10 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | `docs/design/references.md` | The annotated bibliography: what was read, why, what was learned, and where it is used |
 | `docs/design/mds-vendor-contracts.md` | Turning MDS vendor contracts into internal policies: approach and decisions (parked, issue #24) |
 | **`docs/correctness/`** | **How we know it is right** |
-| `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded |
-| `docs/correctness/formalisation-review.md` | Review input, not adopted (2026-10-17): which obligations are provable, which theorems (monotonicity, the completion key, frontier relevance), which vehicles, in what order; deficits found in clingo-i |
+| `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded; the claims the formal model proves (§4.8) |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
 | `docs/decisions/` | Decision records: each settles one question the specification depends on; `docs/decisions/README.md` lists them with their standing |
-| `docs/archive/` | Documents no longer current, kept as history, with an index in its `README.md`: the implementation-alternatives reviews and the documents' earlier **Changes** entries |
+| `docs/archive/` | Documents no longer current, kept as history, with an index in its `README.md`: the implementation-alternatives reviews, the formalisation review, and the documents' earlier **Changes** entries |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus — RL2 use cases, DPROD examples, translations of other evaluators' suites (`force-`, `oval-`, `w3c-fs-`), and due2-native cases (`due2-`) — with scenarios and hand-derived expected verdicts; coverage gaps in its `README.md` |
 | `conformance/odrl22-shape.ttl` | due2's SHACL encoding of the ODRL Information Model 2.2 — validates authored policies (compact and compound forms included), every constraint cited to its IM section |
@@ -66,6 +65,6 @@ uv run pytest --backend=clingo-i                                           # the
 
 - **Specification and corpus.** The corpus has 127 cases. Every expected verdict is hand-derived. `tools/check_corpus.py` checks each case's format and that its policy stays within the admitted profile. The 19 negative cases are policies that W1 must reject, and they wait for W1.
 - **The semantics program.** `spikes/clingo-i/` evaluates the corpus's authored policies with a generic clingo program (`decisions/0009`), which serves as the oracle for the evaluator to come. It passes 400 of the 438 scenarios it is given and declines the other 38, naming the feature: 37 depend on the occurrences of a recurring duty (`unsupported: recurrence`, #80), and one is past the `max_mixed` bound, for which the spike has no fallback.
-- **Next.** Formalisation (#70): counterexample search and a prover spike. Then the W2/W3 bakeoff (`decisions/0006`), then W1.
+- **Next.** Formalisation (#70, `decisions/0021`): counterexample search, then a prover spike. Then the W2/W3 bakeoff (`decisions/0006`), then W1.
 
 Open items are GitHub issues, labelled `open-decision`, `corpus`, `verification`, `work-item`, or `parked`. Each names the section that holds its source of truth.

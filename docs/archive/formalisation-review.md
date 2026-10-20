@@ -1,5 +1,7 @@
 # due2 — Formalisation review (2026-10-17)
 
+> **Archived.** This review was current from 2026-10-17 to 2026-10-19. It is kept as history (`docs/archive/README.md`). `decisions/0021` took up its question, and its claims and its two open deficits (§3 #4 and #5) live on in `correctness-strategy.md` §4.8.
+
 **Status:** Review input, 2026-10-17. **Not adopted.** Nothing here changes a [D] item. It is material for when the semantics program covers enough of the corpus to be worth formalising. Its own trigger is about 100 passing vectors; clingo-i passed 29 of 397 at `f5dc357`, and 172 of 406 at `e301c46`.
 **Companions:** `correctness-strategy.md` (the adopted plan; §4.5 cites `check_completion.py`) · `decisions/0002` (W1 in Python with a Dafny oracle) · `decisions/0009` (the semantics as a clingo program) · `implementation-alternatives.md` (the 2026-10-10 review of Python+Dafny, Lean, Clingo, OCaml+Why3) · `spikes/clingo-i/DESIGN.md`.
 

@@ -39,8 +39,8 @@
 
 %## Integrity
 
-% Each atom has one effect, one policy, and one source rule, so that a row names exactly one
-% of each (formalisation-review.md §3 #2).
+% Each atom has one effect, one policy, and one source rule (due2-workflows.md §3.1), so that
+% a row names exactly one of each.
 :- atom(X), #count { Eff : atom_effect(X, Eff) } != 1.
 :- atom(X), #count { P : atom_policy(X, P) } != 1.
 :- atom(X), #count { R : atom_rule(X, R) } != 1.
@@ -157,7 +157,7 @@ Atom `Y` removes atom `X` under rule `Strat`: `violated_precondition`, a strateg
 policy, or `"prohibit-overrides"` across policies. Across policies, each `t` forbid its own policy
 did not remove removes each candidate of every other policy (due2-workflows.md §6.2 #2).
 structure.lp admits one policy, so no vector reaches the cross-policy rule. It is there because
-due2-workflows.md §3.5 records cross-policy rows (formalisation-review.md §3 #3), and
+due2-workflows.md §3.5 records every removal with its rule, cross-policy ones included, and
 `test_combination_rows_on_facts` runs it on hand-written facts.
 *%
 elim(X, Y, violated_precondition) :- closed_by(X, Y).

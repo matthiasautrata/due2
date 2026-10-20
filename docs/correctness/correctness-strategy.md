@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.9, 2026-10-17 — adopted (§9 #1); §9 #10 remains open. Every item that is new here is marked **[O]** until adopted.
+**Status:** v0.10, 2026-10-19 — adopted (§9 #1); §9 #10 and #11 remain open. Every item that is new here is marked **[O]** until adopted.
 
-**Changes in v0.9** (2026-10-17, `decisions/0016`): §4.3's properties pair only completed parts; an opaque part is a variable of its own. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.10** (2026-10-19, `decisions/0021`): §4.8, the formal model, states the claims M, K, F, W, and P, with their evidence and instruments; the formal model replaces the Dafny `Den` in §1.1, §3, §4.2, and §7; §8 builds the enumerator first and adds the formal model as step 6; §9 #11. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -12,7 +12,7 @@ Markers as in the companions: **[D]** decided · **[O]** open, alternatives list
 
 The pieces of a testing approach are already in the repository, but they are spread over five documents. Nowhere does one place say which check guards against which failure, what each oracle is independent of, or what has to exist before a component is coded. This document says those three things. It does not restate the laws, invariants, or tools. It cites them.
 
-"Correctness" rather than "testing": tests are one instrument among several here. Others are hand derivations, a direct interpreter, a denotational oracle, a randomised check of a proof, and machine-checked extraction. What has to be planned is the argument that the implementation means what the spec says, and tests are only part of it.
+"Correctness" rather than "testing": tests are one instrument among several here. Others are hand derivations, a direct interpreter, a denotational oracle, a randomised check of a proof, and machine-checked proofs. What has to be planned is the argument that the implementation means what the spec says, and tests are only part of it.
 
 ---
 
@@ -47,12 +47,13 @@ The three testing modes are:
 
 | Implementation | Counterpart |
 |---|---|
-| W1 stage 1 | `Den` (Python, then Dafny) through the lineage bijection |
+| W1 stage 1 | `Den` (Python, then in the formal model, §4.8) through the lineage bijection |
 | W1 + W2 + W3 | `I`, the direct interpreter (L9) |
 | W3 | Brute-force W3 over every completion of the findings |
 | Replay of a recorded evaluation | The original trace, byte for byte |
 | Re-evaluation of a case history | A from-scratch evaluation over the current inputs |
 | Any second backend | The first |
+| clingo-i, and W1–W3 | The formal model (§4.8), on the layers it models |
 
 Negative inputs are part of all three modes: the enumerator and the generators also produce invalid policies, and the expected result is the rejection with its diagnostic.
 
@@ -86,7 +87,8 @@ An oracle is only as useful as it is independent. The question for each one is w
 | Hand-derived corpus (positive and negative cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]**, exists |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]**, exists |
 | L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts now; the pipeline's verdict (L9) once W1 exists | W1's rewriting and the corpus relations | Prose of workflows §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
-| `Den` (normalisation §8.1), Python, then Dafny | Stage 1, invariant 3 | §6's algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
+| `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | That document's §6 algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
+| The formal model (§4.8): a small executable model in a prover | The claims of workflows §6.4, by proof; the verdict of every input it covers, by running | clingo-i's encoding and the algorithms of W1–W3 | The prose of workflows §5–§6 and the formaliser's reading of it (R4); the reader that turns a vector into its input, chosen at the spike | **[D]** (`decisions/0021`), issue #70 |
 | `tools/check_completion.py` | §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]**, exists |
 | Laws L1–L10, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
@@ -104,7 +106,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 
 ## 4. Per component
 
-Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" lists the items that must exist first.
+Numbered in the order they were added; §8 gives the order they are built in. Each entry is the §1 plan. "Before code" lists the items that must exist first.
 
 ### 4.1 The semantics program: clingo over flattened ODRL (issue #9)
 
@@ -122,7 +124,7 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Before code.** ~~The case format needs negative cases.~~ Done 2026-10-11: `expected_rejection` (`conformance/README.md`), with codes from `due2-diagnostics.md`. `force-01` … `force-07` and `due2-witness-outside-duty` are the first; the rest of normalisation §10's negative vectors are a coverage gap.
 - **Oracles.** `Den` through the lineage bijection (invariant 3). Golden vectors from normalisation §10.
 - **Properties.** Invariants 6 (determinism over permuted triples, JSON-LD order, and blank-node labels), 7 (idempotence), and 10 (locality: an unrelated edit changes no output IRI). Invariant 8 as exact-limit success and limit-plus-one failure.
-- **Done.** The §10 minimum suite passes, `Den` agrees on every positive vector and on generated policies, and the Dafny `Den` (issue #8) follows as the second, machine-checked oracle.
+- **Done.** The minimum suite of `odrl-compound-to-atomic-normalization.md` §10 passes, `Den` agrees on every positive vector and on generated policies, and the formal model's `Den` (§4.8, issue #8) follows as the second, machine-checked oracle.
 
 ### 4.3 W1 stage 2: the builder (lifted form to relations)
 
@@ -172,6 +174,30 @@ Ordered as they will be built (§8). Each entry is the §1 plan. "Before code" l
 - **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, amend a policy, upgrade the normaliser, re-evaluate, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
 - **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of events, an expected verdict per evaluation.
 
+### 4.8 The formal model (issue #70, `decisions/0021`)
+
+The formal model is a small, executable model of due2's semantics, written in a prover. Proofs establish the claims below about it, and a differential compares it with clingo-i and with W1–W3 as each is built. It is an oracle, never a production evaluator, and no code is extracted from it. Claims M, K, F, and W go to the prover; P is a question the spec answers. Which prover is chosen by a spike on claim M, Lean 4 first (§9 #11).
+
+- **Risks.** R3 and R4 above all: each claim below is an argument that a definite verdict is right, and a flaw in one makes a definite verdict wrong. R1 through `Den`, once `Den` moves into the model (#8). R9 in the bounded-exhaustive search, which proves nothing about a shape it never reaches (#77 is such a case).
+- **Claims.** Each is a sentence of the spec, or a question one of its records leaves open. Every claim gets a small Alloy 6 model of its own and the bounded-exhaustive search over clingo-i first. It goes to the prover only after both have run at stated bounds without a counterexample.
+
+  | Claim | Statement and source | Evidence |
+  |---|---|---|
+  | **M**, monotonicity | Under all three strategies and the default combination, "the verdict is monotone in every finding", so the two extreme completions bound every completion's verdict (`due2-workflows.md` §6.4). The proof's last case extends this to `violations = deny` | The proof by cases in §6.4. `check_completion.py`'s first, third, and fourth phases, 50,000 cases each, against its abstract model rather than the semantics clingo-i implements |
+  | **K**, the completion key | Identical completed parts share one variable, and complementary ones share it with opposite polarity; an opaque part is a variable of its own (§6.4, `decisions/0012`, `decisions/0016`). Two claims: the key never merges parts whose truth values can differ under a value that fits (soundness), and the parts it leaves independent can only widen a verdict to `Indeterminate`, never make it a wrong definite one (one-sidedness). The key is not complete: `x ≤ 5` and `x > 7` stay independent (#25) | The argument in §6.4 and `decisions/0012`; corpus cases such as `due2-xone-unknown`. clingo-i's brute-force differential shares the key, so it is no evidence for it |
+  | **F**, frontier relevance | For a definite `Pending`, only the unknowns of uncertain candidates and of `U` prohibitions can change the frontier: "no other unknown can move the frontier while the verdict stands" (§6.4, `decisions/0004`) | `check_completion.py`'s fifth phase: 942 definite `Pending` instances of 50,000, against the same abstract model |
+  | **W**, the basis waiver | A definite `Permit` or `Deny` with an empty basis has a `U` finding that reads a paired leaf, whose operand is `unresolved` and is listed as an unknown part; so `tools/check_corpus.py` may waive the basis check exactly then (`spikes/clingo-i/DESIGN.md` § `resolve.lp`) | The argument in `DESIGN.md` and one explicit case. A search of 6,000 cases never reached the shape (#77) |
+  | **P**, the listed frontier under unknowns | An open question, not a claim: the listed frontier (`due2-workflows.md` §6.3) can omit a route that every completion offers, because no single permission gives it. Should §6.3 list such a route? (`decisions/0019`) | Two clingo-i tests, named in `decisions/0019` |
+
+  The laws L1–L10 (`due2-workflows.md` §8) also get Alloy models, as a test of adequacy rather than of the model (`decisions/0021` #6).
+- **Before code.** The claims above. Each is restated in the model's terms and pinned to the spec version it states: a proof that outlives its spec version proves the previous one.
+- **Oracles for the model.** clingo-i, through the spike harness (`spikes/README.md`), on the corpus and on the enumerated and generated vectors. The corpus's hand-derived verdicts. Within the model, the definition at the top of `due2-workflows.md` §6.4, every completion enumerated, beside the two-extreme computation: M is the theorem that they agree. The model shares with clingo-i only the prose and its reading (§3).
+- **Properties.** The claims, as theorems. Faithfulness: each definition in the model, and each rule block in clingo-i's `lp/`, names the spec section it encodes, and a test checks that each name resolves. clingo-i's section citations are prose in `DESIGN.md` and in comments, and the faithfulness test is a sub-issue of #70.
+- **Golden vectors.** The corpus scenarios within the layers modelled; the two shapes of `decisions/0019`; the empty-basis case of #77.
+- **Generators.** The bounded-exhaustive enumerator and the generators of §1.1 and §5 (#42, #44). Each claim's hard shape is reached in a stated share of draws, and a test asserts the share (#77).
+- **`check_completion.py`.** Its abstract model is the common mode of the evidence for M and F until the formal model exists. It keeps running until the model's differential covers its five phases, and then it retires.
+- **Done.** M is proved in the chosen prover over the finding and resolution layers, and the spike's result is recorded as an amendment to `decisions/0021`. K, F, and W are each proved, or refuted with the spec edited (§6). P is settled by a spec edit or a decision record. The model runs under the spike harness and agrees with clingo-i on every corpus scenario within the layers it models and on the enumerated vectors at stated bounds. The proofs and the differential run in the slow tier (§7).
+
 ---
 
 ## 5. Generators **[O]** (coverage check **[D]**, 2026-10-11)
@@ -212,22 +238,23 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 |---|---|
 | Every commit (today) | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
 | PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L10 and the stage-1 invariants; the L1 determinism matrix |
-| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the Dafny `Den` check. Results feed the ratchet, not the gate |
+| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the formal model's proofs and its differential (§4.8). Results feed the ratchet, not the gate |
 
 ---
 
 ## 8. Sequence
 
-1. ~~Settle the open items of §9.~~ Adopted 2026-10-11; the remaining item, #10, is set at step 6 by measurement.
+1. ~~Settle the open items of §9.~~ Adopted 2026-10-11; the remaining item, #10, is set at step 5 by measurement.
 2. ~~Case-format extension for negative cases~~ (done 2026-10-11).
 3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
 4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (§6.4's computation) follows, differentially against enumeration.
-5. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written (`decisions/0009`).
-6. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram.
-7. W1 stage 1 with the Python `Den` oracle; the Dafny `Den` follows (issue #8).
-8. W1 stage 2, gated by L9 against `I`.
-9. The surviving W2/W3 backends on the full corpus through W1, completing the §4.4 and §4.5 gates.
-10. The ledger (data model decided, §4.7), gated by the stateful machine.
+5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram, first over clingo-i (#42, #44).
+6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and the bounded-exhaustive search over clingo-i, then the prover spike on M.
+7. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written (`decisions/0009`).
+8. W1 stage 1 with the Python `Den` oracle; the formal model's `Den` follows (issue #8).
+9. W1 stage 2, gated by L9 against `I`.
+10. The surviving W2/W3 backends on the full corpus through W1, completing the §4.4 and §4.5 gates.
+11. The ledger (data model decided, §4.7), gated by the stateful machine.
 
 ---
 
@@ -245,3 +272,4 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 | 8 | Critical features and the three testing modes | §1.1 | **Resolved 2026-10-11:** atomization, evaluation, case history; bounded-exhaustive, generated, and differential |
 | 9 | A ledger data model in `due2-workflows.md` | §4.7 | **Resolved 2026-10-16:** workflows §7.1 (`decisions/0008`) |
 | 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | Set by measurement once the enumerator exists (issue #42) |
+| 11 | The prover for the formal model | §4.8 | Chosen by spike, Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4); the result is an amendment to that record |

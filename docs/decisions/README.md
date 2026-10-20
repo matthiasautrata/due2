@@ -9,7 +9,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | # | Decision | Date | Standing |
 |---|---|---|---|
 | [0001](0001-rl2-as-donor.md) | due2 stays ODRL-native; RL2 is a donor; DPROD Contracts is a profile | 2026-10-09 | In force |
-| [0002](0002-w1-implementation-and-verification.md) | W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline | 2026-10-10 | Amended. Superseded in part: by 0003, which withdraws hoisting; by 0009, which makes the L9 oracle a clingo program (item 7). 0006 exercises item 5's carve-out for a clingo backend. |
+| [0002](0002-w1-implementation-and-verification.md) | W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline | 2026-10-10 | Amended. Superseded in part: by 0003, which withdraws hoisting; by 0009, which makes the L9 oracle a clingo program (item 7); by 0021, which withdraws Dafny (items 2–4). 0006 exercises item 5's carve-out for a clingo backend. |
 | [0003](0003-duty-guards-stay-on-the-duty.md) | Duty guards stay on the duty; conditional-duty hoisting is withdrawn | 2026-10-11 | In force |
 | [0004](0004-frontier-complete-by-bounded-enumeration.md) | `frontier_complete` is computed by bounded enumeration | 2026-10-11 | In force |
 | [0005](0005-set-based-operators-read-after-salas-pareti.md) | Set-based operators with lists are read after Salas–Pareti, with a warning | 2026-10-11 | Amended: an addendum on `isAllOf` |
@@ -28,3 +28,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0018](0018-each-member-bears-a-collection-duty.md) | Each member bears a duty whose bearer is a party collection | 2026-10-18 | In force |
 | [0019](0019-pending-basis-under-unknowns.md) | A `Pending` basis under unknowns is checked only for its kinds | 2026-10-18 | In force |
 | [0020](0020-vocabulary-defined-by-odrl-a-profile-or-the-policy.md) | A vocabulary term is defined by ODRL, a declared profile, or the policy itself | 2026-10-18 | In force |
+| [0021](0021-formalisation-follows-cedar.md) | Formalisation follows Cedar: an executable model, proofs, and differential testing | 2026-10-19 | In force |

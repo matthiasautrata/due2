@@ -4,7 +4,7 @@
 
 Every source that informed a decision, a spec section, or a review goes here, with what was looked at, why, and what we took from it. The list is the seed of a future paper's bibliography and related-work section. It is also the knowledge base: a newcomer can see from it which established notions due2 builds on, and where.
 
-**Entry format.** Citation and link · **Read:** when, for which issue, and how much (abstract, sections, code at a commit) · **Learned:** what we took or rejected, in one to three sentences · **Used in:** the sections that cite it. Add an entry when research informs work, and update **Used in** when a citation moves. Tooling and benchmark sources for the host question stay in `implementation-alternatives-ii.md` § References. Unfinished citations are marked *(complete for the .bib)*.
+**Entry format.** Citation and link · **Read:** when, for which issue, and how much (abstract, sections, code at a commit) · **Learned:** what we took or rejected, in one to three sentences · **Used in:** the sections that cite it. Add an entry when research informs work, and update **Used in** when a citation moves. Tooling and benchmark sources for the host question stay in the archived `implementation-alternatives-ii.md` § References. Unfinished citations are marked *(complete for the .bib)*.
 
 ## 1. ODRL: standards, semantics, evaluators
 
@@ -107,10 +107,17 @@ Surveyed 2026-10-17 for #59 (the `unknown` role and `verdict_range`), #58 (a wit
 - **W3C, *XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes*,** 2012. <https://www.w3.org/TR/xmlschema11-2/>.
   **Read:** 2026-10-17, for `decisions/0014`: §2.4.2 (primitive datatypes) and the lists of §3.3 (primitive) and §3.4 (other built-in). **Learned:** every built-in datatype is primitive or derived from one, as `xsd:dateTimeStamp` from `xsd:dateTime`, `xsd:dayTimeDuration` from `xsd:duration`, and `xsd:integer` from `xsd:decimal`; due2's kinds group datatypes by primitive, with the numerics as one kind. **Used in:** `decisions/0014`, `due2-profiles.md` §3.
 
+## 7. Verification
+
+- **Disselkoen, Eline, He, Headley, Hicks, Hietala, Kastner, Mamat, McCutchen, Rungta, Shah, Torlak, Wells, *How We Built Cedar: A Verification-Guided Approach*,** FSE Companion 2024. DOI 10.1145/3663529.3663854; arXiv:2407.01688.
+  **Read:** 2026-10-19, for #70: the abstract, and the passages of §1, §3 (the Lean models) and §4 (differential testing) cited here; the whole text searched for Dafny. **Learned:** verification-guided development: a readable executable model in Lean, proofs about the model, and differential random testing of the model against the Rust production code, with no extraction. Proofs found 4 bugs in the validator, and differential and property-based testing found 21 more. The Lean models are about a tenth the size of the Rust, the proofs about 3.4 times the size of the models, and everything checks in about 3 minutes. The Lean authorizer's median time per request is 6 µs, against 10 µs for the Rust (§3). The paper does not mention Dafny. **Used in:** `decisions/0021`, `ways-of-working.md` §9.
+- **AWS Open Source Blog, *Lean Into Verified Software Development*,** 2024. <https://aws.amazon.com/blogs/opensource/lean-into-verified-software-development/> *(complete for the .bib)*
+  **Read:** 2026-10-19, for #70. **Learned:** Cedar chose Lean for its fast runtime, which the differential testing needs, its libraries, and its small trusted kernel. It names no earlier tool. `decisions/0002` said that Cedar left Dafny when SMT automation went brittle; neither this post nor the paper above supports that. **Used in:** `decisions/0021`.
+
 ## To read
 
 - arXiv:2601.14764 in full (§2), before #47.
-- Mustafa et al.'s companion papers, before the formalisation review's counterexamples (#70): arXiv:2602.19878 (axis-aligned semantics, the source of the benchmark's axis family) and arXiv:2606.23442 (sort-stratified temporal conflict detection; benchmark <https://github.com/Daham-Mustaf/odrl-temporal-benchmark>). Abstracts only so far.
+- Mustafa et al.'s companion papers, before the formalisation's counterexamples (#70): arXiv:2602.19878 (axis-aligned semantics, the source of the benchmark's axis family) and arXiv:2606.23442 (sort-stratified temporal conflict detection; benchmark <https://github.com/Daham-Mustaf/odrl-temporal-benchmark>). Abstracts only so far.
 - OPA's decision explanations (`--explain`, partial evaluation), for #61.
 - Cedar's partial evaluation (the residuals' format), for #61.
-- From `formalisation-review.md` (not yet read by us): Isabelle/HOL and Sledgehammer; Alloy 6; cedar-spec's Lean proofs, and why Cedar moved from Dafny; K-relations over the Kleene lattice (with Green–Karvounarakis–Tannen, §2). Read when the review's trigger is reached (about 100 passing vectors).
+- For the formalisation (#70, `decisions/0021`): Alloy 6 and Jackson's *Software Abstractions*, before the first Alloy model; cedar-spec's Lean sources, before the Lean spike; Isabelle/HOL and Sledgehammer, before an Isabelle spike; K-relations over the Kleene lattice (Green, Karvounarakis and Tannen, §2), for theorem M.
