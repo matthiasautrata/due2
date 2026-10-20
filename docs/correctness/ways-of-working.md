@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.5
+**Status:** Draft v0.6 (2026-10-20)
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.5, 2026-10-19** (`decisions/0021`): §9 follows Cedar's pattern, an executable model, proofs, and differential testing, in place of Dafny extraction; §6, §10, §11, and §12 drop their Dafny mentions. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.6** (2026-10-20, #83): a cold read. §4 no longer calls its tool undecided; §2.2 names the diagnostics document; §10.2, §10.3, §11, §12, and §14.3 lose their status and history markers; §13 lists the open rows with their issues and states the resolved rows below the table, row 12 as `decisions/0009` and `decisions/0021` leave it; §15 states its reason without the history. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -62,7 +62,7 @@ Failures come in three kinds, and each is handled one way only.
 | **Can't happen** | A contract violation, a broken invariant, `assert_never` reached, an I/O fault | Let it crash. The exception propagates, and the core has no handler for it. |
 
 - **`Result` only where failure is expected.** A function that cannot fail in an expected way returns its plain value. Kleene `and` returns a truth value, not `Success` of one. Its signature then says that any failure is a crash, and the checker keeps the two kinds apart.
-- **No library.** The two dataclasses and a type alias are the whole of it. A stage that must collect every error, such as W1's (diagnostics §1), runs its checks and folds the failures into one `Failure`. It does not chain calls that stop at the first error.
+- **No library.** The two dataclasses and a type alias are the whole of it. A stage that must collect every error, such as W1's (`due2-diagnostics.md` §1), runs its checks and folds the failures into one `Failure`. It does not chain calls that stop at the first error.
 - **One handler, at the shell.** In the Erlang sense of "let it crash", the shell is the supervisor. It catches what escapes the core, logs it in full with the traceback, and answers with an error outcome, never a verdict (`due2-workflows.md` §7). Then it takes the next request. The core is pure, so there is no state to restart. Restarting means handling the next request. This is the one `except Exception:` allowed without a re-raise.
 - **Loud, never hidden.** A crash is never turned into `Indeterminate`, a default verdict, or an empty result. Doing that would make a bug look like missing data in the trace.
 
@@ -104,7 +104,7 @@ Replacements that carry meaning: `NewType` (zero runtime cost, nominal — use f
 
 ## 4. Static type checking **[D]** (provisional, §13)
 
-Strict mode is non-negotiable; the tool is not yet decided.
+Strict mode is non-negotiable. The candidates compare as follows, and the pick is stated after the table.
 
 | Tool | Conformance | Speed | Note |
 |---|---|---|---|
@@ -257,11 +257,11 @@ The consequence is that **language performance arguments apply only to the hot s
 
 ### 10.2 Preserving the option **[D]**
 
-We do not choose a second backend now. We keep the choice cheap. Three commitments do that, and each is justified on its own merits today:
+We do not choose a second backend before a measurement calls for one (§10.4). We keep the choice cheap. Three commitments do that, and each is justified on its own merits:
 
 1. **The hot function stays pure** over its explicit inputs — no I/O, no ambient state, no resolver calls inside it. This is §2 anyway.
 2. **A language-neutral normal form** for the artefact the offline stage emits and the hot stage consumes. Flat arrays of ground records with an explicit edge relation; no recursion to marshal, no host-language types in the contract.
-3. **The conformance suite is backend-parameterised from day one**, even while exactly one backend exists. This is the only commitment that costs anything now, and the only one that is expensive to retrofit.
+3. **The conformance suite is backend-parameterised from day one**, even while exactly one backend exists. This is the only commitment that costs anything while one backend exists, and the only one that is expensive to retrofit.
 
 With these, a later port is a contained piece of work. Without them it is a rewrite, whatever the target language.
 
@@ -269,7 +269,7 @@ With these, a later port is a contained piece of work. Without them it is a rewr
 
 | Target | Buys | Costs | Approval difficulty |
 |---|---|---|---|
-| Indexed in-memory Python | Most of the available speedup, since the win is in not evaluating irrelevant records. Same language, same tests, available now. | Ceiling is real but unmeasured | None |
+| Indexed in-memory Python | Most of the available speedup, since the win is in not evaluating irrelevant records. Same language, same tests, no new toolchain. | Ceiling is real but unmeasured | None |
 | Rego / OPA | A Go binary from a CNCF project; generation from flat ground records is near-trivial. Partial evaluation returns a residual condition, which is the right shape for entitlement-scale queries. | A third semantics to keep in sync; `undefined` collapses per §5.1; policy-plus-data-in-memory model does not suit a large event corpus | Low |
 | Rust via PyO3 | In-process, best latency | Toolchain in the build image; `abi3` from the start or the ABI matrix explodes | Medium — framed as a Python library with Rust inside (pydantic-core, polars, ruff, uv as precedent) |
 | Compiled to SQL | Pushes the scan to the store | Relocates the trusted computing base into the query generator and the engine's three-valued logic; explanation becomes hard | Low technically, high semantically |
@@ -287,7 +287,7 @@ If a backend is ever adopted for the **verified** property rather than for speed
 ## 11. Tooling and environment **[D]**
 
 - **ruff** — linting and formatting. Rule sets: `ANN` (annotations required), `B` (bugbear), `S` (security), `RUF`, `C4`, `SIM`, on top of ruff's defaults. Configured once at repo root (`pyproject.toml`), line length 100.
-- **basedpyright** (§4) — strict mode over `tools/` and `tests/`, configured in `pyproject.toml`; spikes (§7.4) declare their own checkers. **[D]** (2026-10-12) The existing checkers were brought to strict, not ratcheted flag by flag. `tools/import_force.py` is exempt from strict typing and `ANN`: it is a run-once importer, and its output is now maintained by hand.
+- **basedpyright** (§4) — strict mode over `tools/` and `tests/`, configured in `pyproject.toml`; spikes (§7.4) declare their own checkers. **[D]** (2026-10-12) The existing checkers were brought to strict, not ratcheted flag by flag. `tools/import_force.py` is exempt from strict typing and `ANN`: it is a run-once importer, and its output is maintained by hand.
 - **rumdl** — Markdown lint. **[D]** (2026-10-12) Every Markdown file outside the vendored suites (`conformance/external/`, `profiles/vendor/`) is lint-clean. `MD013` (line length) is off, because a paragraph is one line. rumdl rather than markdownlint-cli2 keeps the toolchain uv-only; the two differ slightly (markdownlint's `MD060` table style and `MD029` list numbering), and rumdl is the gate.
 - **uv** — dependency management with hashed lockfiles. Reproducibility and supply-chain provenance are not optional in this environment.
 - **pip-audit** — dependency vulnerability scan in the slow tier.
@@ -307,11 +307,11 @@ Each step is independently valuable. Stop wherever marginal cost exceeds the def
 6. beartype in test environments
 7. Contracts on kernel public functions (§6)
 8. Backend-parameterised conformance suite, single backend (§10.2)
-9. Tiering formalised in CI (§8) — done 2026-10-16 for the PR tier (§14.3)
+9. Tiering formalised in CI (§8; the PR tier is §14.3)
 10. CrossHair on pure predicates; mutation gate on the kernel
 11. The formal model: counterexamples first, then proofs, then the differential (§9)
 
-Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. Steps 10–11 are for the parts where being wrong is expensive.
+Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend exists and expensive after. Steps 10–11 are for the parts where being wrong is expensive.
 
 ---
 
@@ -319,23 +319,17 @@ Steps 1–5 deliver most of the value. Step 8 is cheap now and expensive later. 
 
 **Provisional picks.** #1, #2, #3, #5, #6, and #7 were settled on 2026-10-11 for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
 
-**Tracking.** As `due2-architecture.md` §11, stated once there. Of the implementation-start checklist, #4 and #8 remain open (issue #23); #10/#11/#13 belong to the execution-target cluster (issue #16).
+**Tracking.** As `due2-architecture.md` §11: each open row has an issue, and the issue names this section. Rows keep their numbers, because issues and other documents cite them; a resolved row leaves the table and is stated below it.
 
-| # | Decision | Section | Blocked on |
-|---|---|---|---|
-| 1 | Static type checker (editor + gate) | §4 | Resolved 2026-10-11 (provisional): basedpyright strict, editor and gate |
-| 2 | Boundary parsing library | §5 | Resolved 2026-10-11 (provisional): msgspec |
-| 3 | Error handling: total core vs `Result` | §2.2 | Resolved 2026-10-11 (provisional): `Result` for expected failure, let it crash otherwise; one handler at the shell |
-| 4 | Persistent-structure library | §2.1 | First real use case |
-| 5 | beartype in production or test-only | §5 | Resolved 2026-10-11 (provisional): test environments only, through system test; optional in UAT |
-| 6 | Contracts in production: preconditions-only or off | §6 | Resolved 2026-10-11 (provisional): preconditions only |
-| 7 | `icontract` vs `deal` | §6 | Resolved 2026-10-11 (provisional): `icontract`; trial on the Kleene tables |
-| 8 | Slow tier: nightly vs merge-queue | §8 | Observed merge frequency |
-| 9 | Dafny availability | §9 | Resolved 2026-10-10 (`decisions/0002`): installable — Homebrew Apple-Silicon bottle 4.11.0, .NET 8 + Z3. Moot since 2026-10-19: `decisions/0021` withdraws Dafny |
-| 10 | Rust toolchain in the build image | §10.3 | Platform team conversation |
-| 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume |
-| 12 | Whether a direct interpreter is maintained as a specification artefact | §7.1 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle for stage 1, plus a Python reference evaluator for stage 2 and W2/W3 until a verified backend passes the corpus. Amended 2026-10-16 by `decisions/0009`: the direct interpreter is a clingo program, not Python; the §7.1 principle — maintain a direct rendering of the semantics — is unchanged. Superseded in part 2026-10-19 by `decisions/0021`: `Den` moves into the formal model |
-| 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option |
+| # | Decision | Section | Blocked on | Issue |
+|---|---|---|---|---|
+| 4 | Persistent-structure library | §2.1 | First real use case | #23 |
+| 8 | Slow tier: nightly vs merge-queue | §8 | Observed merge frequency | #23 |
+| 10 | Rust toolchain in the build image | §10.3 | Platform team conversation | #16 |
+| 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume | #16 |
+| 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option | #16 |
+
+Rows 1–3 and 5–7 are the provisional picks above, each stated in its section: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); and `icontract`, trialled on the Kleene tables (§6). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12 asked whether a direct interpreter is maintained as a specification artifact (§7.1). It is. A clingo program, clingo-i, renders the evaluation semantics directly, as the L9 oracle and the generator, in place of the Python interpreter that `decisions/0002` planned; it is not a pipeline stage (`decisions/0009`). The Python `Den` oracle renders W1 stage 1, and the chosen prover's `Den` follows as a second oracle (`decisions/0021`, issue #8).
 
 ---
 
@@ -364,15 +358,15 @@ Every change to a component is an increment, and every increment takes five step
 ### 14.3 Branches and CI
 
 - **Trunk-based.** The owner commits to `main`, and every commit on `main` passes. Work that does not pass stays on a branch.
-- **Other contributors use pull requests.** A change written by another model or agent (Hermes, Agy, a delegated worker) arrives as a pull request and is reviewed before it merges; it is never pushed to `main` directly. The first version of `decisions/0009`, pushed directly, is why. The pull-request template carries the checklist of §14.1.
-- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic and well under five minutes (34 s locally, 2026-10-16). A spike's checks and corpus run join it as a job of their own when the spike's toolchain lands. The slow tier's trigger remains §13 #8.
+- **Other contributors use pull requests.** A change written by another model or agent (Hermes, Agy, a delegated worker) arrives as a pull request and is reviewed before it merges; it is never pushed to `main` directly. The pull-request template carries the checklist of §14.1.
+- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic, and each job has a ten-minute timeout. A spike's checks and its corpus run are a job of their own, as clingo-i's are. The slow tier's trigger is open (§13 #8).
 - **Supply chain.** Actions are pinned by commit SHA. Dependabot proposes updates to the actions and the uv lock monthly, grouped, and each update passes CI like any other change.
 
 ---
 
 ## 15. Documentation **[D]** (2026-10-17, at the owner's request)
 
-Documentation here was written as reminders by a writer who held the whole context, so a later reader had to piece the story together from scattered fragments. This section sets the standard that replaces that. The procedure and the review checklist are the project skill `.claude/skills/technical-writing/SKILL.md`. The sources behind each rule are in `references.md` §5.
+Text written as a reminder, by a writer who holds the whole context, leaves a later reader to piece the story together from scattered fragments. This section sets the standard that prevents it. The procedure and the review checklist are the project skill `.claude/skills/technical-writing/SKILL.md`. The sources behind each rule are in `references.md` §5.
 
 ### 15.1 The reader
 
