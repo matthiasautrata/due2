@@ -49,6 +49,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 4. *W2.* The read permission *applies*: its action and target match, and it names no assignee. The derive permission and the prohibition do not apply, since their actions differ from `read`. All three obligations are *in force*, because their policy matches the request. The delivery resolves to three instances. The 06-01 instance is fulfilled by the evidence. The 06-02 instance is **violated**: no evidence answers it, and its deadline, 07:30 on 06-02, has passed. The 06-03 instance is outstanding, since its deadline is still ahead. The schema and reporting obligations are outstanding.
 5. *W3.* The read permission has no precondition duties, so nothing gates it, and no prohibition applies. Under `violations = deny`, though, a violated instance of an obligation in force acts as a surviving prohibition (`due2-workflows.md` §6.4).
 6. ***Deny***. The obligations the answer reports list the violated 06-02 instance beside the outstanding 06-03 one, so the answer says both what went wrong and what is still owed. DPROD itself permits this request, because it never collects a duty whose action differs from the request's (`due2-profiles.md` §8.2, exception 6). clingo-i, the clingo semantics program (`spikes/clingo-i/`), declines the scenario, since it does not compute recurrence (#80).
+
 ---
 
 ## 1. Scope
