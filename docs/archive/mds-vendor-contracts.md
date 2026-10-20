@@ -1,5 +1,7 @@
 # Turning MDS Vendor Contracts into Internal Policies: Approach and Decisions
 
+> **Archived.** This document was current from 2026-09-20 to 2026-10-20. It is kept as history (`docs/archive/README.md`). It belongs to a separate project, ingesting MDS vendor contracts, which is outside due2's scope.
+
 2026-09-20 · @Someone
 
 ## Summary

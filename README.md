@@ -21,7 +21,6 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | **`docs/design/`** | **What due2 is, why, and the alternatives weighed** |
 | `docs/design/due2-architecture.md` | What due2 is and why; reading order and glossary (§0) |
 | `docs/design/references.md` | The annotated bibliography: what was read, why, what was learned, and where it is used |
-| `docs/design/mds-vendor-contracts.md` | Turning MDS vendor contracts into internal policies: approach and decisions (parked, issue #24) |
 | **`docs/correctness/`** | **How we know it is right** |
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded; the claims the formal model proves (§4.8) |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
