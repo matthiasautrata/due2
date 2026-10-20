@@ -1,0 +1,12 @@
+{
+    "@context": "http://www.w3.org/ns/odrl.jsonld",
+    "@type": "Policy",
+    "uid": "http://example.com/policy:0001",
+    "profile": "http://example.com/odrl:profile:40",
+    "conflict": "perm",
+    "permission": [{
+        "target": "http://example.com/asset:1212",
+        "action": "use",
+        "assigner": "http://example.com/owner:181"
+    }]
+}

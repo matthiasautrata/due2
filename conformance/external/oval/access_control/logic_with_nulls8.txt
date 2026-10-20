@@ -1,6 +1,6 @@
 expected_accept_decision=True
-expected_conditional_prohibitions=[[["http://www.w3.org/ns/odrl/2/xone", [["http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/resolution", "http://www.w3.org/ns/odrl/2/eq", "1024"], ["http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/version", "http://www.w3.org/ns/odrl/2/eq", "2"]]]]]
+expected_conditional_prohibitions=[[["http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/resolution", "http://www.w3.org/ns/odrl/2/eq", "1024"]]]
 semantics_for_duties=1
 semantics_by_default=-1
-test_description=The action should be rejected, but it can be accepted if one of two mutually exclusive conditions hold: resolution equal to 1024 or version equal to 2, all other constraints in the expression are false.
+test_description=The action should be rejected, but it can be accepted if the resolution is 1024 as all other constraints in the expression are false.
 test_tag=conditional_match_on_nulls

@@ -34,7 +34,7 @@ The `X.txt` file must contain an `expected_accept_decision` parameter, which spe
 
 ```
 expected_accept_decision=False
-semantics_for_duties=1,
+semantics_for_duties=1
 semantics_by_default=-1
 test_description=The action should be rejected as it is too generic.
 test_tag=Default_Semantics

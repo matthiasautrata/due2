@@ -1,0 +1,6 @@
+expected_accept_decision=True
+expected_conditional_prohibitions=[[["http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/system","http://www.w3.org/ns/odrl/2/eq","PC"]]]
+semantics_for_duties=1
+semantics_by_default=-1
+test_description=The action should be accepted, but with a warning that it would be rejected if the media equals PC, as this is the only condition that can make the logic constraint of the prohibition match (as the condition in the OR is already true, regardless of the value of 'media').
+test_tag=conditional_match_on_nulls

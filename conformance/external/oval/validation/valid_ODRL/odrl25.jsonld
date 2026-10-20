@@ -1,0 +1,18 @@
+{
+    "@context": "http://www.w3.org/ns/odrl.jsonld",
+    "@type": "Policy",
+    "uid": "http://example.com/policy:8888",
+    "profile": "http://example.com/odrl:profile:21",
+    "permission": [{
+        "assignee": "http://example.com/people/billie",
+        "target": "http://example.com/music/1999.mp3",
+        "assigner": "http://example.com/org/sony-music",
+        "action": "play"
+        },
+        {
+        "assignee": "http://example.com/people/murphy",
+        "target": "http://example.com/music/1999.mp3",
+        "assigner": "http://example.com/org/sony-music",
+        "action": "play"
+        }]
+}  

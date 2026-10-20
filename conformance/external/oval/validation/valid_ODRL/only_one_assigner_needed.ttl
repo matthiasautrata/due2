@@ -1,0 +1,48 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:88>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:duty [
+      odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [
+          odrl:leftOperand odrl:payAmount ;
+          odrl:operator odrl:eq ;
+          odrl:rightOperand 5.0 ;
+          odrl:unit "http://dbpedia.org/resource/Euro"^^xsd:string
+        ]
+      ] ;
+      odrl:constraint [
+        odrl:leftOperand odrl:event ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand odrl:policyUsage
+      ]
+    ] ;
+    odrl:target <http://example.com/music/1999.mp3>
+  ] ;
+  odrl:permission [
+    odrl:action odrl:play ;
+    odrl:assigner <http://example.com/assigner:sony> ;
+    odrl:duty [
+      odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [
+          odrl:leftOperand odrl:payAmount ;
+          odrl:operator odrl:eq ;
+          odrl:rightOperand 5.0 ;
+          odrl:unit "http://dbpedia.org/resource/Euro"^^xsd:string
+        ]
+      ] ;
+      odrl:constraint [
+        odrl:leftOperand odrl:event ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand odrl:policyUsage
+      ]
+    ] ;
+    odrl:target <http://example.com/music/1999.mp3>
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:09> .

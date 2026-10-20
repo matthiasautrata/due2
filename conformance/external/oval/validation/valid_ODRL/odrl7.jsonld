@@ -1,0 +1,23 @@
+{
+    "@context": [
+        "http://www.w3.org/ns/odrl.jsonld",
+        { "vcard": "http://www.w3.org/2006/vcard/ns#" }
+    ],
+    "@type": "Agreement",
+    "uid": "http://example.com/policy:777",
+    "profile": "http://example.com/odrl:profile:05",
+    "permission": [{
+        "target": "http://example.com/looking-glass.ebook",
+        "assigner": {
+            "@type": [ "Party", "vcard:Organization" ],
+            "uid":  "http://example.com/org/sony-books",
+            "vcard:fn": "Sony Books LCC",
+            "vcard:hasEmail": "sony-contact@example.com" },
+        "assignee": {
+            "@type": [ "PartyCollection", "vcard:Group" ],
+            "uid":  "http://example.com/team/A",
+            "vcard:fn": "Team A",
+            "vcard:hasEmail": "teamA@example.com"},
+        "action": "use"
+    }]
+}  

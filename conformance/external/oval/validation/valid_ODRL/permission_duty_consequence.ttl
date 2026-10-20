@@ -1,0 +1,32 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://example.com/policy:1010>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie> ;
+    odrl:duty [
+        odrl:action odrl:use ;
+        odrl:target <http://example.com/asset:1234.movie> ;
+        odrl:consequence [
+            odrl:action odrl:use ;
+            odrl:target <http://example.com/asset:5555.movie>
+          ] ;
+        odrl:consequence [
+            odrl:action odrl:use ;
+            odrl:target <http://example.com/asset:5555_b.movie>
+          ] ;
+      ] ;
+    odrl:duty [
+        odrl:action odrl:use ;
+        odrl:target <http://example.com/asset:1234_c.movie> ;
+        odrl:consequence [
+            odrl:action odrl:use ;
+            odrl:target <http://example.com/asset:5555_c.movie>
+          ] ;
+        odrl:consequence [
+            odrl:action odrl:use ;
+            odrl:target <http://example.com/asset:5555_b_c.movie>
+          ] ;
+      ] ;
+  ] .

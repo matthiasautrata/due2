@@ -1,0 +1,15 @@
+{
+    "@context": [
+        "http://www.w3.org/ns/odrl.jsonld",
+        { "dc": "http://purl.org/dc/terms/" }
+    ],
+    "@type": "Policy",
+    "uid": "http://example.com/policy:8888",
+    "profile": "http://example.com/odrl:profile:22",
+    "dc:creator": "Billie Enterprises LLC",
+    "dc:description": "This policy covers...",
+    "dc:issued": "2017-01-01T12:00",
+    "dc:coverage": { "@id": "https://www.iso.org/obp/ui/#iso:code:3166:AU-QLD" },
+    "dc:replaces": { "@id": "http://example.com/policy:8887" },
+    "permission": [ { } ]
+}  

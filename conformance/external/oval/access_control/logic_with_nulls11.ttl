@@ -1,0 +1,38 @@
+# Test case suggested by https://github.com/matthiasautrata
+
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/document:1234> ;
+  ] ;
+  odrl:prohibition [
+    odrl:action [
+      rdf:value odrl:print ;
+	  odrl:refinement [ odrl:and (
+                [
+                    odrl:leftOperand odrl:system ;
+                    odrl:operator odrl:eq ;
+                    odrl:rightOperand "PC"
+                  ]
+			 [ odrl:or (
+                 [
+                    odrl:leftOperand odrl:resolution ;
+                    odrl:operator odrl:eq ;
+                    odrl:rightOperand 600
+                  ]
+				 [
+					odrl:leftOperand odrl:media ;
+					odrl:operator odrl:eq ;
+					odrl:rightOperand "Poster"
+				  ]
+		   ) ]
+       ) ]
+    ] ;
+    odrl:target <http://example.com/document:1234> ;
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .

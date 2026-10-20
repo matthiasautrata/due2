@@ -1,0 +1,31 @@
+{
+  "@context": "http://www.w3.org/ns/odrl.jsonld",
+  "@type": "Policy",
+  "uid": "http://example.com/policy:8888",
+  "profile": "http://example.com/odrl:profile:21",
+  "target": "http://example.com/music/1999.mp3",
+  "assigner": "http://example.com/org/sony-music",
+  "action": "play",
+  "permission": [
+    {
+      "assignee": "http://example.com/people/billie",
+      "duty": [
+        {
+          "target": "http://example.com/music/bonus.mp3",
+          "assignee": "http://example.com/people/billie",
+          "action": "attribute",
+          "consequence": [
+            {
+              "target": "http://example.com/music/credits.mp3",
+              "assignee": "http://example.com/org/sony-music",
+              "action": "acknowledge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assignee": "http://example.com/people/murphy"
+    }
+  ]
+}

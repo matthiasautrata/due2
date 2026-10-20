@@ -1,0 +1,11 @@
+{
+    "@context": "http://www.w3.org/ns/odrl.jsonld",
+    "@type": "Policy",
+    "uid": "http://example.com/policy:default",
+    "profile": "http://example.com/odrl:profile:30",
+    "assigner": "http://example.com/org-01",
+    "obligation": [{
+        "target": "http://example.com/asset:terms-and-conditions",
+        "action": "reviewPolicy"
+    }]
+}  

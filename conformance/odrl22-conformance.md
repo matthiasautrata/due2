@@ -102,6 +102,16 @@ Re-run 2026-10-20, after the OVAL refresh to `532db7c`:
 OVAL policies                                      119 checked, 52 failing  (the same 52; the nine new logic_with_nulls files are valid)
 ```
 
+Re-run 2026-10-20, after the OVAL refresh to `ee72ffc`:
+
+```text
+OVAL policies                                      122 checked, 51 failing  (undeclared left operands 47, unit as string 4)
+OVAL validation/valid_ODRL                          36 checked,  9 failing  (unit as string 6, undefined terms 3, one assigner per policy 2)
+OVAL validation/invalid_ODRL                        25 checked, 11 failing  (14 accepted: nested Rules 12, misplaced refinement 2; #93)
+```
+
+The validation counts overlap: a file can fail for more than one reason. `conformance/external/README.md` § Triage of what was not translated gives the readings.
+
 ## 6. Reproducing
 
 ```bash

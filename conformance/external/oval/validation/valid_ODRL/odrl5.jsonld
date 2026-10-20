@@ -1,0 +1,13 @@
+{
+   "@context": "http://www.w3.org/ns/odrl.jsonld",
+   "@type": "Policy",
+   "uid": "http://example.com/policy:1011",
+   "profile": "http://example.com/odrl:profile:03",
+   "permission": [{
+       "target": {
+           "@type": "AssetCollection",
+           "uid":  "http://example.com/archive1011" },
+       "action": "index",
+       "summary": "http://example.com/x/database"
+   }]
+}

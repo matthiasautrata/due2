@@ -1,0 +1,15 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://example.com/policy:1012>
+  a odrl:Agreement ;
+  odrl:prohibition [
+    odrl:action odrl:play ;
+    odrl:assigner <http://example.com/party:org:abc> ;
+    odrl:target <http://example.com/asset:9898.movie>
+  ] ;
+  odrl:permission [
+    odrl:action odrl:transfer ;
+    odrl:assignee <http://example.com/party:person:billie> ;
+    odrl:target <http://example.com/asset:9898.movie>
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:01> .

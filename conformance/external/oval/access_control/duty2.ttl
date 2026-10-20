@@ -18,7 +18,6 @@
           odrl:leftOperand odrl:payAmount ;
           odrl:operator odrl:gteq ;
           odrl:rightOperand 5.0 ;
-          odrl:unit "http://dbpedia.org/resource/Euro"^^xsd:string
         ]
       ] ;
     ] ;
