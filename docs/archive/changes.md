@@ -59,6 +59,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.6** (2026-10-20, #83): a cold read. Cross-document references name their document, in the prose and in the registry's "Defined in" column; the timing rows and `UnsupportedConstruct` cite sections that now state their rejections (`due2-profiles.md` §7, `odrl-compound-to-atomic-normalization.md` §3). No code, severity, stage, or condition changes. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.5** (2026-10-17, `decisions/0017`, #74): `MalformedConstraint` covers a logical constraint over the empty list.
 
 **v0.4** (2026-10-17, `decisions/0013` amendment, #69): `MalformedConstraint` covers an empty list as a set right operand. **v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
@@ -71,13 +73,15 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `odrl-compound-to-atomic-normalization.md`
 
+Changes in 0.14 (2026-10-20, #83): a cold read, spelling `artifact`. §3 lists the constructs outside the fragment that `due2-diagnostics.md` rejects as `UnsupportedConstruct`, with the reason for each; §5.2 and §6.1 no longer say that §3 requires Rules to be named, which §3 does not; §6.2 says whose phrase “each Rule in the Policy” is and where DPROD's rule is compared; §8.1 names `ways-of-working.md` and says where `Den` is formalised (`correctness-strategy.md` §4.8). Admitted input, as the registry and `tools/check_corpus.py` already drew it, and generated identity are unchanged. Earlier changes are in `docs/archive/changes.md`.
+
 Changes in 0.13: an anonymous target or assignee is admitted with the `AnonymousEntity` warning (§3); admitted input and generated identity are unchanged.
 
 Changes in 0.12: selected profile modules as input (§3); profile policy subclasses and conflict default (§3); anonymous Rules admitted with local identity (§3, §5.1); policy identity by IRI or `odrl:uid` (§3); interiorisation fills only what a Rule leaves unstated, so `InteriorizationRelationConflict` cannot arise (§6.2). Changes in 0.11: §3 states that named Rules are stricter than ODRL. Changes in 0.10: named Rules and label-independent, local anonymous-node identity (§3, §5.2); RDFC-1.0 removed from the identity path (§5.2, §6.1); all three conflict values accepted, an absent term made explicit as `odrl:invalid` (§3); Rule-reference acyclicity (§6.3); preservation stated over a denotation and witnessed by lineage (§8). The profile version stays `1` because no artefact has been produced under it. Any later change to admitted input or generated identity bumps it.
 
 ## `conformance/README.md` § Coverage gaps
 
-Earlier re-derivations: 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
+Earlier re-derivations: 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
 
 ## README § Status, as it stood on 2026-10-19
 

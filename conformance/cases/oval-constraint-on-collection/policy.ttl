@@ -1,0 +1,27 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@ee72ffc test_cases/validation/invalid_ODRL/odrl12_invalid.jsonld
+# (MIT, University of Southampton). Translated from JSON-LD; rule
+# named; conflict declared; the constraint's left operand bound (case.json
+# notes). The constraint's place is as authored: a negative case.
+
+<http://example.com/policy:4444> a odrl:Offer ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:4444#play> .
+
+<http://example.com/policy:4444#play> a odrl:Permission ;
+    odrl:action odrl:play ;
+    odrl:assigner <http://example.com/org88> ;
+    odrl:target [
+        a odrl:AssetCollection ;
+        odrl:source <http://example.com/media-catalogue> ;
+        # The odrl:constraint sits on the collection, where a refinement belongs.
+        odrl:constraint [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:dateTime ;
+            odrl:operator odrl:lt ;
+            odrl:rightOperand "2027-01-01T00:00:00Z"^^xsd:dateTime
+        ]
+    ] .

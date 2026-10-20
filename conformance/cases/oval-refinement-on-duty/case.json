@@ -1,0 +1,26 @@
+{
+  "case": "oval-refinement-on-duty",
+  "source": "OVAL validation/invalid_ODRL/refinement_instead_of_constraint (DIPS-Tools/ODRL-Engine@ee72ffc)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated from OVAL's validation file refinement_instead_of_constraint, which OVAL's SHACL validator must reject. Kept: the second permission, whose duty carries the misplaced refinement. Dropped: the first permission, whose payAmount unit is a string, a separate finding (conformance/external/README.md § Triage of what was not translated), and OVAL's example profile IRI, which names no terms. Changed: rules named; Rule and Constraint types added; conflict and profiles declared; the payAmount refinement given the unit IRI of oval-duty-payment; the misplaced refinement's odrl:event lt odrl:policyUsage replaced by an odrl:dateTime bound, because due2 binds no odrl:event. Its place, which is what the case tests, is unchanged. Written as odrl:constraint, the same node would be a condition of the duty (IM §2.6). OVAL keeps no result beyond the rejection.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MisplacedConstraint"
+    ],
+    "why": "The duty <http://example.com/policy:88#pay> carries an odrl:refinement of its own, and the ODRL vocabulary places a refinement only on an Action, an AssetCollection, or a PartyCollection (Vocabulary §3.14.3). Normalisation rejects a constraint outside its place in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy."
+  },
+  "oval_expected": [
+    {
+      "test_case": "validation/invalid_ODRL/refinement_instead_of_constraint",
+      "title": null,
+      "request": null,
+      "result": "invalid: OVAL's SHACL validator must reject it"
+    }
+  ],
+  "scenarios": null
+}

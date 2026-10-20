@@ -1,0 +1,26 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@ee72ffc test_cases/validation/invalid_ODRL/permission_duty_remedy.ttl
+# (MIT, University of Southampton). Rules named; conflict declared. The
+# nesting is as authored: a negative case.
+
+<http://example.com/policy:1010> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:1010#use> .
+
+<http://example.com/policy:1010#use> a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie> ;
+    odrl:duty <http://example.com/policy:1010#use-other> .
+
+# odrl:remedy on a Duty: its domain is a Prohibition.
+<http://example.com/policy:1010#use-other> a odrl:Duty ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:1234.movie> ;
+    odrl:remedy <http://example.com/policy:1010#remedy> .
+
+<http://example.com/policy:1010#remedy> a odrl:Duty ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:5555.movie> .

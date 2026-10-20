@@ -1,0 +1,21 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@ee72ffc test_cases/validation/invalid_ODRL/permission_consequence.ttl
+# (MIT, University of Southampton). Rules named; conflict declared. The
+# nesting is as authored: a negative case.
+
+<http://example.com/policy:1010> a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:1010#use> .
+
+# odrl:consequence on a Permission: its domain is a Duty.
+<http://example.com/policy:1010#use> a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:9898.movie> ;
+    odrl:consequence <http://example.com/policy:1010#consequence> .
+
+<http://example.com/policy:1010#consequence> a odrl:Duty ;
+    odrl:action odrl:use ;
+    odrl:target <http://example.com/asset:1234.movie> .

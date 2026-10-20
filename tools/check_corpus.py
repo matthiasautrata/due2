@@ -68,6 +68,17 @@ RULE_EDGES = {
     ODRL.obligation: ODRL.Duty,
 }
 NESTED_EDGES = (ODRL.duty, ODRL.consequence, ODRL.remedy)
+RULE_CLASSES = (ODRL.Permission, ODRL.Prohibition, ODRL.Duty)
+# Each Rule edge's subject and object class, from the edge's rdfs:domain and
+# rdfs:range (Vocabulary 3.9.2, 3.10.2, 3.13.2-3.13.5); None is the Policy.
+EDGE_PLACES: dict[Node, tuple[Node | None, Node]] = {
+    ODRL.permission: (None, ODRL.Permission),
+    ODRL.prohibition: (None, ODRL.Prohibition),
+    ODRL.obligation: (None, ODRL.Duty),
+    ODRL.duty: (ODRL.Permission, ODRL.Duty),
+    ODRL.remedy: (ODRL.Prohibition, ODRL.Duty),
+    ODRL.consequence: (ODRL.Duty, ODRL.Duty),
+}
 SOURCES = {DPROD.requestSource, DPROD.stateSource, DPROD.contextSource, DUE2.witnessSource}
 CONTEXT_PROPS = {DPROD.agent, DPROD.clock, DUE2.actionTime}
 OPERATORS = {
@@ -691,7 +702,7 @@ def check_rule(
         )
     if targets and (rule, ODRL.output, None) in g:
         r.diag("TargetAndOutput", f"{q(g, rule)}: both target and output")
-    for c in list(g.objects(rule, ODRL.constraint)) + list(g.objects(rule, ODRL.refinement)):
+    for c in g.objects(rule, ODRL.constraint):
         check_constraint(g, c, b, r, used, kind == ODRL.Duty)
         if kind == ODRL.Duty:
             check_mixed(g, c, b, r)
@@ -760,11 +771,80 @@ def asset_party_nodes(g: Graph) -> set[Node]:
     return nodes
 
 
+def reachable(g: Graph, root: Node, stop: set[Node]) -> set[Node]:
+    """Every node that a path of triples reaches from `root`, `root` included,
+    entering no node of `stop` except `root`."""
+    seen, todo = {root}, [root]
+    while todo:
+        for o in g.objects(todo.pop(), None):
+            if not isinstance(o, Literal) and o not in seen:
+                seen.add(o)
+                if o not in stop:
+                    todo.append(o)
+    return seen
+
+
+def check_placement(g: Graph, policy: Node, policies: set[Node], r: Report) -> None:
+    """Constraints and Rules where the ODRL vocabulary places them (normalisation
+    3). The rest of this checker reads each property only in its place, so a
+    misplaced one would otherwise be dropped silently. Scoped to the policy's
+    component graph, which stops at another policy (a DPROD Agreement names its
+    Offer), so that a file with several policies reports each once."""
+    scope = reachable(g, policy, policies)
+    classes: dict[Node, set[Node]] = {}
+    for edge, (_, cls) in EDGE_PLACES.items():
+        for s, o in g.subject_objects(edge):
+            if s in scope:
+                classes.setdefault(o, set()).add(cls)
+    for cls in RULE_CLASSES:
+        for s in g.subjects(RDF.type, cls):
+            if s in scope:
+                classes.setdefault(s, set()).add(cls)
+    # The Rule classes are pairwise disjoint (IM 2.6; Vocabulary 3.9.1, 3.10.1,
+    # 3.13.1): a duty edge on a Prohibition makes it a Permission as well.
+    for node, cs in sorted(classes.items(), key=lambda x: str(x[0])):
+        if len(cs) > 1:
+            both = " and ".join(sorted(q(g, c) for c in cs))
+            r.diag("InvalidNesting", f"{q(g, node)}: both {both}, which are disjoint")
+    # A Consequence or a Remedy carries no Consequence (IM 2.6.3, 2.6.7).
+    closed = {o for e in (ODRL.consequence, ODRL.remedy) for o in g.objects(None, e)}
+    for edge, (domain, _) in EDGE_PLACES.items():
+        for s in sorted({s for s in g.subjects(edge, None) if s in scope}, key=str):
+            if domain is None:
+                ok, place = s in policies, "a Policy"
+            else:
+                ok, place = classes.get(s) == {domain}, f"a {q(g, domain)}"
+                if edge == ODRL.consequence and s in closed:
+                    ok, place = False, "a Duty that odrl:duty or odrl:obligation references"
+            if not ok:
+                r.diag("InvalidNesting", f"{q(g, s)}: {q(g, edge)} belongs on {place} only")
+    # A refinement narrows an Action or a collection; a constraint conditions a
+    # Rule (IM 2.5; Vocabulary 3.14.2-3.14.3). Collection refinements are
+    # rejected in check_policy. The Policy's own constraint is UnsupportedConstruct.
+    for node in sorted({policy, *classes}, key=str):
+        if (node, ODRL.refinement, None) in g:
+            r.diag("MisplacedConstraint", f"{q(g, node)}: odrl:refinement on a Policy or Rule")
+    actions = {a for s, a in g.subject_objects(ODRL.action) if s in scope}
+    for node in sorted((actions | asset_party_nodes(g)) & scope, key=str):
+        if (node, ODRL.constraint, None) in g:
+            r.diag(
+                "MisplacedConstraint",
+                f"{q(g, node)}: odrl:constraint on an Action, Asset, Party, or collection",
+            )
+
+
 def check_policy(
-    g: Graph, policy: Node, b: Bindings, r: Report, named: bool, defined: frozenset[Node] | None
+    g: Graph,
+    policy: Node,
+    policies: set[Node],
+    b: Bindings,
+    r: Report,
+    named: bool,
+    defined: frozenset[Node] | None,
 ) -> Used:
-    """`defined` is the vocabulary the policy may use (decisions/0020), or None
-    when a selected profile has no module and so may define any term."""
+    """`policies` are the graph's policy nodes. `defined` is the vocabulary the
+    policy may use (decisions/0020), or None when a selected profile has no
+    module and so may define any term."""
     used: Used = {}
     declared = {str(p) for p in g.objects(policy, ODRL.profile)}
     for ns, label in NAMESPACED_PROFILES.items():
@@ -792,6 +872,13 @@ def check_policy(
                 REJECTED_CODE.get(pred, "UnsupportedConstruct"),
                 f"{q(g, policy)}: {label} is not admitted",
             )
+    if (policy, ODRL.constraint, None) in g:
+        # Valid ODRL (Vocabulary 3.14.2), but the IM gives it no meaning: IM 2.1
+        # lists none, and IM 2.7.1 shares none with the Rules (normalisation 3).
+        r.diag(
+            "UnsupportedConstruct", f"{q(g, policy)}: odrl:constraint on a Policy is not admitted"
+        )
+    check_placement(g, policy, policies, r)
     for term in (DPROD.deadline, DPROD.recurrence):
         if (policy, term, None) in g:
             r.diag(
@@ -838,8 +925,6 @@ def check_policy(
     seen: set[Node] = set()
     for rule, kind in rules:
         check_rule(g, rule, kind, policy, b, r, used, seen, [], named)
-    for c in g.objects(policy, ODRL.constraint):
-        check_constraint(g, c, b, r, used)
     return used
 
 
@@ -884,7 +969,9 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
             defined = frozenset(
                 odrl_terms().union(typed(core), typed(g), *(typed(m) for m in modules))
             )
-        used = check_policy(g, policy, Bindings(g, modules, core, r), r, named, defined)
+        used = check_policy(
+            g, policy, set(policies), Bindings(g, modules, core, r), r, named, defined
+        )
         out.append((r, used, g))
     return out
 

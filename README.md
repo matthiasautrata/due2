@@ -62,7 +62,7 @@ uv run pytest --backend=clingo-i                                           # the
 
 ## Status
 
-- **Specification and corpus.** The corpus has 127 cases. Every expected verdict is hand-derived. `tools/check_corpus.py` checks each case's format and that its policy stays within the admitted profile. The 19 negative cases are policies that W1 must reject, and they wait for W1.
+- **Specification and corpus.** The corpus has 135 cases. Every expected verdict is hand-derived. `tools/check_corpus.py` checks each case's format and that its policy stays within the admitted profile. The 27 negative cases are policies that W1 must reject, and they wait for W1.
 - **The semantics program.** `spikes/clingo-i/` evaluates the corpus's authored policies with a generic clingo program (`decisions/0009`), which serves as the oracle for the evaluator to come. It passes 400 of the 438 scenarios it is given and declines the other 38, naming the feature: 37 depend on the occurrences of a recurring duty (`unsupported: recurrence`, #80), and one is past the `max_mixed` bound, for which the spike has no fallback.
 - **Next.** Formalisation (#70, `decisions/0021`): counterexample search, then a prover spike. Then the W2/W3 bakeoff (`decisions/0006`), then W1.
 

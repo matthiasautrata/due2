@@ -1,0 +1,26 @@
+{
+  "case": "oval-remedy-on-duty",
+  "source": "OVAL validation/invalid_ODRL/permission_duty_remedy (DIPS-Tools/ODRL-Engine@ee72ffc)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated from OVAL's validation file permission_duty_remedy, which OVAL's SHACL validator must reject. Changed: rules named; Rule types added, each the range of the edge that holds it; conflict declared. The nesting is as authored. OVAL keeps no result beyond the rejection.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidNesting"
+    ],
+    "why": "The Duty <http://example.com/policy:1010#use-other> holds a remedy, whose domain is a Prohibition (Vocabulary §3.13.5; IM §2.6.7). Normalisation rejects a Rule edge outside its domain in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy."
+  },
+  "oval_expected": [
+    {
+      "test_case": "validation/invalid_ODRL/permission_duty_remedy",
+      "title": null,
+      "request": null,
+      "result": "invalid: OVAL's SHACL validator must reject it"
+    }
+  ],
+  "scenarios": null
+}

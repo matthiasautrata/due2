@@ -73,7 +73,17 @@ odrl22:PolicyShape a sh:NodeShape ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:in ( odrl:prohibit odrl:perm odrl:invalid )
-  ] .
+  ] ;
+  # Vocabulary §3.14.3: odrl:refinement has domain Action, AssetCollection, or
+  # PartyCollection, never a Policy (IM §2.5; OVAL's shape pe:noRefinementsInRulesOrPolicies,
+  # SHACL/odrl-shacl.ttl in DIPS-Tools/ODRL-Engine@ee72ffc).
+  sh:property [ sh:path odrl:refinement ; sh:maxCount 0 ] ;
+  # Vocabulary §3.13.3-3.13.5: duty, remedy, and consequence have domains
+  # Permission, Prohibition, and Duty. A Policy holds its Rules through
+  # permission, prohibition, and obligation only (IM §2.1).
+  sh:property [ sh:path odrl:duty ; sh:maxCount 0 ] ;
+  sh:property [ sh:path odrl:remedy ; sh:maxCount 0 ] ;
+  sh:property [ sh:path odrl:consequence ; sh:maxCount 0 ] .
 
 # The disjointness pair, stated plainly:
 odrl22:OfferShape a sh:NodeShape ;
@@ -118,6 +128,15 @@ odrl22:RuleShape a sh:NodeShape ;
     # IM §2.5.4: an Action's refinement values are Constraints/Logical Constraints.
     sh:path ( odrl:action odrl:refinement ) ;
     sh:or ( [ sh:class odrl:Constraint ] [ sh:class odrl:LogicalConstraint ] )
+  ] ;
+  # Vocabulary §3.14.3: a refinement belongs on the Action, an AssetCollection,
+  # or a PartyCollection, not on the Rule (IM §2.5; OVAL's pe:noRefinementsInRulesOrPolicies).
+  sh:property [ sh:path odrl:refinement ; sh:maxCount 0 ] ;
+  # Vocabulary §3.9.2, §3.10.2, §3.13.2: permission, prohibition, and
+  # obligation have domain Policy, so a Rule never holds them (IM §2.1, §2.6).
+  sh:property [
+    sh:path [ sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation) ] ;
+    sh:maxCount 0
   ] .
 
 # IM §2.6: Rule subclasses MUST be disjoint.
@@ -141,7 +160,11 @@ odrl22:PermissionShape a sh:NodeShape ;
     # IM §2.6.5: duty values are Duties.
     sh:path odrl:duty ;
     sh:class odrl:Duty
-  ] .
+  ] ;
+  # Vocabulary §3.13.4, §3.13.5: consequence belongs on a Duty and remedy on a
+  # Prohibition (IM §2.6.3, §2.6.7).
+  sh:property [ sh:path odrl:remedy ; sh:maxCount 0 ] ;
+  sh:property [ sh:path odrl:consequence ; sh:maxCount 0 ] .
 
 odrl22:ProhibitionShape a sh:NodeShape ;
   sh:targetClass odrl:Prohibition ;
@@ -162,7 +185,11 @@ odrl22:ProhibitionShape a sh:NodeShape ;
     # IM §2.6.7: remedy values are Duties.
     sh:path odrl:remedy ;
     sh:class odrl:Duty
-  ] .
+  ] ;
+  # Vocabulary §3.13.3, §3.13.4: duty belongs on a Permission and consequence
+  # on a Duty (IM §2.6.3, §2.6.5).
+  sh:property [ sh:path odrl:duty ; sh:maxCount 0 ] ;
+  sh:property [ sh:path odrl:consequence ; sh:maxCount 0 ] .
 
 odrl22:DutyShape a sh:NodeShape ;
   sh:targetClass odrl:Duty ;
@@ -175,11 +202,33 @@ odrl22:DutyShape a sh:NodeShape ;
     sh:nodeKind sh:BlankNodeOrIRI    # IM §2.2: an Asset SHOULD have a uid, so it may be anonymous
   ] ;
   sh:property [
-    # IM §2.6.6: consequence values are Duties (permitted only on duties
-    # referenced by duty/obligation; that placement rule is check_corpus's).
+    # IM §2.6.6: consequence values are Duties. Where a consequence may sit is
+    # ConsequencePlacementShape's.
     sh:path odrl:consequence ;
     sh:class odrl:Duty
-  ] .
+  ] ;
+  # Vocabulary §3.13.3, §3.13.5: duty belongs on a Permission and remedy on a
+  # Prohibition, not on a Duty (IM §2.6.5, §2.6.7).
+  sh:property [ sh:path odrl:duty ; sh:maxCount 0 ] ;
+  sh:property [ sh:path odrl:remedy ; sh:maxCount 0 ] .
+
+# IM §2.6.3: a consequence is allowed only on a Duty that odrl:duty or
+# odrl:obligation references, so never on a consequence; IM §2.6.7: "A remedy
+# MUST NOT refer to a Duty that includes a consequence Duty."
+odrl22:ConsequencePlacementShape a sh:NodeShape ;
+  sh:targetObjectsOf odrl:consequence, odrl:remedy ;
+  sh:property [ sh:path odrl:consequence ; sh:maxCount 0 ] .
+
+# Vocabulary §3.14.2: odrl:constraint has domain Policy or Rule. An Action,
+# an Asset, a Party, or a collection is narrowed by odrl:refinement instead
+# (IM §2.5.4-2.5.6; OVAL's shape pe:noConstraintsInComponents, SHACL/odrl-shacl.ttl in
+# DIPS-Tools/ODRL-Engine@ee72ffc).
+odrl22:ComponentConstraintShape a sh:NodeShape ;
+  sh:targetClass odrl:Asset, odrl:Party, odrl:AssetCollection, odrl:PartyCollection ;
+  sh:targetObjectsOf odrl:action, odrl:target, odrl:output, odrl:assigner, odrl:assignee,
+    odrl:informedParty, odrl:compensatedParty, odrl:attributedParty,
+    odrl:consentingParty, odrl:contractingParty, odrl:trackingParty ;
+  sh:property [ sh:path odrl:constraint ; sh:maxCount 0 ] .
 
 # ---------------------------------------------------------------------------
 # Constraint (IM §2.5.1) and Logical Constraint (IM §2.5.2)

@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.6 (2026-10-20)
+**Status:** Draft v0.7 (2026-10-20)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.6** (2026-10-20, #83): a cold read. Cross-document references name their document, in the prose and in the registry's "Defined in" column; the timing rows and `UnsupportedConstruct` cite sections that now state their rejections (`due2-profiles.md` §7, `odrl-compound-to-atomic-normalization.md` §3). No code, severity, stage, or condition changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.7** (2026-10-20, #93): new row `MisplacedConstraint`; `InvalidNesting` is checked and covers every Rule edge outside the subject the ODRL vocabulary gives it, and a node in two Rule classes; `UnsupportedConstruct` covers an `odrl:constraint` on the Policy. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -39,14 +39,15 @@ A diagnostic is `(code, severity, ref, message)`:
 | `UnanchoredAnonymousNode` | error | 1 | A blank node reaches no IRI or uid-bearing anchor. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `UndeclaredProfile` | error | 1 | A DPROD or due2 core term used without declaring the profile by `odrl:profile`; or a term in a vocabulary position (an action, or a refined action's `rdf:value`, left operand, operator, function, relation, or conflict value) that is not an `odrl:` term of the ODRL vocabulary, a term of a selected profile's modules, or a term the policy types itself. A `cc:` term needs a profile. The second form is not raised when the policy declares a profile that has no due2 module. | ODRL IM §2.1; `odrl-compound-to-atomic-normalization.md` §3; `conformance/odrl22-conformance.md` §3 (`decisions/0020`) |
 | `UnsupportedProfileTerm` | error | 1 | A profile term needs an extension point not on the list. *Unchecked.* | `due2-profiles.md` §2 |
-| `UnsupportedConstruct` | error | 1 | `odrl:inheritFrom`, `odrl:rightOperandReference`, `odrl:implies`, `odrl:source` outside a collection, or a collection `odrl:refinement`. The ref names the node, the message the term. | `odrl-compound-to-atomic-normalization.md` §3; `due2-profiles.md` §8.1 |
+| `UnsupportedConstruct` | error | 1 | `odrl:inheritFrom`, `odrl:rightOperandReference`, `odrl:implies`, `odrl:source` outside a collection, a collection `odrl:refinement`, or an `odrl:constraint` on the Policy. The ref names the node, the message the term. | `odrl-compound-to-atomic-normalization.md` §3; `due2-profiles.md` §8.1 |
 | `UnsupportedConnective` | error | 1 | `odrl:andSequence`. | `due2-profiles.md` §5 |
 | `NoRule` | error | 1 | No `odrl:permission`, `odrl:prohibition`, or `odrl:obligation`. | `odrl-compound-to-atomic-normalization.md` §3 |
 | `InvalidConflict` | error | 1 | More than one `odrl:conflict`, or a value other than `prohibit`, `perm`, `invalid`. | `odrl-compound-to-atomic-normalization.md` §3 |
 | `MissingAction` | error | 1 | A rule with no action after interiorisation; a nested duty interiorises none. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `MissingTarget` | error | 1 | A Permission or Prohibition with no `odrl:target` after interiorisation. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `TargetAndOutput` | error | 1 | A rule with both `odrl:target` and `odrl:output`. | `odrl-compound-to-atomic-normalization.md` §6.3 |
-| `InvalidNesting` | error | 1 | A Consequence with a Consequence, or a Remedy with a Consequence. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §6.3 |
+| `MisplacedConstraint` | error | 1 | An `odrl:refinement` on a Policy or a Rule, or an `odrl:constraint` on an Action, an Asset, a Party, or a collection. The ref names the node, the message the property. | `odrl-compound-to-atomic-normalization.md` §3 |
+| `InvalidNesting` | error | 1 | A Rule edge outside its subject: `odrl:permission`, `odrl:prohibition`, or `odrl:obligation` not on the Policy, `odrl:duty` not on a Permission, `odrl:remedy` not on a Prohibition, `odrl:consequence` not on a Duty that `odrl:duty` or `odrl:obligation` references (so not on a Consequence or a Remedy); or a node in two Rule classes. | `odrl-compound-to-atomic-normalization.md` §3, §6.3 |
 | `RuleReferenceCycle` | error | 1 | A cycle of `duty`, `consequence`, `remedy` edges. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `LimitExceeded` | error | 1 | Input triples, generated rules, or generated policies over the invocation's limit. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `AnonymousEntity` | warning | 1 | A blank-node target or assignee with no `odrl:uid` and no refinement: no request can name it, so its Rule is never `T`, and `U` on a request without a target or assignee. Also raised when the Rule names other targets. The ref names the node and its Rule. | `odrl-compound-to-atomic-normalization.md` §3 |

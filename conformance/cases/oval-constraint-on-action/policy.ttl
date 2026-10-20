@@ -1,0 +1,31 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@ee72ffc test_cases/validation/invalid_ODRL/constraint_instead_of_refinement.ttl
+# (MIT, University of Southampton). Rules named; conflict and profiles
+# declared; the first permission's duty kept, the rest dropped; the right operand
+# typed (case.json notes). The constraint's place is as authored: a negative case.
+
+<http://example.com/policy:6161> a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:6161#print> .
+
+<http://example.com/policy:6161#print> a odrl:Permission ;
+    odrl:action odrl:print ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:duty <http://example.com/policy:6161#pay> .
+
+# The odrl:constraint sits on the action node, where a refinement belongs.
+<http://example.com/policy:6161#pay> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:constraint [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand "50"^^xsd:decimal ;
+            odrl:unit <http://dbpedia.org/resource/Euro>
+        ]
+    ] .

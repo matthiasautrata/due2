@@ -1,0 +1,26 @@
+{
+  "case": "oval-refinement-on-policy",
+  "source": "OVAL validation/invalid_ODRL/refinement_instead_of_constraint2 (DIPS-Tools/ODRL-Engine@ee72ffc)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated from OVAL's validation file refinement_instead_of_constraint2, which OVAL's SHACL validator must reject. Changed: rules named; Rule and Constraint types added; conflict and profiles declared; the payAmount refinement given a unit IRI. The refinement's place is as authored. Written as odrl:constraint on the Policy, it would still be rejected, as UnsupportedConstruct (due2-policy-constraint). OVAL keeps no result beyond the rejection.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MisplacedConstraint"
+    ],
+    "why": "The Policy <http://example.com/policy:1010> carries an odrl:refinement, and the ODRL vocabulary places a refinement only on an Action, an AssetCollection, or a PartyCollection (Vocabulary §3.14.3). Normalisation rejects a constraint outside its place in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy."
+  },
+  "oval_expected": [
+    {
+      "test_case": "validation/invalid_ODRL/refinement_instead_of_constraint2",
+      "title": null,
+      "request": null,
+      "result": "invalid: OVAL's SHACL validator must reject it"
+    }
+  ],
+  "scenarios": null
+}

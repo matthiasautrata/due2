@@ -1,0 +1,26 @@
+{
+  "case": "oval-constraint-on-action",
+  "source": "OVAL validation/invalid_ODRL/constraint_instead_of_refinement (DIPS-Tools/ODRL-Engine@ee72ffc)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated from OVAL's validation file constraint_instead_of_refinement, which OVAL's SHACL validator must reject. Kept: the first permission's action, target, and duty, whose compensate action carries the misplaced constraint. Dropped: the first permission's print refinement, assignee, and dateTime constraint; the second permission, which carries other defects (odrl:create and odrl:adminLevel are not ODRL terms; a refinement on a party collection as assignee, which due2 rejects as UnsupportedConstruct; a constraint on an example.com left operand; an untyped dateTime); the third permission, a plain compensate on the same target, which the placement test does not need; OVAL's example profile IRI. Changed: rules named; Rule and Constraint types added; conflict and profiles declared; the right operand 50, an xsd:integer, written as xsd:decimal with a unit IRI. The constraint's place is as authored. Written as odrl:refinement, it would be oval-duty-payment's pay-at-least idiom with eq. OVAL keeps no result beyond the rejection.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MisplacedConstraint"
+    ],
+    "why": "The action node of the duty <http://example.com/policy:6161#pay> carries an odrl:constraint, and the ODRL vocabulary places a constraint only on a Policy or a Rule (Vocabulary §3.14.2); an action is narrowed by odrl:refinement (IM §2.5.4). Normalisation rejects a constraint outside its place in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy."
+  },
+  "oval_expected": [
+    {
+      "test_case": "validation/invalid_ODRL/constraint_instead_of_refinement",
+      "title": null,
+      "request": null,
+      "result": "invalid: OVAL's SHACL validator must reject it"
+    }
+  ],
+  "scenarios": null
+}

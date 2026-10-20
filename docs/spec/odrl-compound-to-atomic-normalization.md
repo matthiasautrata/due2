@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.14  
+Version: 0.15  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.14 (2026-10-20, #83): a cold read, spelling `artifact`. §3 lists the constructs outside the fragment that `due2-diagnostics.md` rejects as `UnsupportedConstruct`, with the reason for each; §5.2 and §6.1 no longer say that §3 requires Rules to be named, which §3 does not; §6.2 says whose phrase “each Rule in the Policy” is and where DPROD's rule is compared; §8.1 names `ways-of-working.md` and says where `Den` is formalised (`correctness-strategy.md` §4.8). Admitted input, as the registry and `tools/check_corpus.py` already drew it, and generated identity are unchanged. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.15 (2026-10-20, #93): §3 requires every constraint and every Rule to sit where the ODRL vocabulary places it, and rejects a misplaced one with `MisplacedConstraint` or `InvalidNesting`; a constraint on the Policy itself joins the constructs rejected as `UnsupportedConstruct`; §6.3 and §10 follow. Admitted input narrows; generated identity is unchanged. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
@@ -61,7 +61,12 @@ A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy
 - have an identity: be an IRI node, or carry exactly one `odrl:uid` (the ODRL JSON-LD context maps `uid` to `@id`, so in RDF the IRI is usually the uid);
 - have at least one `odrl:permission`, `odrl:prohibition`, or `odrl:obligation`;
 - have at most one `odrl:conflict`, whose value is `odrl:prohibit`, `odrl:perm`, or `odrl:invalid`; and
-- be fully materialized, and use none of the constructs outside the fragment: `odrl:inheritFrom`; `odrl:rightOperandReference`, whose right operand is fetched by dereferencing an IRI, an input that is neither the policy nor the request; `odrl:implies`, which action matching does not read (it reads `odrl:includedIn`, `due2-workflows.md` §5.2); and `odrl:source` anywhere but on a collection (`due2-profiles.md` §8.1). Each is rejected with `UnsupportedConstruct`, never approximated (`due2-architecture.md` §1).
+- be fully materialized, and use none of the constructs outside the fragment: `odrl:inheritFrom`; `odrl:rightOperandReference`, whose right operand is fetched by dereferencing an IRI, an input that is neither the policy nor the request; `odrl:implies`, which action matching does not read (it reads `odrl:includedIn`, `due2-workflows.md` §5.2); `odrl:source` anywhere but on a collection (`due2-profiles.md` §8.1); and an `odrl:constraint` on `P0` itself, which the vocabulary admits (Vocabulary §3.14.2: its domain is Policy or Rule) but the IM gives no meaning: IM §2.1 lists no constraint among a Policy's properties, and IM §2.7.1 shares only actions, relations, and functions with the Rules, so §6.2 interiorises no constraint. Each is rejected with `UnsupportedConstruct`, never approximated (`due2-architecture.md` §1).
+
+Every constraint and every Rule MUST sit where the ODRL vocabulary places it. The vocabulary fixes the subject of each property by its `rdfs:domain`, and this profile reads each property only there. A value anywhere else would be dropped or read as something it is not, so it is rejected instead:
+
+- An `odrl:refinement` narrows an Action, an Asset Collection, or a Party Collection (IM §2.5; Vocabulary §3.14.3), and an `odrl:constraint` conditions a Rule (IM §2.5, §2.6; Vocabulary §3.14.2). A refinement on a Policy or a Rule, and a constraint on an Action, an Asset, a Party, or a collection, are rejected with `MisplacedConstraint`, which names the node and the property. Neither is read in the other's place: a Rule's refinement read as its constraint would be an approximation.
+- `odrl:permission`, `odrl:prohibition`, and `odrl:obligation` have a Policy as their subject (Vocabulary §3.9.2, §3.10.2, §3.13.2); `odrl:duty` a Permission (Vocabulary §3.13.3); `odrl:remedy` a Prohibition (Vocabulary §3.13.5); and `odrl:consequence` a Duty that `odrl:duty` or `odrl:obligation` references (Vocabulary §3.13.4; IM §2.6.3). Permission, Prohibition, and Duty are pairwise disjoint (IM §2.6; Vocabulary §3.9.1, §3.10.1, §3.13.1). A Rule edge from any other subject, and a node that its incoming Rule edges and its explicit types place in two Rule classes, are rejected with `InvalidNesting`. A Prohibition nested in a Permission, for instance, is none of `P0`'s Rules, and §6.4 builds Atomic Policies only from `P0`'s Rule edges. Admitting it would drop it, and the Permission would permit what the Prohibition forbids.
 
 An absent term takes the conflict default a selected profile declares with `odrl:conflict` on its profile resource — DPROD declares `odrl:prohibit` — and otherwise means `odrl:invalid` (ODRL IM §2.10). Either way it is made explicit on every output Atomic Policy. All three values survive decomposition. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids the source Policy when one of its Permissions and one of its Prohibitions both apply, and the source Policy remains identifiable: one `N(P0)` artifact derives from exactly one source Policy, and every downstream atom carries its source Policy (`due2-workflows.md` §3.1).
 
@@ -82,7 +87,7 @@ The baseline recognizes these ODRL Common Vocabulary axes:
 - relation predicates: `odrl:target`, `odrl:output`;
 - function predicates: `odrl:assignee`, `odrl:assigner`, `odrl:attributedParty`, `odrl:attributingParty`, `odrl:compensatedParty`, `odrl:compensatingParty`, `odrl:consentedParty`, `odrl:consentingParty`, `odrl:contractedParty`, `odrl:contractingParty`, `odrl:informedParty`, `odrl:informingParty`, `odrl:trackedParty`, and `odrl:trackingParty`.
 
-Other predicates are preserved as annotations but MUST NOT introduce additional relation, function, inheritance, or expansion semantics. Such semantics require a future versioned profile.
+Other predicates are preserved as annotations but MUST NOT introduce additional relation, function, inheritance, or expansion semantics. Such semantics require a future versioned profile. A Rule edge, `odrl:constraint`, or `odrl:refinement` outside the place this section gives it is not an annotation: it is rejected as above.
 
 The invocation MUST include limits for input triples, generated Rules, and generated Policies. Exceeding a limit fails the complete invocation without partial authoritative output.
 
@@ -225,7 +230,7 @@ After interiorization:
 - every Rule MUST have at least one Action;
 - a Permission or Prohibition MUST have at least one `odrl:target` and no other relation predicate;
 - a Duty MAY have no relation, one or more `odrl:target` values, or one or more `odrl:output` values, but not both predicates;
-- a Consequence Duty MUST NOT have another Consequence, and a Remedy Duty MUST NOT have a Consequence;
+- a Consequence Duty MUST NOT have another Consequence, and a Remedy Duty MUST NOT have a Consequence (IM §2.6.3, §2.6.7; `InvalidNesting`, §3);
 - the Rule-reference graph — `odrl:duty`, `odrl:consequence`, and `odrl:remedy` edges between Rules — MUST be acyclic. A cycle is rejected with `RuleReferenceCycle`, and the diagnostic MUST list every Rule and edge on one cycle, in order; and
 - every atomic result has exactly one Action, at most one relation value in total, and at most one Party for each function predicate.
 
@@ -336,7 +341,7 @@ The first implementation MUST include golden positive and negative vectors for:
 - an atomic root Rule with a compound nested Duty producing one newly identified Atomic Policy rather than retaining `P0`'s UID;
 - two structurally equal named Duties remaining distinct, and two structurally equal anonymous siblings — identical refined actions on one Rule — receiving distinct IRIs;
 - obligations, Duties, Consequences, and Remedies retaining their edge roles;
-- invalid consequence/remedy nesting;
+- each misplacement of §3 rejected with its diagnostic: a refinement on a Policy and on a Rule, a constraint on an Action and on a collection (`MisplacedConstraint`), a constraint on `P0` (`UnsupportedConstruct`), a Prohibition nested in a Permission, a Remedy on a Duty, a Consequence on a Permission, and a Consequence on a Consequence or a Remedy (`InvalidNesting`);
 - authored UID conflicts;
 - deterministic UUID, skolem, source digest, and lineage values across isomorphic serializations;
 - acceptance of all three conflict values, and of an absent term emitted as explicit `odrl:invalid`; rejection of `odrl:inheritFrom`, named graphs, and multiple Policies;

@@ -1,0 +1,38 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# Source: DIPS-Tools/ODRL-Engine@ee72ffc test_cases/validation/invalid_ODRL/refinement_instead_of_constraint.ttl
+# (MIT, University of Southampton). Rules named; conflict and profiles
+# declared; the first permission dropped; the misplaced refinement's operand
+# bound (case.json notes). The refinement's place is as authored: a negative case.
+
+<http://example.com/policy:88> a odrl:Offer ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission <http://example.com/policy:88#play> .
+
+<http://example.com/policy:88#play> a odrl:Permission ;
+    odrl:action odrl:play ;
+    odrl:assigner <http://example.com/assigner:sony> ;
+    odrl:target <http://example.com/music/1999.mp3> ;
+    odrl:duty <http://example.com/policy:88#pay> .
+
+# The second odrl:refinement sits on the Duty, not on its action.
+<http://example.com/policy:88#pay> a odrl:Duty ;
+    odrl:action [
+        rdf:value odrl:compensate ;
+        odrl:refinement [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:payAmount ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand "5.0"^^xsd:decimal ;
+            odrl:unit <http://dbpedia.org/resource/Euro>
+        ]
+    ] ;
+    odrl:refinement [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:dateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2027-01-01T00:00:00Z"^^xsd:dateTime
+    ] .

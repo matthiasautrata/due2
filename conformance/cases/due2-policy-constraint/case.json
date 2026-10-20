@@ -1,0 +1,18 @@
+{
+  "case": "due2-policy-constraint",
+  "source": "due2-native: an odrl:constraint on the Policy, which the vocabulary allows and the Information Model gives no meaning (issue #93)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "Authored for due2. The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. It is the one placement that the vocabulary allows and due2 still rejects, and the place OVAL's refinement_instead_of_constraint2 would reach if its odrl:refinement were renamed odrl:constraint (oval-refinement-on-policy). The same condition on the Rule is admitted.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "UnsupportedConstruct"
+    ],
+    "why": "The Policy <http://example.com/policy:policy-constraint> carries an odrl:constraint. The ODRL vocabulary admits one there (Vocabulary §3.14.2), but the Information Model gives it no meaning: a Policy's shared properties are Rule components (IM §2.1, §2.7.1). Normalisation rejects it as an unsupported construct in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy rather than guess at a reading."
+  },
+  "scenarios": null
+}

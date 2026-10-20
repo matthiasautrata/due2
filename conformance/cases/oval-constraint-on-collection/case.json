@@ -1,0 +1,26 @@
+{
+  "case": "oval-constraint-on-collection",
+  "source": "OVAL validation/invalid_ODRL/odrl12_invalid (DIPS-Tools/ODRL-Engine@ee72ffc)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Translated from OVAL's validation file odrl12_invalid (JSON-LD), which OVAL's SHACL validator must reject. Changed: written in Turtle; rule named; Rule and Constraint types added; conflict declared; OVAL's example profile IRI dropped. Its left operand runningTime is no term of the ODRL vocabulary (the W3C JSON-LD context does not define it, so it expands against the document base) and no profile binds it, so the constraint runningTime lt 60 (xsd:integer, unit qudt MinuteTime) is replaced by an odrl:dateTime bound with no unit, which due2-core binds; the constraint's place, which is what the case tests, is unchanged. Written as odrl:refinement, the collection would still be rejected, as UnsupportedConstruct: due2 admits no collection refinement (odrl-compound-to-atomic-normalization.md §3). OVAL keeps no result beyond the rejection.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MisplacedConstraint"
+    ],
+    "why": "The AssetCollection that <http://example.com/policy:4444#play> targets carries an odrl:constraint, and the ODRL vocabulary places a constraint only on a Policy or a Rule (Vocabulary §3.14.2); a collection is narrowed by odrl:refinement (IM §2.5.5). Normalisation rejects a constraint outside its place in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy."
+  },
+  "oval_expected": [
+    {
+      "test_case": "validation/invalid_ODRL/odrl12_invalid",
+      "title": null,
+      "request": null,
+      "result": "invalid: OVAL's SHACL validator must reject it"
+    }
+  ],
+  "scenarios": null
+}
