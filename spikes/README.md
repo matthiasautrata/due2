@@ -2,7 +2,7 @@
 
 A spike is a candidate implementation, built to be compared. Spikes share one thing: the pinned vectors and their expected results, read from `conformance/` by one Python suite (`tests/`, harness in `tools/harness/`). Everything else is separate. Each spike is built from the same principles and requirements and judged by the same gate, and in the end their code and scores are compared (`decisions/0006` §5).
 
-The first spike is `clingo-i`, the semantics program (issue #9, `decisions/0009`), implementing `interpret` over the corpus — the L9 oracle's role. The W2/W3 bakeoff spikes follow: #41 Clingo (possibly the same program's relation-level face, `decisions/0009` #8) and #40 Elixir first; #39 Python is deferred until the production evaluator is written.
+`clingo-i` is the semantics program (issue #9, `decisions/0009`): it implements `interpret` over the corpus, in the role of the L9 oracle. The W2/W3 bakeoff adds #41 Clingo (possibly the same program's relation-level face, `decisions/0009` #8) and #40 Elixir; #39 Python waits for the production evaluator.
 
 ## Rules
 
