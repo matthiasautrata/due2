@@ -55,6 +55,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.7** (2026-10-16): the tracking convention for every open-decision register is stated here, once (§11); the DPROD relation is marked provisional against the vendored commit, pending upstream PRs (§8.3). Earlier changes are in `docs/archive/changes.md`.
+
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `odrl-compound-to-atomic-normalization.md`

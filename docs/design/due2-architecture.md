@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.7
+**Status:** Draft v0.8
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.7** (2026-10-16): the tracking convention for every open-decision register is stated here, once (§11); the DPROD relation is marked provisional against the vendored commit, pending upstream PRs (§8.3). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.8** (2026-10-20, #83): §0's walk-through follows all six rules of its case; §8.1 opens with what it covers, and SKOS concept schemes are decided; §9 describes the execution choice as `decisions/0002` and `decisions/0006` leave it; §10 states semantic preservation and its oracles in the present tense; §11 drops the four resolved rows and names each open row's issue; references name their documents. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -19,37 +19,36 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 
 | Term | One line | Where |
 |---|---|---|
-| policy | An authored ODRL document: permissions, prohibitions, obligations | workflows §3.1 |
-| request | One access question: subject, action, target, time, parameters | workflows §3.2 |
-| SOTW | The state of the world, frozen for one evaluation | workflows §3.3 |
-| W1 / W2 / W3 | Normalise · evaluate every atom · fold findings into a verdict | workflows §1 |
+| policy | An authored ODRL document: permissions, prohibitions, obligations | `due2-workflows.md` §3.1 |
+| request | One access question: subject, action, target, time, parameters | `due2-workflows.md` §3.2 |
+| SOTW | The state of the world, frozen for one evaluation | `due2-workflows.md` §3.3 |
+| W1 / W2 / W3 | Normalise · evaluate every atom · fold findings into a verdict | `due2-workflows.md` §1 |
 | atom | A rule narrowed to one action, one target, one party per function, conjunctive constraints | §3 |
-| corpus | The flat relations of atoms W1 emits and W2/W3 read | workflows §3.1 |
-| root / edge | An atom a request matches directly / a parent→duty edge | workflows §3.1 |
-| duty | An obligation; as a child of a permission, a precondition that gates it | workflows §5.3 |
-| duty instance | One owed occurrence of a duty — per member, or per request (grant) | workflows §5.3 |
-| guard / witness condition | A duty's constraint on *when* it is owed / on *what* fulfils it | workflows §5.2 |
-| evidence | A record that a party performed an action — the only fulfilment source | workflows §3.3 |
-| activation | When an instance was first owed; anchors relative deadlines | workflows §3.3 |
-| finding | One atom's three-valued result: applies / in force / fulfilled | workflows §5.1 |
-| `T` / `F` / `U` | Kleene truth: true, false, unknown — never collapse `U` to `F` | workflows §2 |
+| corpus | The flat relations of atoms W1 emits and W2/W3 read | `due2-workflows.md` §3.1 |
+| root / edge | An atom a request matches directly / a parent→duty edge | `due2-workflows.md` §3.1 |
+| duty | An obligation; as a child of a permission, a precondition that gates it | `due2-workflows.md` §5.3 |
+| duty instance | One owed occurrence of a duty — per member, or per request (grant) | `due2-workflows.md` §5.3 |
+| guard / witness condition | A duty's constraint on *when* it is owed / on *what* fulfils it | `due2-workflows.md` §5.2 |
+| evidence | A record that a party performed an action — the only fulfilment source | `due2-workflows.md` §3.3 |
+| activation | When an instance was first owed; anchors relative deadlines | `due2-workflows.md` §3.3 |
+| finding | One atom's three-valued result: applies / in force / fulfilled | `due2-workflows.md` §5.1 |
+| `T` / `F` / `U` | Kleene truth: true, false, unknown — never collapse `U` to `F` | `due2-workflows.md` §2 |
 | verdict | Permit · Deny · Pending(frontier) · NotApplicable · Indeterminate | §6.1 |
-| frontier | The `Pending` answer's routes, incomparable ones all listed | workflows §6.3 |
-| trace / explanation | What W2 and W3 emit for an evaluation; the explanation is the part reachable from the verdict (`verdict_basis`, `eliminated`) | workflows §3.5, §3.7 |
-| opaque part | A `U` part whose value is missing, invalid, in conflict, or does not fit its operator: a completion variable of its own, never shared or paired with a complement | workflows §6.4, `decisions/0016` |
-| pivotal literal | A literal whose flip alone changes some completion's verdict; an `Indeterminate` names the `U` atoms that hold one, and its `verdict_range` | workflows §6.4, `decisions/0011` |
-| in force | An obligation travels with its policy: in force when that policy matches | workflows §5.2 |
-| profile | An ODRL extension, declared as data and compiled mechanically | profiles §1 |
+| frontier | The `Pending` answer's routes, incomparable ones all listed | `due2-workflows.md` §6.3 |
+| trace / explanation | What W2 and W3 emit for an evaluation; the explanation is the part reachable from the verdict (`verdict_basis`, `eliminated`) | `due2-workflows.md` §3.5, §3.7 |
+| opaque part | A `U` part whose value is missing, invalid, in conflict, or does not fit its operator: a completion variable of its own, never shared or paired with a complement | `due2-workflows.md` §6.4, `decisions/0016` |
+| pivotal literal | A literal whose flip alone changes some completion's verdict; an `Indeterminate` names the `U` atoms that hold one, and its `verdict_range` | `due2-workflows.md` §6.4, `decisions/0011` |
+| in force | An obligation travels with its policy: in force when that policy matches | `due2-workflows.md` §5.2 |
+| profile | An ODRL extension, declared as data and compiled mechanically | `due2-profiles.md` §1 |
 
-**A request through the pipeline** (from `conformance/cases/dprod-customer-api-v2`, scenario 3; the full derivation is the case's `why`):
+**A request through the pipeline** (from `conformance/cases/dprod-customer-api-v2`, scenario 3; the expected answer is the case's hand-derived one, and its `why` gives the derivation):
 
-1. *Authored.* An offer grants `read` on the customer-data asset — and carries a delivery obligation: *deliver the data every day by 07:30* (`dprod:recurrence` daily 07:00, `dprod:deadline` 30 minutes).
-2. *W1.* The offer normalises into two atoms: the permission, and the delivery obligation as a root duty atom carrying its timing. Nothing else in the policy survives into the corpus as behaviour.
-3. *The request.* Analytics asks to `read` customer data on 2026-06-03 at 07:10. The SOTW freezes: the delivery owed on 06-01 was performed at 07:10 that morning — admissible evidence — and the deployment answers under `violations = deny`.
-4. *W2.* The permission atom *applies* (action, target, party all match). The delivery atom is *in force* (its policy matches the request) and resolves to three instances — 06-01, 06-02, 06-03: the first fulfilled by the evidence, the second **violated** (no witness, deadline 07:30 on 06-02 passed), the third outstanding (its window is still open).
-5. *W3.* The candidate is ready, no prohibition applies — but under `violations = deny` a violated instance of an obligation in force acts as a surviving prohibition.
-6. ***Deny***, with `verdict_basis` naming the violated 06-02 instance — and with the 06-03 instance still outstanding, so the answer explains both what went wrong and what is still owed.
-
+1. *Authored.* An offer on the customer-data asset, taken from DPROD Contracts' examples, has six rules: permissions to `read` and to `derive`, a prohibition on `distribute`, and three obligations. One obligation is *deliver the data every day by 07:30*: `dprod:recurrence` daily at 07:00, with a `dprod:deadline` of 30 minutes. The other two are schema conformance and usage reporting within 30 days.
+2. *W1.* Each rule already has one action and at most one target, so the offer normalises into six atoms, once the offer's target and assigner fill the rules that state none (`odrl-compound-to-atomic-normalization.md` §6.2). The three obligations are root duty atoms, and the delivery and reporting atoms carry their timing.
+3. *The request.* Analytics asks to `read` customer data on 2026-06-03 at 07:10. The SOTW holds one evidence record, the delivery performed at 07:10 on 06-01, and the delivery's activation at 07:00 on 06-01. The deployment answers under `violations = deny`.
+4. *W2.* The read permission *applies*: its action and target match, and it names no assignee. The derive permission and the prohibition do not apply, since their actions differ from `read`. All three obligations are *in force*, because their policy matches the request. The delivery resolves to three instances. The 06-01 instance is fulfilled by the evidence. The 06-02 instance is **violated**: no evidence answers it, and its deadline, 07:30 on 06-02, has passed. The 06-03 instance is outstanding, since its deadline is still ahead. The schema and reporting obligations are outstanding.
+5. *W3.* The read permission has no precondition duties, so nothing gates it, and no prohibition applies. Under `violations = deny`, though, a violated instance of an obligation in force acts as a surviving prohibition (`due2-workflows.md` §6.4).
+6. ***Deny***. The obligations the answer reports list the violated 06-02 instance beside the outstanding 06-03 one, so the answer says both what went wrong and what is still owed. DPROD itself permits this request, because it never collects a duty whose action differs from the request's (`due2-profiles.md` §8.2, exception 6). clingo-i, the clingo semantics program (`spikes/clingo-i/`), declines the scenario, since it does not compute recurrence (#80).
 ---
 
 ## 1. Scope
@@ -58,7 +57,7 @@ due2 evaluates ODRL policies against requests and a state of the world — the *
 
 **In scope:** access decisions with reasons; duties, including duties that gate a permission; a durable record of every decision that supports re-evaluation and audit.
 
-**Out of scope for now, but shaping the design:** entitlement-scale precomputation and realtime evaluation. Neither is a requirement today. §9 records what is preserved so that neither becomes a rewrite.
+**Out of scope, but shaping the design:** entitlement-scale precomputation and realtime evaluation. Neither is a requirement. §9 records what is preserved so that neither becomes a rewrite.
 
 **Not a goal:** implementing all of ODRL. Coverage grows against real policies. Constructs we do not support are rejected at normalisation with a diagnostic, never accepted and approximated.
 
@@ -89,7 +88,7 @@ This asymmetry drives §10 (where verification effort goes) and §9 (why perform
 
 ## 3. Normal form **[D]**
 
-`normalise` emits the corpus and nothing else: flat relations of atoms, their parties and constraints, and parent→child edges. An **atom** is a rule narrowed to one action, at most one relation value, at most one party per function, and conjunctive constraints — the unit a request is matched against; ODRL's atomic Rule (IM §2.6). The schema is `due2-workflows.md` §3.1. Every atom carries required provenance — source policy and source rule — because every verdict must be explainable back to authored text. Full lineage is a separate collection, and the ledger pins the normaliser versions (§7).
+`normalise` emits the corpus and nothing else: flat relations of atoms, their parties and constraints, and parent→child edges. An **atom** is a rule narrowed to one action, at most one relation value, at most one party per function, and conjunctive constraints — the unit a request is matched against; ODRL's atomic Rule (ODRL 2.2 Information Model, IM, §2.6). The schema is `due2-workflows.md` §3.1. Every atom carries required provenance — source policy and source rule — because every verdict must be explainable back to authored text. Full lineage is a separate collection, and the ledger pins the normaliser versions (§7).
 
 Three consequences worth stating explicitly, because each was a live alternative:
 
@@ -101,21 +100,21 @@ Three consequences worth stating explicitly, because each was a live alternative
 
 Duties are shared in practice. "Complete annual training" attaches to many permits; "petition the council" attaches to many high-risk datasets. The two must behave differently: one training session should satisfy every permit that asks for it, while a petition about dataset X must not discharge the duty for dataset Y.
 
-v0.1 gave every attachment its own atom. That conflicts with ODRL, where a duty shared by UID across permissions is fulfilled once, and with §8, where fulfilment is derived from evidence rather than discharged against a stored atom. Duty instances handle both cases, following RL2 (§8.2):
+Giving every attachment its own atom, as v0.1 did, conflicts with ODRL, where a duty shared by UID across permissions is fulfilled once, and with §8, where fulfilment is derived from evidence rather than discharged against a stored atom. Duty instances handle both cases, following RL2 (§8.2):
 
 - **A duty instance is the authored duty plus its scope.** Scope `member`: the authored duty UID and its ground binding (§5). Attachments that bind the duty identically share one instance, and one fulfilment serves all of them. Scope `grant`: the authored duty UID and the request — one instance per request, for "pay per use".
 - **Fulfilment is derived from evidence.** A duty is fulfilled by a record that its obligated party performed its action on its object, admitted by the duty's signer configuration (`due2-workflows.md` §5.3). A grant-scoped instance accepts only evidence submitted against it.
 - **"About this dataset" is a binding, not an identity.** The petition duty binds its target to its parent's. X and Y bind differently, so their instances need evidence about different objects and cannot cross-discharge. An authored duty that names no target asks for one petition, and one petition satisfies it everywhere — which is what it says.
 
-Normalisation stage 1 keeps authored sharing exactly (normalisation spec, invariant 4). Stage 2 instantiates per binding after parameter substitution (§4). Sharing survives in lineage, which is what lets the canonical duty be edited in one place.
+Normalisation stage 1 keeps authored sharing exactly (`odrl-compound-to-atomic-normalization.md`, invariant 4). Stage 2 instantiates per binding after parameter substitution (§4). Sharing survives in lineage, which is what lets the canonical duty be edited in one place.
 
-Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. Rules may still be anonymous, as ODRL allows; their identity is then derived from their content, which is the only identity an unnamed thing has (normalisation spec §3, §5.2). A rule whose identity must survive edits — above all a duty that evidence names — should be named.
+Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. Rules may still be anonymous, as ODRL allows; their identity is then derived from their content, which is the only identity an unnamed thing has (`odrl-compound-to-atomic-normalization.md` §3, §5.2). A rule whose identity must survive edits — above all a duty that evidence names — should be named.
 
 ### 3.2 Acyclicity **[D]**
 
 Nesting cannot cycle; an edge relation can. `A requires B requires A` becomes representable the moment duties are shared, and will eventually be written by someone composing two policy libraries neither of whom saw the other.
 
-Acyclicity is therefore a normaliser post-condition over the edge relation, not a visited-set in the evaluator. A cycle is a malformed policy to be rejected with a diagnostic, not a runtime condition to survive. The diagnostic lists every rule and edge on one cycle, in order (normalisation spec §6.3). The error message is the product.
+Acyclicity is therefore a normaliser post-condition over the edge relation, not a visited-set in the evaluator. A cycle is a malformed policy to be rejected with a diagnostic, not a runtime condition to survive. The diagnostic lists every rule and edge on one cycle, in order (`odrl-compound-to-atomic-normalization.md` §6.3). The error message is the product.
 
 ---
 
@@ -125,14 +124,14 @@ Two stages, each with its own preservation property (`due2-workflows.md` §4). T
 
 **Stage 1 — atomise** (`odrl-compound-to-atomic-normalization.md`):
 
-1. **Interiorisation and cross-product expansion.** Policy-level actions, targets, and parties fill what a root rule leaves unstated, per family — a rule that states any value of a family keeps its own (normalisation spec §6.2). Multi-valued action, relation, and party fields then expand into one atomic rule per combination. Conjunction versus disjunction is not declared per field; it follows from position. Expanding a root rule yields independent atoms, any one of which may match — disjunction. Expanding a nested duty fans out its parent's edges, so every resulting duty is owed — conjunction. Constraints and duties are never expansion axes: splitting a permission with three duties into three atoms would be a semantic error.
+1. **Interiorisation and cross-product expansion.** Policy-level actions, targets, and parties fill what a root rule leaves unstated, per family — a rule that states any value of a family keeps its own (`odrl-compound-to-atomic-normalization.md` §6.2). Multi-valued action, relation, and party fields then expand into one atomic rule per combination. Conjunction versus disjunction is not declared per field; it follows from position. Expanding a root rule yields independent atoms, any one of which may match — disjunction. Expanding a nested duty fans out its parent's edges, so every resulting duty is owed — conjunction. Constraints and duties are never expansion axes: splitting a permission with three duties into three atoms would be a semantic error.
 2. **Identity, skolemisation, lineage, acyclicity.**
 
 **Stage 2 — build:**
 
-3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[D]** (2026-10-10, `decisions/0002`) — expansion stays eager: the exact-count limit check below fails a pathological policy before materialising anything, and the corpus has yet to contain one. Set-valued match keys reopen only on the first real policy that needs them.
+3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[D]** (2026-10-10, `decisions/0002`) — expansion stays eager: the exact-count limit check below fails a pathological policy before materialising anything, and no corpus case comes near the limit. Set-valued match keys reopen only on the first real policy that needs them.
 4. **Parameter substitution, role inheritance, and per-binding instantiation.** A duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); one that declares any inherits none. The inherited roles are part of the binding, which settles a tension inside ODRL: a shared duty is "fulfilled once", yet takes its roles from each referrer — referrers with different roles yield different instances. A duty that is also a root obligation receives the policy-level values as its own, so it inherits nothing (`due2-profiles.md` §6). See §5 and §3.1.
-5. **Conditional duties stay conditional [D]** (`decisions/0003`, 2026-10-11). A duty's constraints split, by their bindings, into *guards* — when the duty is owed — and *witness conditions* — what fulfils it, such as "paid at least 100" or "attested after 1 January" (`due2-workflows.md` §5.2). Both stay on the duty atom. W2 evaluates a precondition's guards as `owed`, and a root obligation's as part of `in_force`, so a duty with both roles needs no special case. An inactive duty is simply not owed — DPROD's D-ACTIVATE reading and the W3C CG's (C21). Earlier versions hoisted guards into the parent permission, splitting it into atoms per guard outcome, to avoid answering what an inactive duty means. That was claimed to be additive; it is ×2^*c* for *c* guarded duties on one permission, and it was withdrawn. The question of guards over post-exercise state dissolves with it: such a condition is a witness condition, not a guard.
+5. **Conditional duties stay conditional [D]** (`decisions/0003`, 2026-10-11). A duty's constraints split, by their bindings, into *guards* — when the duty is owed — and *witness conditions* — what fulfils it, such as "paid at least 100" or "attested after 1 January" (`due2-workflows.md` §5.2). Both stay on the duty atom. W2 evaluates a precondition's guards as `owed`, and a root obligation's as part of `in_force`, so a duty with both roles needs no special case. An inactive duty is simply not owed — DPROD's D-ACTIVATE reading and the W3C CG's (C21). The rejected alternative hoisted guards into the parent permission, splitting it into atoms per guard outcome, to avoid answering what an inactive duty means. It was taken to be additive, but it is ×2^*c* for *c* guarded duties on one permission (`decisions/0003`). The question of guards over post-exercise state dissolves with it: such a condition is a witness condition, not a guard.
 6. **Projection and provenance.** Project into the corpus relations, joining stage-1 lineage so that every atom carries its source policy and rule.
 
 **Blowup budget:** `|atoms| ≈ |actions| × |targets| × |parties| × |DNF disjuncts| + |duty attachments|`. Only the first term is multiplicative, and within it only DNF (`xone` above all) is exponential. Duties add atoms linearly, since their guards stay on the duty (item 5). Stage 1 computes exact counts and fails a limit before materialising anything. **[O]** — the threshold values, and their diagnostic.
@@ -179,7 +178,7 @@ Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 
 Prohibit-wins is a **default, not a law**. ODRL's `conflict` term takes `perm`, `prohibit`, or `invalid`, and it is a property of the source policy. Once atoms from several source policies are in one corpus they cannot be folded uniformly: the fold is per originating policy, then a combination across policies (`due2-workflows.md` §6.2). This is one of the reasons provenance is a required field rather than a nicety.
 
-**[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term takes a selected profile's declared default first, then `invalid` (normalisation spec §3); the normaliser writes the result explicitly.
+**[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); the normaliser writes the result explicitly.
 
 **[D]** (2026-10-11) — a void policy contributes *nothing*. It is ODRL's reading (the policy does not govern), and it keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). Validity and evaluation are separate concerns: a malformed policy is rejected at W1 or by the checkers, while a well-formed policy that voids itself for one request is an evaluation outcome, visible in the trace (`eliminated`, rule `invalid`). OVAL reports such a policy as not evaluable (`oval-conflict-invalid`), which conflates the two. *`Indeterminate` with a cause* — the fail-safe alternative, a value outside the chain needing its own computation — stays parked; revisit if a real policy needs a void policy to block rather than abstain.
 
@@ -192,7 +191,7 @@ So the interface is two functions over the same corpus:
 - `decide` returns a verdict plus duties that *would become owed*.
 - A separate query returns duties *currently owed* for a party.
 
-In workflow terms, both share W1 and W2's matching, constraint, and fulfilment machinery, and differ in the predicate applied to root atoms and in the W3 reduction. The access answer already reports the obligations *in force* for the request — those of the policy it is made under — with their status (`due2-workflows.md` §5.2, §6.1). What remains open is the request-free query: everything a party owes now. If that split is not in the signature now, it gets bolted on later as a special case.
+In workflow terms, both share W1 and W2's matching, constraint, and fulfilment machinery, and differ in the predicate applied to root atoms and in the W3 reduction. The access answer already reports the obligations *in force* for the request — those of the policy it is made under — with their status (`due2-workflows.md` §5.2, §6.1). What remains open is the request-free query: everything a party owes now (#6). A split left out of the signature gets bolted on later as a special case.
 
 ---
 
@@ -221,15 +220,15 @@ Every decision is recorded. Because `decide` is pure over `(corpus, request, SOT
 
 ### 8.1 The Southampton work
 
-Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and Comparison Semantics for ODRL* (arXiv:2509.05139). We should track it; we cannot adopt it wholesale.
+Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and Comparison Semantics for ODRL* (arXiv:2509.05139). due2 takes from it the shape of duties and the reading of approval as a fact (below), and diverges from it on unknowns, duties without evidence, and verdicts.
 
-**Re-read 2026-10-17 (#55).** The comparison below was written against the 2025 paper. It now also covers *A Formally Grounded ODRL Evaluator* (arXiv:2607.15987), *ODRL Policy Comparison Through Normalisation* (arXiv:2603.12926), and OVAL's code at `40b8ac6`. What the re-read adds is review input, marked **[O]**. Nothing in it is adopted until the owner decides.
+The comparison below covers that paper, *A Formally Grounded ODRL Evaluator* (arXiv:2607.15987), *ODRL Policy Comparison Through Normalisation* (arXiv:2603.12926), and OVAL, their evaluator, at commit `40b8ac6` (re-read 2026-10-17, #55). Items marked **[O]** are candidates for due2, not adopted.
 
 - **Monitoring and access control, formally (2607.15987).** Def 1 defines offline monitoring of a state of the world ω and Def 3 defines online (streaming) monitoring. Def 5 defines access control: a request is accepted iff ω ∪ {e_R} is valid, where e_R is the requested event. Thm 4.1 shows the two coincide under two conditions: the stream arrives one event at a time, and the policy uses only permissions, prohibitions and duties. This sharpens the Modality row below. In their semantics, the "post-action state" is ω ∪ {e_R}, and that is a set union, not a prediction. The difference from due2 lies elsewhere: in ω ∪ {e_R} an unknown feature is false, and a duty with no event is violated, whereas due2 returns `U` and `Pending`. **[O]** Their Defs 1 and 3 are a candidate definition for due2's monitoring question (#6), with `U` in place of false. They do not settle #6, which is blocked on requirements.
 - **Comparison by normalisation (2603.12926).** Constraints are put in DNF. Operators are regularised to `==`, `<` and `>`, and numeric and temporal ranges are split into disjoint intervals. Containment then becomes set membership over the intervals, and prohibitions are subtracted from permissions. The set operators are excluded. Their normal form is a constraint normal form. due2's stage 1 is structural: it produces atomic rules and preserves `Den` (`odrl-compound-to-atomic-normalization.md` §8.1). The two compose rather than compete. **[O]** A policy-diff spike (#15) would run their comparison over due2's atomic rules. It would then have to say what to do with `isA`, `isPartOf`, `hasPart` and the list operators, which due2 admits (`decisions/0005`) and their comparison excludes.
-- **OVAL's access-control mode** (`ODRL_Evaluator.py`, `evaluate_ODRL_access_request_on_dataframe`, at `40b8ac6`). It has a mode for single prospective requests that the 2025 rows did not describe. The Conflict, Default, Duties, Nulls and Verdict rows below now say what it does.
+- **OVAL's access-control mode** (`ODRL_Evaluator.py`, `evaluate_ODRL_access_request_on_dataframe`, at `40b8ac6`). It has a mode for single prospective requests, and the Nulls, Absence of a duty event, Verdict, Conflict and Default rows below say what it does.
 
-**Reasoning.** Their semantics keeps hierarchy reasoning out of the core, under unique names, and materialises it instead (2509.05139 §3.3). 2607.15987 repeats that "the chosen semantics does not include reasoning". OVAL nevertheless has `reasoning=True` by default, over the ODRL vocabulary. Its code expands only a rule's action (`includedIn`), assignee and target (`partOf`) into their transitive descendants; constraint values get no hierarchy. due2 has the same shape: comparison by identity, and declared hierarchy edges in a closed-world closure (`due2-profiles.md` §6). due2 extends it to `isPartOf`, `hasPart` and `isA` (`due2-profiles.md` §4) and, once #52 lands, to SKOS concept schemes on constraint operands. The gap was reported to OVAL on 2026-10-16 as DIPS-Tools/ODRL-Engine#8 (`conformance/external/README.md`). due2's reading is #52.
+**Reasoning.** Their semantics keeps hierarchy reasoning out of the core, under unique names, and materialises it instead (2509.05139 §3.3). 2607.15987 repeats that "the chosen semantics does not include reasoning". OVAL nevertheless has `reasoning=True` by default, over the ODRL vocabulary. Its code expands only a rule's action (`includedIn`), assignee and target (`partOf`) into their transitive descendants; constraint values get no hierarchy. due2 has the same shape: comparison by identity, and declared hierarchy edges in a closed-world closure (`due2-profiles.md` §6). due2 extends it to `isPartOf`, `hasPart` and `isA` (`due2-profiles.md` §4), and to SKOS concept schemes on constraint operands (`decisions/0015`). The missing hierarchy on constraint values was reported to OVAL on 2026-10-16 as DIPS-Tools/ODRL-Engine#8 (`conformance/external/README.md`).
 
 **What it confirms.** Duties there are relations over rules — pairs and triples — rather than nested structures, which is independently the shape of §3. It also requires that a duty rule be exercisable by the obligated party, a well-formedness check worth adopting. And duty preconditions are temporal over the event log: the permission is violated if it matched and no matching duty event exists at an earlier timestamp. That settles the question §7 raises — approval is a **fact** in the event set, not a discharge operation — which is what makes re-evaluation purely derivable, and what §3.1 builds on.
 
@@ -250,7 +249,7 @@ Salas, Pareti, Yumuşak, Gheisari, Ibáñez and Konstantinidis, *Evaluation and 
 
 ### 8.2 RL2
 
-RL2 (`~/src/RL2`, `github.com/matthiasautrata/RL2`) is due2's predecessor: an attempt to extend ODRL into a language of its own, with formal semantics. It is not a superset of ODRL — it has its own vocabulary and a partial translator — and it has never been executed. due2 harvests it rather than adopting it (`decisions/0001-rl2-as-donor.md`).
+RL2 (`github.com/matthiasautrata/RL2`) is due2's predecessor: an attempt to extend ODRL into a language of its own, with formal semantics. It is not a superset of ODRL — it has its own vocabulary and a partial translator — and it has never been executed. due2 harvests it rather than adopting it (`decisions/0001-rl2-as-donor.md`).
 
 Harvested — section numbers cite RL2's specs (`Model` = `spec/RL2_Model.md`, `Semantics` = `spec/RL2_Semantics.md`, `Compilation` = `spec/RL2_Compilation.md`):
 
@@ -264,28 +263,28 @@ Left behind: the vocabulary, Maintain duties, Promises, Offer → Agreement mate
 
 Sources for open items:
 
-- stage 2 — RL2_Compilation: canonical projection, closed-world rule, determinism; its diagnostic registry is now `due2-diagnostics.md`;
+- stage 2 — RL2_Compilation: canonical projection, closed-world rule, determinism; its diagnostic registry became `due2-diagnostics.md`;
 - conflict resolution and exception patterns — Semantics §Conflict Resolution;
 - profile operators — Compilation §9.1 (`due2-profiles.md` §4);
 - replayable policy selection and the re-evaluation loop — ExternalData §6–§7.
 
 ### 8.3 DPROD Contracts
 
-DPROD Contracts (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`) is an ODRL 2.2 profile for data contracts with deterministic evaluation — much of RL2's intent, expressed the way ODRL intends. due2 handles it as a profile, with no translation: its operand bindings are due2's (`due2-profiles.md` §3), and its other terms land on due2's extension points (§8.1 there). Where DPROD returns a decision, due2 returns the same one, outside six documented exceptions; where DPROD fails, due2 still decides when the unknowns cannot change the outcome (§8.2 there). Testing DPROD's examples also found gaps in DPROD itself, listed there for upstream. Everything adopted from DPROD is provisional against the vendored commit, pending a stack of upstream PRs (`due2-profiles.md` §8, issue #35).
+DPROD Contracts (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`) is an ODRL 2.2 profile for data contracts with deterministic evaluation — much of RL2's intent, expressed the way ODRL intends. due2 handles it as a profile, with no translation: its operand bindings are due2's (`due2-profiles.md` §3), and its other terms land on due2's extension points (`due2-profiles.md` §8.1). Where DPROD returns a decision, due2 returns the same one, outside six documented exceptions; where DPROD fails, due2 still decides when the unknowns cannot change the outcome (`due2-profiles.md` §8.2). Testing DPROD's examples also found gaps in DPROD itself, listed there for upstream. Everything adopted from DPROD is provisional against the vendored commit, pending a stack of upstream PRs (`due2-profiles.md` §8, issue #35).
 
 ---
 
 ## 9. Execution **[O]**
 
-See companion §10 for the general rule. Specific to due2:
+`ways-of-working.md` §10 gives the general rule. Specific to due2:
 
-**Today:** interpret atoms in memory, in Python. No dependency on another engine's semantics, trivial per-decision explanation, portable. Adequate for governance-scale volumes. The workflows document keeps the semantics independent of that choice.
+**The shape:** an evaluator interprets atoms in memory. W1 is Python (`decisions/0002` #1). W2 and W3 are to be built three ways, in Python, Elixir, and clingo, and compared under one gate (`decisions/0006`); none enters the runtime without an adoption record. An in-memory interpreter keeps the per-decision explanation cheap and is adequate for governance-scale volumes. `due2-workflows.md` keeps the semantics independent of the implementation language.
 
-**First optimisation, if needed:** index the corpus by action and target. Most of the available speedup is in not evaluating irrelevant atoms, and the candidate set drops from thousands to a handful. It is sound because a root atom that certainly does not apply is neutral in W3 (`due2-workflows.md` §5.5, L8). Same language, same conformance suite, available now. Exhaust this before adopting a second semantics.
+**First optimisation, if needed:** index the corpus by action and target. Most of the available speedup is in not evaluating irrelevant atoms, and the candidate set drops from thousands to a handful. It is sound because a root atom that certainly does not apply is neutral in W3 (`due2-workflows.md` §5.5, L8). It needs no new language and runs under the same conformance suite. Exhaust this before adopting a second semantics.
 
 **Only then**, and only against measurement: Rego/OPA, Rust via PyO3, or SQL compilation, with the trade-offs in `ways-of-working.md` §10.3. Note that for entitlement-scale work the interesting property of Rego is *partial evaluation* — a residual condition pushed into a query, so one call returns what a party may see — not raw throughput. If Rego earns its place, that is why.
 
-**What none of these fix.** Entitlements and realtime do not fail on Python being slow. They fail on cardinality (millions of resource-party pairs stop fitting the expand-everything model — a normalisation-strategy problem), on SOTW freshness (a p99 dominated by resolving whether someone is still in home lending), and on explanation cost (building a full reason per decision is affordable in governance and may not be at volume). A faster evaluator addresses none of the three.
+**What none of these fix.** Entitlements and realtime do not fail on a slow evaluator. They fail on cardinality (millions of resource-party pairs stop fitting the expand-everything model — a normalisation-strategy problem), on SOTW freshness (a p99 dominated by resolving whether someone is still in home lending), and on explanation cost (building a full reason per decision is affordable in governance and may not be at volume). A faster evaluator addresses none of the three.
 
 ### 9.1 Measurement before argument **[O]**
 
@@ -295,14 +294,14 @@ Record before the debate: p99 with the resolver excluded, atoms evaluated per re
 
 ## 10. Conformance suite **[D]**
 
-One suite, backend-parameterised from day one even while exactly one backend exists. It is the cheapest thing to build now and the most expensive to retrofit.
+One suite, parameterised by backend from the start (`ways-of-working.md` §10.2). It is the cheapest thing to build first and the most expensive to retrofit.
 
 Contents:
 
-- Hypothesis-generated policies and requests, with a decision table.
+- Generated policies and requests: bounded-exhaustive enumeration over a tiny vocabulary, and Hypothesis over larger inputs, from one description of the input space (`correctness-strategy.md` §1.1, §5).
 - The laws of `due2-workflows.md` §8, as properties.
-- The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, and DPROD Contracts examples — now vendored unmodified under `profiles/vendor/dprod/examples/` and covered as cases — each with scenarios and hand-derived expected verdicts, checked mechanically by `tools/check_corpus.py` until an evaluator runs them.
-- The semantic-preservation property: `decide(normalise(p), r, w)` equals `interpret_directly(p, r, w)` whenever the completion is exact (workflows §6.4, §8 L9, v0.6, 2026-10-11): completions range over literals, so the complementary parts DNF and `xone` create share one variable with what they negate. Since `decisions/0003` there is no hoisting to preserve. Beyond the `max_mixed` bound it weakens to refinement — a definite pipeline verdict equals the direct one, and the pipeline may return `Indeterminate` where the direct one decides (the 2026-10-10 reading). Stage 1 now carries its own oracle: the denotation of normalisation spec §8.1, a page of definition, checked through the lineage bijection. **Resolved 2026-10-10** (`decisions/0002` and its amendment): a direct interpreter over the lifted (authored) form is the maintained L9 oracle — Python then, the clingo semantics program since `decisions/0009` (2026-10-16); the `Den` oracle becomes part of the formal model (`decisions/0021`, `correctness-strategy.md` §4.8). Real cost, and still the only check that the rest of normalisation has not quietly changed meaning.
+- The case corpus in `conformance/`: the RL2 use cases rewritten in ODRL, the DPROD Contracts examples, cases translated from other evaluators' suites (FORCE, OVAL, and the W3C formal-semantics cases), and cases authored for due2 to cover what no origin exercises (`conformance/README.md`). Each case has scenarios and hand-derived expected verdicts, and `tools/check_corpus.py` checks them mechanically.
+- The semantic-preservation property, L9 (`due2-workflows.md` §8): `decide(normalise(p), r, w)` equals `interpret_directly(p, r, w)` whenever the completion is exact. The parts that DNF and `xone` create are identical or complementary to authored ones, so they share a completion variable with what they negate, and both sides enumerate the same completions (`due2-workflows.md` §6.4). Beyond the `max_mixed` bound the property weakens to refinement: a definite pipeline verdict equals the direct one, and the pipeline may return `Indeterminate` where the direct one decides. The direct interpreter over the authored policy is the clingo semantics program, clingo-i (`decisions/0009`). Stage 1 has its own oracle as well, the denotation `Den` of `odrl-compound-to-atomic-normalization.md` §8.1, checked through the lineage bijection, and it moves into the formal model (`decisions/0021`, `correctness-strategy.md` §4.8). Maintaining a second interpreter is costly, and L9 is the only check that the rest of normalisation has not quietly changed meaning.
 - Explicit `Indeterminate` cases with unresolvable operands, asserted per backend. This is the property most likely to be silently lost in a port.
 - Every recorded evaluation, replayed.
 - Differential mode across backends, once there is more than one.
@@ -313,15 +312,13 @@ Contents:
 
 Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
 
-**Tracking.** Open items are recorded as GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`); each issue names its source-of-truth section. This convention is stated here once and covers every open-decision register — this one, `due2-workflows.md` §9, `due2-profiles.md` §9, `ways-of-working.md` §13, `correctness-strategy.md` §9: a register remains the specification record, a resolution lands in it, and the issue closes. Sub-issues, milestones, and the development cycle are `ways-of-working.md` §14. The execution-target cluster (#8) covers ways-of-working §13 #10/#11/#13.
+**Tracking.** Open items are recorded as GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`); each issue names its source-of-truth section. This convention is stated here once and covers every open-decision register — this one, `due2-workflows.md` §9, `due2-profiles.md` §9, `ways-of-working.md` §13, `correctness-strategy.md` §9: a register remains the specification record, a resolution lands in it, and the issue closes. Sub-issues, milestones, and the development cycle are `ways-of-working.md` §14. The execution-target issue (#16) also covers `ways-of-working.md` §13 #10, #11, and #13.
 
-| # | Decision | Section | Blocked on |
-|---|---|---|---|
-| 1 | Eager DNF expansion vs set-valued match keys | §4 item 3 | Resolved by default (`decisions/0002`): eager, limit-enforced; set-valued keys reopen on the first pathological policy |
-| 2 | Atom-count threshold values and diagnostic | §4 | First pathological policy. Since `decisions/0003` only DNF is exponential, and its exact-count limit is decided (item 3) |
-| 3 | Whether any duty constraint is genuinely non-hoistable | §4 item 5 | Resolved by `decisions/0003`: nothing is hoisted, so the question dissolves |
-| 4 | What a void (`invalid`) policy contributes: nothing (default) or `Indeterminate` with a cause | §6.2 | Resolved 2026-10-11: nothing; `Indeterminate` with a cause parked until a real policy needs a void policy to block |
-| 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | Measurement once pending volume is known |
-| 6 | Direct interpreter for stage 2 and the evaluator (stage 1 has its denotational oracle) | §10 | Resolved by `decisions/0002`: Dafny-extracted `Den` oracle (stage 1) plus a Python reference evaluator (stage 2, W2, W3) until a verified backend passes the corpus. Amended 2026-10-16 (`decisions/0009`): the L9 direct interpreter is the clingo semantics program; the production evaluator stays `decisions/0002` #1 and the `decisions/0006` bakeoff. Superseded in part 2026-10-19 by `decisions/0021`: `Den` moves into the formal model |
-| 7 | Policy-diff via query containment | §8.1 | Spike |
-| 8 | Execution target beyond indexed Python | §9 | Measurement per §9.1 |
+Rows keep their numbers, because issues cite them. Rows 1, 3, 4, and 6 are resolved, and their resolutions are in §4 item 3, §4 item 5, §6.2, and §9–§10.
+
+| # | Decision | Section | Issue | Blocked on |
+|---|---|---|---|---|
+| 2 | Atom-count threshold values and diagnostic | §4 | #11 | The first pathological policy. Only DNF is exponential (`decisions/0003`), and its exact-count limit is decided (§4 item 3) |
+| 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | #14 | Measurement once pending volume is known |
+| 7 | Policy diff via query containment | §8.1 | #15 | A spike |
+| 8 | Execution target beyond indexed in-memory evaluation | §9 | #16 | Measurement per §9.1 |
