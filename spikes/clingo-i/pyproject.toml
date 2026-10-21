@@ -48,4 +48,6 @@ testpaths = ["tests"]
 pythonpath = [".", "../../tools"]
 # The suite runs on every core; `loadgroup` spreads the three slow differentials over
 # workers, where the default `load` queued them on one (#82). `-n 0` runs it serially.
-addopts = ["-p", "no:cacheprovider", "-n", "auto", "--dist", "loadgroup"]
+# `slow` tests (minutes each) are deselected; `pytest -m slow` runs them.
+addopts = ["-p", "no:cacheprovider", "-n", "auto", "--dist", "loadgroup", "-m", "not slow"]
+markers = ["slow: minutes long; outside README § Verify, run with `pytest -m slow`"]

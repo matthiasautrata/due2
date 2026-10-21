@@ -1,0 +1,9 @@
+# Briefings
+
+A briefing is a dated snapshot of due2 for readers who have not followed its design: what it does, what its checks establish, and what remains. Each one states the commit it describes, and its numbers and examples come from that commit.
+
+Briefings are not maintained. When the repository moves on, a briefing stays as it was, and a later one supersedes it. For the current state, read `README.md` § Status and the issues; for the semantics, read the documents under `docs/spec/`. A briefing's recommendations are suggestions until an issue or a decision record adopts them.
+
+| Briefing | Commit | Scope |
+|---|---|---|
+| `due2-briefing-2026-10-21.md` | `ce17910` | The whole project, and a primer on reading test numbers: oracles, the rule of three, planted bugs, generator strength |

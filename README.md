@@ -25,6 +25,7 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded; the claims the formal model proves (§4.8) |
 | `docs/correctness/ways-of-working.md` | Engineering discipline: types, contracts, testing layers, tiering, the verification track |
 | `docs/decisions/` | Decision records: each settles one question the specification depends on; `docs/decisions/README.md` lists them with their standing |
+| `docs/briefings/` | Dated snapshots of the project for readers new to it, not maintained; its `README.md` lists them |
 | `docs/archive/` | Documents no longer current, kept as history, with an index in its `README.md`: the implementation-alternatives reviews, the formalisation review, and the documents' earlier **Changes** entries |
 | `profiles/` | Shipped profile and binding modules, including vendored DPROD Contracts terms and example policies (`profiles/vendor/dprod/examples/`) |
 | `conformance/` | The conformance corpus — RL2 use cases, DPROD examples, translations of other evaluators' suites (`force-`, `oval-`, `w3c-fs-`), and due2-native cases (`due2-`) — with scenarios and hand-derived expected verdicts; coverage gaps in its `README.md` |

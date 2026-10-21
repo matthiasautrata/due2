@@ -46,11 +46,15 @@ count.
 
 The mutation tests run the same differentials against programs with one rule changed, and
 assert that they fail (#47, #49). The duty examples alone kill each duty mutant. The
-measurement tests assert that the generators reach each shape the differentials rely on.
+measurement tests assert that the generators reach each shape the differentials rely on. The
+generator-strength test runs each mutant against generated draws alone and asserts that one
+exposes it, except the blind spots it names (#44). It takes minutes, so it is marked `slow`
+and runs only with `pytest -m slow`.
 """
 
 from __future__ import annotations
 
+import contextlib
 import itertools
 import operator
 from collections import Counter
@@ -59,7 +63,7 @@ from dataclasses import dataclass, replace
 
 import pytest
 from clingo import Control
-from hypothesis import Phase, assume, example, given, settings
+from hypothesis import Phase, assume, example, given, seed, settings
 from hypothesis import strategies as st
 
 from clingo_i.interpret import CHAIN, SOLVE_2, Interpreter, load_programs
@@ -1671,3 +1675,120 @@ def test_duty_generator_reaches_each_shape() -> None:
         "Indeterminate naming a duty",
     }
     assert {s: seen[s] for s in wanted if seen[s] == 0} == {}, seen
+
+
+# --- generator strength (#44) ---
+
+# Draws each mutant gets from generation alone, from seed 0; tests/measure_mutants.py reports
+# the table for several seeds.
+STRENGTH_LIMIT = 2000
+# Mutants that generation alone does not expose within STRENGTH_LIMIT draws from seed 0: only
+# an explicit example kills them. Each is a gap in the generators for #44 to close, not a build
+# failure (ways-of-working.md §7.3), so the test expects it to survive, strictly: a generator
+# that starts exposing one fails the run until the mutant leaves this set. No seed of 0 to 4
+# exposes the first two. `duty-roots-negated` is rare rather than unreached: seeds 1, 2, and 4
+# expose it, at draws 1840, 1064, and 277.
+BLIND_SPOTS = {"live-negated-xone-ignores-terms", "violated-u-owed-listed", "duty-roots-negated"}
+
+
+def mutated(name: str) -> Interpreter:
+    """The interpreter with mutant `name`, from MUTANTS or DUTY_MUTANTS, applied."""
+    duty = name in DUTY_MUTANTS
+    file, edits = (DUTY_MUTANTS if duty else MUTANTS)[name]
+    programs = load_programs()
+    for old, new in edits:
+        assert old in programs[file], f"{file} no longer has {old!r}"
+        programs[file] = programs[file].replace(old, new)
+    return Interpreter(DUTY_INIT if duty else INIT, programs)
+
+
+def first_kill(name: str, limit: int, at: int = 0) -> int | None:
+    """The generated draw that first exposes mutant `name`, or None if none of `limit` does.
+
+    Generation alone: no explicit examples and no shrinking, so the number measures the
+    generator, not the examples tuned to the mutants. The draws come from seed `at`, so the
+    number is the same on every run until the generator or the program changes. A duty draw
+    counts only when `checked` admits it, as in the duty differential. Hypothesis replays the
+    failing draw before it raises, so the first failure is recorded as it happens.
+    """
+    interp = mutated(name)
+    draws = 0
+    first: int | None = None
+    config = settings(
+        max_examples=limit,
+        deadline=None,
+        database=None,
+        phases=(Phase.generate,),
+    )
+
+    def seen(check_one: Callable[[], None]) -> None:
+        nonlocal draws, first
+        draws += 1
+        try:
+            check_one()
+        except AssertionError:
+            if first is None:
+                first = draws
+            raise
+
+    @seed(at)
+    @config
+    @given(cases(dead=True))
+    def rule_run(case: Case) -> None:
+        seen(lambda: check(interp, case))
+
+    @seed(at)
+    @config
+    @given(duty_cases())
+    def duty_run(dc: Duties) -> None:
+        assume(checked(dc))
+        seen(lambda: check_duties(interp, dc))
+
+    with contextlib.suppress(AssertionError, BaseExceptionGroup):
+        (duty_run if name in DUTY_MUTANTS else rule_run)()
+    return first
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(
+            n, marks=pytest.mark.xfail(n in BLIND_SPOTS, reason="generator blind spot", strict=True)
+        )
+        for n in sorted(MUTANTS.keys() | DUTY_MUTANTS.keys())
+    ],
+)
+@pytest.mark.slow
+def test_generation_alone_exposes_mutant(name: str) -> None:
+    assert first_kill(name, STRENGTH_LIMIT) is not None
+
+
+def test_opaque_leaf_as_f_fails_open() -> None:
+    """The worked example of `opaque-leaf-as-f`: an unknown read as false lets a request through.
+
+    The request states neither the target nor ex:o0, so the prohibition has two opaque `u`
+    parts and the verdict is Indeterminate between Deny and NotApplicable. The mutant reads
+    the opaque leaf as `f`, so the prohibition cannot apply and it answers NotApplicable while
+    still listing both unknowns. tests/measure_mutants.py --shrink opaque-leaf-as-f prints
+    the shrunk case Hypothesis finds; this is that case, pinned.
+    """
+    case = Case(
+        conflict="prohibit",
+        rules=(Rule("r0", False, "use", "a", None, (Leaf(0, "eq"),)),),
+        action="use",
+        target=None,
+        assignee=None,
+    )
+    unknown_parts = [
+        {"ref": EX + "r0", "input": ODRL + "target", "status": "missing"},
+        {"ref": EX + "r0", "input": EX + "o0", "status": "missing"},
+    ]
+    right = oracle(case)["output"]
+    assert isinstance(right, dict)
+    assert right["verdict"] == "Indeterminate"
+    assert right["verdict_range"] == {"low": "Deny", "high": "NotApplicable"}
+    assert right["unknown_parts"] == unknown_parts
+    wrong = mutated("opaque-leaf-as-f").reply(render(case))["output"]
+    assert isinstance(wrong, dict)
+    assert (wrong["verdict"], wrong["verdict_basis"]) == ("NotApplicable", [])
+    assert wrong["unknown_parts"] == unknown_parts
