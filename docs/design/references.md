@@ -127,6 +127,19 @@ The next five are the sources of the testing statistics in the 2026-10-21 briefi
 - **J. A. Hanley, A. Lippman-Hand, *If Nothing Goes Wrong, Is Everything All Right? Interpreting Zero Numerators*,** JAMA 249(13), 1983. DOI 10.1001/jama.1983.03330370053031.
   **Read:** 2026-10-21, for the briefing; not read in the original. **Learned:** the rule of three: after n independent trials with no event, the one-sided 95% upper bound on the event's rate is about 3/n, since (1 − p)ⁿ = 0.05 gives p ≈ −ln 0.05 / n ≈ 3/n. **Used in:** `due2-briefing-2026-10-21.md` §5.2 and §5.5, for the zero-failure runs and the two mutants no generated draw exposes.
 
+## 8. Architecture and migration
+
+The sources of the component structure and the migration plan in `due2-platform.md`. Each is a practitioner's essay or a tool, not a paper.
+
+- **A. Cockburn, *Hexagonal Architecture* (ports and adapters),** 2005. <https://alistair.cockburn.us/hexagonal-architecture/> *(complete for the .bib)*
+  **Read:** 2026-10-21, for the platform design; the essay. **Learned:** an application exposes ports, interfaces stated in its own terms, and each outside technology (a user interface, a test harness, a database, another service) connects through an adapter for one port. The application can then be driven by tests and by people alike, and a technology is swapped by writing an adapter, not by changing the application. **Used in:** `due2-platform.md` §1.2, the port and adapter vocabulary and one schema behind REST and MCP.
+- **M. Fowler, *Strangler Fig Application*,** martinfowler.com, 2004, revised 2024. <https://martinfowler.com/bliki/StranglerFigApplication.html>
+  **Read:** 2026-10-21, for the platform design; the article. **Learned:** replace a legacy system gradually: build the new system around the edges of the old one, move one piece of behaviour at a time, and let the old one shrink until it can be removed. Each step delivers value and can be stopped, against the high risk of a big-bang rewrite. Interception points, where calls can be routed to either system, are what make it possible. **Used in:** `due2-platform.md` §4.
+- **M. Fowler, *Branch By Abstraction*,** martinfowler.com, 2014. <https://martinfowler.com/bliki/BranchByAbstraction.html> The technique is credited there to Stacy Curl and Paul Hammant.
+  **Read:** 2026-10-21, for the platform design; the article. **Learned:** to replace a component that many callers use, put an abstraction in front of it, move the callers onto the abstraction, build the new implementation behind it, and switch over, possibly per caller, with the system releasable at every step. **Used in:** `due2-platform.md` §4, the choice of engine behind each route.
+- **GitHub, *Scientist*,** a Ruby library for refactoring critical paths, 2016. <https://github.com/github/scientist>; J. Toth, *Scientist: Measure Twice, Cut Over Once*, GitHub blog, 2016. *(complete for the .bib)*
+  **Read:** 2026-10-21, for the platform design; the README and the blog post. **Learned:** an experiment runs the old code path (the control) and the new one (the candidate) on the same input, always returns the control's result, and records every mismatch with its input and timings. Exceptions in the candidate are recorded, not raised. The candidate may not have side effects, which is why it suits a pure function. **Used in:** `due2-platform.md` §4, the shadow phase.
+
 ## To read
 
 - arXiv:2601.14764 in full (§2), before #47.

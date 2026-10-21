@@ -20,6 +20,7 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | `docs/spec/due2-diagnostics.md` | The diagnostic registry: every code W1 rejects or warns with, its stage, and its defining section |
 | **`docs/design/`** | **What due2 is, why, and the alternatives weighed** |
 | `docs/design/due2-architecture.md` | What due2 is and why; reading order and glossary (§0) |
+| `docs/design/due2-platform.md` | The components around the evaluator, their interfaces, the use cases they serve, and the migration from a predecessor system; all open |
 | `docs/design/references.md` | The annotated bibliography: what was read, why, what was learned, and where it is used |
 | **`docs/correctness/`** | **How we know it is right** |
 | `docs/correctness/correctness-strategy.md` | Which check guards which risk, what each oracle is independent of, and what must exist before each component is coded; the claims the formal model proves (§4.8) |
