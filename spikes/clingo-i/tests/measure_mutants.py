@@ -5,9 +5,9 @@ they show that the differentials can see each mutant, not that the generators fi
 script runs each mutant against generated draws only (`first_kill`), once per seed from 0 to
 SEEDS - 1, and prints the draw that first exposes it under each seed, or `-` when none of
 LIMIT draws does. One seed's number is a single draw from a geometric distribution, so it
-varies several-fold between seeds; the columns show by how much.
-`test_generation_alone_exposes_mutant` asserts, for seed 0, that some draw exposes each
-mutant outside its blind spots.
+varies several-fold between seeds; the columns show by how much. No test asserts these
+numbers: `test_spaces_alone_expose_mutant` in test_spaces.py asserts instead that
+the bounded-exhaustive spaces expose each mutant (#44).
 
 With `--shrink NAME`, it prints the shrunk failing case for a rule mutant instead: the case,
 the vector, the mutant's reply, and the oracle's. That search is derandomized and shrinks, so

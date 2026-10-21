@@ -46,10 +46,9 @@ count.
 
 The mutation tests run the same differentials against programs with one rule changed, and
 assert that they fail (#47, #49). The duty examples alone kill each duty mutant. The
-measurement tests assert that the generators reach each shape the differentials rely on. The
-generator-strength test runs each mutant against generated draws alone and asserts that one
-exposes it, except the blind spots it names (#44). It takes minutes, so it is marked `slow`
-and runs only with `pytest -m slow`.
+measurement tests assert that the generators reach each shape the differentials rely on.
+Generated draws do not expose every mutant on their own (tests/measure_mutants.py); the
+bounded-exhaustive spaces of test_spaces.py do, with the same oracle (#44).
 """
 
 from __future__ import annotations
@@ -1062,6 +1061,20 @@ def shapes(case: Case) -> Iterator[str]:
                 yield "u leaf that only f atoms read"
 
 
+# The shapes of `shapes` that the generator, and the slow spaces (test_spaces.py), reach.
+WANTED = {f"conflict {c}" for c in ("prohibit", "perm", "invalid")} | {
+    "open leaves reading one variable with both polarities",
+    "Indeterminate with a non-pivotal u atom",
+    "two u atoms sharing a variable",
+    "an atom with a variable of its own",
+    "an open tree with an opaque and a paired leaf",
+    "an f atom on an absent target",
+    "constraint parts sharing a key",
+    "u leaf under a deciding connective",
+    "u leaf that only f atoms read",
+}
+
+
 def test_generator_reaches_each_shape() -> None:
     seen: Counter[str] = Counter()
 
@@ -1071,18 +1084,7 @@ def test_generator_reaches_each_shape() -> None:
         seen.update(shapes(case))
 
     tally()
-    wanted = {f"conflict {c}" for c in ("prohibit", "perm", "invalid")} | {
-        "open leaves reading one variable with both polarities",
-        "Indeterminate with a non-pivotal u atom",
-        "two u atoms sharing a variable",
-        "an atom with a variable of its own",
-        "an open tree with an opaque and a paired leaf",
-        "an f atom on an absent target",
-        "constraint parts sharing a key",
-        "u leaf under a deciding connective",
-        "u leaf that only f atoms read",
-    }
-    assert {s: seen[s] for s in wanted if seen[s] == 0} == {}, seen
+    assert {s: seen[s] for s in WANTED if seen[s] == 0} == {}, seen
 
 
 # --- duties (#49) ---
@@ -1653,6 +1655,20 @@ def duty_shapes(dc: Duties) -> Iterator[str]:
         yield "Indeterminate naming a duty"
 
 
+# The shapes of `duty_shapes` that the generator, and the slow spaces, reach.
+DUTY_WANTED = {
+    "a u owed",
+    "a u fulfilled",
+    "a u in_force",
+    "a duty finding sharing a variable with a rule",
+    "Pending",
+    "two listed alternatives",
+    "a closed route",
+    "Deny by an obligation",
+    "Indeterminate naming a duty",
+}
+
+
 def test_duty_generator_reaches_each_shape() -> None:
     seen: Counter[str] = Counter()
 
@@ -1663,32 +1679,13 @@ def test_duty_generator_reaches_each_shape() -> None:
         seen.update(duty_shapes(dc))
 
     tally()
-    wanted = {
-        "a u owed",
-        "a u fulfilled",
-        "a u in_force",
-        "a duty finding sharing a variable with a rule",
-        "Pending",
-        "two listed alternatives",
-        "a closed route",
-        "Deny by an obligation",
-        "Indeterminate naming a duty",
-    }
-    assert {s: seen[s] for s in wanted if seen[s] == 0} == {}, seen
+    assert {s: seen[s] for s in DUTY_WANTED if seen[s] == 0} == {}, seen
 
 
 # --- generator strength (#44) ---
 
-# Draws each mutant gets from generation alone, from seed 0; tests/measure_mutants.py reports
-# the table for several seeds.
+# Draws each mutant gets from generation alone in tests/measure_mutants.py.
 STRENGTH_LIMIT = 2000
-# Mutants that generation alone does not expose within STRENGTH_LIMIT draws from seed 0: only
-# an explicit example kills them. Each is a gap in the generators for #44 to close, not a build
-# failure (ways-of-working.md §7.3), so the test expects it to survive, strictly: a generator
-# that starts exposing one fails the run until the mutant leaves this set. No seed of 0 to 4
-# exposes the first two. `duty-roots-negated` is rare rather than unreached: seeds 1, 2, and 4
-# expose it, at draws 1840, 1064, and 277.
-BLIND_SPOTS = {"live-negated-xone-ignores-terms", "violated-u-owed-listed", "duty-roots-negated"}
 
 
 def mutated(name: str) -> Interpreter:
@@ -1747,20 +1744,6 @@ def first_kill(name: str, limit: int, at: int = 0) -> int | None:
     with contextlib.suppress(AssertionError, BaseExceptionGroup):
         (duty_run if name in DUTY_MUTANTS else rule_run)()
     return first
-
-
-@pytest.mark.parametrize(
-    "name",
-    [
-        pytest.param(
-            n, marks=pytest.mark.xfail(n in BLIND_SPOTS, reason="generator blind spot", strict=True)
-        )
-        for n in sorted(MUTANTS.keys() | DUTY_MUTANTS.keys())
-    ],
-)
-@pytest.mark.slow
-def test_generation_alone_exposes_mutant(name: str) -> None:
-    assert first_kill(name, STRENGTH_LIMIT) is not None
 
 
 def test_opaque_leaf_as_f_fails_open() -> None:

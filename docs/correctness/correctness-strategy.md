@@ -210,7 +210,7 @@ Requirements:
 - **Correlated by construction.** Reuse operands deliberately: identical parts, complement pairs, and one fact read both ways across rules. Mixed variables appear only when a generator aims for them.
 - **Structurally complete.** Nested `and`, `or`, `xone`, and `dprod:not`; shared duties; guarded duties; deadlines and recurrences; all three conflict strategies; `violations = deny`.
 - **Valid and invalid.** Each generator has a twin that produces near-miss invalid inputs — one rule left unnamed, an operand unbound, a cycle, a limit exceeded by one — with the expected rejection.
-- **Shared with the enumerator.** The bounded-exhaustive enumerator of §1.1 and the Hypothesis generators draw from one description of the input space, so the two cannot drift apart.
+- **Shared with the enumerator.** The bounded-exhaustive enumerator of §1.1 and the Hypothesis generators draw from one description of the input space, so the two cannot drift apart. Over clingo-i, that description is the space programs in `spikes/clingo-i/tests/space/` (`spikes/clingo-i/DESIGN.md` § Tests), and the spike's own Hypothesis generators are written separately; both run against one oracle and one list of shapes, so a shape that the generators, or the spaces at their slow bounds, stop reaching fails a test. The production evaluator's Hypothesis strategies must draw from the space programs.
 - **ASP-generated [D]** (`decisions/0009`). Coverage targets as choice rules plus constraints over the same facts the program consumes; `#minimize` yields the smallest witness — stronger than generate-and-filter. Generated vectors test other implementations, never the generator (§4.1).
 - **Measured.** Each run reports a histogram of which features it exercised, using the feature list behind the coverage-gap list in `conformance/README.md`. A feature with zero hits fails the run. This makes R9 visible rather than assumed.
 
@@ -264,10 +264,9 @@ Rows keep their numbers, because issues and other documents cite them. Each open
 
 | # | Decision | Section | Issue | Blocked on |
 |---|---|---|---|---|
-| 10 | Bounds for the exhaustive enumeration, per feature and per tier | §1.1 | #42 | Measurement, once the enumerator exists |
 | 11 | The prover for the formal model | §4.8 | #70 | A spike: Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4); the result is an amendment to that record |
 
-Rows 1–9 are resolved, each where its section states it:
+Rows 1–10 are resolved, each where its section states it:
 
 - **1.** Strategy before code is a standing rule (§1; `CLAUDE.md`).
 - **2.** Oracles implement definitions, and `I` completes unknowns by enumeration under a cap (§3). Slow `I` comes first and fast `I` (`due2-workflows.md` §6.4's computation) later, the two differentially tested. The vehicle is the clingo program, whose slow mode is answer-set enumeration under the variable cap (`decisions/0009`).
@@ -278,3 +277,4 @@ Rows 1–9 are resolved, each where its section states it:
 - **7.** The disagreement protocol is §6.
 - **8.** The critical features are atomization, evaluation, and case history, tested bounded-exhaustively, by generation, and differentially (§1.1).
 - **9.** The ledger data model is `due2-workflows.md` §7.1 (§4.7, `decisions/0008`).
+- **10.** The enumeration bounds are measured per input space and tier, not guessed (§1.1): the PR bound keeps README § Verify near a minute on ten cores, and the slow bound finishes in about ten minutes there. clingo-i's bounds, for evaluation, are in `spikes/clingo-i/DESIGN.md` § Tests (#42). W1's and the case history's follow the same rule.
