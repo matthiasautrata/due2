@@ -1,4 +1,4 @@
-"""The driver (DESIGN.md § Tests): the flatten loses nothing, depends on no order or label,
+"""The driver (TESTS.md): the flatten loses nothing, depends on no order or label,
 parses what the checkers parse, and refuses a malformed input."""
 
 from __future__ import annotations

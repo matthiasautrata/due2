@@ -1,4 +1,4 @@
-"""The brute-force differential (DESIGN.md § Tests, correctness-strategy.md §4.1).
+"""The brute-force differential (TESTS.md, correctness-strategy.md §4.1).
 
 Over generated policies of permissions and prohibitions, with an absent target or an unnamed
 assignee, a Python oracle enumerates every completion of the variables, flips each variable

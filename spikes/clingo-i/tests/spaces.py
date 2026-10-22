@@ -13,7 +13,7 @@ oracle, never from the space programs: they choose what is checked, not what is 
 symmetry constraint that removes too much, or too little, makes the two disagree.
 
 Each space has two bounds: the PR bound, which README § Verify runs, and the slow bound, which
-runs under `pytest -m slow` (DESIGN.md § Tests).
+runs under `pytest -m slow` (TESTS.md).
 """
 
 from __future__ import annotations

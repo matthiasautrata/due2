@@ -1,4 +1,4 @@
-"""What the corpus cannot see (DESIGN.md § Tests): integrity, declines, the explanation, and
+"""What the corpus cannot see (TESTS.md): integrity, declines, the explanation, and
 a few verdicts that the other tests rely on."""
 
 from __future__ import annotations

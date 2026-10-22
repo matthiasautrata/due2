@@ -194,6 +194,7 @@ ANCHORED = re.compile(
 )
 DOCUMENTED = [
     "DESIGN.md",
+    "TESTS.md",
     "main.py",
     *(f"lp/{n}" for n in PROGRAM_FILES),
     *(str(p.relative_to(ROOT)) for p in sorted((ROOT / "clingo_i").glob("*.py"))),

@@ -1,7 +1,7 @@
 %# integrity.lp: the constraints that make a gap an error
 %
 % The integrity constraints over every earlier file. They are why a deleted rule fails loudly
-% (DESIGN.md § Tests): without its rule, some item has no value, some read no outcome, or some
+% (TESTS.md): without its rule, some item has no value, some read no outcome, or some
 % world no verdict, so the solve has no model and the reply is an `error`, never a verdict.
 % Solve 1 does not load this file: its declines and rejections name what is wrong, where a
 % failed constraint would only say that something is. Variable letters: DESIGN.md § Vocabulary.

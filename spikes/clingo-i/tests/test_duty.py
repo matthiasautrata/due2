@@ -1,4 +1,4 @@
-"""Duty atoms, the guard/witness split, the duty findings, and W3 over them (DESIGN.md § Tests).
+"""Duty atoms, the guard/witness split, the duty findings, and W3 over them (TESTS.md).
 
 The atoms and the split are read from solve 1's model, which `rows` grounds directly; the
 findings and statuses from one model of solve 2's files, integrity constraints included,

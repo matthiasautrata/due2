@@ -1,4 +1,4 @@
-"""The bounded-exhaustive spaces in the brute-force differentials (#44, DESIGN.md § Tests).
+"""The bounded-exhaustive spaces in the brute-force differentials (#44, TESTS.md).
 
 The differentials of test_brute_force.py check generated draws: many inputs, but each shape
 reached only by chance. These tests check every input of each space in tests/spaces.py, smallest
@@ -157,7 +157,7 @@ def test_spaces_alone_expose_mutant(name: str) -> None:
     pytest.fail(f"no {tier} input of {space} exposes {name}")
 
 
-# DESIGN.md § Tests, the bounded-exhaustive spaces: the smallest input of xone at its slow
+# TESTS.md, the bounded-exhaustive spaces: the smallest input of xone at its slow
 # bound that exposes live-negated-xone-ignores-terms, as clingo shows it and as a Case.
 WITNESS_ATOMS = (
     "slot(1,r(prohibition,node(or,neg(node(xone,l(0,eq),node(and,l(0,neq),l(1,eq)))),l(0,eq))))"
@@ -293,7 +293,7 @@ def test_pr_spaces_hold_by_cases(interpreter: Interpreter, duty_interpreter: Int
 
 
 def test_waiver_worked_example(duty_interpreter: Interpreter) -> None:
-    """DESIGN.md § Tests, claim W: input 94 of `obligation` at the PR bound denies by cases.
+    """TESTS.md, claim W: input 94 of `obligation` at the PR bound denies by cases.
     The prohibition applies when `o0 eq` holds; otherwise the obligation's guard `o0 neq` holds
     and the obligation is violated. No atom denies in every completion, so the basis names the
     obligation with status `unknown`, and `o0` is listed `unresolved`."""

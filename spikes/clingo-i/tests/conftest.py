@@ -1,4 +1,4 @@
-"""Inline modules and vectors for the spike's own tests (DESIGN.md § Tests).
+"""Inline modules and vectors for the spike's own tests (TESTS.md).
 
 The modules are a small stand-in for the shipped profiles: an action hierarchy in the
 core, and one profile with a policy subclass and a conflict default.
