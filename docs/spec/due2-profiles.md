@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.14
+**Status:** Draft v0.15
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.14** (2026-10-22, `decisions/0022`, #100): §5 rejects a logical constraint whose list names a node twice, and an `odrl:xone` with two members, neither a logical constraint, of the same content. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.15** (2026-10-22, #83): a length pass. Dates leave the reference text; §1 and §9 #7 state DPROD's provisional status once, in §8; §4's sentence on warnings is shorter; §7 cites exception 6 instead of restating it; §8.2 cites EKGF/dprod#285 for the gaps reported upstream. No semantics change. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -15,7 +15,7 @@ ODRL is extended through profiles. due2 must evaluate a profile's terms **withou
 
 Two sources are harvested rather than reinvented:
 
-- **DPROD Contracts** (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`, commit `50db943`) — an ODRL 2.2 profile for data contracts with deterministic evaluation. Its operand bindings are adopted verbatim, so a DPROD policy is a due2 policy without translation (§8). The commit is pinned, and a stack of upstream PRs is pending: everything due2 adopts from DPROD is provisional against it, and deferred for adjustment when they land (§8, §9 #7, issue #35). Its formal semantics, `dprod-contracts/docs/formal-semantics.md` at that commit, is cited below as `formal-semantics.md`; it is not vendored.
+- **DPROD Contracts** (EKGF, `github.com/EKGF/dprod`, branch `develop`, `dprod-contracts/`, commit `50db943`) — an ODRL 2.2 profile for data contracts with deterministic evaluation. Its operand bindings are adopted verbatim, so a DPROD policy is a due2 policy without translation (§8). Everything due2 adopts from DPROD is provisional against that commit (§8). Its formal semantics, `dprod-contracts/docs/formal-semantics.md` at that commit, is cited below as `formal-semantics.md`; it is not vendored.
 - **RL2** (`github.com/matthiasautrata/RL2`) — typed operands, fact resolution, admissibility and freshness, typed profile operators, duty windows. Its documents are cited by path, such as RL2's `spec/RL2_Model.md`.
 
 ODRL's two W3C Recommendations are cited as the IM (the ODRL Information Model 2.2) and the Vocabulary (the ODRL Vocabulary & Expression 2.2).
@@ -130,7 +130,7 @@ A closed, typed core registry. An operand that does not fit an operator's signat
 
 **`isAllOf` covers, it need not equal [D].** The published semantics read `isAllOf` as set equality (Bonatti, Fornara and Harth: =; Salas and Pareti et al.: ≡) or as lying below every right value (Mustafa et al.). due2 keeps left ⊇ right (`decisions/0005`, issue #33). The Vocabulary's "a given value is all of the right operand" says the left has every listed value, not that it has nothing else, and a policy author who lists required purposes or certifications does not mean to exclude the rest. Where the left holds values beyond the list, due2 and OVAL give different answers; no warning is raised, because this is due2's reading of the definition, not a choice among equally supported ones.
 
-Because the reading is adopted, not given by ODRL, normalisation accepts a list right operand or a set-valued left operand on these three operators with the warning `ContestedOperatorReading`, naming the operator and the reading applied. A warning is a diagnostic that does not reject; the corpus carries it (`due2-workflows.md` §3.1 `diagnostic`) into the trace of every case that evaluates the policy (§3.5 there). Every diagnostic code, error or warning, is registered in `due2-diagnostics.md`.
+Because the reading is adopted, not given by ODRL, normalisation accepts a list right operand or a set-valued left operand on these three operators with the warning `ContestedOperatorReading`, naming the operator and the reading applied. A warning does not reject: the corpus carries it (`due2-workflows.md` §3.1 `diagnostic`) into the trace of every case that evaluates the policy (§3.5 there). `due2-diagnostics.md` registers every code.
 
 **A list or repeated values [D].** A set right operand may be written as one RDF list, `odrl:rightOperand ( ex:a ex:b )`, or as repeated values, `odrl:rightOperand ex:a, ex:b`. The repeated form is what the ODRL JSON-LD context makes of a JSON array, since it does not declare `rightOperand` an `@list`. On the six set-based operators both forms are one right operand, the set of the values, with no warning: no operator in the table above depends on order or repeats. Normalisation rejects four forms with `MalformedConstraint`: more than one value on an operator that is not set-based; a list together with any other value; two or more lists; and the empty list `()`, which ODRL gives no meaning and which would make the constraint's value independent of the request (`decisions/0013` and its amendment).
 
@@ -203,7 +203,7 @@ A duty's timing lands in the corpus (`due2-workflows.md` §3.1, `duty`), project
 - **A violated precondition removes its candidate** (`due2-workflows.md` §6.1): W3 does not offer a route that can no longer be taken. Without a deadline, a duty is never violated.
 - **Occurrences are bounded by `effective_at`.** DPROD's `expand` is unbounded as written, and its `performed` check has no lower bound, so one performance fulfils every later instance there (§8.2). due2 generates only instances already owed; reporting future ones is the not-yet-owed question (§9).
 
-**Violations and access [D].** DPROD denies a request when a duty matched to it is violated (`formal-semantics.md` §7.2, step 6). due2 makes this configuration, not profile semantics: `config.violations ∈ {ignore, deny}`, default `ignore`. Under `ignore`, duties gate access only as preconditions, and obligations in force are reported. Under `deny`, an obligation in force that is violated denies the request (`due2-workflows.md` §6.4). Selecting the DPROD profile does not switch it on; a DPROD-aligned deployment sets `violations = deny` — aligned, not identical: exception 6 (§8.2) diverges in the six `dprod-*` scenarios where DPROD never collects the duty, such as `dprod-hr-data-access` scenario 6. due2's "in force" — the obligation's policy matches the request — replaces DPROD's "the duty's own action matches the request", which rarely holds (§8.2).
+**Violations and access [D].** DPROD denies a request when a duty matched to it is violated (`formal-semantics.md` §7.2, step 6). due2 makes this configuration, not profile semantics: `config.violations ∈ {ignore, deny}`, default `ignore`. Under `ignore`, duties gate access only as preconditions, and obligations in force are reported. Under `deny`, an obligation in force that is violated denies the request (`due2-workflows.md` §6.4). Selecting the DPROD profile does not switch it on. A DPROD-aligned deployment sets `violations = deny`, and still differs where DPROD never collects the duty, such as `dprod-hr-data-access` scenario 6 (exception 6, §8.2).
 
 **Not adopted.** RL2's Maintain duties (invariants that must hold over a window) and Promises. Neither has an ODRL encoding, and no policy in the corpus needs them (§9 #4).
 
@@ -211,7 +211,7 @@ A duty's timing lands in the corpus (`due2-workflows.md` §3.1, `duty`), project
 
 ## 8. DPROD Contracts compatibility **[D]**
 
-**Provisional against upstream [F]** (2026-10-16, issue #35). DPROD is vendored at commit `50db943` of `develop`, and a stack of upstream PRs (EKGF/dprod#275, PRs #264–#282) may still move the ontology — schedules, operand sources, duty-action refinements, offer applicability. Everything due2 adopts from DPROD — the binding vocabulary (§3), `dprod:not` (§5), roles and timing (§6–§7), the term table and the six exceptions below — is decided *as of that commit* and is deferred for adjustment when the stack lands: re-vendor, re-run both checkers, re-derive the `dprod-*` scenarios, and edit the affected rows. due2's own semantics — the Kleene discipline, the fail-safe reading — is not in scope for adjustment; only the adopted terms and the claims about DPROD's behaviour are.
+**Provisional against upstream [F]** (#35). DPROD is vendored at commit `50db943` of `develop`, and a stack of upstream PRs (EKGF/dprod#275, PRs #264–#282) may still move the ontology — schedules, operand sources, duty-action refinements, offer applicability. Everything due2 adopts from DPROD — the binding vocabulary (§3), `dprod:not` (§5), roles and timing (§6–§7), the term table and the six exceptions below — is decided *as of that commit* and is deferred for adjustment when the stack lands: re-vendor, re-run both checkers, re-derive the `dprod-*` scenarios, and edit the affected rows. due2's own semantics — the Kleene discipline, the fail-safe reading — is not in scope for adjustment; only the adopted terms and the claims about DPROD's behaviour are.
 
 ### 8.1 Term by term
 
@@ -237,7 +237,7 @@ With `profiles/dprod.ttl` selected:
 | ODRL action hierarchy (`odrl:read` ⊑ `odrl:use`) | `profiles/odrl-actions.ttl`, which DPROD's examples assume |
 | `Policy.condition` (`formal-semantics.md` §3.4) | no RDF encoding in DPROD, so nothing to map (§8.2) |
 | `odrl:Request` as a policy | rejected — so does DPROD |
-| `odrl:source` on a collection, without a refinement | admitted, inert: an annotation naming the collection; membership comes from closure edges as for any collection (§6). DPROD rejects it; FORCE's collection cases use it (2026-10-11) |
+| `odrl:source` on a collection, without a refinement | admitted, inert: an annotation naming the collection; membership comes from closure edges as for any collection (§6). DPROD rejects it; FORCE's collection cases use it |
 | collection `odrl:refinement` (with or without `odrl:source`) | rejected — so does DPROD. Open: issue #21. Whoever assembles the policy can supply a refined membership as closure edges instead (§6) |
 
 `odrl-compound-to-atomic-normalization.md` makes DPROD's examples admissible: policies may be typed by a profile subclass (§6); an absent `odrl:conflict` takes the selected profile's declared default before falling back to `invalid`; anonymous rules are admitted; and policy-level values fill only what a rule leaves unstated. With `profiles/dprod.ttl` and `profiles/odrl-actions.ttl` selected, every DPROD example passes `tools/check_corpus.py` unchanged.
@@ -259,7 +259,7 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 5. **Policy-level target.** DPROD treats the policy target as an applicability gate *and* lets a rule's own target override it (`formal-semantics.md` §7.3, §7.4). due2 reads it only as a default. A rule whose target differs from the policy's is unreachable in DPROD and applies in due2 (`dprod-multi-asset-offer`).
 6. **Violated duties.** DPROD collects a duty only when the duty's own action matches the request, and denies for a violation only after a permission is active (`formal-semantics.md` §7.2, steps 1 and 6). due2 reports obligations *in force* — their policy matches the request — and, under `violations = deny`, treats a violated one as a prohibition, which keeps the verdict monotone (`due2-workflows.md` §6.4). Under `ignore`, due2 never denies for a violation, where DPROD does. The two agree whenever no duty is violated (`dprod-hr-data-access` scenario 7).
 
-**Gaps found in DPROD, worth reporting upstream** — bare section numbers below are `dprod-contracts/docs/formal-semantics.md`:
+**Gaps found in DPROD, worth reporting upstream.** Determinism, order sensitivity, and incomparable operands are reported as EKGF/dprod#285. Bare section numbers below refer to `dprod-contracts/docs/formal-semantics.md`.
 
 - Matching direction. §7.4 writes `norm.action matches Env.action` and `norm.asset matches Env.asset`, the reverse of §7.3 and of the authoring guide. Read literally, a prohibition on `odrl:use` never matches a `read`.
 - Determinism. Step 4 asks whether some prohibition is active, over an unordered set, and fails on the first error. When one prohibition holds and another errors, the outcome depends on order, contradicting the determinism theorem (§9.2).
@@ -281,6 +281,6 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 | 2 | Duty windows beyond `effective_at`: whether not-yet-owed instances are generated and reported, under what horizon; and the state of an obligation in force whose window has not opened, which is reported `outstanding` | §7 | A real duty with a future window | #18 |
 | 3 | Bearer default for policy-level obligations without a bearer | §6 | Survey of real obligations | #19 |
 | 4 | Maintain duties and Promises | §7 | A real policy that needs one | #20 |
-| 7 | DPROD upstream stabilisation: every DPROD-derived adoption (§3, §5–§7, §8) is provisional against vendored commit `50db943` | §8 | Upstream PRs landing (EKGF/dprod#275, PRs #264–#282); then re-vendor, re-run both checkers, and re-derive the `dprod-*` scenarios | #35 |
+| 7 | DPROD upstream stabilisation: re-vendoring past commit `50db943` | §8 | Upstream PRs landing (EKGF/dprod#275, PRs #264–#282) | #35 |
 
-Rows 5 and 6 are closed. Row 5, a not-yet-owed state for an obligation in force whose window has not opened, is merged into row 2. Row 6, witness conditions via duty-action refinements, is resolved (2026-10-11): `due2-core` binds `odrl:payAmount` to `due2:witnessSource` (§3), and request and evidence parameters stay separate collections. The evidence is OVAL `duty1-3` and the W3C CG examples C1 and C2, translated as `oval-duty-payment`, `w3c-fs-c1`, and `w3c-fs-c2`, with `due2-conditional-duties`.
+Rows 5 and 6 are closed. Row 5, a not-yet-owed state for an obligation in force whose window has not opened, is merged into row 2. Row 6, witness conditions via duty-action refinements, is resolved: `due2-core` binds `odrl:payAmount` to `due2:witnessSource` (§3), and request and evidence parameters stay separate collections. The evidence is OVAL `duty1-3` and the W3C CG examples C1 and C2, translated as `oval-duty-payment`, `w3c-fs-c1`, and `w3c-fs-c2`, with `due2-conditional-duties`.

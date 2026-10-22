@@ -57,6 +57,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.14** (2026-10-22, `decisions/0022`, #100): §5 rejects a logical constraint whose list names a node twice, and an `odrl:xone` with two members, neither a logical constraint, of the same content. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.13** (2026-10-20, #83): a cold read. §1 says where `formal-semantics.md`, RL2's documents, the IM, and the Vocabulary are; cross-document references name their document, the §2 table's included; history markers leave the reference text, and §3's account of an earlier draft becomes the reason for the present rule; §7 states the timing rejections the registry cites, and names a case where exception 6 diverges; §8.1 says which property `dprod:currentAgent` reads; §8.1's collection-refinement row drops the MDS mapper, a separate project; §9 lists the open rows with their issues and states rows 5 and 6 as closed, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.12** (2026-10-17, `decisions/0017`, #74): §5 rejects a logical constraint over the empty list.
