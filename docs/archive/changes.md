@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.30** (2026-10-20, #83): a cold read. Cross-document references name their document; history markers leave the reference text; §6.4 cites `tools/check_completion.py` for the two-extremes check in place of an unrecorded one; §9 lists the open rows with their issues and states rows 1 and 8 as resolved, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.29** (2026-10-19, #81): §3.5 says which `U` leaves of a nested constraint `unknown_part` names: those that some `T` or `U` atom reads, which follows from atoms being the disjuncts of the constraint DNF; nothing else changes.
 
 **Changes in v0.28** (2026-10-18, `decisions/0018`, #49): §5.3 says that each member bears a duty whose bearer is a party collection, so the witness's actor is the request subject when the subject is a member; §6's opening says that the one duty finding W3 reads before conflict is a violated precondition, which closes its route (§6.1).
