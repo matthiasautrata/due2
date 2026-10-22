@@ -20,6 +20,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.11** (2026-10-20, #83): a cold read. Cross-document references name their document; status markers and struck-through items leave §3, §4.2, §4.5, §4.7, §7, and §8; §3 restates why `I` running the corpus checks R5; §9 lists the open rows with their issues and states rows 1–9 below the table, keeping the row numbers. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.10** (2026-10-19, `decisions/0021`): §4.8, the formal model, states the claims M, K, F, W, and P, with their evidence and instruments; the formal model replaces the Dafny `Den` in §1.1, §3, §4.2, and §7; §8 builds the enumerator first and adds the formal model as step 6; §9 #11.
 
 **Changes in v0.9** (2026-10-17, `decisions/0016`): §4.3's properties pair only completed parts; an opaque part is a variable of its own.

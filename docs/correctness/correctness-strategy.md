@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.11 (2026-10-20). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.12 (2026-10-22). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.11** (2026-10-20, #83): a cold read. Cross-document references name their document; status markers and struck-through items leave §3, §4.2, §4.5, §4.7, §7, and §8; §3 restates why `I` running the corpus checks R5; §9 lists the open rows with their issues and states rows 1–9 below the table, keeping the row numbers. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.12** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4.1 drops the history of the clingo audit; §4.5 and §9 state `check_completion.py`'s coverage once; §4.8's R9 risk points at claim W; §8 step 1 no longer names row 10; §9 rows 2, 3, 5, and 10 cite their sections instead of restating them, and row 10 cites clingo-i's measured bounds instead of copying them. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -16,7 +16,7 @@ The pieces of a testing approach are already in the repository, but they are spr
 
 ---
 
-## 1. The rule: strategy before code **[D]** (2026-10-11)
+## 1. The rule: strategy before code **[D]**
 
 No component gets implementation code until its entry in §4 states:
 
@@ -29,7 +29,7 @@ No component gets implementation code until its entry in §4 states:
 
 An entry can be short. It still has to exist and be reviewed before code. Writing the oracle and the properties first is also the cheapest spec review there is: each ambiguity they surface is a spec edit, not a bug fix later.
 
-### 1.1 Critical features **[D]** (2026-10-11)
+### 1.1 Critical features **[D]**
 
 Three features carry the weight of the system, and each gets the strongest treatment below: **bounded-exhaustive**, **generated**, and **differential** testing together, not one of them.
 
@@ -92,7 +92,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 | `tools/check_completion.py` | `due2-workflows.md` §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]** |
 | Laws L1–L10, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
-**Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** (2026-10-11) Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
+**Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
 - `I` is the clingo semantics program (`decisions/0009`); it has two modes over one program, differing only in how they complete unknowns.
   - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of `due2-workflows.md` §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals it declines rather than falling back. The cap is 64, set by measurement in clingo-i (#48): at 64 variables the slowest measured shape, an `and` of tautologies (`x eq i or x neq i`), takes about 1.1 s, and at 128 about 7 s; the corpus needs at most 3. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
@@ -111,9 +111,9 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 ### 4.1 The semantics program: clingo over flattened ODRL (issue #9)
 
 - **Risks.** R4 and R5, surfaced. R2 in its own Kleene evaluation. R9 when it generates its own vectors.
-- **Encoding obligations** (`decisions/0009`): `U` is data — fact statuses, deadline comparisons, and witness timeliness arrive as facts; every part carries exactly one of `t/f/u`, enforced by an integrity constraint; Kleene connectives are min/max over `f < u < t`; no negation-as-failure anywhere a status can be unknown; the evaluation layer is stratified Datalog, with choice rules only in the completion and the generator. The 2026-10-10 audit encoding failed all of these.
+- **Encoding obligations** (`decisions/0009`): `U` is data — fact statuses, deadline comparisons, and witness timeliness arrive as facts; every part carries exactly one of `t/f/u`, enforced by an integrity constraint; Kleene connectives are min/max over `f < u < t`; no negation-as-failure anywhere a status can be unknown; the evaluation layer is stratified Datalog, with choice rules only in the completion and the generator.
 - **Oracles for the program.** The corpus's positive cases, with disagreements triaged per §6 — its verdicts, and its `verdict_basis` and `eliminated` where a scenario asserts them (`due2-workflows.md` §3.7, #57, #59); the external suites' own answers. For an `Indeterminate`, the corpus asserts little, so the pivotal `unknown` atoms and the `verdict_range` (`decisions/0011`) are checked by a brute-force differential: a Hypothesis test that enumerates the completions in Python, flips each literal alone, and compares the result with the program's. It reads the generated rules, not the driver's facts, and shares only the spec's literal key (`due2-workflows.md` §6.4) with the program (`spikes/clingo-i/tests/test_brute_force.py`). Its own laws: L4 and L5 on generated inputs; the status matrix and Kleene tables as ASP facts, with the one-value integrity constraint making a forgotten rule a loud failure.
-- **Driver.** **[D]** (2026-10-16, `decisions/0009`) The Python driver parses the Turtle and makes a purely syntactic flatten of the authored graph to facts — no lifting, no expansion, no DNF, which are the program's rules — and ranks compared values (32-bit integers; `decisions/0009` #4). It is not an evaluator. Because L9 cannot see a driver bug, it is tested on its own: round trip (facts back to a graph isomorphic to the input), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts, over the corpus, the vendored policies, and the external suites. Agreement is checked as follows: the driver parses the same files the checkers parse; it flattens and places every file that parses, which is a superset of what either checker accepts; and no file the checkers admit holds a literal the driver cannot place (`spikes/clingo-i/TESTS.md`, #46). The driver reads lexical forms as written. The checkers read rdflib's normalised forms, which are lossy, so register #3's shared reader is shared up to that setting.
+- **Driver.** **[D]** (`decisions/0009`) The Python driver parses the Turtle and makes a purely syntactic flatten of the authored graph to facts — no lifting, no expansion, no DNF, which are the program's rules — and ranks compared values (32-bit integers; `decisions/0009` #4). It is not an evaluator. Because L9 cannot see a driver bug, it is tested on its own: round trip (facts back to a graph isomorphic to the input), invariance under triple order and blank-node labels, and agreement with `tools/check_corpus.py` and `tools/check_odrl22.py` on what it accepts, over the corpus, the vendored policies, and the external suites. Agreement is checked as follows: the driver parses the same files the checkers parse; it flattens and places every file that parses, which is a superset of what either checker accepts; and no file the checkers admit holds a literal the driver cannot place (`spikes/clingo-i/TESTS.md`, #46). The driver reads lexical forms as written. The checkers read rdflib's normalised forms, which are lossy, so register #3's shared reader is shared up to that setting.
 - **Golden vectors.** The corpus. Occurrence-dependent scenarios (8 cases use recurrence) report `unsupported: recurrence` loudly, not as passes; every other scenario is runnable.
 - **Generators.** Coverage targets as choice rules plus constraints, `#minimize` for the smallest witness (§5). Self-generated vectors test other implementations, never the program itself.
 - **Done.** Every runnable scenario agrees, or each disagreement has a triage record (§6) that landed as a commit to the case, the spec, or the program.
@@ -146,7 +146,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 - **Risks.** R3, R7.
 - **Oracles.** A brute-force W3 over every completion of the actual findings (§3), capped by variable count. `I` end to end.
 - **Properties.** L4–L7. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`). For an `Indeterminate` (`decisions/0011`): the `unknown` atoms are exactly those with a pivotal literal, and `verdict_range` equals the least and greatest completion verdict, wherever `exact` is true; past the bound, every `U` atom is named and the range contains brute force's.
-- **Abstract model extended.** **[D]** `check_completion.py` models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` is left to the brute-force W3 differential. Nested constraints are left to the brute-force W3 differential and slow `I`.
+- **Abstract model extended.** **[D]** `check_completion.py` models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` and nested constraints are left to the brute-force W3 differential, and nested constraints to slow `I` as well.
 - **Done.** The differential against brute-force W3 is clean on both profiles; the corpus passes, including `frontier`, `verdict_basis` and `verdict_range`.
 
 ### 4.6 Trace and replay
@@ -178,8 +178,8 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 
 The formal model is a small, executable model of due2's semantics, written in a prover. Proofs establish the claims below about it, and a differential compares it with clingo-i and with W1–W3 as each is built. It is an oracle, never a production evaluator, and no code is extracted from it. Claims M, K, F, and W go to the prover; P is a question the spec answers. Which prover is chosen by a spike on claim M, Lean 4 first (§9 #11).
 
-- **Risks.** R3 and R4 above all: each claim below is an argument that a definite verdict is right, and a flaw in one makes a definite verdict wrong. R1 through `Den`, once `Den` moves into the model (#8). R9 in the bounded-exhaustive search, which proves nothing about a shape it never reaches (the first search for W's shape, #77, was such a case).
-- **Claims.** Each is a sentence of the spec, or a question one of its records leaves open. Every claim gets a small Alloy 6 model of its own first, and M and W also get the bounded-exhaustive search over clingo-i (`decisions/0021`, amendment of 2026-10-22). A claim goes to the prover only after these have run at stated bounds without a counterexample.
+- **Risks.** R3 and R4 above all: each claim below is an argument that a definite verdict is right, and a flaw in one makes a definite verdict wrong. R1 through `Den`, once `Den` moves into the model (#8). R9 in the bounded-exhaustive search, which proves nothing about a shape it never reaches (claim W, below).
+- **Claims.** Each is a sentence of the spec, or a question one of its records leaves open. Every claim gets a small Alloy 6 model of its own first, and M and W also get the bounded-exhaustive search over clingo-i (`decisions/0021`, the amendment on the search over clingo-i). A claim goes to the prover only after these have run at stated bounds without a counterexample.
 
   | Claim | Statement and source | Evidence |
   |---|---|---|
@@ -200,7 +200,7 @@ The formal model is a small, executable model of due2's semantics, written in a 
 
 ---
 
-## 5. Generators **[O]** (coverage check **[D]**, 2026-10-11)
+## 5. Generators **[O]** (coverage check **[D]**)
 
 The Hypothesis strategies for policies, requests, and SOTWs are shared by every component in §4. They are a first-class artefact and get reviewed like spec text, because a blind spot in them (R9) silently weakens every property at once.
 
@@ -216,7 +216,7 @@ Requirements:
 
 ---
 
-## 6. When sources disagree **[D]** (2026-10-11)
+## 6. When sources disagree **[D]**
 
 A disagreement between the corpus and `I`, between `I` and the pipeline, or between an origin's answer and due2's is a finding about the spec until shown otherwise.
 
@@ -244,7 +244,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 ## 8. Sequence
 
-1. The open items of §9. Row 10 is set by measurement at step 5, and row 11 by the prover spike at step 6.
+1. The open items of §9. Row 11 is settled by the prover spike at step 6.
 2. The case-format extension for negative cases (`expected_rejection`, §4.2).
 3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
 4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (`due2-workflows.md` §6.4's computation) follows, differentially against enumeration.
@@ -269,12 +269,12 @@ Rows keep their numbers, because issues and other documents cite them. Each open
 Rows 1–10 are resolved, each where its section states it:
 
 - **1.** Strategy before code is a standing rule (§1; `CLAUDE.md`).
-- **2.** Oracles implement definitions, and `I` completes unknowns by enumeration under a cap (§3). Slow `I` comes first and fast `I` (`due2-workflows.md` §6.4's computation) later, the two differentially tested. The vehicle is the clingo program, whose slow mode is answer-set enumeration under the variable cap (`decisions/0009`).
-- **3.** `I` and W1 share only the Turtle reading (§4.1, `decisions/0009`). The driver's flatten is syntactic, the lifting is the program's, and the driver is tested on its own.
+- **2.** Oracles implement definitions; `I` is the clingo program, slow mode first, then fast mode, the two differentially tested (§3, `decisions/0009`).
+- **3.** `I` and W1 share only the Turtle reading, and the driver is tested on its own (§4.1, `decisions/0009`).
 - **4.** Negative cases are `expected_rejection` with codes from the diagnostic registry (§4.2, `due2-diagnostics.md`).
-- **5.** `check_completion.py` covers `violations = deny` and `frontier_complete` (§4.5). Multi-policy conflict under `invalid` is left to the brute-force W3 differential, and nested constraints to it and slow `I`.
+- **5.** `check_completion.py` covers `violations = deny` and `frontier_complete`, and leaves multi-policy conflict under `invalid` and nested constraints to the brute-force W3 differential, the latter also to slow `I` (§4.5).
 - **6.** The generator coverage histogram is a failing check (§5).
 - **7.** The disagreement protocol is §6.
 - **8.** The critical features are atomization, evaluation, and case history, tested bounded-exhaustively, by generation, and differentially (§1.1).
 - **9.** The ledger data model is `due2-workflows.md` §7.1 (§4.7, `decisions/0008`).
-- **10.** The enumeration bounds are measured per input space and tier, not guessed (§1.1): the PR bound keeps README § Verify near a minute on ten cores, and the slow bound finishes in about ten minutes there. clingo-i's bounds, for evaluation, are in `spikes/clingo-i/TESTS.md` (#42). W1's and the case history's follow the same rule.
+- **10.** The enumeration bounds are measured per input space and tier, not guessed (§1.1). clingo-i's bounds, for evaluation, and their timings are in `spikes/clingo-i/TESTS.md` (#42); W1's and the case history's follow the same rule.
