@@ -41,6 +41,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `ways-of-working.md`
 
+**Changes in v0.6** (2026-10-20, #83): a cold read. §4 no longer calls its tool undecided; §2.2 names the diagnostics document; §10.2, §10.3, §11, §12, and §14.3 lose their status and history markers; §13 lists the open rows with their issues and states the resolved rows below the table, row 12 as `decisions/0009` and `decisions/0021` leave it; §15 states its reason without the history. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.5, 2026-10-19** (`decisions/0021`): §9 follows Cedar's pattern, an executable model, proofs, and differential testing, in place of Dafny extraction; §6, §10, §11, and §12 drop their Dafny mentions.
 
 **Changes in v0.4, 2026-10-17:** new §15 — documentation: the cold reader, kinds of text (status kept out of reference), vocabulary, interfaces, worked examples, arguments with their steps, cross-references that name their document, code comments (PEP 257 for Python; clindocs blocks for ASP), and the checks that enforce them: the generated reference (mkdocstrings and clindocs, provisional) and clingo-i's doc tests. §14.1 step 2 cites it.

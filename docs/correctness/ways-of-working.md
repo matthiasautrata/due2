@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.6 (2026-10-20)
+**Status:** Draft v0.7 (2026-10-22)
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.6** (2026-10-20, #83): a cold read. §4 no longer calls its tool undecided; §2.2 names the diagnostics document; §10.2, §10.3, §11, §12, and §14.3 lose their status and history markers; §13 lists the open rows with their issues and states the resolved rows below the table, row 12 as `decisions/0009` and `decisions/0021` leave it; §15 states its reason without the history. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.7** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4 drops a recommendation its pick overrides; §7.1 and §11 lose history; §13 states the resolved rows more briefly. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -51,7 +51,7 @@ The single highest-leverage convention. Effects live at the edges; the middle is
 - Default arguments are never mutable containers.
 - For genuinely shared structures where copying is too expensive, use a persistent-structure library rather than reintroducing mutation. **[O]** — candidates: `immutables` (HAMT, small, CPython-adjacent) vs `pyrsistent` (broader API, heavier). Decide when we hit the first real case; do not adopt speculatively.
 
-### 2.2 Error handling **[D]** (2026-10-11, provisional, §13)
+### 2.2 Error handling **[D]** (provisional, §13)
 
 Failures come in three kinds, and each is handled one way only.
 
@@ -113,11 +113,9 @@ Strict mode is non-negotiable. The candidates compare as follows, and the pick i
 | mypy | ~58% | slow | Mature plugin ecosystem; 2.0 added parallel checking |
 | ty (Astral) | ~53% | fastest | Alpha. Unimplemented and clean look identical in CI — unsafe as a gate |
 
-**Recommendation:** a fast checker in the editor, a high-conformance checker as the CI gate. They need not be the same tool.
+**[D]** (provisional) **basedpyright in strict mode**, in the editor and as the gate. One tool means the editor and CI never disagree. Pyrefly can join the editor later if speed matters. Revisit if the code moves to an environment that approves a different checker (§13).
 
-**[D]** (2026-10-11, provisional) **basedpyright in strict mode**, in the editor and as the gate. One tool means the editor and CI never disagree. Pyrefly can join the editor later if speed matters. Revisit if the code moves to an environment that approves a different checker (§13).
-
-Adoption on existing code: enable one strict flag per sprint rather than a big-bang migration. New modules start strict.
+Adoption on code written before strict checking: enable one strict flag per sprint rather than a big-bang migration. New modules start strict.
 
 ---
 
@@ -125,7 +123,7 @@ Adoption on existing code: enable one strict flag per sprint rather than a big-b
 
 All external input — HTTP, files, queues, database rows, config — is parsed into a typed domain object at the boundary. Past that point, types are trusted and **not re-validated**. Defensive re-checking inside the core is redundancy, and redundancy hides which layer owns the invariant.
 
-**[D]** (2026-10-11, provisional) **msgspec**, for the JSON boundary: requests, state of the world, case files. It decodes straight into the frozen dataclasses of §2, so the domain model does not depend on it. RDF has its own adapter (§2.4). The alternatives considered:
+**[D]** (provisional) **msgspec**, for the JSON boundary: requests, state of the world, case files. It decodes straight into the frozen dataclasses of §2, so the domain model does not depend on it. RDF has its own adapter (§2.4). The alternatives considered:
 
 - **msgspec** — fastest, strict by default. Best fit for wire formats and high-volume paths.
 - **pydantic v2** — richest constraint vocabulary. `Annotated[int, Field(ge=0)]` gives crude refinement types at the edge. Heavier; couples domain models to the library.
@@ -133,7 +131,7 @@ All external input — HTTP, files, queues, database rows, config — is parsed 
 
 Selection criterion: if the domain model should stay library-agnostic, attrs+cattrs. If throughput dominates, msgspec. If constraint expressiveness dominates, pydantic.
 
-**Runtime enforcement:** `beartype` via import hook enforces existing annotations at near-constant cost. **[D]** (2026-10-11, provisional) Test environments only: on in unit, integration, and system tests, optional in UAT, never in production.
+**Runtime enforcement:** `beartype` via import hook enforces existing annotations at near-constant cost. **[D]** (provisional) Test environments only: on in unit, integration, and system tests, optional in UAT, never in production.
 
 ### 5.1 Absent, unknown, and false **[D]**
 
@@ -155,7 +153,7 @@ Every runtime we might generate into collapses unknown into false by default: SQ
 
 Design-by-contract is a first-class part of this discipline, not an optional extra. Contracts are the specification; tests are samples of it.
 
-**Tool:** **[D]** (2026-10-11, provisional) `icontract` — `@require`, `@ensure` (with old-value capture), `@invariant`. The first module to use it is the Kleene truth tables, as the trial. `deal` was the alternative; it bundles a linter and a Z3-backed solver for simple functions, but `icontract` has the stronger ecosystem (`icontract-hypothesis`, CrossHair integration, `pyicontract-lint`).
+**Tool:** **[D]** (provisional) `icontract` — `@require`, `@ensure` (with old-value capture), `@invariant`. The first module to use it is the Kleene truth tables, as the trial. `deal` was the alternative; it bundles a linter and a Z3-backed solver for simple functions, but `icontract` has the stronger ecosystem (`icontract-hypothesis`, CrossHair integration, `pyicontract-lint`).
 
 **What to contract:**
 
@@ -165,7 +163,7 @@ Design-by-contract is a first-class part of this discipline, not an optional ext
 
 **Why contracts earn their place here:** they are the connective tissue between layers. `icontract-hypothesis` derives property-test strategies directly from preconditions, so a contract generates tests for free. CrossHair reads the same contracts and attempts to refute them symbolically. One artefact, three consumers: the runtime check, the test generator, and the symbolic refuter.
 
-**Runtime cost:** contracts are enabled in dev and test unconditionally. **[D]** (2026-10-11, provisional) In production, preconditions stay on and postconditions and invariants are off. A wrong policy decision costs more than the check.
+**Runtime cost:** contracts are enabled in dev and test unconditionally. **[D]** (provisional) In production, preconditions stay on and postconditions and invariants are off. A wrong policy decision costs more than the check.
 
 ---
 
@@ -177,7 +175,7 @@ This section lists the instruments. Which instrument guards which risk in due2, 
 
 - **Unit tests** — pytest. Example-based, fast, deterministic. Cover the specific and the regression-worthy.
 - **Property tests** — Hypothesis. The primary correctness instrument for the core. Test algebraic laws: idempotence, commutativity where claimed, round-tripping (parse ∘ render = id), invariant preservation, monotonicity.
-- **Semantic preservation** — where a pipeline rewrites a rich input into a normal form before acting on it, the load-bearing property is that the rewrite changes nothing observable: for all inputs `p` and requests `r`, `interpret(normalise(p), r)` equals `interpret_directly(p, r)`, provided unknowns are completed over literals rather than over the normal form's findings — otherwise the rewrite's own correlations (a split guard and its negation) are lost and only refinement holds (`due2-workflows.md` §6.4, §8 L9: refinement on 2026-10-10, equality again in v0.6). This is worth more than any number of tests against the normal form itself, because it is the only check that the rewrite has not quietly changed meaning. It requires maintaining a direct interpreter as a specification artefact, which is a real cost and a justified one.
+- **Semantic preservation** — where a pipeline rewrites a rich input into a normal form before acting on it, the load-bearing property is that the rewrite changes nothing observable: for all inputs `p` and requests `r`, `interpret(normalise(p), r)` equals `interpret_directly(p, r)`, provided unknowns are completed over literals rather than over the normal form's findings — otherwise the rewrite's own correlations (a split guard and its negation) are lost and only refinement holds (`due2-workflows.md` §6.4, §8 L9). This is worth more than any number of tests against the normal form itself, because it is the only check that the rewrite has not quietly changed meaning. It requires maintaining a direct interpreter as a specification artefact, which is a real cost and a justified one.
 - **Model-based / stateful** — Hypothesis `RuleBasedStateMachine`, comparing an implementation against a simple reference model. For an evaluator, the declarative semantics *are* the model; this is worth more than any amount of example-based testing.
 - **Differential** — where two implementations exist (reference vs optimised, Python vs extracted backend), cross-check them on generated inputs. See §10.
 - **Mutation testing** — `mutmut`. Coverage measures execution; mutation measures whether the tests would *notice* a bug. Scoped to kernel modules only; unaffordable repo-wide.
@@ -195,7 +193,7 @@ The fast suite therefore accumulates every hard case the slow tools have ever fo
 
 A surviving mutant is not a build failure. It is a ticket that says "this line has no assertion behind it." The fix lands in the fast tier.
 
-### 7.4 One suite, many spikes **[D]** (2026-10-16)
+### 7.4 One suite, many spikes **[D]**
 
 Candidate implementations (the oracle `I`, the bakeoff backends of `decisions/0006`) are tested by one Python suite, written before them and shared by all. The vectors and expected results are the corpus (`conformance/`), pinned in git. Each candidate is a separate spike under `spikes/` that runs as a subprocess and speaks a JSON-lines protocol: text in, text out, so a spike in any language faces the same tests. The harness measures latency identically for every spike. Each spike commits a scorecard (its last full run) and an append-only journal: effort, attempts, rewrites, bugs, and checker diagnostic counts over time. Code and scores are compared at the end. The contract is in `spikes/README.md`, and the harness in `tools/harness/`. `uv run pytest` alone runs only the harness's self-tests, which pin both ends: a backend that echoes the expected results passes every vector, and one that returns nothing fails every vector.
 
@@ -229,7 +227,7 @@ Everything above reduces the probability of a defect. None of it produces a proo
 - **The completion algebra** (`due2-workflows.md` §6.4). Its claims make W3's two-extreme computation equal to the definition over every completion. A flaw in one makes a definite verdict wrong (`correctness-strategy.md` R3).
 - **Semantic preservation in W1** (§7.1; `odrl-compound-to-atomic-normalization.md` §8.1). A mis-normalised policy still evaluates cleanly and simply means something else (R1). The `Den` oracle becomes part of the model (issue #8).
 
-**Counterexamples first.** Each claim gets a small Alloy 6 model, and M and W also a bounded-exhaustive search over clingo-i, before anyone tries to prove it (`decisions/0021` #3 and its amendment of 2026-10-22). A small-scope search finds a false claim in minutes, and a failed proof finds it slowly.
+**Counterexamples first.** Each claim gets a small Alloy 6 model, and M and W also a bounded-exhaustive search over clingo-i, before anyone tries to prove it (`decisions/0021` #3 and its amendment). A small-scope search finds a false claim in minutes, and a failed proof finds it slowly.
 
 **Operational cautions:**
 
@@ -287,8 +285,8 @@ If a backend is ever adopted for the **verified** property rather than for speed
 ## 11. Tooling and environment **[D]**
 
 - **ruff** — linting and formatting. Rule sets: `ANN` (annotations required), `B` (bugbear), `S` (security), `RUF`, `C4`, `SIM`, on top of ruff's defaults. Configured once at repo root (`pyproject.toml`), line length 100.
-- **basedpyright** (§4) — strict mode over `tools/` and `tests/`, configured in `pyproject.toml`; spikes (§7.4) declare their own checkers. **[D]** (2026-10-12) The existing checkers were brought to strict, not ratcheted flag by flag. `tools/import_force.py` is exempt from strict typing and `ANN`: it is a run-once importer, and its output is maintained by hand.
-- **rumdl** — Markdown lint. **[D]** (2026-10-12) Every Markdown file outside the vendored suites (`conformance/external/`, `profiles/vendor/`) is lint-clean. `MD013` (line length) is off, because a paragraph is one line. rumdl rather than markdownlint-cli2 keeps the toolchain uv-only; the two differ slightly (markdownlint's `MD060` table style and `MD029` list numbering), and rumdl is the gate.
+- **basedpyright** (§4) — strict mode over `tools/` and `tests/`, configured in `pyproject.toml`; spikes (§7.4) declare their own checkers. `tools/import_force.py` is exempt from strict typing and `ANN`: it is a run-once importer, and its output is maintained by hand.
+- **rumdl** — Markdown lint. Every Markdown file outside the vendored suites (`conformance/external/`, `profiles/vendor/`) is lint-clean. `MD013` (line length) is off, because a paragraph is one line. rumdl rather than markdownlint-cli2 keeps the toolchain uv-only; the two differ slightly (markdownlint's `MD060` table style and `MD029` list numbering), and rumdl is the gate.
 - **uv** — dependency management with hashed lockfiles. Reproducibility and supply-chain provenance are not optional in this environment.
 - **pip-audit** — dependency vulnerability scan in the slow tier.
 - **Generated artefacts are vendored, never hand-edited, and regenerated by a documented command recorded in the repo.** This applies to every generation target without exception — generated Rego, generated SQL, and any compiled wheel. A generated policy artefact that someone patches in place destroys the traceability from source to decision, which is the property the whole discipline exists to defend. Where the artefact is a build output rather than source, it is separately versioned and its CI runs the conformance suite against the built artefact, not against the generator.
@@ -317,7 +315,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend e
 
 ## 13. Open decisions register
 
-**Provisional picks.** #1, #2, #3, #5, #6, and #7 were settled on 2026-10-11 for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
+**Provisional picks.** #1, #2, #3, #5, #6, and #7 were settled for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
 
 **Tracking.** As `due2-architecture.md` §11: each open row has an issue, and the issue names this section. Rows keep their numbers, because issues and other documents cite them; a resolved row leaves the table and is stated below it.
 
@@ -329,11 +327,11 @@ Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend e
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume | #16 |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option | #16 |
 
-Rows 1–3 and 5–7 are the provisional picks above, each stated in its section: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); and `icontract`, trialled on the Kleene tables (§6). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12 asked whether a direct interpreter is maintained as a specification artifact (§7.1). It is. A clingo program, clingo-i, renders the evaluation semantics directly, as the L9 oracle and the generator, in place of the Python interpreter that `decisions/0002` planned; it is not a pipeline stage (`decisions/0009`). The Python `Den` oracle renders W1 stage 1, and the chosen prover's `Den` follows as a second oracle (`decisions/0021`, issue #8).
+Rows 1–3 and 5–7 are the provisional picks above, each stated in its section: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); and `icontract`, trialled on the Kleene tables (§6). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12, whether a direct interpreter is maintained as a specification artifact (§7.1), is answered yes: clingo-i renders the evaluation semantics as the L9 oracle and the generator, and is not a pipeline stage (`decisions/0009`); the Python `Den` oracle, and later the chosen prover's, render W1 stage 1 (`decisions/0021`, issue #8).
 
 ---
 
-## 14. Development cycle and backlog **[D]** (2026-10-16)
+## 14. Development cycle and backlog **[D]**
 
 ### 14.1 The cycle
 
@@ -364,7 +362,7 @@ Every change to a component is an increment, and every increment takes five step
 
 ---
 
-## 15. Documentation **[D]** (2026-10-17, at the owner's request)
+## 15. Documentation **[D]**
 
 Text written as a reminder, by a writer who holds the whole context, leaves a later reader to piece the story together from scattered fragments. This section sets the standard that prevents it. The procedure and the review checklist are the project skill `.claude/skills/technical-writing/SKILL.md`. The sources behind each rule are in `references.md` §5.
 
