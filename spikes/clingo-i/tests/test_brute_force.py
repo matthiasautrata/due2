@@ -49,6 +49,12 @@ assert that they fail (#47, #49). The duty examples alone kill each duty mutant.
 measurement tests assert that the generators reach each shape the differentials rely on.
 Generated draws do not expose every mutant on their own (tests/measure_mutants.py); the
 bounded-exhaustive spaces of test_spaces.py do, with the same oracle (#44).
+
+Two claims of correctness-strategy.md §4.8 are checked here as well. `check_waiver` checks
+claim W on every reply: a definite verdict that holds by cases lists an `unresolved` unknown
+part (#77). For claim M, monotonicity, `monotone_ranges` computes a verdict's range both by
+uniform and mixed variables and over every completion, on the oracle's semantics, and
+test_spaces.py asserts the two equal on every input of the spaces (#85).
 """
 
 from __future__ import annotations
@@ -755,10 +761,45 @@ EXAMPLES = [
 ]
 
 
+def holds_by_cases(got: Obj, violations: str = "ignore") -> bool:
+    """The reply is a definite `Permit` or `Deny` whose basis lacks the atoms that determine
+    it, as `tools/check_corpus.py` reads a basis: no permission for a `Permit`; no prohibition,
+    and under `violations` `deny` no obligation listed `violated`, for a `Deny`
+    (due2-workflows.md §6.4, decisions/0016 #4)."""
+    basis = got.get("verdict_basis", [])
+    assert isinstance(basis, list)
+    by_role: dict[str, set[str]] = {}
+    for b in basis:
+        assert isinstance(b, dict)
+        by_role.setdefault(str(b["role"]), set()).add(str(b["ref"]))
+    obligations = got.get("obligations", [])
+    assert isinstance(obligations, list)
+    violated = {
+        str(o["duty"]) for o in obligations if isinstance(o, dict) and o["status"] == "violated"
+    }
+    if got["verdict"] == "Permit":
+        return "permission" not in by_role
+    if got["verdict"] == "Deny":
+        obliged = violations == "deny" and bool(by_role.get("obligation", set()) & violated)
+        return "prohibition" not in by_role and not obliged
+    return False
+
+
+def check_waiver(got: Obj, violations: str = "ignore") -> None:
+    """Claim W (correctness-strategy.md §4.8, #77): a verdict that holds by cases lists an
+    `unresolved` unknown part, the premise of the basis waiver in `tools/check_corpus.py`.
+    DESIGN.md § `resolve.lp` argues it; this checks it on every reply the differentials see."""
+    if holds_by_cases(got, violations):
+        parts = got["unknown_parts"]
+        assert isinstance(parts, list)
+        assert any(isinstance(u, dict) and u["status"] == "unresolved" for u in parts), got
+
+
 def check(interp: Interpreter, case: Case) -> None:
     reply = interp.reply(render(case))
     got = reply.get("output")
     if isinstance(got, dict):
+        check_waiver(got)
         reply = {
             "output": {
                 k: v for k, v in got.items() if k not in ("frontier", "obligations", "exact")
@@ -1417,6 +1458,7 @@ def check_duties(interp: Interpreter, dc: Duties) -> None:
     reply = interp.reply(render_duties(dc))
     got = reply.get("output")
     assert isinstance(got, dict), reply
+    check_waiver(got, dc.violations)
     keys = ("verdict", "frontier", "verdict_range", "verdict_basis")
     assert {k: got[k] for k in keys if k in got} == duty_oracle(dc)
 
@@ -1800,3 +1842,110 @@ def test_opaque_leaf_as_f_fails_open() -> None:
     assert isinstance(wrong, dict)
     assert (wrong["verdict"], wrong["verdict_basis"]) == ("NotApplicable", [])
     assert wrong["unknown_parts"] == unknown_parts
+
+
+# --- monotonicity, claim M (#85, correctness-strategy.md §4.8) ---
+
+
+def occurrences(case: Case, tree: Tree, positive: bool = True) -> Iterator[tuple[Literal, bool]]:
+    """Each variable a `u` tree reads, once per occurrence, with whether making the variable
+    true can make the tree truer.
+
+    The leaves are those of `open_leaves`, paired ones only: an opaque leaf is the atom's `fin`
+    variable's concern. `and` and `or` keep the sign, `not` flips it, and a member of an `xone`
+    goes both ways, because an `xone` is not monotone in its members. A complement reads its
+    base's variable negated (POLARITY), so its sign flips too.
+    """
+    if tree_value(case, tree) is not None:
+        return
+    match tree:
+        case Leaf():
+            if paired(case, tree):
+                yield leaf_literal(tree), positive == POLARITY[tree.op][1]
+        case Node("not", members, _):
+            yield from occurrences(case, members[0], not positive)
+        case Node("xone", members, _):
+            for m in members:
+                yield from occurrences(case, m, True)
+                yield from occurrences(case, m, False)
+        case Node(_, members, _):
+            for m in members:
+                yield from occurrences(case, m, positive)
+
+
+def directions(
+    items: dict[str, list[Part]], raises: dict[str, bool | None]
+) -> dict[Literal, set[bool]]:
+    """Which way making each variable true moves the verdict, one entry per occurrence: `True`
+    up, `False` down (due2-workflows.md §6.4, the *Computing it* paragraph that defines uniform and mixed
+    variables). A variable with both entries is mixed.
+
+    `raises[n]` says which way item `n` moves the verdict when it becomes truer: up for a
+    permission, down for a prohibition or a precondition's `owed`, and `None` for an item that
+    does not move it, the obligation's `in_force` under `violations` `ignore`. A variable read
+    only by such items has no direction; either extreme gives the same verdict.
+    """
+    out: dict[Literal, set[bool]] = {}
+    for n, ps in items.items():
+        lits = reads(n, ps)
+        for lit in lits:
+            out.setdefault(lit, set())
+        up = raises[n]
+        if up is None:
+            continue
+        for p in ps:
+            if isinstance(p, Open):
+                for lit, s in occurrences(p.case, p.tree):
+                    out[lit].add(s == up)
+        # An atom left `u` by an opaque part takes its `fin` variable, which is its finding.
+        if fin(n) in lits:
+            out[fin(n)].add(up)
+    return out
+
+
+def monotone_ranges(
+    dirs: dict[Literal, set[bool]], verdict: Callable[[dict[Literal, bool]], str]
+) -> tuple[tuple[str, str], tuple[str, str]]:
+    """The least and greatest verdict over every completion, and as *Computing it* computes
+    them: each assignment of the mixed variables, with the uniform ones at both extremes.
+
+    The two are equal for every input exactly when the verdict is monotone in the directions
+    `dirs` gives, which is claim M (correctness-strategy.md §4.8).
+    """
+    lits = sorted(dirs)
+    every = [
+        verdict(dict(zip(lits, vals, strict=True)))
+        for vals in itertools.product((False, True), repeat=len(lits))
+    ]
+    mixed = [lit for lit in lits if len(dirs[lit]) == 2]
+    ends: list[str] = []
+    for vals in itertools.product((False, True), repeat=len(mixed)):
+        w = dict(zip(mixed, vals, strict=True))
+        for high in (False, True):
+            # A variable with no direction is set as if it moved the verdict up.
+            uniform = {lit: (False not in dirs[lit]) == high for lit in lits if lit not in w}
+            ends.append(verdict(w | uniform))
+
+    def span(vs: list[str]) -> tuple[str, str]:
+        return min(vs, key=CHAIN.index), max(vs, key=CHAIN.index)
+
+    return span(every), span(ends)
+
+
+def monotone_input(
+    x: Case | Duties,
+) -> tuple[dict[Literal, set[bool]], Callable[[dict[Literal, bool]], str]]:
+    """The directions of `x`'s variables, and its verdict in a completion, by the oracle."""
+    if isinstance(x, Case):
+        ps = {r.name: parts(x, r) for r in x.rules}
+        raises: dict[str, bool | None] = {r.name: r.permit for r in x.rules}
+        return directions(ps, raises), lambda w: resolve(
+            x, {n: applies(n, p, w) for n, p in ps.items()}
+        )[0]
+    items, fulfilled = duty_items(x)
+    raises = {r.name: r.permit for r in x.case.rules}
+    raises |= {n: False for n in items if n.startswith("owed ")}
+    raises["in_force ob"] = False if x.violations == "deny" else None
+    dirs = directions(items, raises)
+    dirs |= {ful(k): {True} for k, v in fulfilled.items() if v is None}
+    return dirs, lambda w: resolve_duties(x, w)[0]

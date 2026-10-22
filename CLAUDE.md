@@ -42,7 +42,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 ## Next
 
-1. **Formalisation (#70, `decisions/0021`).** The claims M, K, F, W, and P are stated in `correctness-strategy.md` §4.8. The bounded-exhaustive spaces over clingo-i exist (#44, `spikes/clingo-i/DESIGN.md` § Tests). Next, check M and W by bounded-exhaustive search over clingo-i (#85, #77), and write a small Alloy model per claim, K first (#84). Triage what they find (`correctness-strategy.md` §6). Then spike Lean on M; Isabelle is optional. Record the spike's result as an amendment to `decisions/0021`. The chosen prover takes over `Den` (#8).
+1. **Formalisation (#70, `decisions/0021`).** The claims M, K, F, W, and P are stated in `correctness-strategy.md` §4.8. The bounded-exhaustive spaces over clingo-i check M and W, and found no counterexample (#85, `spikes/clingo-i/DESIGN.md` § Tests). Next, write a small Alloy model per claim, K first (#84), and triage what they find (`correctness-strategy.md` §6). Then spike Lean on M; Isabelle is optional. Record the spike's result as an amendment to `decisions/0021`. The chosen prover takes over `Den` (#8).
 2. **Documentation house-cleaning (#83)**, interleaved with #70.
 3. **The W2/W3 bakeoff** (`decisions/0006`, milestone "W2/W3 bakeoff"): relation-level vectors (#36, #37) and the brute-force W3 (#38), then Clingo (#41) and Elixir (#40). Python (#39) is deferred until the production evaluator is written.
 4. **W1**, the normaliser, whose 27 negative cases wait for it.
