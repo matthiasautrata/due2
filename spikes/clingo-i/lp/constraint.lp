@@ -8,7 +8,7 @@
 % letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `triple/3`, `voc/2`, `operator/2`, `set_based/1`, `connective/1`,
-%   `is_list/1`, `list_item/2`, `unplaceable/2`, `stated/3` (lift.lp); `rule/1`, `duty_node/1`,
+%   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `stated/3` (lift.lp); `rule/1`, `duty_node/1`,
 %   `action_term/1` (structure.lp).
 % - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
 %   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`,
@@ -145,7 +145,7 @@ unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
 % or two lists; the empty list on a set-based operator, which ODRL gives no meaning and which
 % would make the leaf's value independent of the request (due2-diagnostics.md,
 % MalformedConstraint; decisions/0013, amendment); a connective over the empty list, for the
-% same reasons (decisions/0017).
+% same reasons (decisions/0017); a repeated member (decisions/0022).
 reject("MalformedConstraint", C) :- cnode(C), not leaf(C), not conn(C, _).
 reject("MalformedConstraint", C) :- leaf(C), #count { Op : left(C, Op) } != 1.
 reject("MalformedConstraint", C) :- leaf(C), #count { Iri : c_operator(C, Iri) } != 1.
@@ -158,6 +158,20 @@ reject("MalformedConstraint", C) :- op(C, O), set_based(O), right_value(C, List)
 % Without this rule, the connective rules of compare.lp and completion.lp would give such a node
 % the identities they start from: `and ()` would be `t`, and `or ()` and `xone ()` would be `f`.
 reject("MalformedConstraint", C) :- conn(C, K), triple(C, Pred, List), voc(K, Pred), voc(nil, List).
+% A list that names one node twice, which ODRL forbids for every connective, and an `xone` with
+% two leaf members that state the same left operand, operator, unit, and right operand values,
+% compared as written terms (decisions/0022). `member/2` is a set, so without these rules
+% `xone ( c c )` would be `c` here, while W1's expansion reads two positions and never makes it
+% `t`. The conditional literals state that the two leaves' sets of each kind are equal.
+reject("MalformedConstraint", C) :- conn(C, K), triple(C, Pred, List), voc(K, Pred),
+    list_cell(List, Cell), list_cell(List, Cell2), Cell != Cell2,
+    triple(Cell, F, D), triple(Cell2, F, D), voc(first, F).
+reject("MalformedConstraint", C) :- conn(C, xone), member(C, D), member(C, D2), D < D2,
+    leaf(D), leaf(D2),
+    left(D, Op) : left(D2, Op); left(D2, Op) : left(D, Op);
+    c_operator(D, Iri) : c_operator(D2, Iri); c_operator(D2, Iri) : c_operator(D, Iri);
+    unit(D, Iri) : unit(D2, Iri); unit(D2, Iri) : unit(D, Iri);
+    right(D, Term) : right(D2, Term); right(D2, Term) : right(D, Term).
 reject("UnsupportedOperator", C) :- c_operator(C, Iri), not operator(Iri, _).
 reject("UnsupportedConnective", C) :- conn(C, andSequence).
 reject("FloatingPointOperand", C) :- right(C, Term), unplaceable(Term, "value: xsd:double").

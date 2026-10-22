@@ -5,7 +5,7 @@
 % combines the comparisons by the operator's definition (due2-profiles.md §4). A comparison the
 % operands do not fit, such as an IRI against a literal or values of two spaces, is `u` (rank
 % 1), never `f`. Then the connectives combine their members' values: `and` is the least rank,
-% `or` the greatest, `dprod:not` the involution, and `xone` the value of its expansion
+% `or` the greatest, `dprod:not` the involution, and `xone` counts its `t` and `u` members
 % (DESIGN.md § `compare.lp`). The leaf rules serve the worlds that read operands: the Kleene
 % world `k`, before completion, and the witness worlds of duty.lp. The connective rules serve
 % those and the completion worlds of completion.lp. Ranks are those of kleene.lp.
@@ -18,7 +18,7 @@
 % - **Provides:** `cpair/4`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
 %   `above/2`, `ceqr/4`, `ordered/1`,
 %   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
-%   `any_eq/4`, `any_le/4`, `crank/3`, `evaluates/2`, `xone_term/4`; extends `item/1`, `holds/2`
+%   `any_eq/4`, `any_le/4`, `crank/3`, `evaluates/2`, `xone_count/4`; extends `item/1`, `holds/2`
 %   (applies.lp) and `unsupported_value/1` (lift.lp).
 
 %## Pairs
@@ -262,16 +262,22 @@ crank(W, C, N) :- evaluates(W, C), conn(C, and),
 crank(W, C, N) :- evaluates(W, C), conn(C, or),
     N = #max { 0; M, D : member(C, D), crank(W, D, M) }.
 crank(W, C, 2 - N) :- evaluates(W, C), conn(C, negation), member(C, D), crank(W, D, N).
-crank(W, C, N) :- evaluates(W, C), conn(C, xone), N = #max { 0; M, D : xone_term(W, C, D, M) }.
+%*! xone_count(W, C, NT, NU)
 
-%*! xone_term(W, C, D, N)
-
-In world `W`, the disjunct of `xone` node `C` for its member `D` has rank `N`: `D`, and not
-each other member. `xone` is the disjunction of these terms, ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ).
+In world `W`, `NT` members of the `xone` node `C` are `t` and `NU` are `u`.
 *%
-xone_term(W, C, D, N) :- evaluates(W, C), conn(C, xone), member(C, D), crank(W, D, _),
-    N = #min { M, self : crank(W, D, M); 2 - M2, D2 : member(C, D2), D2 != D,
-        crank(W, D2, M2) }.
+xone_count(W, C, NT, NU) :- evaluates(W, C), conn(C, xone),
+    NT = #count { D : member(C, D), crank(W, D, 2) },
+    NU = #count { D : member(C, D), crank(W, D, 1) }.
+% `xone` by counting: `t` when one member is `t` and none is `u`; `f` when two are `t`, whatever
+% the rest, or when every member is `f`; `u` otherwise. That is the Kleene value of W1's
+% expansion ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ) for any values of the members (DESIGN.md § `compare.lp`), and
+% `member/2` holds a set of nodes, which equals the list's positions because constraint.lp
+% rejects a list that names one node twice (decisions/0022).
+crank(W, C, 2) :- xone_count(W, C, 1, 0).
+crank(W, C, 0) :- xone_count(W, C, NT, _), NT >= 2.
+crank(W, C, 0) :- xone_count(W, C, 0, 0).
+crank(W, C, 1) :- xone_count(W, C, NT, NU), NT < 2, NU > 0.
 
 %## Values
 

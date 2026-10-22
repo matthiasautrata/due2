@@ -124,20 +124,25 @@ class Case:
     state: tuple[bool, ...] = (False,) * OPERANDS  # True: read from the state, not the request
 
 
+def distinct_leaves(members: tuple[Tree, ...]) -> bool:
+    """No two members are the same leaf, which an `xone` must not have (decisions/0022)."""
+    leaves = [m for m in members if isinstance(m, Leaf)]
+    return len(set(leaves)) == len(leaves)
+
+
 def trees(depth: int) -> st.SearchStrategy[Tree]:
     """Constraint trees at most `depth` connectives deep. A leaf comes first, so it shrinks to one."""
     leaf = st.builds(Leaf, st.integers(0, OPERANDS - 1), st.sampled_from(tuple(OPERATORS)))
     if depth == 0:
         return leaf
     sub = trees(depth - 1)
+    members = st.lists(sub, min_size=2, max_size=3).map(tuple)
     negation = st.builds(Node, st.just("not"), st.tuples(sub), st.just(False))
-    nary = st.builds(
-        Node,
-        st.sampled_from(("and", "or", "xone")),
-        st.lists(sub, min_size=2, max_size=3).map(tuple),
-        st.booleans(),
-    )
-    return st.one_of(leaf, negation, nary)
+    nary = st.builds(Node, st.sampled_from(("and", "or")), members, st.booleans())
+    # Two equal compound members are two nodes, so an xone admits them, and both the oracle and
+    # clingo-i read them as two positions.
+    xone = st.builds(Node, st.just("xone"), members.filter(distinct_leaves), st.booleans())
+    return st.one_of(leaf, negation, nary, xone)
 
 
 TREES = trees(2)
@@ -187,9 +192,10 @@ def dead_branch(draw: st.DrawFn, case: Case) -> Case:
     """`case` with one rule's first constraint `keep` replaced by `or(dead, keep)`.
 
     `dead` is `f` whatever its subtree `sub` is: `and(lf, sub)`, `not(or(lt, sub))`, or
-    `xone(lt, lt, sub)`, where `lf` and `lt` are leaves, on an operand with a value, that are
-    `f` and `t`. Each DNF disjunct that holds a leaf of `sub` is then `f`, so a `u` leaf of
-    `sub` that `keep` does not also read is not an unknown part (due2-workflows.md §3.5).
+    `xone(lt, lt2, sub)`, where `lf`, `lt`, and `lt2` are leaves, on an operand with a value,
+    that are `f`, `t`, and `t`, and `sub` is not one of those two `t` leaves. Each DNF disjunct
+    that holds a leaf of `sub` is then `f`, so a `u` leaf of `sub` that `keep` does not also read
+    is not an unknown part (due2-workflows.md §3.5).
     """
     known = [k for k, p in enumerate(case.params) if p is not None]
     if not known:
@@ -197,17 +203,26 @@ def dead_branch(draw: st.DrawFn, case: Case) -> Case:
     k = draw(st.sampled_from(known))
     value = case.params[k]
     assert value is not None
-    false, true = (
-        Leaf(k, draw(st.sampled_from([op for op, f in OPERATORS.items() if f(value, 1) is b])))
-        for b in (False, True)
+    false = Leaf(k, draw(st.sampled_from([op for op, f in OPERATORS.items() if not f(value, 1)])))
+    # Every value makes three operators t against 1, so two distinct t leaves exist.
+    true, true2 = (
+        Leaf(k, op)
+        for op in draw(
+            st.lists(
+                st.sampled_from([op for op, f in OPERATORS.items() if f(value, 1)]),
+                min_size=2,
+                max_size=2,
+                unique=True,
+            )
+        )
     )
-    sub = draw(TREES)
+    sub = draw(TREES.filter(lambda t: t not in (true, true2)))
     dead = draw(
         st.sampled_from(
             (
                 Node("and", (false, sub), False),
                 Node("not", (Node("or", (true, sub), True),), False),
-                Node("xone", (true, true, sub), True),
+                Node("xone", (true, true2, sub), True),
             )
         )
     )
@@ -719,7 +734,7 @@ EXAMPLES = [
         for dead in (
             Node("and", (eq(1), eq(2)), False),
             Node("not", (Node("or", (eq(0), eq(2)), False),), False),
-            Node("xone", (eq(0), eq(0), eq(2)), True),
+            Node("xone", (eq(0), Leaf(0, "gteq"), eq(2)), True),
             Node("not", (Node("xone", (eq(0), Node("and", (eq(1), eq(2)), False)), True),), False),
         )
     ),
@@ -933,7 +948,7 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "flip(R, Q),\n    not xone_term(W, C, D2, 2) : member(C, D2), D2 != D.",
+                "flip(R, Q),\n    not xone_by(W, C, D2) : member(C, D2), D2 != D.",
                 "flip(R, Q).",
             )
         ],
@@ -978,13 +993,23 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
             )
         ],
     ),
-    "xone-without-negations": (
+    # An xone with two or more t members read as t, as `or` reads them.
+    "xone-many-true-as-t": (
         "compare.lp",
         [
             (
-                "{ M, self : crank(W, D, M); 2 - M2, D2 : member(C, D2), D2 != D,\n        crank(W, D2, M2) }",
-                "{ M, self : crank(W, D, M) }",
+                "crank(W, C, 0) :- xone_count(W, C, NT, _), NT >= 2.",
+                "crank(W, C, 2) :- xone_count(W, C, NT, _), NT >= 2.",
             )
+        ],
+    ),
+    # A u member read as f, the shortcut a counting evaluator is likely to take (decisions/0022).
+    "xone-unknown-as-false": (
+        "compare.lp",
+        [
+            ("xone_count(W, C, 1, 0).", "xone_count(W, C, 1, _)."),
+            ("xone_count(W, C, 0, 0).", "xone_count(W, C, 0, _)."),
+            ("crank(W, C, 1) :- xone_count(W, C, NT, NU), NT < 2, NU > 0.", ""),
         ],
     ),
 }

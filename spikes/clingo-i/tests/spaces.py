@@ -18,7 +18,7 @@ runs under `pytest -m slow` (DESIGN.md § Tests).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import cache
 from math import comb
@@ -90,8 +90,9 @@ SPACES = {
     "conflicts": Space(
         "candidates.lp", False, (("rules", 1), ("actions", 1)), (("rules", 3), ("actions", 1))
     ),
-    # The coverage target past the trees bounds: a negated xone with a compound term.
-    "negxone": Space("negxone.lp", False, (("largest", 7),), (("largest", 8),)),
+    # The coverage targets past the trees bounds: an xone, positive or negated, with a compound
+    # member.
+    "xone": Space("xone.lp", False, (("largest", 7),), (("largest", 8),)),
     # Permissions with routes of unguarded duties, and the subject alice or none.
     "routes": Space(
         "duties.lp",
@@ -266,8 +267,9 @@ def catalog(operands: int, operators: int, most: int) -> list[int]:
     """The trees of trees.lp by size: `c[s]` trees of size `s`, for `s` from 0 to `most`."""
     c = [0] * (most + 1)
 
-    def members(k: int, w: int) -> int:
-        # Multisets of `k` trees of total size `w`: choose how many of each size, then which.
+    def members(k: int, w: int, pick: Callable[[int, int], int]) -> int:
+        # Collections of `k` trees of total size `w`: choose how many of each size, then which,
+        # with `pick` the ways to choose `m` of `n` trees: `mult` for a multiset, `comb` for a set.
         ways = {(0, 0): 1}
         for s in range(1, w + 1):
             nxt: dict[tuple[int, int], int] = {}
@@ -275,13 +277,15 @@ def catalog(operands: int, operators: int, most: int) -> list[int]:
                 for m in range(k - n + 1):
                     if total + m * s <= w:
                         key = (n + m, total + m * s)
-                        nxt[key] = nxt.get(key, 0) + v * mult(c[s], m)
+                        nxt[key] = nxt.get(key, 0) + v * pick(c[s], m)
             ways = nxt
         return ways.get((k, w), 0)
 
     for s in range(1, most + 1):
-        c[s] = (operands * operators if s == 1 else c[s - 1]) + 3 * (
-            members(2, s - 1) + members(3, s - 1)
+        # `and` and `or` take multisets of members, `xone` sets.
+        c[s] = (operands * operators if s == 1 else c[s - 1]) + sum(
+            n * (members(2, s - 1, pick) + members(3, s - 1, pick))
+            for n, pick in ((2, mult), (1, comb))
         )
     return c
 
@@ -326,18 +330,19 @@ def count(name: str, tier: str) -> int:
         case "candidates.lp":
             k = {"actions": 2} | k
             return rule_sets(k["rules"], k["actions"] * 2 * 3) * k["actions"] * 2 * 2
-        case "negxone.lp":
+        case "xone.lp":
             largest = k["largest"]
-            c = catalog(2, 2, largest - 5)
-            pairs = [0] * (largest + 1)
+            c = catalog(2, 2, largest - 4)
+            # pairs[w]: the pairs of two different trees of total size w, one of them compound.
+            pairs = [0] * (2 * len(c))
             for sa in range(1, len(c)):
                 for sb in range(sa, len(c)):
-                    w = sa + sb
-                    if w <= largest - 4:
-                        pairs[w] += c[sa] * c[sb] if sa < sb else mult(c[sa], 2)
-            pairs[2] -= mult(c[1], 2)  # two leaves: neither term is compound
+                    pairs[sa + sb] += c[sa] * c[sb] if sa < sb else comb(c[sa], 2)
+            pairs[2] -= comb(c[1], 2)  # two leaves: neither member is compound
             shapes = sum(
-                pairs[w] * sum(c[1 : largest - 1 - (w + 2) + 1]) for w in range(2, largest - 3)
+                pairs[w] * sum(c[1 : largest - 1 - (w + nodes) + 1])
+                for nodes in (1, 2)  # xone, or neg and xone
+                for w in range(2, largest - 1 - nodes)
             )
             return 2 * 3 * shapes
         case _:

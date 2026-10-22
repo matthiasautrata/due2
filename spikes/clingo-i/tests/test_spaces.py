@@ -41,25 +41,26 @@ from tests.test_brute_force import (
 # The most inputs one test checks: a PR shard runs in about 10 s, a slow one in about 2 min.
 SHARD = {"pr": 300, "slow": 3000}
 
-# The space and tier whose inputs expose each mutant soonest, smallest input first. Five need
+# The space and tier whose inputs expose each mutant soonest, smallest input first. Three need
 # the slow bounds; the PR bounds expose the rest.
 EXPOSED_BY = {
-    "and-or-swapped": ("negxone", "pr"),
+    "and-or-swapped": ("xone", "pr"),
     "flip-constraint-deleted": ("conflicts", "slow"),
     "live-ignores-negation": ("pinned", "pr"),
-    "live-negated-xone-ignores-terms": ("negxone", "slow"),
-    "live-xone-ignores-term": ("pinned", "slow"),
+    "live-negated-xone-ignores-terms": ("xone", "slow"),
+    "live-xone-ignores-term": ("xone", "pr"),
     "missing-paired": ("trees", "pr"),
-    "not-as-identity": ("pinned", "pr"),
+    "not-as-identity": ("xone", "pr"),
     "opaque-atoms-share-a-variable": ("leaves", "pr"),
     "opaque-leaf-as-f": ("leaves", "pr"),
-    "polarity-ignored": ("negxone", "pr"),
+    "polarity-ignored": ("xone", "pr"),
     "u-atoms-remove": ("leaves", "pr"),
-    "u-leaf-of-f-atom-named": ("pinned", "slow"),
+    "u-leaf-of-f-atom-named": ("xone", "pr"),
     "unknown-parts-of-f-atoms": ("candidates", "pr"),
     "unknown-parts-of-u-atoms-only": ("pinned", "pr"),
-    "variable-per-leaf": ("negxone", "pr"),
-    "xone-without-negations": ("negxone", "pr"),
+    "variable-per-leaf": ("xone", "pr"),
+    "xone-many-true-as-t": ("xone", "pr"),
+    "xone-unknown-as-false": ("xone", "pr"),
     "duties-never-unknown": ("routes", "pr"),
     "duty-roots-negated": ("guards", "pr"),
     "fulfilled-share-a-variable": ("routes", "pr"),
@@ -137,7 +138,7 @@ def test_spaces_alone_expose_mutant(name: str) -> None:
     pytest.fail(f"no {tier} input of {space} exposes {name}")
 
 
-# DESIGN.md § Tests, the bounded-exhaustive spaces: the smallest input of negxone at its slow
+# DESIGN.md § Tests, the bounded-exhaustive spaces: the smallest input of xone at its slow
 # bound that exposes live-negated-xone-ignores-terms, as clingo shows it and as a Case.
 WITNESS_ATOMS = (
     "slot(1,r(prohibition,node(or,neg(node(xone,l(0,eq),node(and,l(0,neq),l(1,eq)))),l(0,eq))))"
@@ -147,8 +148,8 @@ WITNESS_ATOMS = (
 
 def test_negated_xone_worked_example() -> None:
     t, f, u = Leaf(0, "eq"), Leaf(0, "neq"), Leaf(1, "eq")
-    negxone = Node("not", (Node("xone", (t, Node("and", (f, u), False)), False),), False)
-    tree = Node("or", (negxone, t), False)
+    neg_xone = Node("not", (Node("xone", (t, Node("and", (f, u), False)), False),), False)
+    tree = Node("or", (neg_xone, t), False)
     case = Case(
         "perm",
         (Rule("r0", False, "use", "a", None, (tree,)),),
@@ -158,10 +159,10 @@ def test_negated_xone_worked_example() -> None:
         (1, None, None),
         (False, True, False),
     )
-    found = answer_sets("negxone.lp", SPACES["negxone"].consts("slow"))
+    found = answer_sets("xone.lp", SPACES["xone"].consts("slow"))
     shown = {" ".join(str(a) for a in m): m for m in found}
     assert to_input(shown[WITNESS_ATOMS], False) == case
-    assert inputs("negxone", "slow").index(case) == 1052
+    assert inputs("xone", "slow").index(case) == 8180
     deny = {
         "verdict": "Deny",
         "verdict_basis": [{"ref": "https://example.org/r0", "role": "prohibition"}],

@@ -812,6 +812,42 @@ def test_empty_connective_rejected(interpreter: Interpreter, constraint: str, ru
 
 
 @pytest.mark.parametrize(
+    "constraint",
+    [
+        "ex:c . ex:c odrl:and ( ex:d ex:d ) . ex:d " + leaf("eq", "ex:v")[1:-1],
+        "ex:c . ex:c odrl:xone ( ex:d ex:e ex:d ) . ex:d " + leaf("eq", "ex:v")[1:-1]
+        + " . ex:e " + leaf("eq", "ex:w")[1:-1],
+        f"[ odrl:xone ( {leaf('eq', 'ex:v')} {leaf('eq', 'ex:w')} {leaf('eq', 'ex:v')} ) ]",
+        f"[ odrl:xone ( {leaf('isAnyOf', '( ex:v ex:w )')} {leaf('isAnyOf', '( ex:w ex:v )')} ) ]",
+    ],
+)  # fmt: skip
+def test_repeated_member_rejected(interpreter: Interpreter, constraint: str) -> None:
+    """A list that names a node twice, or an `xone` that states a leaf twice (decisions/0022).
+
+    Both are malformed, and the right operand values compare as a set. Without the rejection, `member/2` held each repeat once, so `xone ( ex:d ex:e ex:d )` took
+    the value of `xone ( ex:d ex:e )`, where W1's expansion reads three positions.
+    """
+    reply = interpreter.reply(vector(constrained(constraint, bound("x"))))
+    assert "error" in reply and "MalformedConstraint" in str(reply["error"]), reply
+
+
+@pytest.mark.parametrize(
+    "constraint",
+    [
+        f"[ odrl:and ( {leaf('eq', 'ex:v')} {leaf('eq', 'ex:v')} ) ]",
+        f"[ odrl:xone ( {leaf('eq', 'ex:v')} {leaf('neq', 'ex:v')} ) ]",
+        f"[ odrl:xone ( {leaf('isAnyOf', '( ex:v ex:w )')} {leaf('isAnyOf', '( ex:v )')} ) ]",
+    ],
+)  # fmt: skip
+def test_distinct_or_idempotent_members_admitted(interpreter: Interpreter, constraint: str) -> None:
+    # Same-content leaves under `and` or `or` are admitted, and so are xone leaves that differ
+    # only in operator or in one right operand value (decisions/0022).
+    pol = constrained(constraint, bound("x"))
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": iri("ex:v")}}))
+    assert "output" in reply, reply
+
+
+@pytest.mark.parametrize(
     ("constraint", "binding", "reason"),
     [
         ("[ odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand ex:v ;"
@@ -1123,7 +1159,7 @@ def test_decided_leaf_is_reported(interpreter: Interpreter) -> None:
     assert unknown_parts(reply) == [("ex:r", "ex:y", "unresolved")]
 
 
-XT, XF = leaf("eq", "ex:v"), leaf("eq", "ex:w")  # with ex:x = ex:v, t and f
+XT, XT2, XF = leaf("eq", "ex:v"), leaf("neq", "ex:w"), leaf("eq", "ex:w")  # ex:x = ex:v: t, t, f
 Y, Z = (leaf("eq", "ex:v").replace("ex:x", f"ex:{op}") for op in ("y", "z"))
 
 
@@ -1138,7 +1174,7 @@ Y, Z = (leaf("eq", "ex:v").replace("ex:x", f"ex:{op}") for op in ("y", "z"))
     [(f"[ odrl:and ( {XF} {Y} ) ]", ["z"]),
      (f"[ dprod:not ( [ odrl:or ( {XT} {Y} ) ] ) ]", ["z"]),
      (f"[ dprod:not ( [ dprod:not ( [ odrl:and ( {XF} {Y} ) ] ) ] ) ]", ["z"]),
-     (f"[ odrl:xone ( {XT} {XT} {Y} ) ]", ["z"]),
+     (f"[ odrl:xone ( {XT} {XT2} {Y} ) ]", ["z"]),
      (f"[ dprod:not ( [ odrl:xone ( {XT} [ odrl:and ( {XF} {Y} ) ] ) ] ) ]", ["z"]),
      (f"[ odrl:and ( {XT} {Y} ) ]", ["y", "z"]),
      (f"[ dprod:not ( [ odrl:xone ( {XT} {Y} ) ] ) ]", ["y", "z"])],

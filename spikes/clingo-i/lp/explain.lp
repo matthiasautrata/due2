@@ -25,7 +25,7 @@
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
 %   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2` (applies.lp); `conn/2`,
 %   `member/2`, `leaf/1`, `left/2` (constraint.lp); `prop/2`, `read_ok/2`, `read_status/3`
-%   (operand.lp); `crank/3`, `evaluates/2`, `xone_term/4` (compare.lp); `rank/2` (kleene.lp);
+%   (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `rank/2` (kleene.lp);
 %   `voc/2` (lift.lp);
 %   `witness_cond/2`, `obligation_policy/2`, `instance/1`, `passed/1`, `status/3` (duty.lp);
 %   `duty_item/1`, `finding_atom/2`, `item_root/2`, `leaf_status/2` (completion.lp).
@@ -35,7 +35,7 @@
 %   `uncertain/1`, `conflicted/1`, `candidate_state/2`, `listed/1`, `listed_out/2`,
 %   `listed_apart/2`, `listed_dominated/1`, `listed_front/1`, `front_duty/2`,
 %   `obligation_row/2`, `reported/1`, `polar/4`, `flip/2`, `conj/2`, `disj/2`,
-%   `xone_pol/4`, `live/4`, `witness_status/3`, `unknown_part/3`.
+%   `xone_pol/4`, `xone_by/3`, `live/4`, `witness_status/3`, `unknown_part/3`.
 
 %## Integrity
 
@@ -318,6 +318,13 @@ conjunction per member (due2-workflows.md §6.4 and §4, its stage 2).
 xone_pol(C, D, D, pos) :- conn(C, xone), member(C, D).
 xone_pol(C, D, G, neg) :- conn(C, xone), member(C, D), member(C, G), G != D.
 
+%*! xone_by(W, C, D)
+
+In world `W`, the `xone` node `C` is `t` because of its member `D`: `D` is the one member that
+is `t`. Then the term of `xone_pol/4` for `D` is `t`, and every other term is `f`.
+*%
+xone_by(W, C, D) :- crank(W, C, 2), conn(C, xone), member(C, D), crank(W, D, 2).
+
 %*! live(W, I, C, P)
 
 Node `C`, read with polarity `P`, lies in a disjunct of finding `I`'s DNF whose value, in world
@@ -341,8 +348,9 @@ other part, so it is live. Liveness passes from a node to its members as follows
   liveness to a member when no other member of the term is `f` under its polarity there.
 - An `xone` read negatively is the conjunction of its negated terms, because due2-profiles.md §5
   expands an `xone` before pushing a negation in. A negated term is the disjunction of its
-  members, each read with the opposite polarity, and it is `f` exactly when its term is `t`
-  (`xone_term/4` rank 2). It passes liveness to its members when no other negated term is `f`.
+  members, each read with the opposite polarity, and it is `f` exactly when its term is `t`:
+  when the `xone` is `t` because of that term's member (`xone_by/3`). It passes liveness to its
+  members when no other negated term is `f`.
 *%
 live(k, I, C, pos) :- reported(I), item_root(I, C).
 live(wit(E), witness(Y, E), C, pos) :- witness_cond(Y, C), holds(witness(Y, E), V), V != f.
@@ -353,7 +361,7 @@ live(W, I, D, Q) :- live(W, I, C, P), conn(C, negation), member(C, D), flip(P, Q
 live(W, I, G, Q) :- live(W, I, C, pos), conn(C, xone), xone_pol(C, D, G, Q),
     not polar(W, H, R, 0) : xone_pol(C, D, H, R), H != G.
 live(W, I, G, Q) :- live(W, I, C, neg), conn(C, xone), xone_pol(C, D, G, R), flip(R, Q),
-    not xone_term(W, C, D2, 2) : member(C, D2), D2 != D.
+    not xone_by(W, C, D2) : member(C, D2), D2 != D.
 
 %*! witness_status(E, C, S)
 
