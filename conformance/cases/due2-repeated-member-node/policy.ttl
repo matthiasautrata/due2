@@ -1,0 +1,56 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native negative case: logical constraints whose list names one node
+# twice (decisions/0022, due2-profiles.md §5). IM §2.5.2 requires the operand
+# values to be unique Constraint instances, so the policy is not valid ODRL 2.2.
+# In ex:singleDomicile the repeat changes the meaning: read as positions, the
+# xone is (usDomiciled ∧ ¬euDomiciled); read as a set, it is
+# xone(euDomiciled, usDomiciled). In ex:euAndUs, an odrl:and, both readings
+# agree, and the policy is still not valid ODRL.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:singleDomicile, ex:euAndUs .
+
+ex:singleDomicile a odrl:Permission ;
+    odrl:action ex:export ;
+    odrl:target ex:ClientData ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:xone ( ex:euOnly ex:euOnly ex:usOnly )
+    ] .
+
+ex:euAndUs a odrl:Permission ;
+    odrl:action ex:export ;
+    odrl:target ex:ClientData ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:and ( ex:euOnly ex:usOnly ex:euOnly )
+    ] .
+
+ex:euOnly a odrl:Constraint ;
+    odrl:leftOperand ex:euDomiciled ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperand true .
+
+ex:usOnly a odrl:Constraint ;
+    odrl:leftOperand ex:usDomiciled ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperand true .
+
+ex:export a odrl:Action .
+
+ex:euDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:euDomiciled ;
+    rdfs:range xsd:boolean .
+
+ex:usDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:usDomiciled ;
+    rdfs:range xsd:boolean .

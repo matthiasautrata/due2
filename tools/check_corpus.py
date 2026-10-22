@@ -462,6 +462,35 @@ class Bindings:
             )
 
 
+def leaf_key(g: Graph, c: Node) -> tuple[frozenset[Node], ...] | None:
+    """What a leaf constraint states, with values as written; None for a logical constraint."""
+    if any((c, p, None) in g for p in CONNECTIVES):
+        return None
+    rights = frozenset(m for ro in g.objects(c, ODRL.rightOperand) for m in members(g, ro))
+    return (
+        frozenset(g.objects(c, ODRL.leftOperand)),
+        frozenset(g.objects(c, ODRL.operator)),
+        frozenset(g.objects(c, ODRL.unit)),
+        rights,
+    )
+
+
+def check_repeats(g: Graph, c: Node, p: Node, r: Report) -> None:
+    """A list that names a node twice, or an odrl:xone that states one leaf twice (decisions/0022)."""
+    ms = [m for o in g.objects(c, p) for m in members(g, o)]
+    if len(set(ms)) < len(ms):
+        r.diag(
+            "MalformedConstraint",
+            f"{q(g, c)}: {q(g, p)} names a member twice (due2-profiles.md 5, decisions/0022)",
+        )
+    keys = [k for m in set(ms) if (k := leaf_key(g, m)) is not None]
+    if p == ODRL.xone and len(set(keys)) < len(keys):
+        r.diag(
+            "MalformedConstraint",
+            f"{q(g, c)}: odrl:xone states one leaf twice (due2-profiles.md 5, decisions/0022)",
+        )
+
+
 def check_constraint(
     g: Graph, c: Node, b: Bindings, r: Report, used: Used, in_duty: bool = False
 ) -> None:
@@ -483,6 +512,7 @@ def check_constraint(
                     )
                 for m in members(g, o):
                     check_constraint(g, m, b, r, used, in_duty)
+            check_repeats(g, c, p, r)
         return
     left = list(g.objects(c, ODRL.leftOperand))
     ops = list(g.objects(c, ODRL.operator))

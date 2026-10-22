@@ -1,0 +1,44 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native negative case: an odrl:xone with two leaf members that state the
+# same constraint (decisions/0022, due2-profiles.md §5). The two blank nodes are
+# distinct Constraint instances, so the policy is valid ODRL 2.2. Read as
+# positions, the xone is (usDomiciled ∧ ¬euDomiciled), so a client with
+# euDomiciled true and usDomiciled false could never export; read as a set, it
+# is xone(euDomiciled, usDomiciled), and that client could.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:singleDomicile .
+
+ex:singleDomicile a odrl:Permission ;
+    odrl:action ex:export ;
+    odrl:target ex:ClientData ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:xone (
+            [ a odrl:Constraint ; odrl:leftOperand ex:euDomiciled ;
+              odrl:operator odrl:eq ; odrl:rightOperand true ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:euDomiciled ;
+              odrl:operator odrl:eq ; odrl:rightOperand true ]
+            [ a odrl:Constraint ; odrl:leftOperand ex:usDomiciled ;
+              odrl:operator odrl:eq ; odrl:rightOperand true ]
+        )
+    ] .
+
+ex:export a odrl:Action .
+
+ex:euDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:euDomiciled ;
+    rdfs:range xsd:boolean .
+
+ex:usDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:usDomiciled ;
+    rdfs:range xsd:boolean .

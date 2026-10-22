@@ -29,3 +29,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0019](0019-pending-basis-under-unknowns.md) | A `Pending` basis under unknowns is checked only for its kinds | 2026-10-18 | In force |
 | [0020](0020-vocabulary-defined-by-odrl-a-profile-or-the-policy.md) | A vocabulary term is defined by ODRL, a declared profile, or the policy itself | 2026-10-18 | In force |
 | [0021](0021-formalisation-follows-cedar.md) | Formalisation follows Cedar: an executable model, proofs, and differential testing | 2026-10-19 | In force |
+| [0022](0022-repeated-logical-constraint-member.md) | A repeated member of a logical constraint is malformed | 2026-10-22 | In force |

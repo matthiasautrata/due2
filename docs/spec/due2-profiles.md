@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.13
+**Status:** Draft v0.14
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.13** (2026-10-20, #83): a cold read. §1 says where `formal-semantics.md`, RL2's documents, the IM, and the Vocabulary are; cross-document references name their document, the §2 table's included; history markers leave the reference text, and §3's account of an earlier draft becomes the reason for the present rule; §7 states the timing rejections the registry cites, and names a case where exception 6 diverges; §8.1 says which property `dprod:currentAgent` reads; §8.1's collection-refinement row drops the MDS mapper, a separate project; §9 lists the open rows with their issues and states rows 5 and 6 as closed, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.14** (2026-10-22, `decisions/0022`, #100): §5 rejects a logical constraint whose list names a node twice, and an `odrl:xone` with two members, neither a logical constraint, of the same content. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -157,6 +157,8 @@ Mixed-component durations (months with days) and floating-point values are rejec
 `odrl:and`, `odrl:or`, `odrl:xone`, and `dprod:not`. ODRL has no negation; DPROD adds it with one operand. `odrl:andSequence` is rejected at normalisation (`UnsupportedConnective`): it carries ordering semantics and is not flattened into `and`.
 
 A connective's members may be one RDF list or repeated values, as a set right operand's may (§4). A connective over the empty list, `odrl:and ()` for example, is rejected (`MalformedConstraint`, `decisions/0017`): ODRL gives it no meaning, and the empty conjunction's `T` or the empty disjunction's `F` would decide the rule without looking at the request.
+
+A connective whose list names one node twice is rejected too (`MalformedConstraint`, `decisions/0022`): ODRL IM §2.5.2 requires the operand values to be unique Constraint instances. An `odrl:xone` is also rejected when two of its members that are not logical constraints state the same left operand, operator, unit, and set of right operand values, compared as written terms (`due2-workflows.md` §2 `Term`). The two nodes are distinct instances, so ODRL admits this form, and the rejection is due2's own. Read as positions in the list, as W1's expansion reads it (`due2-workflows.md` §4, stage 2), `xone(a, a, b)` is `b ∧ ¬a` whenever `a` is decided; read as a set, it is `xone(a, b)`. ODRL does not say which reading it means, and an author who lists a condition twice most likely made a mistake. `and` and `or` are idempotent, so two leaves with the same content change nothing there and are admitted.
 
 Stage 2 of W1 pushes negation inward before DNF: De Morgan for `and` and `or`, and complement operators for atoms — `eq`↔`neq`, `lt`↔`gteq`, `lteq`↔`gt`, `isAnyOf`↔`isNoneOf`. Both rewrites are valid in Kleene logic because an operand that is missing, ill-typed, or a concept outside the operand's schemes (§4) gives `U` on both sides. `not` over `xone` expands `xone` first.
 

@@ -1,0 +1,16 @@
+{
+  "case": "due2-xone-repeated-leaf",
+  "source": "due2-native: an odrl:xone that states one leaf twice (decisions/0022; issue #100)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2. IM §2.5.2 requires a logical constraint's operand values to be unique Constraint instances, and the two blank nodes are two instances, so the policy is valid ODRL 2.2 and the rejection is due2's own (decisions/0022 item 2). Read as positions, as W1's expansion does, the xone is (usDomiciled ∧ ¬euDomiciled), so a client with euDomiciled true and usDomiciled false could never export; read as a set, it is xone(euDomiciled, usDomiciled), and that client could. Contrast due2-repeated-member-node, where the list names one node twice and the shape fails the policy too.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "ex:singleDomicile's odrl:xone has two leaf members that both state euDomiciled eq true, so it has no single reading. due2-profiles.md §5 rejects it with MalformedConstraint, in stage 2."
+  }
+}

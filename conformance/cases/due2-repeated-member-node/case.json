@@ -1,0 +1,17 @@
+{
+  "case": "due2-repeated-member-node",
+  "source": "due2-native: logical constraints whose list names one node twice (decisions/0022; issue #100)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Authored for due2. Not valid ODRL 2.2: IM §2.5.2 requires a logical constraint's operand values to be unique Constraint instances, and odrl22-shape.ttl fails a list that names one node twice. In ex:singleDomicile the repeat changes the meaning: read as positions, the xone is (usDomiciled ∧ ¬euDomiciled); read as a set, it is xone(euDomiciled, usDomiciled). In ex:euAndUs both readings agree, and due2 still rejects it, as ODRL requires (decisions/0022 item 1).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "ex:singleDomicile's odrl:xone and ex:euAndUs's odrl:and each name ex:euOnly twice in their list. due2-profiles.md §5 rejects a logical constraint whose list names a node twice with MalformedConstraint, in stage 2."
+  }
+}
