@@ -229,7 +229,7 @@ Everything above reduces the probability of a defect. None of it produces a proo
 - **The completion algebra** (`due2-workflows.md` §6.4). Its claims make W3's two-extreme computation equal to the definition over every completion. A flaw in one makes a definite verdict wrong (`correctness-strategy.md` R3).
 - **Semantic preservation in W1** (§7.1; `odrl-compound-to-atomic-normalization.md` §8.1). A mis-normalised policy still evaluates cleanly and simply means something else (R1). The `Den` oracle becomes part of the model (issue #8).
 
-**Counterexamples first.** Each claim gets a small Alloy 6 model and a bounded-exhaustive search over clingo-i before anyone tries to prove it (`decisions/0021` #3). A small-scope search finds a false claim in minutes, and a failed proof finds it slowly.
+**Counterexamples first.** Each claim gets a small Alloy 6 model, and M and W also a bounded-exhaustive search over clingo-i, before anyone tries to prove it (`decisions/0021` #3 and its amendment of 2026-10-22). A small-scope search finds a false claim in minutes, and a failed proof finds it slowly.
 
 **Operational cautions:**
 

@@ -179,7 +179,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 The formal model is a small, executable model of due2's semantics, written in a prover. Proofs establish the claims below about it, and a differential compares it with clingo-i and with W1–W3 as each is built. It is an oracle, never a production evaluator, and no code is extracted from it. Claims M, K, F, and W go to the prover; P is a question the spec answers. Which prover is chosen by a spike on claim M, Lean 4 first (§9 #11).
 
 - **Risks.** R3 and R4 above all: each claim below is an argument that a definite verdict is right, and a flaw in one makes a definite verdict wrong. R1 through `Den`, once `Den` moves into the model (#8). R9 in the bounded-exhaustive search, which proves nothing about a shape it never reaches (#77 is such a case).
-- **Claims.** Each is a sentence of the spec, or a question one of its records leaves open. Every claim gets a small Alloy 6 model of its own and the bounded-exhaustive search over clingo-i first. It goes to the prover only after both have run at stated bounds without a counterexample.
+- **Claims.** Each is a sentence of the spec, or a question one of its records leaves open. Every claim gets a small Alloy 6 model of its own first, and M and W also get the bounded-exhaustive search over clingo-i (`decisions/0021`, amendment of 2026-10-22). A claim goes to the prover only after these have run at stated bounds without a counterexample.
 
   | Claim | Statement and source | Evidence |
   |---|---|---|
@@ -249,7 +249,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
 4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (`due2-workflows.md` §6.4's computation) follows, differentially against enumeration.
 5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram, first over clingo-i (#42, #44).
-6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and the bounded-exhaustive search over clingo-i, then the prover spike on M.
+6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and, for M and W, the bounded-exhaustive search over clingo-i, then the prover spike on M.
 7. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written (`decisions/0009`).
 8. W1 stage 1 with the Python `Den` oracle; the formal model's `Den` follows (issue #8).
 9. W1 stage 2, gated by L9 against `I`.
