@@ -42,3 +42,7 @@ The model in `check_completion.py` covers one policy. Under conflict `invalid` w
 ## Amendment (2026-10-24, the listed frontier)
 
 `decisions/0026` changes the listed frontier that `frontier_complete` is compared with: under unknowns, it is the non-dominated routes that suffice, read from the same enumeration of the relevant unknowns. The definition (#1) and the relevant unknowns (#2) stand. Beyond the bound (#4), W3 now also lists a frontier: the routes of the candidates that are ready or pending whatever the unknowns are, and that no completion removes in `due2-workflows.md` §6.2. The figures of § Finding are v0.33's. Against `decisions/0026`'s definition, the same 942 instances give `frontier_complete` false in 189, the listed frontier empty in 1, and the cheap rule false in 143 more where the definition says true.
+
+## Amendment (2026-10-24, the bound is config)
+
+`max_frontier_vars` (#3) is a field of `config` (`due2-workflows.md` §3.4), set by the caller, default 8, rather than a limit of W3. It changes `frontier_complete` and the listed frontier, so it must be an input for L1 and replay to hold. The definition and the computation stand.

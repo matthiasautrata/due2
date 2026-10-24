@@ -150,17 +150,19 @@ A vector file is named like a case, starting with its origin. Each of its scenar
 {
   "file": "due2-one-permission",
   "notes": "Anything a reviewer needs beyond each scenario's why.",
+  "tags": ["duties"],
   "prefixes": { "ex": "https://example.org/", "odrl": "http://www.w3.org/ns/odrl/2/", "xsd": "http://www.w3.org/2001/XMLSchema#" },
   "corpus": { "policy": [ … ], "atom": [ … ], "atom_party": [ … ], "root": [ … ] },
   "scenarios": [
     {
       "name": "within ceiling and quota",
+      "tags": ["temporal"],
       "request": {
         "request": [ { "action": "ex:retrieve", "target": "ex:DataService", "at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ],
         "request_party": [ { "function": "odrl:assignee", "party": "ex:Subscriber" } ]
       },
       "sotw": { "sotw": [ { "effective_at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ] },
-      "config": { "config": [ { "combination": "prohibit-overrides", "violations": "ignore" } ] },
+      "config": { "config": [ { "combination": "prohibit-overrides", "violations": "ignore", "max_mixed": 8, "max_frontier_vars": 8 } ] },
       "expected": {
         "trace": { "verdict": [ { "value": "Permit", "frontier_complete": true, "exact": true } ], "eliminated": [] },
         "why": "Both constraints hold; the permission applies and has no duties."
@@ -175,16 +177,18 @@ A vector file is named like a case, starting with its origin. Each of its scenar
 | `file` | The file name without `.json`. |
 | `source`, `notes` | Optional. `source` names what the vector file was derived from, such as a case and scenario. `notes` records what changed in the derivation, and anything else a reviewer needs. |
 | `prefixes` | Prefix to namespace IRI, for the authoring form below. |
-| `corpus` | The corpus (`due2-workflows.md` §3.1). It satisfies the invariants that `due2-workflows.md` §3.1 lists, because W1 establishes them and the evaluator trusts them. Ids the corpus mints, such as `atom_id` and `constraint_id`, are IRIs the author chooses (`ex:a1`), and `duty.binding_key` is any string the author chooses. |
+| `tags`, `scenarios[].tags` | Optional. Short labels for what a vector exercises (`duties`, `temporal`); a scenario carries the file's tags and its own. They serve the scorecard's per-tag counts (`spikes/README.md`), which count a scenario once under each of its tags. Tags are test metadata: no collection carries them, and the evaluator never sees them. |
+| `corpus` | The corpus (`due2-workflows.md` §3.1). It satisfies the invariants that `due2-workflows.md` §3.1 lists, because W1 establishes them and the evaluator trusts them. Ids the corpus mints, such as `atom_id` and `constraint_id`, are IRIs the author chooses (`ex:a1`), and `duty.binding_key` is any `Digest` the author chooses, such as the digest of the duty's IRI. |
 | `scenarios[].request`, `sotw`, `config` | The scenario's request, SOTW, and config (`due2-workflows.md` §3.2–§3.4). |
 | `expected.trace` | The trace relations the scenario asserts (`due2-workflows.md` §3.5). `verdict` is required, and every other relation is optional. A stated relation is compared with the evaluator's as a set of tuples, exactly, every field included: `[]` asserts that it has no tuples, and an absent relation asserts nothing. So `verdict.exact` is always compared, unlike `expected.exact` of a case. `evaluation` is never stated (below). |
 | `expected.why` | The derivation in one or two sentences, from `due2-workflows.md` §5–§6, as in a case. |
 
-**Authoring form.** A vector file is written by hand, so it may differ from the canonical form of `due2-workflows.md` §2 in three ways. The harness canonicalises every collection, the expected trace included, before it sends or compares it.
+**Authoring form.** A vector file is written by hand, so it may differ from the canonical form of `due2-workflows.md` §2 in four ways. The harness canonicalises every collection, the expected trace included, before it sends or compares it.
 
 - A string value may be a prefixed name: when the text before its first colon is a key of `prefixes`, that text and the colon are replaced by the namespace IRI. A full IRI's scheme (`https`, `urn`) is not a key, so it stays as written, and so does a literal's lexical form `v`, which never expands. `party` and `sha256` are not allowed as prefix names, because `constraint.scope` values and digests start with them.
 - Tuples may be in any order. The harness sorts them.
 - A relation with no tuples may be written as `[]`. The harness omits it.
+- A relation may be written as a table, `{"fields": ["atom_id", "function", "party"], "rows": [["ex:a1", "odrl:assignee", "ex:Subscriber"]]}`: each row gives one value per field, in order, and `null` for an optional field the tuple omits. The harness expands each row into a tuple. A row whose length differs from `fields`, or with `null` in a field that is not optional, makes the file invalid. A `null` means only that the field is absent, never that a value is unknown: a property whose value is missing or unresolved is a `fact` whose `status` says so (`due2-workflows.md` §3.3).
 
 Literals take the form `{"v", "t", "l"}` of `due2-workflows.md` §2, not the JSON-LD forms of `case.json`. Set semantics apply to a relation's key (`due2-workflows.md` §2), so a tuple written twice counts once, and two tuples with one key that differ elsewhere make the file invalid. So do a relation or a field that `due2-workflows.md` §3 does not define, and a relation with an empty key, such as `verdict`, holding other than one tuple.
 
@@ -207,7 +211,7 @@ Closed gaps, with the cases that close them:
 - **`odrl:or`** — `force-20` (260 disjuncts, all known) and `due2-or-unknown` (Kleene, with unknowns).
 - **`max_mixed` fallback (`due2-workflows.md` §6.4, beyond the bound)** — `due2-max-mixed` (nine facts each read both ways by an authored permission pair, `expected.exact = false`; scenario 2 sits at the bound, where only exact enumeration decides).
 - **`perm` and `invalid` conflict strategies** — `oval-conflict-perm`, `oval-conflict-invalid`.
-- **Incomparable frontier** — `due2-incomparable-frontier` (collapse, dominance, second approver); `config.preference` itself waits on its format (`due2-workflows.md` §9 #3).
+- **Incomparable frontier** — `due2-incomparable-frontier` (collapse, dominance, second approver); a declared preference waits on its config field's form (`due2-workflows.md` §9 #3).
 - **Requests without a target** — `oval-no-target-permission`, `oval-no-target-prohibition` (`due2-workflows.md` §3.2, §5.2).
 - **Canonical literals deciding a verdict** — `due2-xone-unknown` (an `xone` operand read both ways; `due2-workflows.md` §6.4).
 - **Unknown duty guards; many conditional duties on one permission** — `due2-conditional-duties` (nine guarded duties, linear and exact, `decisions/0003`) and `w3c-fs-c2` scenarios 4–5.
@@ -227,7 +231,7 @@ Open gaps:
 
 - **Rejection codes without a negative case.** Covered: `MissingAction`, `MissingTarget`, `WitnessOutsideDuty`, `OperatorTypeMismatch` (a right operand outside its range, a right operand outside its operand's concept schemes, and an operator other than `eq`, `neq`, `isAnyOf`, and `isNoneOf` on a concept-scheme operand; the operator-not-allowed and `isA`-over-a-set forms lack one), `MalformedConstraint` (several values on `eq`, a list mixed with a value, the empty list as a right operand, a connective over the empty list, a list that names a node twice, and an `xone` that states a leaf twice; the missing-operand and two-lists forms lack one), `RetypedOperand` (a restated range; the cardinality and allowed-operator forms lack one), `OperandRangeMismatch`, `InvalidBinding` (a concept scheme on a datatype range; the source, property, and context-property forms lack one), `UndeclaredProfile` (an action no vocabulary defines; an undeclared DPROD or due2 namespace lacks one), `MisplacedConstraint` (a refinement on a Duty and on a Policy, a constraint on an action node and on an AssetCollection; a constraint on an Asset or a Party lacks one), `UnsupportedConstruct` (a constraint on the Policy; `odrl:inheritFrom`, `odrl:rightOperandReference`, `odrl:implies`, a misplaced `odrl:source`, and a collection refinement lack one), `InvalidNesting` (a Prohibition under a Permission, a remedy on a Duty, a consequence on a Permission; a consequence on a Consequence or a Remedy, and a node in two Rule classes, lack one). `ConflictingProfileDeclaration` cannot have one while DPROD is the only profile that ships a binding module, because it needs two modules that declare one term differently; the clingo-i unit tests cover it with test modules. Every other error of `due2-diagnostics.md` §3 needs one. `odrl-compound-to-atomic-normalization.md` §10's minimum suite names the stage-1 vectors. The *unchecked* rows need W1 itself, because the checker cannot see them.
 - **`admit_source` / `admit_age`** — a case-format gap: `sotw.facts` carries no attribution (`source`, `observed_at`), so the filter cannot be shown at work; three cases note this in `notes`. Fixing it needs a fact-attribution extension to the case format.
-- **`config.preference`** — the incomparable frontier has a case (`due2-incomparable-frontier`), but the preference format is open (`due2-workflows.md` §9 #3, #5).
+- **Declared preference** — the incomparable frontier has a case (`due2-incomparable-frontier`), but the preference format is open (`due2-workflows.md` §9 #3, #5).
 - **Several policies per case** — `due2-workflows.md` §9 #7 (#1); blocked on a case-format extension. With it come the cross-policy combinations: every case's `combination` is `prohibit-overrides`.
 - **`frontier_complete`** — no case asserts it, neither an incomplete frontier under a definite `Pending` nor the beyond-`max_frontier_vars` fallback (`due2-workflows.md` §6.4, `decisions/0004`); needs `expected.frontier_complete` in the case format (#30).
 - **The explanation in the rest of the corpus** — 65 of 438 scenarios assert `verdict_basis` and `eliminated`, and 35 assert `unknown_parts` (`due2-workflows.md` §3.7). The W3 done-gate names `verdict_basis` (`correctness-strategy.md` §4.5), so the rest are backfilled as cases are touched. An elimination by the cross-policy `combination` waits for several policies per case. 23 of the 88 `Indeterminate` scenarios assert `verdict_range`. The `Indeterminate` witness is open (#58).

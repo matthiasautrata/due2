@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.34
+**Status:** Draft v0.35
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.34** (2026-10-24, `decisions/0026`, #84): under unknowns, §6.3 lists the non-dominated routes that suffice, those within which every completion has an open route, where v0.33 listed only the routes of the candidates that are ready or pending whatever the unknowns are; §6.4 says how W3 computes them, within `max_frontier_vars` and beyond it, and §3.5's `alternative` follows. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.35** (2026-10-24, #36): every field of §3 has a value type, and §2 adds `Instant`, `Flag`, `Count`, `Digest`, and `String`. A policy's profiles move to `policy_profile`, one tuple per IRI, and `policy.version` is the digest of the authored policy. `config` gains `max_mixed` and `max_frontier_vars`, which change the trace, and loses `preference`, whose form is open (#5). `eliminated`, `dominated`, and `verdict_basis` are keyed by all of their fields, since one atom or alternative can have several removers, dominators, or roles. `request.reference` is a `String`, since a caller's identifier need not be an IRI. `decisions/0004` is amended. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -58,15 +58,20 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 | Type | Meaning |
 |---|---|
 | `Id` | IRI, compared by equality only. Generated ids are UUID IRIs (`odrl-compound-to-atomic-normalization.md` §5). |
-| `Term` | An `Id`, or a literal `(lexical, datatype[, language])`. Exact numbers are lexical forms with a numeric datatype; there is no floating-point domain. Instants are `xsd:dateTime` in UTC. |
+| `Term` | An `Id`, or a literal `(lexical, datatype[, language])`. Exact numbers are lexical forms with a numeric datatype; there is no floating-point domain. |
+| `Instant` | A literal of datatype `xsd:dateTime` with a timezone (`decisions/0024`). |
 | `Truth` | `T`, `F`, `U` — Kleene strong three-valued logic. |
-| `Enum` | A closed set, listed with the field. |
+| `Enum` | A closed set of strings, listed in the field's row of §3 or in the section that row cites. |
+| `Flag` | `true` or `false`. |
+| `Count` | An integer within ±2^53. |
+| `Digest` | `sha256:` followed by 64 lowercase hex digits: the SHA-256 of the bytes that the field's row names, written as a collection id is (below). The bytes behind the derived keys, `binding_key`, `alt_id`, and the instance keys, are open (#107). |
+| `String` | Text that is neither an IRI nor a literal, such as an RFC 5545 RRULE. |
 
 **Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. **[D]** (`decisions/0007`):
 
 - **Encoding.** A collection is a JSON object keyed by relation name, serialised by RFC 8785 (JCS) to UTF-8. Each value is the relation's tuples, as a JSON array; a relation with no tuples is omitted, so a collection with no tuples is `{}`. A tuple is a JSON object keyed by field name; absent optional fields are omitted. Relation and field names are ASCII, so JCS orders them by code point.
 - **Order.** Within a relation, tuples are sorted by key, field by field in declaration order, each field by Unicode code-point order of its serialised value. A relation with an empty key holds one tuple.
-- **Values.** An `Id`, `Truth`, or `Enum` is a JSON string. A literal is the object `{"v": lexical, "t": datatype}` plus `"l": language` when present; an `Id` is never an object, so the two cannot collide. A number is never a JSON number — it is a literal with a numeric datatype. A field declared as a count or bound is a JSON integer within ±2^53. A flag is a JSON boolean. No floating point.
+- **Values.** An `Id`, `Truth`, `Enum`, `Digest`, or `String` is a JSON string. A literal is the object `{"v": lexical, "t": datatype}` plus `"l": language` when present; an `Id` is never an object, so the two cannot collide. A number is never a JSON number — it is a literal with a numeric datatype. A `Count` is a JSON integer within ±2^53, and a `Flag` a JSON boolean. No floating point.
 - **Digest.** The collection id is `sha256:` followed by the lowercase hex SHA-256 of the canonical bytes.
 
 Canonical N-Quads remain the artifact of W1 stage 1, which carries a graph (`odrl-compound-to-atomic-normalization.md` §4); nothing downstream of stage 2 reads them.
@@ -75,24 +80,29 @@ Canonical N-Quads remain the artifact of W1 stage 1, which carries a graph (`odr
 
 ## 3. Reference data model
 
+Each relation is written as §2 declares it. A field is an `Id` unless a value type of §2 follows its name, as in `version: Digest`.
+
 ### 3.1 Corpus — output of W1
 
 ```text
-policy            (policy_id | conflict, profile, version)
-atom              (atom_id | effect, action, relation?, relation_value?, policy_id, source_rule, priority?)
+policy            (policy_id | conflict: Enum, version: Digest)
+policy_profile    (policy_id, profile)
+atom              (atom_id | effect: Enum, action, relation?, relation_value?, policy_id, source_rule, priority?: Count)
 atom_party        (atom_id, function | party)
-constraint        (constraint_id | atom_id, scope, left_operand, operator, datatype, unit?)
-constraint_value  (constraint_id, value)
+constraint        (constraint_id | atom_id, scope: Enum, left_operand, operator, datatype, unit?)
+constraint_value  (constraint_id, value: Term)
 edge              (parent_id, child_id)
 root              (atom_id)
-duty              (atom_id | source_duty, scope, binding_key, deadline?, recurrence?)
+duty              (atom_id | source_duty, scope: Enum, binding_key: Digest, deadline?: Term, recurrence?: String)
 closure           (relation, narrower, broader)
-diagnostic        (policy_id, code, ref)
+diagnostic        (policy_id, code: Enum, ref)
 ```
 
 | Field | Meaning |
 |---|---|
 | `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); W1 makes the result explicit. |
+| `policy.version` | The digest of the authored policy graph: `sha256:` followed by its `source_digest`, the SHA-256 of its canonical N-Quads (`odrl-compound-to-atomic-normalization.md` §5.2). Versions are told apart by content, never by a number that has to be ordered. |
+| `policy_profile` | Each profile the policy names with `odrl:profile`, one tuple per IRI. A policy may name none, or several. |
 | `atom.effect` | `Enum {Permit, Forbid, Oblige}` — one required field (`due2-architecture.md` §3). |
 | `atom.action` | The atom's single action, unrefined. Refinements are constraints with scope `action`. |
 | `atom.relation`, `relation_value` | At most one relation, `odrl:target` or `odrl:output`, and its value. |
@@ -120,9 +130,9 @@ Invariants, established by W1 and trusted downstream: `edge` is acyclic; every c
 ### 3.2 Request
 
 ```text
-request        (| reference?, action, target?, at)
+request        (| reference?: String, action, target?, at: Instant)
 request_party  (function | party)
-request_param  (name | value)
+request_param  (name | value: Term)
 ```
 
 `reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action, an `xsd:dateTime` with a timezone — validity time, what ODRL's `dateTime` constrains. `target` may be absent — a request for an action on no named asset; every relation part is then `U` (§5.2), never `F`. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
@@ -130,13 +140,13 @@ request_param  (name | value)
 ### 3.3 SOTW
 
 ```text
-sotw              (| effective_at)
-fact              (property | status)
-fact_value        (property, value)
-attribution       (property, source | observed_at)
-evidence          (evidence_id | occurred_at, actor, action, object?, issuer?, discharges?)
-evidence_param    (evidence_id, name | value)
-activation        (instance_key | at)
+sotw              (| effective_at: Instant)
+fact              (property | status: Enum)
+fact_value        (property, value: Term)
+attribution       (property, source | observed_at: Instant)
+evidence          (evidence_id | occurred_at: Instant, actor, action, object?, issuer?, discharges?: Digest)
+evidence_param    (evidence_id, name | value: Term)
+activation        (instance_key: Digest | at: Instant)
 closure           (module, relation, narrower, broader)
 ```
 
@@ -169,31 +179,31 @@ An evaluation's SOTW is frozen once W2 runs; a fact that changes later is a new 
 ### 3.4 Config
 
 ```text
-config        (| combination, preference?, violations)
+config        (| combination: Enum, violations: Enum, max_mixed: Count, max_frontier_vars: Count)
 signer        (source_duty, issuer)
 admit_source  (property, source)
-admit_age     (property | max_age)
+admit_age     (property | max_age: Term)
 ```
 
-Parameters that are not policy content: the cross-policy `combination` (§6.2), an optional declared `preference` among frontier alternatives (§6.3), and `signer`, the admissibility record for evidence. When a duty has `signer` entries, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2's `spec/RL2_Model.md` §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` and `admit_age` are the admissibility record for facts: a value whose `attribution` source is not listed for its property, or that was observed longer than `max_age` before `effective_at`, is treated as absent — `missing` (`due2-profiles.md` §3).
+Parameters that are not policy content. `combination` is the cross-policy strategy, `Enum {prohibit-overrides}`; other strategies are open (§6.2). `max_mixed` and `max_frontier_vars` bound W3's exact computations (§6.4); the caller sets each, 8 unless it has reason to choose otherwise. They are config, not constants of the evaluator, because they change the trace: L1 (§8) requires the same trace bytes from the same evaluation, and an evaluation is its four input collection ids (§3.5), `config_id` among them. A declared preference among frontier alternatives (§6.3) would be a config field too; its form is open (#5). `signer` is the admissibility record for evidence. When a duty has `signer` entries, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2's `spec/RL2_Model.md` §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` and `admit_age` are the admissibility record for facts: a value whose `attribution` source is not listed for its property, or that was observed longer than `max_age`, an `xsd:duration`, before `effective_at`, is treated as absent — `missing` (`due2-profiles.md` §3).
 
 ### 3.5 Trace — output of W2 and W3
 
 ```text
-evaluation     (| corpus_id, request_id, sotw_id, config_id)
-finding        (atom_id, predicate | truth)
-basis          (atom_id, kind, ref | truth)
-unknown_part   (atom_id, predicate, kind, ref | input, status)
+evaluation     (| corpus_id: Digest, request_id: Digest, sotw_id: Digest, config_id: Digest)
+finding        (atom_id, predicate: Enum | truth: Truth)
+basis          (atom_id, kind: Enum, ref | truth: Truth)
+unknown_part   (atom_id, predicate: Enum, kind: Enum, ref | input, status: Enum)
 read           (property)
-instance       (instance_key | atom_id, occurrence?, status)
-eliminated     (atom_id | by_atom, rule)
-alternative    (alt_id, permission_id)
-alt_duty       (alt_id, duty_id)
-dominated      (alt_id | by_alt)
-verdict        (| value, frontier_complete, exact)
-verdict_basis  (atom_id | role)
-verdict_range  (| low, high)
-diagnostic     (policy_id, code, ref)
+instance       (instance_key: Digest | atom_id, occurrence?: Instant, status: Enum)
+eliminated     (atom_id, by_atom, rule: Enum)
+alternative    (alt_id: Digest, permission_id)
+alt_duty       (alt_id: Digest, duty_id)
+dominated      (alt_id: Digest, by_alt: Digest)
+verdict        (| value: Enum, frontier_complete: Flag, exact: Flag)
+verdict_basis  (atom_id, role: Enum)
+verdict_range  (| low: Enum, high: Enum)
+diagnostic     (policy_id, code: Enum, ref)
 ```
 
 | Relation | Written by | Meaning |
@@ -201,12 +211,12 @@ diagnostic     (policy_id, code, ref)
 | `evaluation` | shell | The four input collection ids. The evaluation id is the digest of this tuple — derived, not stored. The case is not an input: the ledger links each evaluation to its case (§7), so the trace depends on content alone. |
 | `finding` | W2 | One truth value per evaluated atom and predicate — `applies`, `in_force`, `owed`, or `fulfilled` (§5.1). |
 | `basis` | W2 | The parts that *determine* the finding. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
-| `unknown_part` | W2 | Every `U` part of every finding W2 produces whose value is `T` or `U`, determining or not: its atom, the finding's predicate, the part's `kind` and `ref` as in `basis`, the `input` it reads (`target`, a party function, or an operand's property), and that input's `status`: `missing`, `invalid`, `conflict`, `unresolved`, or `misfit`, a `resolved` value that does not fit the operator (§5.4). An `unresolved` part is completed, and every other part is opaque (§6.4). An `F` finding's `U` parts are not named: none of them can change it, and an index may skip a certainly-`F` atom (§5.5), so naming them would make the relation depend on the index. Atoms are the disjuncts of the constraint DNF, unsimplified, with negation pushed to the leaves and `xone` expanded (§3.1, §4 stage 2, §6.4), so a `U` leaf of the authored tree is named exactly when some atom that reads it is `T` or `U`, even if the node above it is decided: in `or(a, u)` with `a` true, `u` is named; in `and(a, u)` with `a` false, it is not. **[D]** (`decisions/0016` and its amendment) |
+| `unknown_part` | W2 | Every `U` part of every finding W2 produces whose value is `T` or `U`, determining or not: its atom, the finding's predicate, the part's `kind` and `ref` as in `basis`, the `input` it reads (`odrl:target`, a party function, or an operand's property), and that input's `status`: `missing`, `invalid`, `conflict`, `unresolved`, or `misfit`, a `resolved` value that does not fit the operator (§5.4). An `unresolved` part is completed, and every other part is opaque (§6.4). An `F` finding's `U` parts are not named: none of them can change it, and an index may skip a certainly-`F` atom (§5.5), so naming them would make the relation depend on the index. Atoms are the disjuncts of the constraint DNF, unsimplified, with negation pushed to the leaves and `xone` expanded (§3.1, §4 stage 2, §6.4), so a `U` leaf of the authored tree is named exactly when some atom that reads it is `T` or `U`, even if the node above it is decided: in `or(a, u)` with `a` true, `u` is named; in `and(a, u)` with `a` false, it is not. **[D]** (`decisions/0016` and its amendment) |
 | `read` | W2 | Every state property consulted, determining or not. What the ledger pins (`due2-architecture.md` §7); also the dependency index re-evaluation may use. |
 | `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), and its status `Enum {fulfilled, outstanding, violated, unknown}`. The instance key is the key under which a case records what is owed and evidence is submitted. |
 | `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied: the policy's `conflict` value within a policy, the `combination` across policies (§6.2), or `violated_precondition`. **[D]** (#57) `by_atom` is one tuple per remover: under `prohibit` and a prohibit-overrides combination, each `T` `Forbid` that eliminates the candidate; under `perm`, each `T` candidate that eliminates the `Forbid`; under `invalid`, each `T` candidate and `T` `Forbid` of the void policy other than the atom itself; under `violated_precondition`, the violated duty. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. Under unknowns, the sets are the routes that suffice (§6.3), and the permissions those that give each in some completion. |
-| `dominated` | W3 | An alternative whose outstanding set strictly contains another's. |
+| `dominated` | W3 | An alternative whose outstanding set strictly contains another's, one tuple per alternative it contains. |
 | `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). |
 | `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
 | `verdict_range` | W3 | For an `Indeterminate` only: the least and the greatest completion verdict in the order `Deny < NotApplicable < Pending < Permit` (§6.4). Sound, and possibly wider, when `verdict.exact` is false. **[D]** (`decisions/0011`) |
@@ -425,7 +435,7 @@ Within one completion, alternatives are formed from the ready and pending candid
 2. **Order by inclusion.** Alternative `A` dominates `B` when `outstanding(A) ⊊ outstanding(B)`. This needs nothing but duty identity: no weights, no costs, no configuration. A ready candidate has the empty set and so dominates every pending one. Authorisation state is not a separate rule — it falls out of the order.
 3. **Frontier.** The non-dominated alternatives. If there are several, they are incomparable — neither demands a subset of the other's duties — and W3 reports all of them. Each outstanding duty is reported with its bearer, so a route that waits on someone other than the requester — a second approver — says so.
 
-**Sorting [O].** Inclusion is a partial order, and the frontier is its honest output. A total order needs a declared preference — fewest duties, declared weights, a ranking of duty kinds — in `config.preference`. Without one, alternatives are listed in a deterministic order (outstanding-set size, then `alt_id`) that expresses **no** preference. Storage order, upload time, and evaluation order never break a tie.
+**Sorting [O].** Inclusion is a partial order, and the frontier is its honest output. A total order needs a declared preference — fewest duties, declared weights, a ranking of duty kinds — in config, a field whose form is open (#5). Without one, alternatives are listed in a deterministic order (outstanding-set size, then `alt_id`) that expresses **no** preference. Storage order, upload time, and evaluation order never break a tie.
 
 **The listed frontier [D]** (`decisions/0026`). A *route* is an outstanding set. Under unknowns, each completion (§6.4) has its own candidates and frontier. A route is **open** in a completion when some candidate that survives §6.2 there has it, whether or not a smaller route dominates it there. A route **suffices** when it is open in some completion and every completion has an open route within it: the same set or a subset. For a definite `Pending` or `Permit` (§6.4), the listed frontier is the routes that suffice and that no route that suffices dominates. Each is an alternative whose grounds are the permissions that give it in some completion. For a definite `Permit`, every completion has the empty route open, so the listed frontier is the empty route.
 
@@ -468,13 +478,13 @@ The verdict is therefore a monotone map from completions — ordered with prohib
 
 This matters wherever one fact is read in both directions. `xone` expands into disjuncts that carry the others' negations. Authors write complements across rules ("home lending may read; everyone else must petition first" as two permissions, `dept = HL` and `dept ≠ HL`). A guard literal may also appear in a rule's constraint. With the fact unknown, completing those parts independently admits combinations no value produces — both `dept = HL` and `dept ≠ HL` `F` — and the verdict widens to `Indeterminate` where the authored policy decides. In `due2-xone-unknown`, single-domicile clients are permitted by an `xone` and dual-domicile clients by a separate rule with an attestation duty; with one domicile known, the other unknown, and the attestation on file, every value of the unknown fact permits. Sharing one variable excludes the impossible combinations, and the verdict is `Permit`.
 
-*Computing it.* A variable is **uniform** when each of its occurrences moves the verdict the same way — upward for a positive occurrence in a permission's `applies` or a duty's `fulfilled`, or a negative one in a prohibition's `applies`, a precondition's `owed`, or an obligation's `in_force` under `deny`; downward for the reverse — and **mixed** otherwise. By the monotonicity argument above, applied per occurrence, uniform variables are bounded by the two extreme completions. Mixed variables are enumerated: for each of the `2^k` assignments to the `k` mixed variables, complete the uniform ones at both extremes. The verdict is definite when all `2^(k+1)` completion verdicts agree. `k` counts only unknown literals that occur with both directions in the evaluation at hand — zero unless a fact is read both ways, as above; a duty's guards alone never raise it. Beyond `max_mixed` (a W3 limit, like W1's limits; default 8) the mixed variables are completed independently, each occurrence its own variable: sound, erring only towards `Indeterminate`, and recorded as `verdict.exact = false`. Either way, a definite verdict is invariant over every real value of every unresolved fact, and over both truth values of every opaque part. `tools/check_completion.py` checks this computation against brute force over every assignment, under the three conflict strategies, with the fallback forced, with guards that share variables with rule constraints (`decisions/0003`), and with deadlines, violated preconditions, and `violations = deny`. It has found no mismatch, and 2.5% of its instances are definite where completing every occurrence independently says `Indeterminate`.
+*Computing it.* A variable is **uniform** when each of its occurrences moves the verdict the same way — upward for a positive occurrence in a permission's `applies` or a duty's `fulfilled`, or a negative one in a prohibition's `applies`, a precondition's `owed`, or an obligation's `in_force` under `deny`; downward for the reverse — and **mixed** otherwise. By the monotonicity argument above, applied per occurrence, uniform variables are bounded by the two extreme completions. Mixed variables are enumerated: for each of the `2^k` assignments to the `k` mixed variables, complete the uniform ones at both extremes. The verdict is definite when all `2^(k+1)` completion verdicts agree. `k` counts only unknown literals that occur with both directions in the evaluation at hand — zero unless a fact is read both ways, as above; a duty's guards alone never raise it. Beyond `max_mixed` (a `config` field, §3.4) the mixed variables are completed independently, each occurrence its own variable: sound, erring only towards `Indeterminate`, and recorded as `verdict.exact = false`. Either way, a definite verdict is invariant over every real value of every unresolved fact, and over both truth values of every opaque part. `tools/check_completion.py` checks this computation against brute force over every assignment, under the three conflict strategies, with the fallback forced, with guards that share variables with rule constraints (`decisions/0003`), and with deadlines, violated preconditions, and `violations = deny`. It has found no mismatch, and 2.5% of its instances are definite where completing every occurrence independently says `Indeterminate`.
 
 *What stays approximate.* Parts that read one fact but are neither identical nor complementary remain independent: `x ≤ 5` and `x > 7` both `T` is still a completion, though no value of `x` produces it, and two permissions on `x = "a"` and `x = "b"` over an enumerated `x` are still `Indeterminate` when `x` is unknown. The cost is an `Indeterminate`, or a wider `verdict_range`, never a wrong definite verdict. Exactness there needs each operand's value domain and is not bounded in general. RL2 makes the same approximation for all shared facts (RL2's `spec/RL2_Semantics.md` § Conflict Resolution). **[O]** — domain-aware completion for enumerated facts (§9 #6).
 
 `frontier_complete` is true iff every completion's frontier is the listed frontier (§6.3). It is false when some uncertain candidate could, in some completion, add or change a frontier alternative without changing the verdict: `Pending` stands, but a completion's frontier may hold routes that are not listed, or lack some that are. "Change" includes removal: an uncertain candidate whose outstanding set is smaller can dominate a listed alternative.
 
-*Computing it* **[D]** (`decisions/0004`, `decisions/0026`). For a definite `Pending`, the *relevant unknowns* are the variables of the `U` parts of uncertain candidates (permission, `owed`, `fulfilled`) and of prohibitions whose finding is `U`. Ready and pending candidates have none, and two `Pending` completions that agree on the relevant unknowns have the same surviving candidates, each with the same outstanding set. So they have the same open routes and the same frontier. With `r` relevant unknowns, at most `max_frontier_vars` (a W3 limit; default 8), W3 enumerates all `2^r` assignments, with every other unknown at one fixed value. The routes that suffice, and so the listed frontier, are read from those assignments' open routes, and `frontier_complete` is true iff each assignment's frontier is the listed frontier. The two-extremes shortcut does not apply, because a frontier is a set, not a point on the verdict chain. Beyond the bound, W3 lists the routes of the candidates that are ready or pending whatever the unknowns are, and that no completion removes in §6.2, the non-dominated ones. Under `invalid`, a `U` prohibition in a candidate's policy voids the policy in the completions where the prohibition is `T`, so such a candidate is left out. Under `prohibit` and the default combination, such a prohibition gives `Deny` where it is `T`, so a definite `Pending` has none. Each route listed then suffices, since its candidate survives with it in every completion, though some route that suffices may be missing. `frontier_complete` is false and `verdict.exact` is false. The cheaper rule "complete iff no candidate is uncertain" is sound but less exact; `decisions/0004` compares the two, and `tools/check_completion.py` checks the enumeration against the definitions, and that every route the fallback lists suffices.
+*Computing it* **[D]** (`decisions/0004`, `decisions/0026`). For a definite `Pending`, the *relevant unknowns* are the variables of the `U` parts of uncertain candidates (permission, `owed`, `fulfilled`) and of prohibitions whose finding is `U`. Ready and pending candidates have none, and two `Pending` completions that agree on the relevant unknowns have the same surviving candidates, each with the same outstanding set. So they have the same open routes and the same frontier. With `r` relevant unknowns, at most `max_frontier_vars` (a `config` field, §3.4), W3 enumerates all `2^r` assignments, with every other unknown at one fixed value. The routes that suffice, and so the listed frontier, are read from those assignments' open routes, and `frontier_complete` is true iff each assignment's frontier is the listed frontier. The two-extremes shortcut does not apply, because a frontier is a set, not a point on the verdict chain. Beyond the bound, W3 lists the routes of the candidates that are ready or pending whatever the unknowns are, and that no completion removes in §6.2, the non-dominated ones. Under `invalid`, a `U` prohibition in a candidate's policy voids the policy in the completions where the prohibition is `T`, so such a candidate is left out. Under `prohibit` and the default combination, such a prohibition gives `Deny` where it is `T`, so a definite `Pending` has none. Each route listed then suffices, since its candidate survives with it in every completion, though some route that suffices may be missing. `frontier_complete` is false and `verdict.exact` is false. The cheaper rule "complete iff no candidate is uncertain" is sound but less exact; `decisions/0004` compares the two, and `tools/check_completion.py` checks the enumeration against the definitions, and that every route the fallback lists suffices.
 
 `verdict_basis` names the determining atoms: the surviving prohibition for `Deny`; the ready alternative's permissions for `Permit`; the frontier's permissions and outstanding duties for `Pending`. Under unknowns these are the atoms that play the role in every completion **[D]** (`decisions/0016`, #71): the certain answer, the notion that makes the verdict definite. A `U` atom that plays it in every completion is named. A verdict that holds by cases has no such atom, and its basis is empty. Two prohibitions on `x eq 5` and `x neq 5`, with `x` unresolved, give `Deny` in both completions, each from a different prohibition, so the basis is empty, and `unknown_part` names `x`. `verdict_basis` also names the `U` atoms whose completion changes the outcome for `Indeterminate`, and, for a `NotApplicable` where candidates were removed by violated preconditions, those candidates with role `closed` (§3.5).
 

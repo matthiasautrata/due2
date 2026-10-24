@@ -128,6 +128,7 @@ The plain `uv run pytest` of README § Verify runs only the harness's own tests.
 - the revision (`+dirty` if uncommitted) and the machine;
 - startup time, from spawn to `ready`, which includes loading the profile modules;
 - per task: pass, fail, error, and unsupported counts, plus total, p50, p95, p99, and max latency;
+- for `decide`, the same four counts per tag of the relation-level vector files (`conformance/README.md`);
 - per vector: status, latency, and the first mismatch or error.
 
 Latency is wall clock, from writing the request to reading the reply, measured by the harness the same way for every backend.
