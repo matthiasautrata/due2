@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.14 (2026-10-24). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.15 (2026-10-24). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.14** (2026-10-24, `decisions/0030`, #111): §4.7 adds the property that an access evaluation's `at` is never earlier than its `effective_at`, and that its request differs from its case's only in `at`; a moved `at` is a cause of a verdict transition. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.15** (2026-10-24, #114): §4.4 and §4.5 follow the restated laws L2, L3, L6, and L7 and give each law's first property-test cases; §4.7's *pinning suffices* excepts the `evaluation` tuple. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -138,14 +138,14 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 
 - **Risks.** R2 above all, then R7.
 - **Golden vectors.** The **status matrix**: for every operator and every fact status (`resolved`, `missing`, `invalid`, `conflict`, `unresolved`), the part's truth value, enumerated exhaustively. A non-`resolved` status gives `U`, with no exceptions (`ways-of-working.md` §5.1). This is the primary defence against R2 and is cheap to make complete. The same for request parameters (absent means `missing`) and for absent parties and targets (`due2-workflows.md` §3.2).
-- **Properties.** L2 (an atom's finding is unchanged by other atoms), L3 (prefetch neutrality), L8 (skip soundness). Plan coverage: W2's `read` is within `plan(corpus, request)` for every generated and corpus evaluation (`due2-workflows.md` §3.3). Duty instances and statuses against the `due2-workflows.md` §5.3 table, over generated deadlines and recurrences.
+- **Properties.** L2 (an atom's finding reads no other atom's finding), L3 (prefetch neutrality), L8 (skip soundness). Each law's first cases are the ones that its wording must exclude. For L2, removing a policy's only `Permit` or `Forbid` turns its root obligation's `in_force` from `T` to `F`. For L3, an unread fact changes `sotw_id`, and a second value for a cardinality-one property turns a `T` part `U`. Plan coverage: W2's `read` is within `plan(corpus, request)` for every generated and corpus evaluation (`due2-workflows.md` §3.3). Duty instances and statuses against the `due2-workflows.md` §5.3 table, over generated deadlines and recurrences.
 - **Done.** The status matrix is complete and passing, the properties hold, and the corpus's `obligations` agree.
 
 ### 4.5 W3: resolve
 
 - **Risks.** R3, R7.
 - **Oracles.** A brute-force W3 over every completion of the actual findings (§3), capped by variable count. `I` end to end.
-- **Properties.** L4–L7. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`). For an `Indeterminate` (`decisions/0011`): the `unknown` atoms are exactly those with a pivotal literal, and `verdict_range` equals the least and greatest completion verdict, wherever `exact` is true; past the bound, every `U` atom is named and the range contains brute force's.
+- **Properties.** L4–L7. The first cases of L6 and L7 are the ones that their wording must exclude. For L6, under `perm`, timely evidence restores a permission that a passed deadline closed, and the permission then eliminates its policy's prohibition. For L7, under `violations = deny`, a violated root obligation denies though a candidate is ready. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`). For an `Indeterminate` (`decisions/0011`): the `unknown` atoms are exactly those with a pivotal literal, and `verdict_range` equals the least and greatest completion verdict, wherever `exact` is true; past the bound, every `U` atom is named and the range contains brute force's.
 - **Abstract model extended.** **[D]** `check_completion.py` models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier of `decisions/0026` against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` and nested constraints are left to the brute-force W3 differential, and nested constraints to slow `I` as well.
 - **Done.** The differential against brute-force W3 is clean on both profiles; the corpus passes, including `frontier`, `verdict_basis` and `verdict_range`.
 
@@ -167,7 +167,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 - **Oracle.** A from-scratch evaluation over the current inputs, the request with its moved `at` among them. Re-evaluation, whichever trigger is chosen (`due2-architecture.md` §7, issue #14), must agree with it.
 - **Properties.**
   - *Replay.* Every recorded evaluation, re-run under its pinned normaliser versions, gives byte-identical traces.
-  - *Pinning suffices.* Re-running with the SOTW cut down to the evaluation's recorded reads gives the same trace (a consequence of L3); an evaluation that needs more than it pinned is a defect.
+  - *Pinning suffices.* Re-running with the SOTW cut down to the evaluation's recorded reads gives the same trace, apart from the `evaluation` tuple's `sotw_id` (a consequence of L3); an evaluation that needs more than it pinned is a defect.
   - *Append-only.* No operation changes an earlier event; re-evaluation adds an evaluation to the case.
   - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy, `Permit` to `NotApplicable` when a moved `at` leaves a time window — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
   - *Two clocks.* An as-of query for an earlier decision answers from that evaluation, unaffected by later facts, policy amendments, or normaliser upgrades.

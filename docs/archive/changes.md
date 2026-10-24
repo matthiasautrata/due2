@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.40** (2026-10-24, `decisions/0032`, #113): `instance` gains `passed`, whether the instance's deadline has passed, which W3 reads where a completion makes an `unknown` instance unfulfilled (§3.5, §5.3, §6.4), and W3's signature lists `instance` (§6). A grant-scoped instance key is the digest of `binding_key` and `request.reference`, so each atom of an authored duty has its own instance, and `discharges` names the grant by the digest of `source_duty` and `request.reference` (§3.3, §5.3). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.39** (2026-10-24, `decisions/0031`, #112): a verdict is the answer of the policies supplied, as written, whatever their class; over an offer, `Permit` says that its terms permit the action, not that it has been accepted (§6.4). §3.1 says that `policy` keeps no class. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.38** (2026-10-24, `decisions/0030`, #111): each evaluation of a case runs with the case's request, with `at` moved to the evaluation's `effective_at` when it is earlier, so a re-evaluation asks at its own time (§3.2). §7.1's `evaluation` relation names the request it ran with, and the latest evaluation is the case's current answer. Earlier changes are in `docs/archive/changes.md`.
@@ -37,6 +39,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Coherence updates, 2026-10-10** (after `decisions/0002`): L9 restated as a refinement — conditional-duty hoisting splits one unknown into correlated findings completed independently, so the equality as previously written cannot hold under unknowns; L6 scoped to §6.2's conflict eliminations, because `eliminated` now also records `violated_precondition` removals (§3.5, §6.1), which give a closed route visibility in `verdict_basis` (role `closed`); the absent conflict term takes a selected profile's declared default first (normalisation spec §3); §5.3's no-guard sentence scoped to the parent relation.
 
 ## `correctness-strategy.md`
+
+**Changes in v0.14** (2026-10-24, `decisions/0030`, #111): §4.7 adds the property that an access evaluation's `at` is never earlier than its `effective_at`, and that its request differs from its case's only in `at`; a moved `at` is a cause of a verdict transition. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.13** (2026-10-23, `decisions/0023`, #84): §4.8's claim K cites `decisions/0023` and gains the Alloy models as evidence. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 

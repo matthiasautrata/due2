@@ -130,7 +130,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 - An unfulfilled precondition gives due2 `Pending` with the route, where RL2 gives `NotApplicable`.
 - due2 closes `odrl:partOf` transitively; RL2 core matches only direct members.
 - due2 evidence is existential: any witness fulfils a duty, so RL2's conflicting-evidence scenarios have no counterpart.
-- Completion is over findings, so two permissions on complementary values of one unknown fact give `Indeterminate` (`due2-workflows.md` §6.4).
+- Completion is over literals, so two permissions on complementary values of one `unresolved` fact give a definite verdict, where RL2, which treats every occurrence of a shared fact as independent, gives `Indeterminate`. A `missing`, `invalid`, or conflicting value still gives `Indeterminate` (`due2-workflows.md` §6.4, `decisions/0016`, `due2-unresolved-or-missing`).
 
 **Standing divergences from DPROD,** which a `dprod-*` case need not re-explain: the six exceptions of `due2-profiles.md` §8.2 — Kleene masking and errors in rules that do not apply, incomparable operands, duty state derived from evidence, Agreement parties, policy-level targets, and violated duties — together with DPROD's duty-collection rule (`formal-semantics.md` §7.2 step 1: a duty is collected only when its own action matches the request), which is why no DPROD duty is ever collected for a read.
 
