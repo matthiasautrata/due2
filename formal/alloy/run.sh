@@ -7,7 +7,8 @@
 #
 #   formal/alloy/run.sh [model.als ...]
 #
-# Needs Java 17 or later and curl. The solutions go to $TMPDIR/due2-alloy/<model>/.
+# Needs Java 17 or later and curl. The solutions go to $TMPDIR/due2-alloy/<model>/. The SAT solver
+# is $DUE2_ALLOY_SOLVER (default sat4j, pure Java); glucose and minisat are native and often faster.
 set -eu
 
 version=6.2.0
@@ -39,6 +40,10 @@ out=${TMPDIR:-/tmp}/due2-alloy
 for model in "$@"; do
   name=$(basename "$model" .als)
   echo "$name"
-  java --enable-native-access=ALL-UNNAMED -jar "$jar" exec -f -o "$out/$name" -t text "$model" 2>&1 |
-    grep -E '^[0-9]+\. '
+  log=$(java --enable-native-access=ALL-UNNAMED -jar "$jar" exec -f -s "${DUE2_ALLOY_SOLVER:-sat4j}" -o "$out/$name" -t text "$model" 2>&1) || true
+  # A model that does not compile prints no command line: show Alloy's error instead.
+  if ! printf '%s\n' "$log" | grep -E '^[0-9]+\. '; then
+    printf '%s\n' "$log" | head -5 >&2
+    exit 1
+  fi
 done
