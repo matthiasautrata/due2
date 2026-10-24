@@ -7,3 +7,4 @@ Briefings are not maintained. When the repository moves on, a briefing stays as 
 | Briefing | Commit | Scope |
 |---|---|---|
 | `due2-briefing-2026-10-21.md` | `ce17910` | The whole project, and a primer on reading test numbers: oracles, the rule of three, planted bugs, generator strength |
+| `due2-briefing-2026-10-24.md` | `c711e89` | Supersedes 10-21: the bounded-exhaustive spaces, the Alloy models of the formal claims, the listed frontier of `decisions/0026`, and decisions 0022 to 0026 |
