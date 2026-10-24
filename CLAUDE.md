@@ -9,7 +9,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 - **The repo is the only source of truth.** No other copy is maintained: not the claude.ai project, not chat attachments.
 - **Unknown is never false.** Missing, invalid, conflicting, or unresolved data makes a part `U`, and `U` survives to the verdict (`ways-of-working.md` §5.1). Every external evaluator gets this wrong (`conformance/external/README.md`); do not copy their behaviour.
 - **Correctness strategy before code.** No component gets implementation code until its entry in `docs/correctness/correctness-strategy.md` §4 names its risks, oracles (and what each shares with the implementation), properties, golden vectors, generators, and done-gate.
-- **Spec before code.** Spec text carries markers: **[D]** decided, **[O]** open (alternatives listed), **[F]** blocked externally. A design change lands as a spec edit, plus a record in `docs/decisions/` when it reverses or settles something load-bearing. The matching GitHub issue closes afterwards, with the commit cited. Open items live in issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`), and each issue names its source-of-truth section.
+- **Spec before code.** Spec text carries markers: **[D]** decided, **[O]** open (alternatives listed), **[F]** blocked externally. A design change lands as a spec edit, plus a record in `docs/decisions/` when it reverses or settles something load-bearing. The matching GitHub issue closes afterwards, with the commit cited. Open items live in issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`, plus `bug` for a fault in what is already specified or built), and each issue names its source-of-truth section.
 - **Corpus cases** (`conformance/cases/<origin>-<name>/`, format in `conformance/README.md`):
   - every rule is named;
   - every left operand is bound;
@@ -42,9 +42,10 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 ## Next
 
-1. **The W2/W3 evaluator** (`decisions/0027`; its language is #104, Kotlin leading): relation-level vectors (#37; their format and the port schema are in `conformance/README.md` and `schema/`) and the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Record the `ways-of-working.md` §10.4 measurables for the agent workload before any performance work.
-2. **W1**, the normaliser, in Python, whose 29 negative cases wait for it.
-3. **Documentation house-cleaning (#83)**, interleaved.
+1. **The external review's findings** (#118, milestone *Review 2026-10-24*): #109 to #117, in that order, each decision settled with a record and a spec edit. They come first because #37's vectors and #38 would otherwise encode the faults.
+2. **The W2/W3 evaluator** (`decisions/0027`; its language is #104, Kotlin leading): relation-level vectors (#37; their format and the port schema are in `conformance/README.md` and `schema/`) and the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Record the `ways-of-working.md` §10.4 measurables for the agent workload before any performance work.
+3. **W1**, the normaliser, in Python, whose 29 negative cases wait for it.
+4. **Documentation house-cleaning (#83)**, interleaved.
 
 Parked: the prover spike, Lean on M (#87), and `Den` in the prover (#8), until the evaluator reaches production (`decisions/0021`, amendment of 2026-10-24). The claims' evidence meanwhile is the Alloy models (#84) and the search over clingo-i (#85). clingo-i follows `decisions/0026` with #103.
 
