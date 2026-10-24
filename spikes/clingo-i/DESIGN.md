@@ -57,7 +57,7 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 | `Base` | the positive operator a leaf asserts: the operator itself, or the one its complement negates |
 | `Scope` | a scope, `rule` or `action` |
 | `InstScope` | an instance scope, `member` or `grant` |
-| `Attr` | an attribute of a completion key: `right(Term)` or `unit(Iri)` |
+| `Attr` | an attribute of a completion key: `right(Term)`, `unit(Iri)`, or `concept` |
 | `W` | a world |
 | `C`, `D`, `D2` | a constraint node; `D` is a member of `C` |
 | `O` | a core operator, such as `eq` or `isPartOf` |
@@ -538,7 +538,7 @@ Evidence that came too late is no witness: the duty was violated on 1 May, and d
 - in each completion world, each open node gets a rank, `crank(W, C, N)`. A paired leaf takes its variable's value, 0 or 2, negated for `neg`. An opaque leaf keeps 1. An open connective is re-evaluated from its members by the connective rules of `compare.lp`, which the world applies to its open nodes (`evaluates(W, C)`). A member that is not open keeps its rank in world `k`;
 - the constraint part takes its root's rank in the world.
 
-**The key.** Two open paired leaves read one variable when they make the same comparison (`due2-workflows.md` §6.4). The key has five components:
+**The key.** Two open paired leaves read one variable when they make the same comparison (`due2-workflows.md` §6.4). The key has six components:
 
 | Component | Relation | Note |
 |---|---|---|
@@ -547,6 +547,7 @@ Evidence that came too late is no witness: the duty was violated on 1 May, and d
 | positive operator | `op_literal(O, Base, Pol)` | a complement asserts its `Base`, `neg` |
 | right operand values | `leaf_attr(C, right(Term))` | a set of terms |
 | units | `leaf_attr(C, unit(Iri))` | a set |
+| concept | `leaf_attr(C, concept)` | whether the operand has a concept scheme: with one, `eq` is ⊑, and without, identity |
 
 The complements are `neq` of `eq`, `gteq` of `lt`, `gt` of `lteq`, and `isNoneOf` of `isAnyOf` (`complement/2`). `leaf_key/5` holds the first three components. Two leaves with one `leaf_key` differ when one has an attribute the other lacks (`attr_apart/2`), and `same_key/2` holds when neither does. The variable is `cons(D)`, with `D` the least leaf of the class in clingo's term order, so every leaf of the class names the same variable.
 

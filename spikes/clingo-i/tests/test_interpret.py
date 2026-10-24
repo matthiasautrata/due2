@@ -991,6 +991,23 @@ def test_binding_not_operand_iri(interpreter: Interpreter) -> None:
     assert outcome(interpreter.reply(vector(pol))) == "Permit"
 
 
+def test_concept_scheme_in_key(interpreter: Interpreter) -> None:
+    # ex:y is bound to ex:x's property, with a scheme: its eq is ⊑ and ex:x's is identity. At
+    # ex:x = ex:low both leaves are f, so they are not complements and stay two variables
+    # (due2-workflows.md §6.4). Sharing one would give Permit, which ex:low refutes.
+    pol = (
+        two_rules(leaf("eq", "ex:top"), leaf("neq", "ex:top").replace("ex:x", "ex:y")).replace(
+            "ex:y dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:y",
+            "ex:y dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:x ;"
+            " due2:conceptScheme ex:s",
+        )
+        + SCHEME
+    )
+    assert outcome(interpreter.reply(vector(pol))) == "Indeterminate"
+    low: Obj = {"facts": {"ex:x": {"status": "resolved", "values": [iri("ex:low")]}}}
+    assert outcome(interpreter.reply(vector(pol, sotw=low))) == "NotApplicable"
+
+
 @pytest.mark.parametrize(
     ("c1", "c2", "kind", "expected"),
     [

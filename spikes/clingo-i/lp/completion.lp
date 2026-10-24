@@ -18,9 +18,10 @@
 %
 % - **Consumes:** `operator/2` (lift.lp); `atom/1`, `atom_party/3` (structure.lp);
 %   `scope/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2` (constraint.lp);
-%   `src/2`, `prop/2`, `read_ok/2`, `read_status/3` (operand.lp); `crank/3`, `evaluates/2`
-%   (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp);
-%   `pre/2`, `obligation/1` (structure.lp); `guard/2`, `policy_match/2`, `instance/1` (duty.lp).
+%   `src/2`, `prop/2`, `has_scheme/1`, `read_ok/2`, `read_status/3` (operand.lp); `crank/3`,
+%   `evaluates/2` (compare.lp); `holds/2`, `part_of/2`, `atom_constraint/2` (applies.lp);
+%   `rank/2` (kleene.lp); `pre/2`, `obligation/1` (structure.lp); `guard/2`, `policy_match/2`,
+%   `instance/1` (duty.lp).
 % - **Provides:** `duty_item/1`, `u_item/1`, `item_root/2`, `finding_atom/2`, `leaf_status/2`,
 %   `opaque_leaf/1`, `opened/2`, `open/1`, `opaque_item/1`, `complement/2`, `op_literal/3`,
 %   `leaf_key/5`, `leaf_attr/2`, `attr_apart/2`, `same_key/2`, `leaf_lit/3`, `var/1`, `reads/2`,
@@ -142,10 +143,13 @@ leaf_key(C, Scope, Src, Prop, Base) :- open(C), leaf_status(C, unresolved), scop
 %*! leaf_attr(C, Attr)
 
 The open `unresolved` leaf `C` has `Attr` in the set part of its key: `right(Term)` for each
-right operand value, and `unit(Iri)` for each unit.
+right operand value, `unit(Iri)` for each unit, and `concept` when its left operand has a
+concept scheme. Two operands bound to one property, one with a scheme and one without, read
+`eq` as ⊑ and as identity, so their `eq` and `neq` are not complements (due2-workflows.md §6.4).
 *%
 leaf_attr(C, right(Term)) :- leaf_key(C, _, _, _, _), right(C, Term).
 leaf_attr(C, unit(Iri)) :- leaf_key(C, _, _, _, _), unit(C, Iri).
+leaf_attr(C, concept) :- leaf_key(C, _, _, _, _), left(C, Op), has_scheme(Op).
 
 %*! attr_apart(C, D)
 

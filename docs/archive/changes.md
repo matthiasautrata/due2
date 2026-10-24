@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.31** (2026-10-22, #83): a length pass. Dates leave the headings; the results of `tools/check_completion.py` are cited from the records that hold them; text repeated within §3.3, §6.4, §7, §9, and the appendix is cut. No semantics change. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.30** (2026-10-20, #83): a cold read. Cross-document references name their document; history markers leave the reference text; §6.4 cites `tools/check_completion.py` for the two-extremes check in place of an unrecorded one; §9 lists the open rows with their issues and states rows 1 and 8 as resolved, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.29** (2026-10-19, #81): §3.5 says which `U` leaves of a nested constraint `unknown_part` names: those that some `T` or `U` atom reads, which follows from atoms being the disjuncts of the constraint DNF; nothing else changes.
@@ -19,6 +21,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Coherence updates, 2026-10-10** (after `decisions/0002`): L9 restated as a refinement — conditional-duty hoisting splits one unknown into correlated findings completed independently, so the equality as previously written cannot hold under unknowns; L6 scoped to §6.2's conflict eliminations, because `eliminated` now also records `violated_precondition` removals (§3.5, §6.1), which give a closed route visibility in `verdict_basis` (role `closed`); the absent conflict term takes a selected profile's declared default first (normalisation spec §3); §5.3's no-guard sentence scoped to the parent relation.
 
 ## `correctness-strategy.md`
+
+**Changes in v0.12** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4.1 drops the history of the clingo audit; §4.5 and §9 state `check_completion.py`'s coverage once; §4.8's R9 risk points at claim W; §8 step 1 no longer names row 10; §9 rows 2, 3, 5, and 10 cite their sections instead of restating them, and row 10 cites clingo-i's measured bounds instead of copying them. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.11** (2026-10-20, #83): a cold read. Cross-document references name their document; status markers and struck-through items leave §3, §4.2, §4.5, §4.7, §7, and §8; §3 restates why `I` running the corpus checks R5; §9 lists the open rows with their issues and states rows 1–9 below the table, keeping the row numbers. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 

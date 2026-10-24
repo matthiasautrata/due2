@@ -36,6 +36,7 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | `tools/check_corpus.py` | Checks the corpus and any ODRL policy file against the admitted profile, without an evaluator |
 | `tools/check_odrl22.py` | Validates policies against ODRL 2.2 itself: `odrl22-shape.ttl` plus the vendored official vocabulary (`profiles/vendor/w3c/ODRL22.ttl`), via pyshacl |
 | `tools/import_force.py` | One-shot translation of the FORCE suite into `force-*` corpus cases, with an independent due2 derivation |
+| `formal/alloy/` | Alloy 6 models of the claims of `correctness-strategy.md` §4.8, run outside § Verify by `formal/alloy/run.sh`; scopes and run times in its `README.md` |
 | `spikes/` | Candidate implementations, one directory each, run against the corpus by one shared suite; the contract, protocol, scorecard, and journal in its `README.md` |
 | `tests/`, `tools/harness/` | The shared suite and its harness: corpus vectors, the comparator, the line protocol, scorecards (`pytest --backend=<spike>`) |
 | `tools/spike_journal.py` | A spike's journal (effort, attempts, rewrites, bugs, checker diagnostics) and the cross-spike comparison table |
@@ -66,6 +67,7 @@ uv run pytest --backend=clingo-i                                           # the
 
 - **Specification and corpus.** The corpus has 135 cases. Every expected verdict is hand-derived. `tools/check_corpus.py` checks each case's format and that its policy stays within the admitted profile. The 27 negative cases are policies that W1 must reject, and they wait for W1.
 - **The semantics program.** `spikes/clingo-i/` evaluates the corpus's authored policies with a generic clingo program (`decisions/0009`), which serves as the oracle for the evaluator to come. It passes 400 of the 438 scenarios it is given and declines the other 38, naming the feature: 37 depend on the occurrences of a recurring duty (`unsupported: recurrence`, #80), and one is past the `max_mixed` bound, for which the spike has no fallback. Its tests check it against a brute-force oracle on generated draws and on every input of nine bounded spaces, which together expose each of its twenty-three mutants (#44). The spaces also check two claims of `correctness-strategy.md` §4.8, monotonicity (M) and the basis waiver (W), with no counterexample (#85).
-- **Next.** Formalisation (#70, `decisions/0021`): counterexample search, then a prover spike. Then the W2/W3 bakeoff (`decisions/0006`), then W1.
+- **Formal models.** The Alloy 6 models of claim K (`formal/alloy/`) find no counterexample at their stated scopes, now that `decisions/0023` has closed the gap they found in the completion key (#84).
+- **Next.** Formalisation (#70, `decisions/0021`): Alloy models of the other claims, then a prover spike. Then the W2/W3 bakeoff (`decisions/0006`), then W1.
 
 Open items are GitHub issues, labelled `open-decision`, `corpus`, `verification`, `work-item`, or `parked`. Each names the section that holds its source of truth.

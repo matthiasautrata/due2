@@ -65,3 +65,7 @@ Item 3 gave every claim both a small Alloy 6 model and a bounded-exhaustive sear
 - **K leaves the search.** clingo-i and its oracle use the same completion key, so a search that compares them cannot find the key wrong (`correctness-strategy.md` §4.8). Only a model that derives each part's value from an operand value tests it, which is what the Alloy model does (#84).
 - **F leaves the search.** It is left to its Alloy model and the prover. The W2/W3 bakeoff compares each backend's frontier with clingo-i's (#38, #40, #41), so a search over clingo-i alone adds little.
 - **P is unchanged.** It is a question, settled by a spec edit or a decision record (decision item 2), and was never a search target.
+
+## Note (2026-10-23, the #25 example)
+
+§ Why states #25's gap as a completion in which `x ≤ 5` and `x > 7` are both `F`. A value above 5 and at most 7 gives that. The completion no value gives is both `T`, as `due2-workflows.md` v0.32 §6.4 now says. The Alloy model of claim K checks both (`formal/alloy/k_completion_key.als`, runs `Issue25BothT` and `Issue25BothF`). The model also found a second, real gap in the key, which `decisions/0023` closes.

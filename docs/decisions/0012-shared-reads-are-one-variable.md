@@ -1,6 +1,6 @@
 # 0012 — The same read is one completion variable; different reads stay independent
 
-**Status:** Decided, 2026-10-17; narrowed by `decisions/0016` (#1 and #2 hold only for unresolved values, so #1 no longer applies to request fields)
+**Status:** Decided, 2026-10-17; narrowed by `decisions/0016` (#1 and #2 hold only for unresolved values, so #1 no longer applies to request fields) and by `decisions/0023` (#1 and #2 apply only when the concept reading is also the same)
 **Context documents:** `due2-workflows.md` §5.2, §6.4, §9 (open decision 6) · `decisions/0011` #2 · issues #56, #59
 
 ## Question

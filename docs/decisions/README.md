@@ -19,7 +19,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0009](0009-the-semantics-live-in-clingo.md) | The semantics live in a clingo program: the L9 oracle and the generator | 2026-10-16 | Amended |
 | [0010](0010-the-trace-is-the-explanation.md) | The trace is the explanation | 2026-10-16 | In force |
 | [0011](0011-indeterminate-explained-by-pivotal-literals.md) | An `Indeterminate` verdict is explained by its pivotal literals and its range | 2026-10-17 | In force |
-| [0012](0012-shared-reads-are-one-variable.md) | The same read is one completion variable; different reads stay independent | 2026-10-17 | Narrowed by 0016: items 1 and 2 hold only for unresolved values |
+| [0012](0012-shared-reads-are-one-variable.md) | The same read is one completion variable; different reads stay independent | 2026-10-17 | Narrowed by 0016: items 1 and 2 hold only for unresolved values. Narrowed by 0023: they apply only when the concept reading is also the same. |
 | [0013](0013-repeated-right-operand-values.md) | Repeated right-operand values are the same set as a list | 2026-10-17 | Amended: the empty list is rejected |
 | [0014](0014-operand-type-belongs-to-its-declaring-layer.md) | An operand's type belongs to the layer that declares it | 2026-10-17 | In force |
 | [0015](0015-concept-schemes-on-operands.md) | An operand may compare concepts under a SKOS hierarchy | 2026-10-17 | In force |
@@ -28,5 +28,6 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0018](0018-each-member-bears-a-collection-duty.md) | Each member bears a duty whose bearer is a party collection | 2026-10-18 | In force |
 | [0019](0019-pending-basis-under-unknowns.md) | A `Pending` basis under unknowns is checked only for its kinds | 2026-10-18 | In force |
 | [0020](0020-vocabulary-defined-by-odrl-a-profile-or-the-policy.md) | A vocabulary term is defined by ODRL, a declared profile, or the policy itself | 2026-10-18 | In force |
-| [0021](0021-formalisation-follows-cedar.md) | Formalisation follows Cedar: an executable model, proofs, and differential testing | 2026-10-19 | In force |
+| [0021](0021-formalisation-follows-cedar.md) | Formalisation follows Cedar: an executable model, proofs, and differential testing | 2026-10-19 | Amended: a note corrects the #25 example |
 | [0022](0022-repeated-logical-constraint-member.md) | A repeated member of a logical constraint is malformed | 2026-10-22 | In force |
+| [0023](0023-completion-key-includes-concept-reading.md) | The completion key includes the concept reading | 2026-10-23 | In force |
