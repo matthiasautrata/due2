@@ -1,32 +1,31 @@
 /*
- * Question P of correctness-strategy.md §4.8: the listed frontier under unknowns.
+ * Claim P of correctness-strategy.md §4.8: the listed frontier under unknowns (decisions/0026).
  *
- * Under unknowns, the reply lists the frontier of the candidates that are ready or pending
- * whatever the unknowns are; an uncertain candidate enters only through the verdict
- * (due2-workflows.md v0.33 §6.3). decisions/0019 found a definite `Pending` whose listed frontier
- * omits a route that every completion offers, because no single permission gives it. P is a
- * question for the spec, not a claim, so the model characterises the omission:
+ * A route is an outstanding set. It is open in a completion when some candidate that survives
+ * §6.2 there has it, and it suffices when it is open in some completion and every completion has
+ * an open route within it. For a definite `Pending` or `Permit`, the listed frontier is the
+ * non-dominated routes that suffice (§6.3). Beyond max_frontier_vars, W3 lists the routes of the
+ * candidates that are ready or pending whatever the unknowns are and that no completion removes
+ * in §6.2 (§6.4). The model checks:
  *
- *   ListedGiver      A route that one permission gives in every completion is listed, unless
- *                    some finding reads a variable both ways.
- *   Flagged          An omission comes with frontier_complete false: some completion's frontier
- *                    is not the listed one.
- *   NeedsMixed       An omission needs a mixed variable, one read both upward and downward
- *                    (§6.4, Computing it).
- *   TwoRoutes        Without a finding that reads a variable both ways, an omission needs two
- *                    permissions that read one mixed variable, in their own findings or their
- *                    preconditions' `owed`.
+ *   NoOmission        A route that every completion's frontier offers is listed: the omission
+ *                     decisions/0019 found cannot happen.
+ *   PermitListsEmpty  For a definite `Permit`, the listed frontier is the empty route.
+ *   FallbackSound     Every candidate the fallback lists survives in every completion, so its
+ *                     route suffices.
  *
- * The runs show one instance of each shape found: complementary permissions (decisions/0019),
- * a precondition that closes one route where another permission opens it, complementary
- * preconditions, and a finding that
- * reads a variable both ways.
+ * That fulfilling a listed route's duties permits in every completion follows from claim M
+ * (m_monotonicity.als) and is argued in decisions/0026. Three runs show routes that the
+ * definition lists: a route no single permission gives in every completion (decisions/0019's
+ * second run), a route open only in some completions, and a route that a smaller one dominates
+ * in some completion (decisions/0019's first run). Two more show an empty listed frontier, and
+ * why the fallback must exclude a candidate whose policy is under `invalid` with a `U`
+ * prohibition.
  *
- * A route is an outstanding set. The listed frontier is formed from the ready and pending
- * candidates that no `T` atom removes in §6.2, as clingo-i reads §6.3. W3 is resolve.als, and the
- * worlds are every completion (everyCompletion).
+ * W3 is resolve.als, and the worlds are every completion (everyCompletion). A route is named by
+ * a world and a candidate surviving there: outstanding[w, p].
  *
- * A bare § is a section of due2-workflows.md v0.33.
+ * A bare § is a section of due2-workflows.md v0.34.
  *
  * Run: formal/alloy/run.sh formal/alloy/p_listed_frontier.als.
  * The scopes and times are in README.md.
@@ -39,25 +38,19 @@ fact { everyCompletion }
 
 pred definitePending { all w: World | verdict[w] = Pending }
 
-// §6.1: a candidate is ready or pending when its permission is `T` and no precondition's open
-// value is `U`, nor is a violated precondition's `owed`. It survives §6.2 when no `T` prohibition
-// of its policy removes it: a `U` atom removes nothing (§6.2). This is clingo-i's reading
-// (explain.lp, listed). Its outstanding set is the same in every completion.
-fun definiteCandidates: set Permission {
-  { p: Permission |
-      tApplies[p]
-      and (no d: p.pre | openU[d] or (d in Lapsed and fulF[d] and uOwed[d]))
-      and (no d: p.pre | d in Lapsed and fulF[d] and tOwed[d])
-      and not (p.policy.conflict in Prohibit + Invalid
-           and some f: Prohibition & policy.(p.policy) | tApplies[f]) }
+pred definitePermit { all w: World | verdict[w] = Permit }
+
+pred suffices[w: World, p: Permission] {
+  p in survivors[w]
+  all w2: World | some q: survivors[w2] | outstanding[w2, q] in outstanding[w, p]
 }
 
-// The listed frontier: the definite candidates whose outstanding set no other's strictly
-// contains. Their outstanding set is the same in every world.
-fun listed: set Permission {
-  { p: definiteCandidates |
-      no q: definiteCandidates | all w: World |
-        outstanding[w, q] in outstanding[w, p] and outstanding[w, q] != outstanding[w, p] }
+// A route that suffices, and that no route that suffices strictly dominates.
+pred isListed[w: World, p: Permission] {
+  suffices[w, p]
+  no w2: World, q: Permission |
+    suffices[w2, q]
+    and outstanding[w2, q] in outstanding[w, p] and outstanding[w2, q] != outstanding[w, p]
 }
 
 // Permission p gives, in world w, a route that every world's frontier offers.
@@ -66,83 +59,74 @@ pred offeredEverywhere[w: World, p: Permission] {
   all w2: World | some q: frontier[w2] | outstanding[w2, q] = outstanding[w, p]
 }
 
-pred isListed[w: World, p: Permission] {
-  some l: listed | outstanding[w, l] = outstanding[w, p]
+assert NoOmission {
+  definitePending implies all w: World, p: Permission | offeredEverywhere[w, p] implies isListed[w, p]
 }
 
-// The omission of decisions/0019: a route every completion offers that is not listed.
-pred omission {
+assert PermitListsEmpty {
+  definitePermit implies {
+    some w: World, p: Permission | isListed[w, p]
+    all w: World, p: Permission | isListed[w, p] implies no outstanding[w, p]
+  }
+}
+
+// §6.1: a candidate is ready or pending whatever the unknowns are when its permission is `T`, no
+// precondition's open value is `U`, and no precondition is lapsed, unfulfilled, and owed `T` or
+// `U`. That also makes its outstanding set the same in every completion. The fallback keeps it unless a
+// `T` prohibition removes it in §6.2, or its policy is under `invalid` with a `U` prohibition.
+pred definite[p: Permission] {
+  tApplies[p]
+  no d: p.pre | openU[d] or (d in Lapsed and fulF[d] and d not in OwedRefuted)
+}
+
+pred removedByT[p: Permission] {
+  p.policy.conflict in Prohibit + Invalid
+  some f: Prohibition & policy.(p.policy) | tApplies[f]
+}
+
+pred removedByU[p: Permission] {
+  p.policy.conflict = Invalid
+  some f: Prohibition & policy.(p.policy) | uApplies[f]
+}
+
+fun fallback: set Permission { { p: Permission | definite[p] and not removedByT[p] and not removedByU[p] } }
+
+assert FallbackSound {
+  definitePending implies all p: fallback, w: World | p in survivors[w]
+}
+
+// decisions/0019's second run: a listed route that no single permission gives everywhere.
+run NoSingleGiver {
   definitePending
-  some w: World, p: Permission | offeredEverywhere[w, p] and not isListed[w, p]
-}
-
-// No finding reads a variable both ways, as `x eq 5` and `x neq 5` in one `and` would. Such a
-// finding is `U` before completion and `F` in every completion.
-pred consistent {
-  no r: Rule | some r.pos & r.neg
-  no d: Duty | some d.opos & d.oneg or some d.ipos & d.ineg
-}
-
-pred givesEverywhere[p: Permission] { all w: World | offeredEverywhere[w, p] }
-
-assert ListedGiver {
-  definitePending and consistent implies all p: Permission |
-    givesEverywhere[p] implies some w: World | isListed[w, p]
-}
-
-assert Flagged {
-  omission implies some w: World |
-    not (all p: frontier[w] | isListed[w, p])
-    or some l: listed | no p: frontier[w] | outstanding[w, p] = outstanding[w, l]
-}
-
-// The directions of §6.4, as in m_monotonicity.als.
-fun up: set Var {
-  Permission.pos + Prohibition.neg + Duty.oneg
-  + (Config.violations = DenyViolations => Obligation.ineg else none)
-}
-
-fun down: set Var {
-  Permission.neg + Prohibition.pos + Duty.opos
-  + (Config.violations = DenyViolations => Obligation.ipos else none)
-}
-
-assert NeedsMixed { omission implies some up & down }
-
-// The variables a route's permission reads: its own, and its preconditions' `owed`.
-fun routeReads[p: Permission]: set Var { readsApplies[p] + readsOwed[p.pre] }
-
-assert TwoRoutes {
-  omission and consistent implies
-    some disj p, q: Permission | some routeReads[p] & routeReads[q] & up & down
-}
-
-// The decisions/0019 shape: two permissions on x and on ¬x with one outstanding set.
-run Shape0019 { omission and one Var and #Permission = 3 } for 3 but 4 World
-
-// A closing precondition: a lapsed precondition, owed on x, closes one route where the other permission,
-// on x, opens the same route. No permission reads x both ways.
-run ClosingPrecondition {
-  omission and consistent
-  no Permission.pos & Permission.neg
-  some Permission.pre & Lapsed
-  some Permission.(pos + neg) & Duty.(opos + oneg)
+  some w: World, p: Permission | isListed[w, p] and no q: Permission | all w2: World |
+    q in survivors[w2] and outstanding[w2, q] = outstanding[w, p]
 } for 3 but 4 World
 
-// Complementary preconditions: two `T` permissions whose preconditions are owed on x and on ¬x.
-run ComplementaryPreconditions {
-  omission and consistent
-  no Permission.pos + Permission.neg
-} for 3 but 4 World
-
-// A self-contradictory finding hides a route that one permission gives in every completion.
-run SelfContradiction {
+// A listed route that some completion does not offer at all: a `fulfilled` finding is `U`.
+run OpenInSome {
   definitePending
-  some p: Permission | givesEverywhere[p] and no l: listed | all w: World |
-    outstanding[w, l] = outstanding[w, p]
+  some w: World, p: Permission | isListed[w, p] and some w2: World |
+    no q: survivors[w2] | outstanding[w2, q] = outstanding[w, p]
 } for 3 but 4 World
 
-check ListedGiver for 3 but 8 World
-check Flagged for 3 but 8 World
-check NeedsMixed for 3 but 8 World
-check TwoRoutes for 3 but 8 World
+// decisions/0019's first run: a listed route that a smaller one dominates in some completion.
+run DominatedInSome {
+  definitePending
+  some w: World, p: Permission | isListed[w, p] and some w2: World | p in survivors[w2] - frontier[w2]
+} for 3 but 4 World
+
+// What to do depends on an unknown: nothing suffices.
+run EmptyListed {
+  definitePending
+  no w: World, p: Permission | isListed[w, p]
+} for 3 but 4 World
+
+// Without removedByU, the fallback would list a candidate that some completion removes.
+run InvalidNeedsExclusion {
+  definitePending
+  some p: Permission, w: World | definite[p] and not removedByT[p] and p not in survivors[w]
+} for 3 but 4 World
+
+check NoOmission for 3 but 8 World
+check PermitListsEmpty for 3 but 8 World
+check FallbackSound for 3 but 8 World

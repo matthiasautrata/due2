@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.33** (2026-10-23, `decisions/0024`, #101): an absolute deadline and the instants of a request and a SOTW have a timezone (§3.1–§3.3, §5.3, §5.4), and §5.4 lists a `dateTime` without a timezone, or a `date` with one, as a value that does not fit. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.32** (2026-10-23, `decisions/0023`, #84): §6.4 adds the concept reading to the completion key, since an operand with a concept scheme reads `eq` as ⊑ and one without reads it as identity; *What stays approximate* corrects its example: the completion no value gives is `x ≤ 5` and `x > 7` both `T`, not both `F` (#25). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.31** (2026-10-22, #83): a length pass. Dates leave the headings; the results of `tools/check_completion.py` are cited from the records that hold them; text repeated within §3.3, §6.4, §7, §9, and the appendix is cut. No semantics change. Earlier changes are in `docs/archive/changes.md`.

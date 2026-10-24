@@ -29,17 +29,18 @@ same variables, deny when violated under config.violations = deny (§6.4).
 Recorded: 50000 cases, 0 mismatches, Deny under violations = deny in 3285.
 
 Fifth phase (seed 20261015, `rand_frontier`): partial knowledge, each variable
-known T, known F, or U. For every definite Pending, the frontier W3 lists from
-ready and pending candidates (§6.1-§6.3) is compared with every completion's;
-frontier_complete holds, by its §6.4 definition, iff all completions give the
-listed frontier. Gated (decisions/0004): enumerating only the relevant unknowns,
-bounded by max_frontier_vars, equals that definition; and with the bound forced
-to 1 the fallback (false, inexact) is never unsound. Recorded: definite Pending in
-942; listed frontier empty in 191; a listed alternative off some completion's
-frontier in 4 (an uncertain candidate's smaller outstanding set dominates it);
-frontier_complete false in 199; the rejected rule "complete iff no candidate is
-uncertain" would say false in 133 more; bounded enumeration 0 mismatches; with
-bound 1, fallback in 148, 0 unsound.
+known T, known F, or U. For every definite Pending, the listed frontier (§6.3,
+decisions/0026) is computed by brute force over every completion: the
+non-dominated routes that suffice, where a route suffices when it is open in some
+completion and every completion has an open route within it. frontier_complete
+holds, by its §6.4 definition, iff every completion's frontier is the listed one.
+Gated (decisions/0004, 0026): enumerating only the relevant unknowns, bounded by
+max_frontier_vars, gives both exactly; and with the bound forced to 1, every route
+the fallback lists suffices. Recorded: definite Pending in 942; listed frontier
+empty in 1 (v0.33's, from ready and pending candidates only: 191; the routes open
+in every completion: 181); frontier_complete false in 189; the rejected rule
+"complete iff no candidate is uncertain" would say false in 143 more; bounded
+enumeration 0 mismatches; with bound 1, fallback in 148, 0 unsound.
 
 Scope: one policy; atoms are flat conjunctions; obligations carry no guards and no duties
 of their own; no recurrence or instances. A sanity check of §6.4's claims, not
@@ -83,8 +84,9 @@ def evaluate(
     past: dict[Var, bool] | None = None,
     obligations: list[Obligation] | None = None,
     violations: str = "ignore",
-) -> tuple[str, Frontier]:
-    """One completion (no U): (verdict, frontier), workflows §6.1-§6.4.
+) -> tuple[str, Frontier, Frontier]:
+    """One completion (no U): (verdict, frontier, open routes), workflows §6.1-§6.4. The
+    open routes are every surviving candidate's outstanding set, dominated or not.
     past: duty -> its deadline has passed (fixed by the case, not a finding).
     obligations: root obligations, each {"lits": in_force literals, "duty": d}."""
     guards, past = guards or {}, past or {}
@@ -112,18 +114,41 @@ def evaluate(
     elif conflict == "invalid" and perms and forbs:
         perms, forbs = [], []
     if forbs:
-        return "Deny", frozenset()
+        return "Deny", frozenset(), frozenset()
     if violations == "deny" and any(
         holds(o["lits"]) and not val[o["duty"]] and past.get(o["duty"]) for o in obligations or []
     ):
-        return "Deny", frozenset()  # §6.4: a violated obligation in force acts as a prohibition
+        return (
+            "Deny",
+            frozenset(),
+            frozenset(),
+        )  # §6.4: a violated obligation in force acts as a prohibition
     sets = {
         frozenset(d for d in a["duties"] if owed(d) and not val[d]) for a in perms
     }  # decisions/0003: outstanding = owed and not fulfilled; §6.3 collapse
-    frontier = frozenset(x for x in sets if not any(y < x for y in sets))
+    frontier = non_dominated(sets)
     if frozenset() in sets:
-        return "Permit", frontier
-    return ("Pending" if sets else "NotApplicable"), frontier
+        return "Permit", frontier, frozenset(sets)
+    return ("Pending" if sets else "NotApplicable"), frontier, frozenset(sets)
+
+
+def non_dominated(sets: Iterable[frozenset[Var]]) -> Frontier:
+    """§6.3: the routes whose outstanding set strictly contains no other's."""
+    sets = set(sets)
+    return frozenset(x for x in sets if not any(y < x for y in sets))
+
+
+def sufficient(opens: Iterable[Frontier]) -> Frontier:
+    """decisions/0026: the routes open in some completion such that every completion has
+    an open route within them, given each completion's open routes."""
+    opens = list(opens)
+    routes = {r for o in opens for r in o}
+    return frozenset(r for r in routes if all(any(s <= r for s in o) for o in opens))
+
+
+def listed(opens: Iterable[Frontier]) -> Frontier:
+    """decisions/0026: the listed frontier, the non-dominated routes that suffice."""
+    return non_dominated(sufficient(opens))
 
 
 def verdict(
@@ -316,17 +341,22 @@ def kleene_and(xs: Iterable[bool | None]) -> bool | None:
     return False if False in xs else (None if None in xs else True)
 
 
-def listed_frontier(
+def fallback_frontier(
     atoms: list[Atom],
     conflict: str,
     known: dict[Var, bool],
     guards: Guards,
     past: dict[Var, bool],
+    v033: bool = False,
 ) -> tuple[Frontier, bool, set[Var]]:
-    """The frontier W3 lists from three-valued findings (§6.1-§6.3): alternatives from
-    surviving ready and pending candidates only; uncertain candidates (permission U,
-    an unknown open duty, or a violated precondition whose owed is U) are left out.
-    known: variable -> True/False, absent = U. Returns (frontier, any_uncertain, relevant):
+    """The frontier W3 lists beyond max_frontier_vars, from three-valued findings
+    (§6.4, decisions/0026): the routes of the ready and pending candidates that no
+    completion removes in §6.2; uncertain candidates (permission U, an unknown open
+    duty, or a violated precondition whose owed is U) are left out, and so are the
+    candidates of a policy under invalid with a U prohibition. v033=True keeps them,
+    which is v0.33's listed frontier, for the fifth phase's comparison.
+    known: variable -> True/False, absent = U. Returns (frontier, any_uncertain,
+    relevant):
     relevant holds the unknown variables of uncertain candidates' parts (permission,
     owed, fulfilled) and of prohibitions whose finding is U — the only unknowns a
     completion can use to change the frontier while Pending stands (decisions/0004)."""
@@ -338,7 +368,7 @@ def listed_frontier(
         return kleene_and(lit(v, p) for v, p in lits)
 
     sure: list[frozenset[Var]] = []
-    uncertain, forbs_t = False, False
+    uncertain, forbs_t, forbs_u = False, False, False
     relevant: set[Var] = set()
 
     def unknowns(lits: list[Lit]) -> set[Var]:
@@ -349,6 +379,7 @@ def listed_frontier(
         if a["eff"] == "Forbid":
             forbs_t = forbs_t or f is True
             if f is None:
+                forbs_u = True
                 relevant |= unknowns(a["lits"])
             continue
         if f is False:
@@ -376,10 +407,9 @@ def listed_frontier(
                 relevant |= unknowns(guards.get(d, [])) | ({d} - known.keys())
         else:
             sure.append(frozenset(opens))
-    if forbs_t and conflict == "prohibit":
-        sure = []
-    sets = set(sure)
-    return frozenset(x for x in sets if not any(y < x for y in sets)), uncertain, relevant
+    if (forbs_t and conflict == "prohibit") or (forbs_u and conflict == "invalid" and not v033):
+        sure = []  # under invalid, a completion where the U prohibition is T voids the policy
+    return non_dominated(sure), uncertain, relevant
 
 
 def frontier_complete(
@@ -389,29 +419,26 @@ def frontier_complete(
     guards: Guards,
     kw: Config,
     bound: int = 8,
-) -> tuple[bool, bool]:
-    """decisions/0004: for a definite Pending, enumerate every assignment to the
-    relevant unknowns (no two-extremes shortcut: a frontier is a set, not a point on
-    the verdict chain); complete iff each gives the listed frontier. Beyond `bound`,
-    false and inexact. Returns (frontier_complete, exact)."""
-    listed, _, relevant = listed_frontier(atoms, conflict, known, guards, kw.get("past", {}))
+) -> tuple[Frontier, bool, bool]:
+    """§6.4, decisions/0004 and 0026: for a definite Pending, enumerate every assignment
+    to the relevant unknowns, the others fixed F (no two-extremes shortcut: a frontier
+    is a set, not a point on the verdict chain). The listed frontier is the
+    non-dominated routes that suffice over the assignments, and frontier_complete holds iff
+    each assignment's frontier is the listed one. Beyond `bound`, the fallback frontier,
+    not complete and inexact. Returns (listed frontier, frontier_complete, exact)."""
+    fallback, _, relevant = fallback_frontier(atoms, conflict, known, guards, kw.get("past", {}))
     if len(relevant) > bound:
-        return False, False
+        return fallback, False, False
     rel = sorted(relevant)
     rest = {v: False for v in all_vars(atoms, guards) if v not in known and v not in relevant}
-    for bits in itertools.product([False, True], repeat=len(rel)):
-        if (
-            evaluate(
-                atoms,
-                conflict,
-                {**known, **rest, **dict(zip(rel, bits, strict=True))},
-                guards,
-                **kw,
-            )[1]
-            != listed
-        ):
-            return False, True
-    return True, True
+    runs = [
+        evaluate(
+            atoms, conflict, {**known, **rest, **dict(zip(rel, bits, strict=True))}, guards, **kw
+        )
+        for bits in itertools.product([False, True], repeat=len(rel))
+    ]
+    front = listed(o for _, _, o in runs)
+    return front, all(f == front for _, f, _ in runs), True
 
 
 def all_vars(atoms: list[Atom], guards: Guards) -> set[Var]:
@@ -519,46 +546,53 @@ def main() -> int:
     print(
         f"{n4} deadline/violations cases, {mism4} mismatches; Deny under violations = deny in {denied}"
     )
-    # frontier_complete (§6.4, decisions/0004): the bounded enumeration over the relevant
-    # unknowns against the definition (brute force over every unknown), for definite
-    # Pending verdicts. Gates: equal whenever exact; never true where the definition says
-    # false, also with a bound of 1 so the fallback runs.
+    # The listed frontier and frontier_complete (§6.3, §6.4, decisions/0004 and 0026), for
+    # definite Pending verdicts, against their definitions by brute force over every
+    # unknown. Gates: the bounded enumeration over the relevant unknowns equals both; with a
+    # bound of 1, so that the fallback runs, every route listed suffices.
     rng5 = random.Random(20261015)
     n5 = 50000
-    pending = empty = wrong = incomplete = rule_loose = mism5 = unsound5 = fell = 0
+    pending = empty = open_empty = old_empty = gained = old_unsound = incomplete = rule_loose = 0
+    mism5 = unsound5 = fell = 0
     for _ in range(n5):
         atoms, conflict, vars_, guards, kw, known = rand_frontier(rng5)
         unknown = [v for v in vars_ if v not in known]
-        fronts: set[Frontier] = set()
-        verdicts: set[str] = set()
-        for bits in itertools.product([False, True], repeat=len(unknown)):
-            v, f = evaluate(
+        runs = [
+            evaluate(
                 atoms, conflict, {**known, **dict(zip(unknown, bits, strict=True))}, guards, **kw
             )
-            verdicts.add(v)
-            fronts.add(f)
-        if verdicts != {"Pending"}:
+            for bits in itertools.product([False, True], repeat=len(unknown))
+        ]
+        if {v for v, _, _ in runs} != {"Pending"}:
             continue
         pending += 1
-        listed, uncertain, _ = listed_frontier(atoms, conflict, known, guards, kw.get("past", {}))
-        complete = fronts == {listed}  # the definition, by brute force
-        empty += not listed
-        wrong += any(not listed <= f for f in fronts) and bool(listed)
+        enough = sufficient(o for _, _, o in runs)
+        front = listed(o for _, _, o in runs)  # the definition, by brute force
+        complete = all(f == front for _, f, _ in runs)
+        old, uncertain, _ = fallback_frontier(
+            atoms, conflict, known, guards, kw.get("past", {}), v033=True
+        )
+        empty += not front
+        open_empty += not any(all(r in o for _, _, o in runs) for r in runs[0][2])
+        old_empty += not old
+        gained += front != old
+        old_unsound += not old <= enough
         incomplete += not complete
         rule_loose += uncertain and complete  # what 'complete iff no uncertain candidate' loses
-        fc, exact = frontier_complete(atoms, conflict, known, guards, kw)
-        if not exact or fc != complete:
+        got, fc, exact = frontier_complete(atoms, conflict, known, guards, kw)
+        if not exact or got != front or fc != complete:
             mism5 += 1
             if mism5 <= 3:
-                print("MISMATCH (frontier)", conflict, atoms, guards, kw, known, fronts, listed)
-        fc1, exact1 = frontier_complete(atoms, conflict, known, guards, kw, bound=1)
+                print("MISMATCH (frontier)", conflict, atoms, guards, kw, known, front, got)
+        got1, fc1, exact1 = frontier_complete(atoms, conflict, known, guards, kw, bound=1)
         fell += not exact1
-        unsound5 += (fc1 and not complete) or (exact1 and fc1 != complete)
+        unsound5 += not got1 <= enough or (exact1 and (got1, fc1) != (front, complete))
     print(
-        f"{n5} partial-knowledge cases, definite Pending in {pending}: listed frontier empty in {empty}; "
-        f"a listed alternative off some completion's frontier in {wrong}; frontier_complete false in "
-        f"{incomplete}, true where an uncertain candidate exists in {rule_loose}; bounded enumeration "
-        f"{mism5} mismatches; with bound 1, fallback in {fell}, {unsound5} unsound"
+        f"{n5} partial-knowledge cases, definite Pending in {pending}: listed frontier empty in "
+        f"{empty} (v0.33: {old_empty}; routes open in every completion: {open_empty}); differs from v0.33's in {gained}; v0.33 listed a route "
+        f"that does not suffice in {old_unsound}; frontier_complete false in "
+        f"{incomplete}, true where an uncertain candidate exists in {rule_loose}; bounded "
+        f"enumeration {mism5} mismatches; with bound 1, fallback in {fell}, {unsound5} unsound"
     )
     return 1 if mism or unsound or mism3 or mism4 or mism5 or unsound5 else 0
 

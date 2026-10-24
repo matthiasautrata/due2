@@ -2,7 +2,7 @@
  * Claim W of correctness-strategy.md §4.8: the basis waiver.
  *
  * Under unknowns, verdict_basis names the atoms that play their role in every completion
- * (due2-workflows.md v0.33 §6.4; decisions/0016 #4). A verdict that holds by cases has none.
+ * (due2-workflows.md v0.34 §6.4; decisions/0016 #4). A verdict that holds by cases has none.
  * tools/check_corpus.py therefore waives the basis check for a definite `Permit` or `Deny`
  * whose scenario lists an `unresolved` unknown part. The claim that makes the waiver safe:
  *
@@ -20,7 +20,7 @@
  * W3 is resolve.als. The worlds are every completion (everyCompletion), so the scope on World
  * bounds the unknowns: 8 worlds hold every completion of three.
  *
- * A bare § is a section of due2-workflows.md v0.33.
+ * A bare § is a section of due2-workflows.md v0.34.
  *
  * Run: formal/alloy/run.sh formal/alloy/w_basis_waiver.als.
  * The scopes and times are in README.md.

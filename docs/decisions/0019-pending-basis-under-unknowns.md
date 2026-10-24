@@ -23,3 +23,7 @@ The spec stands. When a `Pending` scenario lists an unknown part of any status, 
 ## Consequences
 
 `tools/check_corpus.py` and `conformance/README.md` (`expected.verdict_basis`) state the relaxed check. No corpus case reaches either shape. The second run also shows that the listed frontier can omit a route that every completion offers, `{ex:d3}`, because no single permission gives it. Whether `due2-workflows.md` §6.3 should list such a route is a question for the formalisation review (#70), with both shapes among its counterexamples.
+
+## Amendment (2026-10-24, the listed frontier)
+
+§ Consequences left open whether `due2-workflows.md` §6.3 should list a route that every completion offers when no single permission gives it. `decisions/0026` answers it: under unknowns, the listed frontier is the non-dominated routes that suffice, those within which every completion has an open route. In the second run, the listed frontier becomes `[[ex:d], [ex:d3]]`, so the basis's duties are now the frontier's. In the first run it stays `[[ex:d, ex:d2]]`, and the basis is still `ex:d` alone. The relaxed check therefore stands. clingo-i and `test_pending_basis_beyond_the_listed_frontier` follow `decisions/0026` with #103.

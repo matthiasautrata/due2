@@ -3,7 +3,7 @@
  *
  * Under all three strategies and the default combination, "the verdict is monotone in every
  * finding", so the two extreme completions bound every completion's verdict (due2-workflows.md
- * v0.33 §6.4, Computing it). The model checks two claims:
+ * v0.34 §6.4, Computing it). The model checks two claims:
  *
  *   Monotone       Of two completions, the one with every permission and `fulfilled` finding
  *                  at least as true, and every prohibition, `owed`, and, under `deny`,
@@ -16,7 +16,7 @@
  * W3 is resolve.als. Monotone compares any two completions, so it states nothing about the
  * variables. UniformBound reads the findings from the variables (resolve.als, fromVars).
  *
- * A bare § is a section of due2-workflows.md v0.33.
+ * A bare § is a section of due2-workflows.md v0.34.
  *
  * Run: formal/alloy/run.sh formal/alloy/m_monotonicity.als.
  * The scopes and times are in README.md.

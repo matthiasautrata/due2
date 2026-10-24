@@ -4,19 +4,21 @@
  * For a definite `Pending`, the relevant unknowns are the variables of the `U` parts of
  * uncertain candidates (permission, `owed`, `fulfilled`) and of prohibitions whose finding is
  * `U`, and "no other unknown can move the frontier while the verdict stands" (due2-workflows.md
- * v0.33 §6.4, frontier_complete; decisions/0004). W3 therefore enumerates only the relevant
+ * v0.34 §6.4, frontier_complete; decisions/0004). W3 therefore enumerates only the relevant
  * unknowns to decide frontier_complete. The model checks a stronger claim, which needs no
  * quantifier over every completion:
  *
  *   Relevant   Two completions that both give `Pending` and agree on every relevant unknown
  *              have one frontier, with one outstanding set per candidate in it.
+ *   OpenRoutes   They also have the same surviving candidates, with one outstanding set
+ *                each, and so the same open routes (decisions/0026).
  *
  * A definite `Pending` gives `Pending` in every completion, so the claim covers it.
  *
  * W3 is resolve.als, and the findings come from the variables (fromVars). Before completion,
  * every variable is `U`.
  *
- * A bare § is a section of due2-workflows.md v0.33.
+ * A bare § is a section of due2-workflows.md v0.34.
  *
  * Run: formal/alloy/run.sh formal/alloy/f_frontier_relevance.als.
  * The scopes and times are in README.md.
@@ -62,6 +64,13 @@ assert Relevant {
   }
 }
 
+assert OpenRoutes {
+  (verdict[C1] = Pending and verdict[C2] = Pending and agreeOnRelevant[C1, C2]) implies {
+    survivors[C1] = survivors[C2]
+    all p: survivors[C1] | outstanding[C1, p] = outstanding[C2, p]
+  }
+}
+
 // Not vacuous: two `Pending` completions whose frontiers differ, on a relevant unknown.
 run RelevantMoves {
   verdict[C1] = Pending and verdict[C2] = Pending
@@ -76,3 +85,4 @@ run IrrelevantDiffers {
 } for 3
 
 check Relevant for 6
+check OpenRoutes for 6

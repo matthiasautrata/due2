@@ -38,3 +38,7 @@ The model in `check_completion.py` covers one policy. Under conflict `invalid` w
 
 - The `frontier_complete` paragraph of workflows §6.4 now states the computation, and §3.5's meaning of `exact` now covers this fallback too. The workflows draft goes to v0.9.
 - No corpus case asserts `frontier_complete`. This is a coverage gap, tracked as issue #30.
+
+## Amendment (2026-10-24, the listed frontier)
+
+`decisions/0026` changes the listed frontier that `frontier_complete` is compared with: under unknowns, it is the non-dominated routes that suffice, read from the same enumeration of the relevant unknowns. The definition (#1) and the relevant unknowns (#2) stand. Beyond the bound (#4), W3 now also lists a frontier: the routes of the candidates that are ready or pending whatever the unknowns are, and that no completion removes in `due2-workflows.md` §6.2. The figures of § Finding are v0.33's. Against `decisions/0026`'s definition, the same 942 instances give `frontier_complete` false in 189, the listed frontier empty in 1, and the cheap rule false in 143 more where the definition says true.

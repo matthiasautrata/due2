@@ -1,5 +1,5 @@
 /*
- * W3 over one completion: candidates, conflict, frontier, and verdict (due2-workflows.md v0.33
+ * W3 over one completion: candidates, conflict, frontier, and verdict (due2-workflows.md v0.34
  * §6.1–§6.4). A module, opened by the models of claims M, F, W, and P; it has no commands.
  *
  * A world is a completion: every finding is `T` or `F`. A world states its findings as the
@@ -17,7 +17,7 @@
  * - Grounds. The frontier is a set of candidates, not of alternatives; two candidates with one
  *   outstanding set are one alternative with two grounds (§6.3 #1).
  *
- * A bare § is a section of due2-workflows.md v0.33.
+ * A bare § is a section of due2-workflows.md v0.34.
  */
 module resolve
 
