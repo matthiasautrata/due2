@@ -1,6 +1,6 @@
 # 0021 — Formalisation follows Cedar: an executable model, proofs, and differential testing
 
-**Status:** Decided, 2026-10-19 (the owner: Dafny out; Lean first, Isabelle optional)
+**Status:** Decided, 2026-10-19 (the owner: Dafny out; Lean first, Isabelle optional); amended 2026-10-24: the prover spike is parked, and `decisions/0027` answers item 7
 **Context documents:** `correctness-strategy.md` §3, §4.8, §8 · `ways-of-working.md` §9 · `due2-workflows.md` §6.4, §8 · `decisions/0002` #2–#4 · `decisions/0009` · `docs/archive/formalisation-review.md` · issues #70, #8, #23
 
 ## Question
@@ -69,3 +69,14 @@ Item 3 gave every claim both a small Alloy 6 model and a bounded-exhaustive sear
 ## Note (2026-10-23, the #25 example)
 
 § Why states #25's gap as a completion in which `x ≤ 5` and `x > 7` are both `F`. A value above 5 and at most 7 gives that. The completion no value gives is both `T`, as `due2-workflows.md` v0.32 §6.4 now says. The Alloy model of claim K checks both (`formal/alloy/k_completion_key.als`, runs `Issue25BothT` and `Issue25BothF`). The model also found a second, real gap in the key, which `decisions/0023` closes.
+
+## Amendment (2026-10-24, the prover spike parked)
+
+The owner parked the prover spike of item 4 on 2026-10-24, so that the production evaluator is built first (`decisions/0027`). Parked means not withdrawn: the Lean spike (#87) and `Den` in the prover (#8) wait, and item 4's scoring stands for when the spike resumes.
+
+- **The claims' evidence is unchanged in kind.** The Alloy models (#84, `formal/alloy/`) find no counterexample for K, M, F, or W, and `decisions/0026` settles P. The bounded-exhaustive search over clingo-i also checks M and W (#85, `spikes/clingo-i/TESTS.md`). No claim is proved, and `correctness-strategy.md` §4.8 says so.
+- **The Python `Den` oracle stays** W1 stage 1's first oracle (item 5), and is its only one while the prover is parked.
+- **The differential of item 1 runs without the model.** The W2/W3 evaluator is compared with the brute-force W3 on the relation-level vectors, and with clingo-i on the corpus once W1 exists (`decisions/0027` #5).
+- **Item 7 is answered** by `decisions/0027` for W1, which stays Python. The W2/W3 language is open (#104).
+
+Resume the spike when the evaluator reaches production, when a paper needs the proofs, or when an Alloy scope is judged too small for a claim that production relies on.

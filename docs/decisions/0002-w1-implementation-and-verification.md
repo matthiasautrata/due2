@@ -1,6 +1,6 @@
 # 0002 — W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline
 
-**Status:** Decided, 2026-10-10; superseded in part by `decisions/0003` (hoisting), `decisions/0009` (item 7, the L9 oracle), and `decisions/0021` (items 2–4: Dafny withdrawn)
+**Status:** Decided, 2026-10-10; superseded in part by `decisions/0003` (hoisting), `decisions/0009` (item 7, the L9 oracle), `decisions/0021` (items 2–4: Dafny withdrawn), and `decisions/0027` (item 1 narrowed to W1, item 5's carve-out closed, item 8 no longer sets Kotlin aside for W2 and W3)
 **Context documents:** `implementation-alternatives.md` (the full review this records) · `ways-of-working.md` §9–§10 · `due2-architecture.md` §9–§10, §11 · `odrl-compound-to-atomic-normalization.md` §8.1 · `mds-vendor-contracts.md`
 
 ## Question

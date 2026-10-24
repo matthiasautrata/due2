@@ -86,7 +86,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 |---|---|---|---|---|
 | Hand-derived corpus (positive and negative cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]** |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]** |
-| L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts; with W1, the pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of `due2-workflows.md` §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1); the program's rules, if the Clingo backend (#41) reuses them | **[D]** (`decisions/0009`), issue #9 |
+| L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts; with W1, the pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of `due2-workflows.md` §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1) | **[D]** (`decisions/0009`), issue #9 |
 | `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | Its §6 algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
 | The formal model (§4.8): a small executable model in a prover | The claims of `due2-workflows.md` §6.4, by proof; the verdict of every input it covers, by running | clingo-i's encoding and the algorithms of W1–W3 | The prose of `due2-workflows.md` §5–§6 and the formaliser's reading of it (R4); the reader that turns a vector into its input, chosen at the spike | **[D]** (`decisions/0021`), issue #70 |
 | `tools/check_completion.py` | `due2-workflows.md` §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]** |
@@ -176,7 +176,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 
 ### 4.8 The formal model (issue #70, `decisions/0021`)
 
-The formal model is a small, executable model of due2's semantics, written in a prover. Proofs establish the claims below about it, and a differential compares it with clingo-i and with W1–W3 as each is built. It is an oracle, never a production evaluator, and no code is extracted from it. Claims M, K, F, and W go to the prover; P is a question the spec answers. Which prover is chosen by a spike on claim M, Lean 4 first (§9 #11).
+The formal model is a small, executable model of due2's semantics, written in a prover. Proofs establish the claims below about it, and a differential compares it with clingo-i and with W1–W3 as each is built. It is an oracle, never a production evaluator, and no code is extracted from it. Claims M, K, F, and W go to the prover; P is a question the spec answers. Which prover is chosen by a spike on claim M, Lean 4 first (§9 #11). The spike is parked until the evaluator reaches production (`decisions/0021`, the amendment of 2026-10-24).
 
 - **Risks.** R3 and R4 above all: each claim below is an argument that a definite verdict is right, and a flaw in one makes a definite verdict wrong. R1 through `Den`, once `Den` moves into the model (#8). R9 in the bounded-exhaustive search, which proves nothing about a shape it never reaches (claim W, below).
 - **Claims.** Each is a sentence of the spec or of a decision record. Every claim gets a small Alloy 6 model of its own first, and M and W also get the bounded-exhaustive search over clingo-i (`decisions/0021`, the amendment on the search over clingo-i). A claim goes to the prover only after these have run at stated bounds without a counterexample.
@@ -244,16 +244,16 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 ## 8. Sequence
 
-1. The open items of §9. Row 11 is settled by the prover spike at step 6.
+1. The open items of §9. Row 11 is settled by the prover spike of step 6, which is parked.
 2. The case-format extension for negative cases (`expected_rejection`, §4.2).
 3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
 4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (`due2-workflows.md` §6.4's computation) follows, differentially against enumeration.
 5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram, first over clingo-i (#42, #44).
-6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and, for M and W, the bounded-exhaustive search over clingo-i, then the prover spike on M.
-7. The W2/W3 backend bakeoff (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40), each gated as in §4.4 and §4.5 as far as the vectors reach. The Python backend (#39) is deferred, not withdrawn: it may enter when the production evaluator is written (`decisions/0009`).
-8. W1 stage 1 with the Python `Den` oracle; the formal model's `Den` follows (issue #8).
+6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and, for M and W, the bounded-exhaustive search over clingo-i, then the prover spike on M, parked (`decisions/0021`, the amendment of 2026-10-24).
+7. The W2/W3 evaluator (`decisions/0027`; its language is #104): relation-level vectors (#36, #37), the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4 and as in §4.4 and §4.5 as far as the vectors reach.
+8. W1 stage 1 with the Python `Den` oracle. The formal model's `Den` (issue #8) waits for the prover spike.
 9. W1 stage 2, gated by L9 against `I`.
-10. The surviving W2/W3 backends on the full corpus through W1, completing the §4.4 and §4.5 gates.
+10. The W2/W3 evaluator on the full corpus through W1, completing the §4.4 and §4.5 gates.
 11. The ledger (data model in §4.7), gated by the stateful machine.
 
 ---
@@ -264,7 +264,7 @@ Rows keep their numbers, because issues and other documents cite them. Each open
 
 | # | Decision | Section | Issue | Blocked on |
 |---|---|---|---|---|
-| 11 | The prover for the formal model | §4.8 | #70 | A spike: Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4); the result is an amendment to that record |
+| 11 | The prover for the formal model | §4.8 | #70 | A spike, parked until the evaluator reaches production: Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4 and the amendment of 2026-10-24); the result is an amendment to that record |
 
 Rows 1–10 are resolved, each where its section states it:
 

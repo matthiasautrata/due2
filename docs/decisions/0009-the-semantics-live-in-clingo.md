@@ -1,6 +1,6 @@
 # 0009 — The semantics live in a clingo program: the L9 oracle and the generator
 
-**Status:** Decided, 2026-10-16 (amended the same day: scope narrowed to the oracle and generator roles; see the end)
+**Status:** Decided, 2026-10-16 (amended the same day: scope narrowed to the oracle and generator roles; see the end); role (d), the bakeoff entrant, lapses with the bakeoff, and the production evaluator is chosen under `decisions/0027`, not by the bakeoff that #1 and the Consequences name
 **Supersedes:** `decisions/0002` #7 and its amendment's clarification 1 as to vehicle — the L9 oracle is the clingo program, not a Python direct interpreter. `decisions/0002` #1 (the workflows stay Python) and #5 (clingo stays out of the evaluator pipeline) stand: the program is an oracle and a generator, not a pipeline stage.
 **Context documents:** `decisions/0002` · `decisions/0006` · `due2-workflows.md` §5–§6, §6.4 · `correctness-strategy.md` §1.1, §3–§5, §8 · `implementation-alternatives.md` §5 (the 2026-10-10 clingo audit), §7 · `ways-of-working.md` §2.4, §5.1 · issues #9, #36–#42
 

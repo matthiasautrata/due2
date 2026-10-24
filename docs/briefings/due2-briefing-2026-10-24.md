@@ -346,7 +346,7 @@ In all: 324 tests at the top level, 1,782 in clingo-i, and the 438 corpus scenar
    - W, the basis waiver: 67 inputs of the slow spaces, and the Alloy model over every completion of three unknowns.
    - P, the listed frontier: the argument in `decisions/0026`; the abstract model's fifth phase, where the bounded computation equals brute force in all 942 definite `Pending` cases and the fallback lists no route that does not suffice in 148; and the Alloy model over every completion of three unknowns.
 
-   A scope is a small bound, and the abstract model is not clingo-i. The prover spike on M is the next step (Section 8).
+   A scope is a small bound, and the abstract model is not clingo-i. The prover spike on M was the next step; Section 8 has the revised sequence.
 6. **The negative cases are checked only by `check_corpus.py`**, a second implementation of W1's rejections, until W1 exists.
 7. **Common mode.** One author derived the expected answers, wrote clingo-i, and wrote the Python oracle, from one reading of the spec. External answers are the only independent check, and adequacy cannot be proved (`decisions/0021` #6).
 8. **The ledger's stateful test is designed, not built** (`correctness-strategy.md` §4.7). Every test today evaluates one frozen snapshot.
@@ -363,17 +363,18 @@ Three parts of the setup are easy to mistake for waste. None is, but two point a
 
 ## 8. Recommendations
 
-The first five follow the repository's own sequence, in its order: `CLAUDE.md` § Next for the first four, and `correctness-strategy.md` §8 for the ledger. The 10-21 briefing's first two, the enumerator and the search per claim, are done (Section 0). The last four are suggestions this briefing adds.
+Later on the day of this briefing's commit, the owner took two decisions that change the sequence, and this section was revised to follow them. The prover spike is parked until the evaluator reaches production (`decisions/0021`, the amendment of 2026-10-24). W1 stays Python, the corpus is the only thing that crosses from W1 to W2 and W3, and the bakeoff of `decisions/0006` ends without being run (`decisions/0027`). The W2/W3 language is open, with Kotlin leading (#104).
 
-1. **Run the Lean spike on M**, and record its result as an amendment to `decisions/0021`. Only then take claims to the prover, which takes over `Den` (#8).
-2. **Finish the documentation house-cleaning** (#83), interleaved with the spike. Two points that writing this briefing found belong there. `due2-workflows.md` §1 and §6.4 give a frontier to `Pending` only, and does not say whether an `Indeterminate` reply lists one. And "open" has two senses: a precondition duty that is owed and not fulfilled (`due2-workflows.md` §6.1), and a route that a candidate gives in a completion (`decisions/0026`).
-3. **Run the W2/W3 bakeoff** (`decisions/0006`): relation-level vectors (#36, #37), the brute-force W3 (#38), then Clingo (#41) and Elixir (#40).
-4. **Build W1**: stage 1 with the Python `Den` oracle, then stage 2, gated by L9 against clingo-i. The 29 negative cases then get a real implementation instead of `check_corpus.py`'s.
-5. **Build the ledger**, gated by its stateful machine (`correctness-strategy.md` §4.7).
-6. **Bring clingo-i to `decisions/0026`** (#103), so that the oracle lists the frontier the spec defines, and add recurrence (#80), which 37 of the 38 declines need.
-7. **Register the Hypothesis profiles** (`fast`, `nightly`) and the slow tier that `correctness-strategy.md` already describes. Put the slow spaces and the Alloy models in it, write the L1–L10 property tests into it, and give the PR differentials fixed seeds (Section 7.2, item 9).
-8. **Keep generator strength measured.** `test_spaces_alone_expose_mutant` now fails if the spaces stop exposing a mutant, so a planted bug no longer depends on a lucky seed. Random generation still matters beyond the spaces' bounds: re-measure Section 5.5's table with `tests/measure_mutants.py` whenever a generator changes.
-9. **Get an outside reader for the spec.** Common mode (Section 7.2, item 7) is the largest risk no tool removes. A second person deriving a sample of corpus answers from the spec alone would test it directly.
+The first four follow the repository's own sequence, in its order: `CLAUDE.md` § Next for the first three, and `correctness-strategy.md` §8 for the ledger. The 10-21 briefing's first two, the enumerator and the search per claim, are done (Section 0). The last four are suggestions this briefing adds.
+
+1. **Build the W2/W3 evaluator** (`decisions/0027`; its language is #104): relation-level vectors (#36, #37), the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Agents as well as people will call it, so record the `ways-of-working.md` §10.4 measurables for that workload before any performance work.
+2. **Build W1 in Python**: stage 1 with the Python `Den` oracle, then stage 2, gated by L9 against clingo-i. The 29 negative cases then get a real implementation instead of `check_corpus.py`'s.
+3. **Finish the documentation house-cleaning** (#83), interleaved with the two above. Two points that writing this briefing found belong there. `due2-workflows.md` §1 and §6.4 give a frontier to `Pending` only, and do not say whether an `Indeterminate` reply lists one. And "open" has two senses: a precondition duty that is owed and not fulfilled (`due2-workflows.md` §6.1), and a route that a candidate gives in a completion (`decisions/0026`).
+4. **Build the ledger**, gated by its stateful machine (`correctness-strategy.md` §4.7).
+5. **Bring clingo-i to `decisions/0026`** (#103), so that the oracle lists the frontier the spec defines, and add recurrence (#80), which 37 of the 38 declines need.
+6. **Register the Hypothesis profiles** (`fast`, `nightly`) and the slow tier that `correctness-strategy.md` already describes. Put the slow spaces and the Alloy models in it, write the L1–L10 property tests into it, and give the PR differentials fixed seeds (Section 7.2, item 9).
+7. **Keep generator strength measured.** `test_spaces_alone_expose_mutant` now fails if the spaces stop exposing a mutant, so a planted bug no longer depends on a lucky seed. Random generation still matters beyond the spaces' bounds: re-measure Section 5.5's table with `tests/measure_mutants.py` whenever a generator changes.
+8. **Get an outside reader for the spec.** Common mode (Section 7.2, item 7) is the largest risk no tool removes. A second person deriving a sample of corpus answers from the spec alone would test it directly.
 
 ---
 

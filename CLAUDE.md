@@ -2,7 +2,7 @@
 
 due2 is an ODRL 2.2 policy evaluation runtime: three-valued (Kleene) evaluation, five verdicts (`Permit`, `Deny`, `Pending` with a frontier of duty routes, `NotApplicable`, `Indeterminate`), and replayable decisions. This repository holds the specification, the conformance corpus, and the checkers. **There is no evaluator yet.** Every expected verdict is hand-derived.
 
-Start with `README.md` (layout, verify commands, status), then `docs/design/due2-architecture.md` §0 (reading order). Documents live under `docs/{spec,design,correctness,decisions}/` and cite each other by bare file name. `docs/briefings/` holds dated snapshots that are never updated, so cite them for history only.
+Start with `README.md` (layout, verify commands, status), then `docs/design/due2-architecture.md` §0 (reading order). Documents live under `docs/{spec,design,correctness,decisions}/` and cite each other by bare file name. `docs/briefings/` holds dated snapshots that are not updated after their date, so cite them for history only.
 
 ## Rules that are easy to break
 
@@ -42,9 +42,10 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 ## Next
 
-1. **Formalisation (#70, `decisions/0021`).** The claims M, K, F, W, and P are stated in `correctness-strategy.md` §4.8. The bounded-exhaustive spaces over clingo-i check M and W, and found no counterexample (#85, `spikes/clingo-i/TESTS.md`). The Alloy models (#84, `formal/alloy/`) find no counterexample for K, M, F, W, or P, which `decisions/0026` settled; clingo-i follows it with #103. Next, spike Lean on M; Isabelle is optional. Record the spike's result as an amendment to `decisions/0021`. The chosen prover takes over `Den` (#8).
-2. **Documentation house-cleaning (#83)**, interleaved with #70.
-3. **The W2/W3 bakeoff** (`decisions/0006`, milestone "W2/W3 bakeoff"): relation-level vectors (#36, #37) and the brute-force W3 (#38), then Clingo (#41) and Elixir (#40). Python (#39) is deferred until the production evaluator is written.
-4. **W1**, the normaliser, whose 29 negative cases wait for it.
+1. **The W2/W3 evaluator** (`decisions/0027`; its language is #104, Kotlin leading): relation-level vectors (#36, #37) and the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Record the `ways-of-working.md` §10.4 measurables for the agent workload before any performance work.
+2. **W1**, the normaliser, in Python, whose 29 negative cases wait for it.
+3. **Documentation house-cleaning (#83)**, interleaved.
+
+Parked: the prover spike, Lean on M (#87), and `Den` in the prover (#8), until the evaluator reaches production (`decisions/0021`, amendment of 2026-10-24). The claims' evidence meanwhile is the Alloy models (#84) and the search over clingo-i (#85). clingo-i follows `decisions/0026` with #103.
 
 Open beside these: recurrence in clingo-i (#80); the implementation-start tooling picks (#23).

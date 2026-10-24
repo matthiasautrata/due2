@@ -85,7 +85,7 @@ RDF is a wire format, not a working representation. It appears in three places: 
 - **Serialisation is a pure function from the internal structures** — term rendering and a sort, not a library graph re-serialised. Digests and canonical bytes come from these renderings, which is what keeps them deterministic by construction.
 - **The library's remaining job is the slow tier.** Property tests round-trip the lift against the library's own parse — isomorphic inputs, equal canonical bytes (§7.3 ratchet). A discrepancy is a lift bug.
 
-What this buys: exhaustiveness where it pays (§2.3) instead of `isinstance` chains against open graph APIs; a hot path free of graph indexes (§10.1); canonical-byte determinism for free; and a second backend that ports a parser, not an RDF stack.
+What this buys: exhaustiveness where it pays (§2.3) instead of `isinstance` chains against open graph APIs; a hot path free of graph indexes (§10.1); canonical-byte determinism for free; and an evaluator in another language that reads the corpus, not an RDF stack (`decisions/0027`).
 
 ---
 
@@ -195,7 +195,7 @@ A surviving mutant is not a build failure. It is a ticket that says "this line h
 
 ### 7.4 One suite, many spikes **[D]**
 
-Candidate implementations (the oracle `I`, the bakeoff backends of `decisions/0006`) are tested by one Python suite, written before them and shared by all. The vectors and expected results are the corpus (`conformance/`), pinned in git. Each candidate is a separate spike under `spikes/` that runs as a subprocess and speaks a JSON-lines protocol: text in, text out, so a spike in any language faces the same tests. The harness measures latency identically for every spike. Each spike commits a scorecard (its last full run) and an append-only journal: effort, attempts, rewrites, bugs, and checker diagnostic counts over time. Code and scores are compared at the end. The contract is in `spikes/README.md`, and the harness in `tools/harness/`. `uv run pytest` alone runs only the harness's self-tests, which pin both ends: a backend that echoes the expected results passes every vector, and one that returns nothing fails every vector.
+Candidate implementations (the oracle `I`, and the W2/W3 evaluator of `decisions/0027` until W1 exists) are tested by one Python suite, written before them and shared by all. The vectors and expected results are the corpus (`conformance/`), pinned in git. Each candidate is a separate spike under `spikes/` that runs as a subprocess and speaks a JSON-lines protocol: text in, text out, so a spike in any language faces the same tests. The harness measures latency identically for every spike. Each spike commits a scorecard (its last full run) and an append-only journal: effort, attempts, rewrites, bugs, and checker diagnostic counts over time. The contract is in `spikes/README.md`, and the harness in `tools/harness/`. `uv run pytest` alone runs only the harness's self-tests, which pin both ends: a backend that echoes the expected results passes every vector, and one that returns nothing fails every vector.
 
 ---
 
@@ -267,9 +267,9 @@ With these, a later port is a contained piece of work. Without them it is a rewr
 
 | Target | Buys | Costs | Approval difficulty |
 |---|---|---|---|
-| Indexed in-memory Python | Most of the available speedup, since the win is in not evaluating irrelevant records. Same language, same tests, no new toolchain. | Ceiling is real but unmeasured | None |
+| Indexed in memory, in the evaluator's language (`decisions/0027`, #104) | Most of the available speedup, since the win is in not evaluating irrelevant records. Same language, same tests, no new toolchain. | Ceiling is real but unmeasured | None |
 | Rego / OPA | A Go binary from a CNCF project; generation from flat ground records is near-trivial. Partial evaluation returns a residual condition, which is the right shape for entitlement-scale queries. | A third semantics to keep in sync; `undefined` collapses per §5.1; policy-plus-data-in-memory model does not suit a large event corpus | Low |
-| Rust via PyO3 | In-process, best latency | Toolchain in the build image; `abi3` from the start or the ABI matrix explodes | Medium — framed as a Python library with Rust inside (pydantic-core, polars, ruff, uv as precedent) |
+| Rust, in process | Best latency | Toolchain in the build image, and a native-library boundary: the JVM's foreign function API, or PyO3 for a Python host, with `abi3` from the start or the ABI matrix explodes | Medium — framed as a library with Rust inside (pydantic-core, polars, ruff, uv as precedent) |
 | Compiled to SQL | Pushes the scan to the store | Relocates the trusted computing base into the query generator and the engine's three-valued logic; explanation becomes hard | Low technically, high semantically |
 
 **Ordering rule:** exhaust indexing and measurement before adopting a second semantics. Adding a target adds a synchronisation obligation that never goes away.

@@ -1,6 +1,6 @@
 # 0006 — W2 and W3 are built as a bakeoff: Python, Elixir, Clingo, under one conformance suite
 
-**Status:** Decided, 2026-10-16
+**Status:** Decided, 2026-10-16; superseded by `decisions/0027` (the bakeoff ends unrun; the W2/W3 language is #104), except for the relation-level input (item 3), the gate (item 4), and the vectors, which gate the W2/W3 evaluator
 **Context documents:** `decisions/0002` (#1, #5, #8) · `ways-of-working.md` §10 · `due2-architecture.md` §10 · `correctness-strategy.md` §3, §4.4, §4.5, §8 · `due2-workflows.md` §3, §5, §6 · issues #3, #16
 
 ## Question

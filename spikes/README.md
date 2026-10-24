@@ -1,13 +1,13 @@
 # Spikes
 
-A spike is a candidate implementation, built to be compared. Spikes share one thing: the pinned vectors and their expected results, read from `conformance/` by one Python suite (`tests/`, harness in `tools/harness/`). Everything else is separate. Each spike is built from the same principles and requirements and judged by the same gate, and in the end their code and scores are compared (`decisions/0006` §5).
+A spike is a candidate implementation, built to be compared. Spikes share one thing: the pinned vectors and their expected results, read from `conformance/` by one Python suite (`tests/`, harness in `tools/harness/`). Everything else is separate. Each spike is built from the same principles and requirements and judged by the same gate (`decisions/0006` #4).
 
-`clingo-i` is the semantics program (issue #9, `decisions/0009`): it implements `interpret` over the corpus, in the role of the L9 oracle. The W2/W3 bakeoff adds #41 Clingo (possibly the same program's relation-level face, `decisions/0009` #8) and #40 Elixir; #39 Python waits for the production evaluator.
+`clingo-i` is the semantics program (issue #9, `decisions/0009`): it implements `interpret` over the corpus, in the role of the L9 oracle. The W2/W3 evaluator (`decisions/0027`) runs here as a spike on the relation-level vectors until W1 exists. clingo-i may gain a relation-level face for the same vectors (#41), as a second oracle.
 
 ## Rules
 
-- **Tests first, written once.** The suite is Python and is shared. A spike adds no tests of its own to the shared suite, and it never changes a vector or an expected result to make itself pass. A vector it cannot meet without changing semantics is a finding: record it in the journal (`note`, with `--vector`) and in an issue. It is never a spec change (`decisions/0006` §4).
-- **Same inputs.** A spike reads the spec (`docs/`) and the vectors. It does not read another spike's code until the comparison.
+- **Tests first, written once.** The suite is Python and is shared. A spike adds no tests of its own to the shared suite, and it never changes a vector or an expected result to make itself pass. A vector it cannot meet without changing semantics is a finding: record it in the journal (`note`, with `--vector`) and in an issue. It is never a spec change (`decisions/0006` #4).
+- **Same inputs.** A spike reads the spec (`docs/`) and the vectors. It does not read another spike's code.
 - **Text in, text out.** Every input and output is JSON or Turtle text. Nothing passes between the harness and a spike except the line protocol below.
 - **Isolated.** A spike lives entirely under `spikes/<name>/`, with its own toolchain, lockfile, and checkers. Repo-level ruff and basedpyright skip `spikes/`, and the spike declares its own checkers instead.
 - **Recorded.** `journal.jsonl` and `scorecard.json` are committed with the code they describe.
@@ -82,7 +82,7 @@ The verdict is one of the five. The frontier is a set of alternatives, each a se
 
 ### `w2`, `w3`
 
-Reserved for the bakeoff's relation-level vectors. Their format is issue #36, and it is written before any spike implements them.
+Reserved for the relation-level vectors that gate the W2/W3 evaluator (`decisions/0027` #5). Their format is issue #36, and it is written before any spike implements them.
 
 ## Running
 
@@ -129,4 +129,4 @@ uv run python tools/spike_journal.py summary          # Markdown table, one row 
 
 ## Comparison
 
-`summary` gives the measurable columns: source lines, effort, attempts, rewrites, bugs, test runs, diagnostics (all-time and current), pass rate, latency, and startup. The bakeoff's first scoring criteria (trace fidelity, how `U` and the verdicts are represented, reviewability; `decisions/0006` §5) are judged by reading the code. That comparison, with its table, lands as a decision record.
+`summary` gives the measurable columns: source lines, effort, attempts, rewrites, bugs, test runs, diagnostics (all-time and current), pass rate, latency, and startup.
