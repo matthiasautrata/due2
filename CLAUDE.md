@@ -42,7 +42,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 ## Next
 
-1. **The W2/W3 evaluator** (`decisions/0027`; its language is #104, Kotlin leading): relation-level vectors (#36, #37) and the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Record the `ways-of-working.md` §10.4 measurables for the agent workload before any performance work.
+1. **The W2/W3 evaluator** (`decisions/0027`; its language is #104, Kotlin leading): relation-level vectors (#37; their format and the port schema are in `conformance/README.md` and `schema/`) and the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Record the `ways-of-working.md` §10.4 measurables for the agent workload before any performance work.
 2. **W1**, the normaliser, in Python, whose 29 negative cases wait for it.
 3. **Documentation house-cleaning (#83)**, interleaved.
 

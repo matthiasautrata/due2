@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.9
+**Status:** Draft v0.10
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.9** (2026-10-22, #83): a length pass. Dates and version history leave the reference text; §0's walk-through drops clingo-i's status; §4 item 5 states the rejected alternative in one sentence; §10 cites L9 instead of restating it. No design changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.10** (2026-10-24, #83): §0's reading order and directory map name `due2-platform.md`, `schema/`, `spikes/`, and `formal/`. No design changes. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -13,7 +13,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 
 **The one-sentence story.** An author writes a policy in ODRL; due2 turns it once into a flat corpus of atoms, and then answers each request by evaluating every relevant atom against the request and a frozen snapshot of the world, and folding the results into one verdict with reasons.
 
-**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `due2-diagnostics.md` (every code W1 can reject or warn with) → `ways-of-working.md` (engineering discipline) → `correctness-strategy.md` (which check guards which risk, and what must exist before each component is coded) → `references.md` (the annotated bibliography: what was read, why, and what it taught). The documents live under `docs/`: `spec/` (workflows, profiles, normalisation, diagnostics), `design/` (this document and the references), `correctness/` (ways of working, correctness strategy), `decisions/` (the decision records, indexed with their standing in `docs/decisions/README.md`), and `archive/` (documents no longer current, kept as history). At the root, `conformance/` holds the case corpus that an implementation must satisfy, `profiles/` the shipped profile modules, and `tools/` the checkers.
+**Reading order.** This document (what due2 is and why) → `due2-workflows.md` (the three workflows W1–W3 and the reference data model — the normative centre) → `due2-profiles.md` (how ODRL extensions are declared as data) → `odrl-compound-to-atomic-normalization.md` (W1 stage 1, implementation-ready) → `due2-diagnostics.md` (every code W1 can reject or warn with) → `due2-platform.md` (the components around the evaluator, and its port) → `ways-of-working.md` (engineering discipline) → `correctness-strategy.md` (which check guards which risk, and what must exist before each component is coded) → `references.md` (the annotated bibliography: what was read, why, and what it taught). The documents live under `docs/`: `spec/` (workflows, profiles, normalisation, diagnostics), `design/` (this document, the platform, and the references), `correctness/` (ways of working, correctness strategy), `decisions/` (the decision records, indexed with their standing in `docs/decisions/README.md`), and `archive/` (documents no longer current, kept as history). At the root, `conformance/` holds the case corpus that an implementation must satisfy, `schema/` the evaluator's port in JSON Schema, `profiles/` the shipped profile modules, `spikes/` the candidate implementations (among them clingo-i, the semantics program that serves as oracle), `formal/` the Alloy models of the correctness claims, and `tools/` the checkers.
 
 **Glossary.** Each term is defined in the section named; this is the map, not the definition.
 

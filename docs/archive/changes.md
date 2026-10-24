@@ -93,6 +93,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.9** (2026-10-22, #83): a length pass. Dates and version history leave the reference text; §0's walk-through drops clingo-i's status; §4 item 5 states the rejected alternative in one sentence; §10 cites L9 instead of restating it. No design changes.
+
 **Changes in v0.8** (2026-10-20, #83): §0's walk-through follows all six rules of its case; §8.1 opens with what it covers, and SKOS concept schemes are decided; §9 describes the execution choice as `decisions/0002` and `decisions/0006` leave it; §10 states semantic preservation and its oracles in the present tense; §11 drops the four resolved rows and names each open row's issue; references name their documents. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.7** (2026-10-16): the tracking convention for every open-decision register is stated here, once (§11); the DPROD relation is marked provisional against the vendored commit, pending upstream PRs (§8.3). Earlier changes are in `docs/archive/changes.md`.
