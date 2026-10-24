@@ -20,7 +20,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 - **Every increment** follows `ways-of-working.md` §14: design, docs, test, code, verify. Its issue states the design and the gate; a multi-increment item is a parent issue with sub-issues and a milestone. Work by another model or agent arrives as a pull request, never a direct push to `main`.
 - **Documentation is written for a cold reader** (`ways-of-working.md` §15): prose, docstrings, and ASP doc blocks alike. Use the skill in `.claude/skills/technical-writing/` whenever you write or review any of them. Status goes in issues, the journal, and README § Status, not in reference text. clingo-i's generated reference is built by MkDocs (mkdocstrings and clindocs) and checked by `tests/test_docs.py`.
 - **Research gets an entry** in `docs/design/references.md`: the citation, what was read, what was learned, and where it is used. It may become a paper's bibliography.
-- **Every commit:** every command in `README.md` § Verify passes: the checkers, strict basedpyright, ruff, and rumdl. CI (`.github/workflows/verify.yml`) re-runs them on every push. Push when done.
+- **Every commit:** every command in `README.md` § Verify passes: the checkers, strict basedpyright, ruff, and rumdl. A commit that changes only Markdown needs only `uv run rumdl check .` and `uv run pytest tests/test_doc_references.py tests/test_vocabulary.py`, plus clingo-i's `tests/test_docs.py` and MkDocs build when it touches `spikes/clingo-i/`. CI (`.github/workflows/verify.yml`) re-runs everything on every push. Push when done.
 
 ## Where the semantics live
 

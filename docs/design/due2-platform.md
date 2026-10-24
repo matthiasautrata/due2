@@ -1,6 +1,6 @@
 # due2 — Platform
 
-**Status:** Draft v0.1 (2026-10-21). Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.2 (2026-10-24). Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
@@ -27,6 +27,8 @@ The specification governs. Where this document and `due2-workflows.md` disagree,
 | component | A unit with one responsibility and its own interface. It may run in its own process or share one (§1.2). |
 | port | A component's interface, stated in the data model of `due2-workflows.md` §3, independent of transport (Cockburn's term, `references.md` §8). |
 | adapter | A binding of a port to one transport: an in-process call, REST, or MCP. |
+| orchestrator | The case workflow (§2.6): the one component that calls the others (§1.2). |
+| normal path, fast path | Whether a call to the evaluator carries its corpus in full or only the corpus's digest (§1.3). |
 | connector | An adapter that fetches one kind of fact from an outside system, such as HR or a data catalog, for the SOTW services (§2.4). |
 | inquiry | What a person asks in one sitting, such as "may I use these three datasets for this purpose". It holds one or more requests (§2.6). |
 | draft request | A request whose parameters are still being gathered. It becomes a request when its case is created (§2.6). |
@@ -49,11 +51,13 @@ Each component exposes a port (Cockburn, `references.md` §8). An in-process cal
 This works only if each port is designed for the remote case. In-process is then an optimisation of it; the reverse does not hold. Concretely:
 
 - **Coarse calls.** One call per step of a use case, not one per object.
-- **Ids and immutable collections.** Arguments are collection ids and canonical collections (§1.3), not live object graphs.
+- **Immutable collections, by value.** Arguments are canonical collections (§1.3), never live object graphs.
 - **Safe retries.** A caller that times out does not know whether its write landed, and retries. A retry must not record an event twice. How the ledger recognises a repeated write is open; it must not add concurrency machinery to the event relation, which `decisions/0008` declined (#98).
 - **Explicit errors.** A call that fails returns `Error(cause)`, as a crashed evaluation does (`due2-workflows.md` §7). A remote call can also fail in transport, and the caller handles that the same way.
 
 A port designed in-process the other way, as fine-grained calls that assume shared memory, breaks the first time it crosses the network: chatty calls multiply latency, and a partial failure leaves half-written state.
+
+**Each component works in its own space.** The case workflow (§2.6) is the only component that calls other components. It fetches collections from the stores by id, passes them by value to the components that compute, and records what they return. Every other component answers from what the call carries and from the state it owns, and calls no other component. The evaluator therefore receives all four of its inputs by value: a replay with the same inputs is the same call as the original, and the evaluator cannot tell them apart. The SOTW services and the catalog reach outside systems, which is their own space (§2.4, §2.5). The request GUI and the intelligent services are the workflow's callers, not components it coordinates, and reach the others only through it. A component's one other effect is its log, which serves operations and is never a record: the ledger is the record (§2.2).
 
 **One schema, several adapters.** The port schema is derived once from the relations of `due2-workflows.md` §3. The REST description (OpenAPI) and the MCP tool definitions are both generated from it, so the adapters cannot drift apart.
 
@@ -64,9 +68,11 @@ A port designed in-process the other way, as fine-grained calls that assume shar
 - effectful: the connectors and the catalog;
 - long-running: the case workflow.
 
-### 1.3 Ids, not objects
+### 1.3 Ids and values
 
-Every collection, whether corpus, request, SOTW, config, or trace, is canonical JSON under JCS, and its id is its digest (`decisions/0007`). A component passes a stored collection by id. A draft request (§2.6) is not stored, so it travels by value. The receiver fetches the collection only if it doesn't hold it. A cached collection can never be stale, because a changed collection has a different id. Versions and provenance largely follow from this (§2.10).
+Every collection, whether corpus, request, SOTW, config, or trace, is canonical JSON under JCS, and its id is its digest (`decisions/0007`). Stores hold collections under their ids, and records refer to them by id: an evaluation names its corpus, request, SOTW, and config by id (`due2-workflows.md` §3.5). Between components, collections travel by value (§1.2). A cached collection can never be stale, because a changed collection has a different id. Versions and provenance largely follow from this (§2.10).
+
+**The normal path and the fast path.** On the normal path, every call to the evaluator carries its corpus in full. The evaluator computes the corpus's digest itself, which the evaluation records anyway, and keeps the parsed and indexed corpus under that digest. A repeated corpus is then hashed again, but not parsed or indexed again. The memo changes no result, only latency: the output is the same function of the same inputs whether the corpus was held or not. It is derived state, and dropping it at any time loses nothing but time. The evaluator never takes the digest from the caller: a wrong digest would file one corpus under another's id. A fast path would let the caller send only the digest, and the evaluator would reply `not held` when it lacks the corpus. That saves the transfer, but every caller would have to handle the new reply, so the fast path is added only if the measurements of `ways-of-working.md` §10.4 (`decisions/0027` item 6), corpus size and p99 among them, show that the transfer matters. A caller that always sends the corpus keeps working.
 
 ### 1.4 Who decides, and who may assert a fact
 
@@ -89,24 +95,23 @@ Every collection, whether corpus, request, SOTW, config, or trace, is canonical 
                      │  never decide, never assert a fact   │  map text to request fields
                      └──────────┬───────────────────────────┘
                                 │
-┌──────────────┐     ┌──────────▼──────────────────────────┐     ┌──────────────────┐
-│ catalog      │◄────┤  case workflow                      ├────►│ SOTW services    │
-│ (external)   │     │  select · plan · ask · fetch ·       │     │ one connector    │
-│ dataset →    │     │  record · decide · record · show     │     │ per bound        │
-│ classes and  │     └──┬──────────────┬───────────────┬────┘     │ property         │
-│ policies     │        │              │               │          └──────────────────┘
-└──────────────┘        │              │               │
-             ┌──────────▼───┐   ┌──────▼───────┐  ┌────▼──────────────────┐
-             │ policy store │   │ evaluator    │  │ ledger                │
-             │ policies,    │   │ plan, decide │  │ case · event ·        │
-             │ corpora,     │   │ pure         │  │ evaluation            │
-             │ profiles     │   └──────────────┘  │ append-only           │
-             └──────▲───────┘                     └───────────────────────┘
-                    │
-     ┌──────────────┴──────────────────────────────────────────────┐
-     │ authoring · normalisation (W1) · explanation · versions     │
-     └─────────────────────────────────────────────────────────────┘
+┌──────────────┐     ┌──────────▼─────────────────────────────┐     ┌──────────────────┐
+│ catalog      │◄────┤  case workflow (orchestrator)          ├────►│ SOTW services    │
+│ (external)   │     │  select · plan · ask · fetch ·         │     │ one connector    │
+│ dataset →    │     │  record · decide · record · show       │     │ per bound        │
+│ classes and  │     │  the only caller of the others         │     │ property         │
+│ policies     │     └┬─────────┬────────────────┬───────────┬┘     └──────────────────┘
+└──────────────┘      │         │                │           │
+                      │         │                │           │
+  ┌───────────────────▼┐ ┌──────▼───────┐ ┌──────▼───────┐ ┌─▼──────────────┐
+  │ normalisation      │ │ policy store │ │ evaluator    │ │ ledger         │
+  │ (W1): batch,       │ │ policies,    │ │ plan, decide │ │ case · event · │
+  │ once per           │ │ corpora,     │ │ pure         │ │ evaluation     │
+  │ policy version     │ │ profiles     │ │              │ │ append-only    │
+  └────────────────────┘ └──────────────┘ └──────────────┘ └────────────────┘
 ```
+
+Explanation (§2.9) is a component the workflow calls, as it calls the evaluator. Authoring (§2.11) is a set of use cases the workflow runs. Versions and provenance (§2.10) are obligations on every store. None of the three is drawn.
 
 | § | Component | Inherits from | What is new |
 |---|---|---|---|
@@ -120,20 +125,22 @@ Every collection, whether corpus, request, SOTW, config, or trace, is canonical 
 | 2.8 | Normalisation | W1 (`due2-workflows.md` §4, `due2-diagnostics.md`) | The port only |
 | 2.9 | Explanation | `due2-workflows.md` §3.7; `decisions/0010` | Rendering; policy explanation |
 | 2.10 | Versions and provenance | Normaliser pins (`due2-architecture.md` §7), lineage (`due2-workflows.md` §3.6) | Retention |
-| 2.11 | Authoring | W1 diagnostics | What-if replay |
+| 2.11 | Authoring | W1 diagnostics | What-if runs |
 
 The interface sketches below use `name(arguments) -> result`. Types are those of `due2-workflows.md` §3. Every call can also return `Error(cause)` (§1.2), which the sketches leave out.
 
 ### 2.1 Evaluator
 
-Answers one access question from its four inputs, and lists in advance what the answer can depend on. It owns no state.
+Answers one access question from its four inputs, and lists in advance what the answer can depend on. It owns no state: its memo of indexed corpora (§1.3) is derived and can be dropped.
 
 ```text
-plan(corpus_id, request)                         -> Reads
-decide(corpus_id, request, sotw_id, config_id)   -> Trace
+plan(corpus, request)                            -> Reads
+decide(corpus, request, sotw, config)            -> Trace
 ```
 
-`Reads` and the rule that `decide` runs only once every planned read is in the case are `due2-workflows.md` §3.3. The verdict is one relation of the trace, and the explanation is the part of the trace reachable from it (`due2-workflows.md` §3.7). The request-free question, which duties a party owes now, is a second function over the same corpus (`due2-architecture.md` §6.3, #6).
+`Reads` and the rule that `decide` runs only once every planned read is in the case are `due2-workflows.md` §3.3. The verdict is one relation of the trace, and the explanation is the part of the trace reachable from it (`due2-workflows.md` §3.7).
+
+All four inputs arrive by value, and the evaluator fetches nothing (§1.2). §1.3 gives the normal and fast paths for the corpus. Inside the call, the evaluator may skip atoms through an index it builds from the corpus, within the limits of `due2-workflows.md` §5.5: only roots that are certainly `F`, never an atom whose match turns on a `U` part, never a precondition of a live permission. #105 states the rule per atomic policy, with the property test that checks it. The request-free question, which duties a party owes now, is a second function over the same corpus (`due2-architecture.md` §6.3, #6).
 
 ### 2.2 Ledger
 
@@ -145,25 +152,28 @@ append(case_id, event)                     -> seq
 record_evaluation(case_id, evaluation)     -> seq            # built by the case workflow (§2.6)
 case(case_id)                              -> request, events, evaluations
 sotw(case_id, effective_at)                -> sotw_id        # the case's events as of effective_at, frozen
-replay(case_id, seq)                       -> match | mismatch
+get(collection_id)                         -> collection     # a request, SOTW, or evaluation it holds
 cases(latest_verdict?)                     -> case_ids       # for re-evaluation (§3.3)
 owed(party, at)                            -> duty instances # the monitoring question, open (#6)
 ```
 
-The case workflow calls `decide` and builds the `evaluation` (its ids, pins, and trace); the ledger only records it. `replay` is the one call through which the ledger uses the evaluator: it re-runs `decide` on the evaluation's pinned inputs and compares digests (`due2-workflows.md` §7). The ledger never edits an event and never recomputes an earlier decision to answer an audit question: the earlier `evaluation` event is the answer.
+The case workflow calls `decide` and builds the `evaluation` (its ids, pins, and trace); the ledger only records it, and calls no other component (§1.2). Replay is therefore the workflow's (§2.6). The ledger never edits an event and never recomputes an earlier decision to answer an audit question: the earlier `evaluation` event is the answer.
 
 ### 2.3 Policy store
 
-Holds authored policies, their corpora, profile modules with their operand bindings, and the vocabularies and concept schemes policies refer to. Every item is immutable and named by its digest. A policy's current version is a pointer to one of them.
+Holds authored policies, their corpora, configs, profile modules with their operand bindings, and the vocabularies and concept schemes policies refer to. Every item is immutable and named by its digest. A policy's current version is a pointer to one of them.
 
 ```text
 put_policy(document)                       -> policy_id, version
-corpus(policy_ids, normaliser)             -> corpus_id | diagnostics     # through W1 (§2.8)
+put_corpus(policy_ids, normaliser_version, corpus, lineage) -> corpus_id   # W1's output (§2.8)
+corpus(policy_ids, normaliser_version)     -> corpus_id | absent          # one covering at least these
 get(collection_id)                         -> collection
 profiles()                                 -> profile modules
 binding(property)                          -> operand binding             # due2-profiles.md §3
 select(target, ancestors, action, parties) -> policy_ids                  # open (§5 #1)
 ```
+
+The store never runs W1. Normalisation (§2.8) produces each corpus as a batch job when a policy or normaliser version is published, and the workflow puts it here. On the request path, the workflow finds the policies that may apply with `select`, and a stored corpus that covers them with `corpus`. The evaluator then skips atoms within that corpus (§2.1). Which sets of policies get a corpus in advance, and what the workflow does when no stored corpus covers a request's policies, are open (§5 #1). The workflow does not run W1 on the request path (`decisions/0027` item 3).
 
 **Selection must over-select.** `decide` reads only the policies in its corpus, so choosing that corpus is part of the decision's soundness. A prohibition left out cannot eliminate a permission. For example, policy A permits reading dataset D and policy B prohibits it. Over both, the verdict is `Deny`; over A alone, it is `Permit`. Prohibition monotonicity (L5, `due2-workflows.md` §8) says only that adding B cannot raise the verdict. It does not protect a corpus that leaves B out.
 
@@ -172,7 +182,7 @@ Including a policy that cannot match the request is safe, for two reasons:
 - Root atoms that are certainly `F` leave the trace unchanged (L8, `due2-workflows.md` §8).
 - A policy's obligations are in force only if one of its `Permit` or `Forbid` atoms *matches* the request: action, relation, and parties, with constraints aside (`due2-workflows.md` §5.2).
 
-The second reason cuts both ways. A policy whose permission matches the request but whose constraint is certainly `F` still puts its obligations in force, and under `violations = deny` a violated one acts as a prohibition (`due2-workflows.md` §6.4). So `select` must return every policy with a `Permit` or `Forbid` atom whose match on action, target, and parties is not certainly `F`. It may skip a policy only on those fields, never on a constraint. This is the rule for the corpus index (`due2-workflows.md` §5.5). A catalog's attachment of a policy to a dataset can help find policies, but it is not the criterion. A policy whose target is a classification the dataset falls under applies whether or not anyone attached it. This is the action-and-target index of `due2-architecture.md` §9, one level up.
+The second reason cuts both ways. A policy whose permission matches the request but whose constraint is certainly `F` still puts its obligations in force, and under `violations = deny` a violated one acts as a prohibition (`due2-workflows.md` §6.4). So selection, whether of a corpus or of atoms within one, must keep every policy with a `Permit` or `Forbid` atom whose match on action, target, and parties is not certainly `F`. It may skip a policy only on those fields, never on a constraint. This is the rule for the corpus index (`due2-workflows.md` §5.5). A catalog's attachment of a policy to a dataset can help find policies, but it is not the criterion. A policy whose target is a classification the dataset falls under applies whether or not anyone attached it. This is the action-and-target index of `due2-architecture.md` §9, one level up.
 
 ### 2.4 SOTW services
 
@@ -209,13 +219,14 @@ search(text)                               -> datasets
 
 ### 2.6 Case workflow
 
-The orchestrator: it runs a use case from the first question to the presented answer, and is the only component that calls the others in sequence. It owns inquiries and draft requests. Cases belong to the ledger.
+The orchestrator: it runs a use case from the first question to the presented answer, and is the only component that calls the others (§1.2). It fetches what each call needs, passes it by value, and records the result. It owns inquiries and draft requests. Cases belong to the ledger.
 
 ```text
 open_inquiry(subject, action, datasets, at?)   -> inquiry_id, questions
 answer(inquiry_id, answers)                    -> questions | outcomes
 submit_evidence(case_id, evidence, key)        -> evaluation
 reevaluate(case_id)                            -> evaluation
+replay(case_id, seq, engine)                   -> match | mismatch
 ```
 
 **Inquiries.** A request has at most one target (`due2-workflows.md` §3.2), and each request has one case (`decisions/0008`). A person asking about three datasets therefore makes three requests, and the inquiry groups them. How the requests share questions and answers is open (§5 #4). The starting point is the simplest form: an inquiry is one request and one case, and the workflow passes it straight through.
@@ -224,11 +235,13 @@ reevaluate(case_id)                            -> evaluation
 
 **Re-evaluation.** When facts change, or a policy or normaliser version changes, the workflow re-evaluates the affected cases. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated as well.
 
+**Replay.** To check a recorded evaluation, the workflow fetches the four collections it names, from the policy store and the ledger, calls `decide` with them, and compares the digest of the new trace with the recorded one (`due2-workflows.md` §7). To the evaluator this is an ordinary call. The workflow chooses which evaluator deployment answers (`engine`): a replay on the engine that made the evaluation checks the record, and a replay on the current engine checks for a regression. The first needs the ledger to record each evaluation's engine, which is open (§5 #5).
+
 ### 2.7 Intelligent services
 
 An assistant, typically a language model, that serves the request GUI and drives the case workflow through its MCP adapter.
 
-- **It may:** find datasets from a description (catalog `search`); order questions by what decides the verdict (§3.1); phrase a question for its reader; map an answer onto a request field or a fact; narrate a rendered explanation (§2.9).
+- **It may:** find datasets from a description (catalog `search`, through the workflow); order questions by what decides the verdict (§3.1); phrase a question for its reader; map an answer onto a request field or a fact; narrate a rendered explanation (§2.9).
 - **It may not:** call `decide` with facts it supplies; record a fact under any source other than the person who gave it; change a verdict or add a reason (§1.4).
 
 Its useful work rests on what the trace already reports. For an `Indeterminate`, the trace names:
@@ -241,10 +254,10 @@ For a `Pending`, the frontier lists the duties that would permit (`due2-workflow
 
 ### 2.8 Normalisation
 
-W1 behind a port: an authored policy and its profiles in, a corpus or rejection diagnostics out (`due2-workflows.md` §4, `due2-diagnostics.md`). It runs once per policy version and normaliser version, never per request.
+W1 behind a port: authored policies and their profiles in, a corpus or rejection diagnostics out (`due2-workflows.md` §4, `due2-diagnostics.md`). It runs once per policy version and normaliser version, never per request. It sits beside the policy store, off the request path: the workflow runs it as a batch job when a policy or normaliser version is published, and puts its corpus in the store (§2.3).
 
 ```text
-normalise(policy_id, profiles)            -> corpus_id, lineage_id, warnings | rejections
+normalise(policies, profiles)             -> corpus, lineage, warnings | rejections
 ```
 
 ### 2.9 Explanation
@@ -254,9 +267,9 @@ normalise(policy_id, profiles)            -> corpus_id, lineage_id, warnings | r
 **Policy explanation** answers what a policy means before any request is made. It is read from the corpus and its lineage: the atoms one authored rule produced, their constraints, and the warnings W1 accepted the policy with.
 
 ```text
-explanation(case_id, seq)                 -> derivation         # due2-workflows.md §3.7
+explanation(trace)                        -> derivation         # due2-workflows.md §3.7
 render(derivation, audience)              -> text
-explain_policy(policy_id)                 -> atoms, constraints, lineage, warnings
+explain_policy(corpus, lineage, warnings) -> atoms and constraints per authored rule
 ```
 
 ### 2.10 Versions and provenance
@@ -276,7 +289,7 @@ Supports writing and amending policies:
 - **Explain:** policy explanation (§2.9).
 - **What-if:** before a version is published, evaluate recent cases and pending ones against the new corpus and list the verdicts that would change, revocations first.
 
-`decide` is pure and each case holds its SOTW, so a what-if run reads the ledger and writes nothing to it. Whether what-if results are recorded at all is open (§5 #6).
+`decide` is pure and each case holds its SOTW, so a what-if run reads the ledger and writes nothing to it. The workflow runs it, as it runs a replay (§2.6). Whether what-if results are recorded at all is open (§5 #6).
 
 ```text
 lint(document, profiles)                  -> diagnostics
@@ -291,9 +304,9 @@ what_if(corpus_id, case_ids)              -> verdict changes
 
 **The sequence.**
 
-1. **Identify.** The person names datasets. The intelligent services find them in the catalog (`search`).
+1. **Identify.** The person names datasets. The workflow finds them in the catalog (`search`) for the intelligent services.
 2. **Describe.** For each dataset, the catalog returns its classification edges and attached policies (§2.5).
-3. **Select.** The policy store returns every policy that may apply (§2.3) and its corpus.
+3. **Select.** The workflow asks the policy store for a corpus that covers every policy that may apply (§2.3), and fetches it.
 4. **Draft.** The workflow drafts a request: the action, the dataset as target, the subject from authentication, and the time.
 5. **Plan.** `plan` names everything the decision can read: request parameters, state properties, and hierarchy modules.
 6. **Ask for parameters.** The planned request parameters are questions for the requester. When they are answered, the request is complete and the case is created. `plan` runs again on the complete request, since what it names can depend on the request.
@@ -346,7 +359,7 @@ A role changes, a dataset is reclassified, or a policy is amended. The workflow 
 
 ### 3.4 Audit a past decision
 
-"What did we decide on 3 March, and why?" The ledger returns that evaluation, replay confirms its trace, and the explanation service renders it. Today's policy is not consulted (`due2-architecture.md` §7, two clocks).
+"What did we decide on 3 March, and why?" The ledger returns that evaluation, the workflow replays it on the engine that made it (§2.6), and the explanation service renders its trace. Today's policy is not consulted (`due2-architecture.md` §7, two clocks).
 
 ### 3.5 Amend a policy
 
@@ -413,7 +426,7 @@ Either way, the ledger has to record which engine produced each evaluation, besi
 
 | # | Question | Where | Issue |
 |---|---|---|---|
-| 1 | Policy selection: what may `select` use, and how is it shown to over-select? | §2.3 | #94 |
+| 1 | Policy selection: which sets of policies get a corpus, what `select` may use, and how both levels are shown to over-select | §2.3 | #94, #105 |
 | 2 | A hierarchy lookup that fails has no status, and hierarchy is closed-world, so a missing classification makes a part `F` | §2.5 | #95 |
 | 3 | Asking request parameters in order of importance: a status for a parameter not yet asked, or an evaluation of the draft outside the ledger | §3.1 | #96 |
 | 4 | Inquiries: how the requests of one inquiry share questions, answers, and presentation | §2.6 | #97 |
