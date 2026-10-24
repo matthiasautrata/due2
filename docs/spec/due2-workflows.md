@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.38
+**Status:** Draft v0.39
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.38** (2026-10-24, `decisions/0030`, #111): each evaluation of a case runs with the case's request, with `at` moved to the evaluation's `effective_at` when it is earlier, so a re-evaluation asks at its own time (§3.2). §7.1's `evaluation` relation names the request it ran with, and the latest evaluation is the case's current answer. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.39** (2026-10-24, `decisions/0031`, #112): a verdict is the answer of the policies supplied, as written, whatever their class; over an offer, `Permit` says that its terms permit the action, not that it has been accepted (§6.4). §3.1 says that `policy` keeps no class. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -100,7 +100,7 @@ diagnostic        (policy_id, code: Enum, ref)
 
 | Field | Meaning |
 |---|---|
-| `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); W1 makes the result explicit. |
+| `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); W1 makes the result explicit. The policy's class (Set, Offer, Agreement, or a profile's subclass of one) is not kept: W1 stage 1 carries it (`odrl-compound-to-atomic-normalization.md` §4), and no workflow reads it (`decisions/0031`). |
 | `policy.version` | The digest of the authored policy graph: `sha256:` followed by its `source_digest`, the SHA-256 of its canonical N-Quads (`odrl-compound-to-atomic-normalization.md` §5.2). Versions are told apart by content, never by a number that has to be ordered. |
 | `policy_profile` | Each profile the policy names with `odrl:profile`, one tuple per IRI. A policy may name none, or several. |
 | `atom.effect` | `Enum {Permit, Forbid, Oblige}` — one required field (`due2-architecture.md` §3). |
@@ -462,6 +462,8 @@ For a completion, which has no `U`:
 | `Permit` | the frontier contains a ready alternative |
 | `Pending(frontier)` | the frontier is non-empty |
 | `NotApplicable` | otherwise |
+
+**What a verdict says [D]** (`decisions/0031`). A verdict is the answer of the policies in the corpus, as written, for the request in the SOTW, whatever their class. Over an offer, `Permit` says that the offer's terms permit the action: "this offer permits you to proceed". It does not say that anyone has accepted the offer. Accepting it, and recording the agreement that results, happen outside the workflows. The reading cuts both ways: an offer's prohibitions and, under `violations = deny`, its violated obligations deny as any policy's do. The offer permits only a requester it covers, since an assignee is matched like any party (§5.2). A withdrawn or expired offer still permits unless selection leaves it out or a constraint on its status, flattened onto the request, excludes it (`due2-profiles.md` §8.1). `verdict_basis` names the permitting atoms and so their policies (§3.7).
 
 Under `deny`, a violated obligation in force acts as a surviving prohibition. DPROD instead checks violations only once a permission is active (`formal-semantics.md` §7.2, steps 5–6). Withholding only `Permit` and `Pending` would let a new permission turn `NotApplicable` into `Deny`, which breaks monotonicity and with it the two-completion computation below. due2 keeps monotonicity; the difference is DPROD exception 6 (`due2-profiles.md` §8.2).
 

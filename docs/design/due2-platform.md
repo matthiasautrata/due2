@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.4. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.5. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.4** (2026-10-24, `decisions/0030`, #111): §2.6 says that a case's request is fixed except for `at`, which each evaluation moves to its own time, and that the orchestrator never sends an access evaluation an `at` earlier than its `effective_at`. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.5** (2026-10-24, `decisions/0031`, #112): §2.3 says that offers are selected like any other policy, and §3.1 shows a `Permit` over an offer as "this offer permits you to proceed". Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -177,6 +177,8 @@ select(target, ancestors, action, parties) -> policy_ids                  # open
 
 The store never runs W1. Normalisation (§2.8) produces each corpus as a batch job when a policy or normaliser version is published, and the orchestrator puts it here. On the request path, the orchestrator finds the policies that may apply with `select`, and a stored corpus that covers them with `corpus`. The evaluator then skips atoms within that corpus (§2.1). Which sets of policies get a corpus in advance, and what the orchestrator does when no stored corpus covers a request's policies, are open (§5 #1). The orchestrator does not run W1 on the request path (`decisions/0027` item 3).
 
+**Offers are selected like any other policy.** A store holds offers as well as agreements, and a verdict over an offer says what its terms permit, not that it has been accepted (`due2-workflows.md` §6.4, `decisions/0031`). Accepting an offer, such as by signing a contract, is a separate step outside the evaluator.
+
 **Selection must over-select.** `decide` reads only the policies in its corpus, so choosing that corpus is part of the decision's soundness. Suppose policy A permits reading dataset D and policy B prohibits it. Over both, the verdict is `Deny`; over A alone, it is `Permit`. Prohibition monotonicity (L5, `due2-workflows.md` §8) says only that adding B cannot raise the verdict, not that a corpus may leave B out.
 
 Including a policy that cannot match the request is safe, because root atoms that are certainly `F` leave the trace unchanged (L8, `due2-workflows.md` §8). The converse needs care. A policy's obligations are in force when one of its `Permit` or `Forbid` atoms *matches* the request on action, relation, and parties, whatever its constraints (`due2-workflows.md` §5.2). So a policy whose permission matches but whose constraint is certainly `F` still puts its obligations in force, and under `violations = deny` a violated one acts as a prohibition (`due2-workflows.md` §6.4). Selection must therefore keep every policy with a `Permit` or `Forbid` atom whose match on action, target, and parties is not certainly `F`, and may skip a policy on those fields only, never on a constraint. This is the policy-level reading of the index rule of `due2-workflows.md` §5.5; #105 is to state the rule per atomic policy, with a property test. A catalog's attachment of a policy to a dataset helps find policies but is not the criterion: a policy whose target is a classification the dataset falls under applies whether or not anyone attached it.
@@ -304,6 +306,7 @@ what_if(corpus_id, case_ids)              -> verdict changes
 7. **Fetch.** The connectors fetch every planned state property and hierarchy module. Each answer is recorded as an event, including failures as `unresolved`.
 8. **Decide.** Every planned read is now in the case, so `decide` runs and the evaluation is recorded.
 9. **Show.** The verdict and its explanation are shown:
+   - a `Permit` names the policies that permit, so over an offer it reads "this offer permits you to proceed";
    - a `Pending` shows its frontier as the duties that would permit;
    - an `Indeterminate` shows what is missing and its `verdict_range`.
 10. **Iterate.** For an `Indeterminate`, the orchestrator asks for the inputs that decide it: from a person, where `admit_source` admits them, or from a connector again, up to a retry limit the deployment sets. Each answer is a new event, and step 8 runs again.

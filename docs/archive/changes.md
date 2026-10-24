@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.38** (2026-10-24, `decisions/0030`, #111): each evaluation of a case runs with the case's request, with `at` moved to the evaluation's `effective_at` when it is earlier, so a re-evaluation asks at its own time (§3.2). §7.1's `evaluation` relation names the request it ran with, and the latest evaluation is the case's current answer. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.37** (2026-10-24, `decisions/0029`, #110): under `invalid`, a void policy loses its permissions and prohibitions and keeps its root obligations, so under `violations = deny` a violated one still denies (§6.2). §6.4's proof covers the void's obligations, and a `Deny` from a violated obligation is explained by role `obligation` (§6.4). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.36** (2026-10-24, `decisions/0028`, #109): a duty stays one atom, and its condition is kept in clauses. `constraint` gains `clause`, present on the constraints of an `Oblige` atom (§3.1). The guards hold, or a witness satisfies the witness conditions, when some clause of that kind holds (§5.1–§5.3), and §3.5, §3.6, §4, §6.4, and L9 say so. Earlier changes are in `docs/archive/changes.md`.
@@ -116,6 +118,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `due2-platform.md`
+
+**Changes in v0.4** (2026-10-24, `decisions/0030`, #111): §2.6 says that a case's request is fixed except for `at`, which each evaluation moves to its own time, and that the orchestrator never sends an access evaluation an `at` earlier than its `effective_at`. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
