@@ -88,12 +88,13 @@ has_forbidding(W, P) :- forbidding(W, X), atom_policy(X, P).
 
 Atom `X` applies in world `W` but its policy's conflict strategy removes it: under `prohibit` a
 forbid removes the candidates, under `perm` a candidate removes the forbids, and under
-`invalid` a candidate and a forbid together void the policy, removing all its applying atoms.
+`invalid` a candidate and a forbid together void the policy, removing its applying permit and
+forbid atoms. A void policy's root obligations stay in force (decisions/0029).
 *%
 eliminated(W, X) :- candidate(W, X), atom_policy(X, P), conflict(P, prohibit), has_forbidding(W, P).
 eliminated(W, X) :- forbidding(W, X), atom_policy(X, P), conflict(P, perm), has_candidate(W, P).
-eliminated(W, X) :- applying(W, X), atom_policy(X, P), conflict(P, invalid),
-    has_candidate(W, P), has_forbidding(W, P).
+eliminated(W, X) :- applying(W, X), not atom_effect(X, oblige), atom_policy(X, P),
+    conflict(P, invalid), has_candidate(W, P), has_forbidding(W, P).
 
 %## Across policies
 

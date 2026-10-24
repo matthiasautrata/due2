@@ -1,0 +1,37 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: a policy under odrl:invalid whose permission and prohibition
+# conflict on a marketing request, and whose root obligation is overdue. The
+# conflict voids the permission and the prohibition; the obligation stays in
+# force (decisions/0029).
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:invalid ;
+    odrl:permission ex:use ;
+    odrl:prohibition ex:noMarketing ;
+    odrl:obligation ex:deleteCopy .
+
+ex:use a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset .
+
+ex:noMarketing a odrl:Prohibition ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand ex:marketing
+    ] .
+
+# The steward must delete an expired copy by 1 June 2026.
+ex:deleteCopy a odrl:Duty ;
+    odrl:action odrl:delete ;
+    odrl:target ex:ExpiredCopy ;
+    odrl:assignee ex:Steward ;
+    dprod:deadline "2026-06-01T00:00:00Z"^^xsd:dateTime .

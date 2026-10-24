@@ -135,8 +135,9 @@ elim_within(X, Y, perm) :- may_contend(X), atom_effect(X, forbid), sure_candidat
 
 %*! void(P)
 
-Policy `P` has strategy `invalid`, a sure candidate, and a `t` forbid, so it contributes nothing
-in any completion. See due2-workflows.md §6.2 #1.
+Policy `P` has strategy `invalid`, a sure candidate, and a `t` forbid, so its contenders are
+removed in every completion. Its root obligations stay in force (due2-workflows.md §6.2 #1,
+decisions/0029).
 *%
 void(P) :- conflict(P, invalid), sure_candidate(X), atom_policy(X, P), surely_applies(Y),
     atom_effect(Y, forbid), atom_policy(Y, P).

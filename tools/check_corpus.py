@@ -1314,7 +1314,7 @@ def check_explanation(
         removers = {
             "prohibit": (perms, prohibs),
             "perm": (prohibs, perms),
-            "invalid": (perms | prohibs | obligs, perms | prohibs),
+            "invalid": (perms | prohibs, perms | prohibs),
             "violated_precondition": (perms, preconds),
             combination: (perms, prohibs),
         }

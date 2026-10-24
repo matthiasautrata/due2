@@ -90,7 +90,7 @@ fun outstanding[w: World, p: Permission]: set Duty { p.pre & w.owed - w.fulfille
 
 // §6.2 #1, within a policy. Under `prohibit` a prohibition that applies eliminates the policy's
 // candidates. Under `perm` a candidate eliminates its prohibitions. Under `invalid` the two
-// together void the policy.
+// together void the policy, whose obligations stay in force (decisions/0029).
 fun survivingProhibitions[w: World]: set Prohibition {
   { f: Prohibition & w.applies |
       not (f.policy.conflict in Perm + Invalid and some candidates[w] & policy.(f.policy)) }

@@ -36,7 +36,7 @@
         "obligations": [],
         "verdict_basis": [],
         "eliminated": [ { "ref": "ex:policy:1010#permission", "by": "ex:policy:1010#prohibition", "rule": "invalid" }, { "ref": "ex:policy:1010#prohibition", "by": "ex:policy:1010#permission", "rule": "invalid" } ],
-        "why": "Both rules apply; under invalid a T candidate and a T prohibition together void the policy, all its atoms are eliminated with rule invalid, and nothing remains (workflows §6.2)."
+        "why": "Both rules apply; under invalid a T candidate and a T prohibition together void the policy, both rules are eliminated with rule invalid, and nothing remains (workflows §6.2)."
       },
       "oval_expected": "not evaluated (None)"
     },

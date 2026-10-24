@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.11
+**Status:** Draft v0.12
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.11** (2026-10-24, `decisions/0028`, #109): §4 item 3 makes only a root rule's DNF disjuncts atoms; a duty's become clauses of its one atom, and the blowup budget's exact count includes them. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.12** (2026-10-24, `decisions/0029`, #110): §6.2 says that a void policy keeps its root obligations, and names the departure from ODRL's reading. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -181,7 +181,7 @@ Prohibit-wins is a **default, not a law**. ODRL's `conflict` term takes `perm`, 
 
 **[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); the normaliser writes the result explicitly.
 
-**[D]** A void policy contributes *nothing*. It is ODRL's reading (the policy does not govern), and it keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). Validity and evaluation are separate concerns: a malformed policy is rejected at W1 or by the checkers, while a well-formed policy that voids itself for one request is an evaluation outcome, visible in the trace (`eliminated`, rule `invalid`). OVAL reports such a policy as not evaluable (`oval-conflict-invalid`), which conflates the two. *`Indeterminate` with a cause* — the fail-safe alternative, a value outside the chain needing its own computation — stays parked; revisit if a real policy needs a void policy to block rather than abstain.
+**[D]** A void policy gives *no access answer*: its permissions and prohibitions are eliminated. Its root obligations stay in force, and under `violations = deny` a violated one still denies (`decisions/0029`). ODRL reads a void policy as governing nothing, so this is a departure, made for two reasons. Whether an obligation was met does not depend on the request whose conflict voids the policy, and removing it would let a request escape a violated obligation by asking for a use the policy forbids. And the reading keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). Validity and evaluation are separate concerns: a malformed policy is rejected at W1 or by the checkers, while a well-formed policy that voids itself for one request is an evaluation outcome, visible in the trace (`eliminated`, rule `invalid`). OVAL reports such a policy as not evaluable (`oval-conflict-invalid`), which conflates the two. *`Indeterminate` with a cause* — the fail-safe alternative, a value outside the chain needing its own computation — stays parked; revisit if a real policy needs a void policy to block rather than abstain.
 
 ### 6.3 Two kinds of question **[D]**
 

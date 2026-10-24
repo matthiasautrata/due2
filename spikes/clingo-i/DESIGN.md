@@ -584,7 +584,7 @@ The four steps of `due2-workflows.md` §6.1–§6.4, in order. Every relation ca
 2. **Conflict** (`due2-workflows.md` §6.2), among the candidates and the prohibitions that apply. Within the policy, by its strategy (`due2-workflows.md` §6.2 #1):
    - `prohibit`: an applying `forbid` eliminates the policy's candidates;
    - `perm`: a candidate eliminates the policy's `forbid` atoms;
-   - `invalid`: a candidate and an applying `forbid` together eliminate everything in the policy that applies.
+   - `invalid`: a candidate and an applying `forbid` together eliminate every `permit` and `forbid` atom of the policy that applies, and its root obligations stay in force (`decisions/0029`).
 
    Across policies (`due2-workflows.md` §6.2 #2), something denies (`deny/1`) when a `forbid` survives, or when `config.violations` is `deny` and an obligation in force is violated (`due2-workflows.md` §6.4). Either eliminates every candidate (prohibit-overrides), so a candidate survives (`survives/2`) when conflict does not remove it and nothing denies. Under `ignore`, the default, whether stated or absent, `config_violations(deny)` does not hold, and obligations never change the verdict.
 3. **The frontier** (`due2-workflows.md` §6.3). A surviving candidate is dominated when another's outstanding set is a strict subset of its own (`not_within/3`, `dominated/2`), and the frontier is the surviving candidates that are not dominated (`frontier/2`). The program compares candidates, not sets: two candidates with one set are both in the frontier, and `interpret.py` collapses them into one alternative (§ Output).
