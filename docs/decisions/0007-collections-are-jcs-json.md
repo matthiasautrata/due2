@@ -1,6 +1,6 @@
 # 0007 — Collections are JCS JSON arrays, identified by SHA-256
 
-**Status:** Decided, 2026-10-16
+**Status:** Decided, 2026-10-16; amended 2026-10-24
 **Context documents:** `due2-workflows.md` §2, §9 #1 · `ways-of-working.md` §2.4 · `decisions/0006` · `odrl-compound-to-atomic-normalization.md` §4 · issue #3
 
 ## Question
@@ -32,3 +32,14 @@ Why:
 
 - A backend cannot produce JCS output byte-identically; fix that backend, not the rule.
 - A collection grows tuples that are not flat (nested relations): the value rules need extending.
+
+## Amendment (2026-10-24, several relations in one collection)
+
+The decision said that a collection is a JSON array of tuples, but every collection holds several relations: the corpus has ten, and even the request has three (`due2-workflows.md` §3.1–§3.5). An array of tuples does not say which relation a tuple belongs to, so the encoding did not fix the bytes of any collection. The owner settled it while the evaluator's port schema was designed (#36).
+
+**Decision.** A collection is a JSON object keyed by relation name. Each value is that relation's tuples, as a JSON array sorted as before. A relation with no tuples is omitted, so that an empty relation has one form. JCS orders the relation names. A collection with no tuples at all is `{}`. `due2-workflows.md` §2 states the rule. Where the title and Option B say "arrays", read this amendment.
+
+**Why.**
+
+- **The schema states it directly.** Each relation is one property of the collection, with its own tuple schema, so JSON Schema validates a collection without a discriminator.
+- **The alternative needs a reserved field.** Tagging each tuple with its relation name keeps one array, but the tag must be a name no relation uses as a field, and the corpus's `closure` already has a field called `relation`.

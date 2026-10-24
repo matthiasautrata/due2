@@ -64,8 +64,8 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 
 **Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. **[D]** (`decisions/0007`):
 
-- **Encoding.** A collection is a JSON array of tuples, serialised by RFC 8785 (JCS) to UTF-8. A tuple is a JSON object keyed by field name; absent optional fields are omitted.
-- **Order.** Tuples are sorted by key, field by field in declaration order, each field by Unicode code-point order of its serialised value. A relation with an empty key holds one tuple.
+- **Encoding.** A collection is a JSON object keyed by relation name, serialised by RFC 8785 (JCS) to UTF-8. Each value is the relation's tuples, as a JSON array; a relation with no tuples is omitted, so a collection with no tuples is `{}`. A tuple is a JSON object keyed by field name; absent optional fields are omitted. Relation and field names are ASCII, so JCS orders them by code point.
+- **Order.** Within a relation, tuples are sorted by key, field by field in declaration order, each field by Unicode code-point order of its serialised value. A relation with an empty key holds one tuple.
 - **Values.** An `Id`, `Truth`, or `Enum` is a JSON string. A literal is the object `{"v": lexical, "t": datatype}` plus `"l": language` when present; an `Id` is never an object, so the two cannot collide. A number is never a JSON number — it is a literal with a numeric datatype. A field declared as a count or bound is a JSON integer within ±2^53. A flag is a JSON boolean. No floating point.
 - **Digest.** The collection id is `sha256:` followed by the lowercase hex SHA-256 of the canonical bytes.
 

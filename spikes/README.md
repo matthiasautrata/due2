@@ -48,13 +48,13 @@ The harness starts `command` once per test run and talks JSON lines over stdin a
 
 ```text
 -> {"init": {"modules": {path: text}, "core": [path], "profiles": {profile IRI: [path]}}}
-<- {"ready": {"tasks": ["interpret"]}}
+<- {"ready": {"tasks": ["interpret"]}}               or, with decide, {"ready": {"tasks": [...], "relations": {"decide": [...]}}}
 -> {"id": "<case>/<scenario>", "task": "interpret", "input": {...}}
 <- {"id": "<case>/<scenario>", "output": {...}}   or   {"id": ..., "error": "..."}
                                                  or   {"id": ..., "unsupported": "<feature>"}
 ```
 
-`init` carries every shipped profile module once: `core` is always loaded, and `profiles` lists the modules a policy's `odrl:profile` IRI selects (`tools/check_corpus.py` `CORE`, `MODULES`). `ready.tasks` declares what the spike implements. A task it does not declare is reported as unsupported, never as a pass. A spike that declares a task but cannot yet meet one vector declines it with `unsupported` and names the feature (`"recurrence"`, `"deadline"`): the vector is reported unsupported with that reason, never as a pass, and the same reply must come on every repeat. Declining is how a spike grows by increments (`ways-of-working.md` §14) and still runs green: every vector it does answer must pass. A spike declines only a feature it does not implement, and the scorecard's unsupported count shows the rest. A crash, a timeout (60 s per call, 120 s to `ready`), or a reply with the wrong `id` counts as an error, and the harness restarts the backend.
+`init` carries every shipped profile module once: `core` is always loaded, and `profiles` lists the modules a policy's `odrl:profile` IRI selects (`tools/check_corpus.py` `CORE`, `MODULES`). `ready.tasks` declares what the spike implements, and `ready.relations` the trace relations it emits for `decide` (see `decide`, below). A vector's `id` is `<case>/<scenario>` for `interpret` and `<file>/<scenario>` for `decide`, `<file>` naming the relation-level vector file. A task it does not declare is reported as unsupported, never as a pass. A spike that declares a task but cannot yet meet one vector declines it with `unsupported` and names the feature (`"recurrence"`, `"deadline"`): the vector is reported unsupported with that reason, never as a pass, and the same reply must come on every repeat. Declining is how a spike grows by increments (`ways-of-working.md` §14) and still runs green: every vector it does answer must pass. A spike declines only a feature it does not implement, and the scorecard's unsupported count shows the rest. A crash, a timeout (60 s per call, 120 s to `ready`), or a reply with the wrong `id` counts as an error, and the harness restarts the backend.
 
 ### `interpret`
 
@@ -80,9 +80,35 @@ One vector per positive scenario in `conformance/cases/` (negative cases wait fo
 
 The verdict is one of the five. The frontier is a set of alternatives, each a set of duty IRIs. Obligations are a set; `status` is `fulfilled`, `outstanding`, `violated`, or `unknown`, and `instance` is present only for an instance of a recurring duty. `exact` is compared only for scenarios that state it. `verdict_basis` and `eliminated` are the explanation at the authored level (`conformance/README.md`, `due2-workflows.md` §3.7), each a set, and both optional. `verdict_range` is an `Indeterminate`'s least and greatest completion verdict (`decisions/0011`), also optional. `unknown_parts` is every `U` part of every rule whose finding is not `F`, under any verdict, as a set: the input it reads and that input's status (`decisions/0016`, `conformance/README.md`), also optional. Each is compared when the scenario states it and the output has it. A vector whose output matches but lacks a field the scenario states is reported unsupported (`not emitted: verdict_basis`), never as a pass. A spike that emits none of them yet still runs green, and grows into them by increment. Names may be full IRIs or use the vector's prefixes.
 
-### `w2`, `w3`
+### `decide`
 
-Reserved for the relation-level vectors that gate the W2/W3 evaluator (`decisions/0027` #5). Their format is issue #36, and it is written before any spike implements them.
+The task of the W2/W3 evaluator, `decide` of `due2-platform.md` §2.1. Its vectors are the scenarios of the relation-level vector files in `conformance/vectors/`, which gate the evaluator (`decisions/0027` #5). Input:
+
+```json
+{"file": "...", "scenario": "...", "corpus": {...}, "request": {...}, "sotw": {...}, "config": {...}}
+```
+
+The four collections are in the canonical form of `due2-workflows.md` §2: full IRIs, tuples sorted, and relations with no tuples omitted. The harness has canonicalised them from the vector file's authoring form (`conformance/README.md`, section Relation-level vectors). The output is the trace, `due2-workflows.md` §3.5, in the same form:
+
+```json
+{"evaluation": [{"corpus_id": "sha256:...", "request_id": "sha256:...", "sotw_id": "sha256:...", "config_id": "sha256:..."}],
+ "verdict": [{"value": "Pending", "frontier_complete": true, "exact": true}],
+ "alternative": [...], "alt_duty": [...], "finding": [...], ...}
+```
+
+A spike lists the trace relations it emits in its `ready` reply:
+
+```text
+<- {"ready": {"tasks": ["decide"], "relations": {"decide": ["evaluation", "verdict", "eliminated"]}}}
+```
+
+The list is needed because the canonical form omits a relation with no tuples, so an absent relation in the output means "emitted, and empty" only if the spike declares it. A relation the spike emits without declaring it is an error. A scenario that states a relation the spike does not declare is reported unsupported (`not emitted: <relation>`), never as a pass. The harness canonicalises the output, then compares every other stated relation as the section Relation-level vectors of `conformance/README.md` describes. When the spike declares `evaluation`, the harness also checks its four ids against the collections it sent.
+
+The corpus does not yet carry the operand bindings that W2 needs to evaluate a constraint (#108); until it does, `decide` vectors have no constraints.
+
+### `plan`
+
+Reserved for `plan` of `due2-platform.md` §2.1. The relations of its output, `Reads`, are open (#106), and the task is defined once they are settled.
 
 ## Running
 

@@ -14,13 +14,15 @@ uv run python tools/check_corpus.py profiles/vendor/dprod/examples/*.ttl   # the
 conformance/cases/<case>/
     policy.ttl     one ODRL policy, plus the operand bindings it uses
     case.json      provenance, classification, and scenarios — or, for a negative case, the expected rejection
+conformance/vectors/<file>.json
+                   a relation-level vector file: a corpus written as relations, and scenarios against it
 ```
 
 Case names start with their origin: `rl2-` for the RL2 use cases (`github.com/matthiasautrata/RL2`, `conformance/usecases/`), `dprod-` for DPROD Contracts examples (`github.com/EKGF/dprod`, `develop`, `dprod-contracts/examples/`), `force-`, `oval-`, and `w3c-fs-` for other evaluators' suites (vendored under `external/`, see `external/README.md`), and `due2-` for cases authored here to cover what no origin exercises.
 
 ## Running a backend
 
-Each positive scenario is a vector of the `interpret` task: its policy, request, SOTW, and config in, its `expected` out. `uv run pytest --backend=<spike>` runs every vector against a spike under `spikes/`; the protocol, output shape, and comparison rules are in `spikes/README.md`. Negative cases are not `interpret` vectors; they wait for W1, the normaliser.
+Each positive scenario is a vector of the `interpret` task: its policy, request, SOTW, and config in, its `expected` out. `uv run pytest --backend=<spike>` runs every vector against a spike under `spikes/`; the protocol, output shape, and comparison rules are in `spikes/README.md`. Negative cases are not `interpret` vectors; they wait for W1, the normaliser. Each scenario of a relation-level vector file is a vector of the `decide` task (see Relation-level vectors, below).
 
 ## Vendored DPROD examples
 
@@ -51,7 +53,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {
-      "name": "within ceiling and quota",
+      "name": "the subscriber retrieves",
       "request": {
         "reference": "req-1",
         "action": "ex:retrieve",
@@ -74,7 +76,7 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
-        "why": "Both constraints hold; the permission applies and has no duties."
+        "why": "The one permission's action, target, and assignee match the request, and it has no constraints or duties, so it is ready."
       },
       "rl2_expected": "Permit"
     }
@@ -133,6 +135,64 @@ The `dprod-*` cases cover every one of the sixteen vendored policies with scenar
 **Standing divergences from DPROD,** which a `dprod-*` case need not re-explain: the six exceptions of `due2-profiles.md` §8.2 — Kleene masking and errors in rules that do not apply, incomparable operands, duty state derived from evidence, Agreement parties, policy-level targets, and violated duties — together with DPROD's duty-collection rule (`formal-semantics.md` §7.2 step 1: a duty is collected only when its own action matches the request), which is why no DPROD duty is ever collected for a read.
 
 Expected results are hand-derived. The derivation in `why` is what a reviewer checks.
+
+## Relation-level vectors
+
+A relation-level vector file gives the W2/W3 evaluator its inputs written directly as relations, together with the traces it must return (`decisions/0006` #3 and #4, kept by `decisions/0027` #5). No policy is normalised, so the evaluator is tested apart from W1, and a W1 defect cannot pass for an evaluator defect. The relations are those of `due2-workflows.md` §3.1–§3.5. Each collection is encoded as `due2-workflows.md` §2 states: a JSON object keyed by relation name, whose values are arrays of tuples.
+
+```text
+conformance/vectors/<file>.json    one corpus, and the scenarios evaluated against it
+```
+
+A vector file is named like a case, starting with its origin. Each of its scenarios is one vector of the `decide` task (`spikes/README.md`): a request, SOTW, and config, evaluated against the file's corpus, and the expected trace. In this sketch the `…` stand for tuples:
+
+```json
+{
+  "file": "due2-one-permission",
+  "notes": "Anything a reviewer needs beyond each scenario's why.",
+  "prefixes": { "ex": "https://example.org/", "odrl": "http://www.w3.org/ns/odrl/2/", "xsd": "http://www.w3.org/2001/XMLSchema#" },
+  "corpus": { "policy": [ … ], "atom": [ … ], "atom_party": [ … ], "root": [ … ] },
+  "scenarios": [
+    {
+      "name": "within ceiling and quota",
+      "request": {
+        "request": [ { "action": "ex:retrieve", "target": "ex:DataService", "at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ],
+        "request_party": [ { "function": "odrl:assignee", "party": "ex:Subscriber" } ]
+      },
+      "sotw": { "sotw": [ { "effective_at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ] },
+      "config": { "config": [ { "combination": "prohibit-overrides", "violations": "ignore" } ] },
+      "expected": {
+        "trace": { "verdict": [ { "value": "Permit", "frontier_complete": true, "exact": true } ], "eliminated": [] },
+        "why": "Both constraints hold; the permission applies and has no duties."
+      }
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `file` | The file name without `.json`. |
+| `source`, `notes` | Optional. `source` names what the vector file was derived from, such as a case and scenario. `notes` records what changed in the derivation, and anything else a reviewer needs. |
+| `prefixes` | Prefix to namespace IRI, for the authoring form below. |
+| `corpus` | The corpus (`due2-workflows.md` §3.1). It satisfies the invariants that `due2-workflows.md` §3.1 lists, because W1 establishes them and the evaluator trusts them. Ids the corpus mints, such as `atom_id` and `constraint_id`, are IRIs the author chooses (`ex:a1`), and `duty.binding_key` is any string the author chooses. |
+| `scenarios[].request`, `sotw`, `config` | The scenario's request, SOTW, and config (`due2-workflows.md` §3.2–§3.4). |
+| `expected.trace` | The trace relations the scenario asserts (`due2-workflows.md` §3.5). `verdict` is required, and every other relation is optional. A stated relation is compared with the evaluator's as a set of tuples, exactly, every field included: `[]` asserts that it has no tuples, and an absent relation asserts nothing. So `verdict.exact` is always compared, unlike `expected.exact` of a case. `evaluation` is never stated (below). |
+| `expected.why` | The derivation in one or two sentences, from `due2-workflows.md` §5–§6, as in a case. |
+
+**Authoring form.** A vector file is written by hand, so it may differ from the canonical form of `due2-workflows.md` §2 in three ways. The harness canonicalises every collection, the expected trace included, before it sends or compares it.
+
+- A string value may be a prefixed name: when the text before its first colon is a key of `prefixes`, that text and the colon are replaced by the namespace IRI. A full IRI's scheme (`https`, `urn`) is not a key, so it stays as written, and so does a literal's lexical form `v`, which never expands. `party` and `sha256` are not allowed as prefix names, because `constraint.scope` values and digests start with them.
+- Tuples may be in any order. The harness sorts them.
+- A relation with no tuples may be written as `[]`. The harness omits it.
+
+Literals take the form `{"v", "t", "l"}` of `due2-workflows.md` §2, not the JSON-LD forms of `case.json`. Set semantics apply to a relation's key (`due2-workflows.md` §2), so a tuple written twice counts once, and two tuples with one key that differ elsewhere make the file invalid. So do a relation or a field that `due2-workflows.md` §3 does not define, and a relation with an empty key, such as `verdict`, holding other than one tuple.
+
+**Ids the vector file does not state.**
+
+- **`evaluation`.** The harness computes the four collection ids from the canonical collections it sends. It compares them with the evaluator's `evaluation` tuple whenever the evaluator emits that relation (`spikes/README.md`, `decide`). A vector file does not state them, because any edit to an input changes them.
+- **Derived ids.** `alt_id`, and the instance key of a `grant` instance or of a recurring duty's occurrence, are digests whose byte construction is open (#107). Until #107 settles it, an expected trace names each by any string of its choosing, and the comparison passes when one one-to-one renaming of those names to the evaluator's, applied across every stated relation, makes each relation equal. The harness searches for the renaming. A `member` instance key is the corpus's `binding_key`, which the vector file states, so it is compared exactly. An input that has to name a `grant` instance or an occurrence, in `activation` or in `evidence.discharges`, cannot be written until #107 is settled.
+- **Operand bindings.** The corpus carries no operand bindings, which W2 needs to evaluate a constraint (`due2-workflows.md` §5.4, step 1). Until #108 settles their relations, a vector file cannot state a constraint.
 
 ## Coverage gaps
 
