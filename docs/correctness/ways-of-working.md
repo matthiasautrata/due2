@@ -315,7 +315,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend e
 
 ## 13. Open decisions register
 
-**Provisional picks.** #1, #2, #3, #5, #6, and #7 were settled for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
+**Provisional picks.** #1, #2, #3, #5, #6, #7, and #14 were settled for a single-author repository. If due2 moves into a team or work environment, they are revisited against what that environment approves. They are not reopened before then without a reason.
 
 **Tracking.** As `due2-architecture.md` §11: each open row has an issue, and the issue names this section. Rows keep their numbers, because issues and other documents cite them; a resolved row leaves the table and is stated below it.
 
@@ -327,7 +327,7 @@ Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend e
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume | #16 |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option | #16 |
 
-Rows 1–3 and 5–7 are the provisional picks above, each stated in its section: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); and `icontract`, trialled on the Kleene tables (§6). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12, whether a direct interpreter is maintained as a specification artifact (§7.1), is answered yes: clingo-i renders the evaluation semantics as the L9 oracle and the generator, and is not a pipeline stage (`decisions/0009`); the Python `Den` oracle, and later the chosen prover's, render W1 stage 1 (`decisions/0021`, issue #8).
+Rows 1–3, 5–7, and 14 are the provisional picks above, each stated in the section named: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); `icontract`, trialled on the Kleene tables (§6); and, as row 14, JSON Schema 2020-12 as the language of the port schema, from which the OpenAPI and MCP adapters are generated (`due2-platform.md` §1.2). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12, whether a direct interpreter is maintained as a specification artifact (§7.1), is answered yes: clingo-i renders the evaluation semantics as the L9 oracle and the generator, and is not a pipeline stage (`decisions/0009`); the Python `Den` oracle, and later the chosen prover's, render W1 stage 1 (`decisions/0021`, issue #8).
 
 ---
 
