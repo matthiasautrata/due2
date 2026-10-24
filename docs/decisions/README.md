@@ -11,10 +11,10 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0001](0001-rl2-as-donor.md) | due2 stays ODRL-native; RL2 is a donor; DPROD Contracts is a profile | 2026-10-09 | In force |
 | [0002](0002-w1-implementation-and-verification.md) | W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline | 2026-10-10 | Amended. Superseded in part: by 0003, which withdraws hoisting; by 0009, which makes the L9 oracle a clingo program (item 7); by 0021, which withdraws Dafny (items 2–4); by 0027, which narrows item 1 to W1, closes item 5's carve-out for a clingo backend, and no longer sets Kotlin aside for W2 and W3 (item 8). |
 | [0003](0003-duty-guards-stay-on-the-duty.md) | Duty guards stay on the duty; conditional-duty hoisting is withdrawn | 2026-10-11 | In force |
-| [0004](0004-frontier-complete-by-bounded-enumeration.md) | `frontier_complete` is computed by bounded enumeration | 2026-10-11 | Amended: 0026 changes the listed frontier it compares with |
+| [0004](0004-frontier-complete-by-bounded-enumeration.md) | `frontier_complete` is computed by bounded enumeration | 2026-10-11 | Amended: 0026 changes the listed frontier it compares with, and the bound is config |
 | [0005](0005-set-based-operators-read-after-salas-pareti.md) | Set-based operators with lists are read after Salas–Pareti, with a warning | 2026-10-11 | Amended: an addendum on `isAllOf` |
-| [0006](0006-w2w3-backend-bakeoff.md) | W2 and W3 are built as a bakeoff: Python, Elixir, Clingo, under one conformance suite | 2026-10-16 | Superseded by 0027, except for the gate (item 4) and the relation-level vectors |
-| [0007](0007-collections-are-jcs-json.md) | Collections are JCS JSON arrays, identified by SHA-256 | 2026-10-16 | In force |
+| [0006](0006-w2w3-backend-bakeoff.md) | W2 and W3 are built as a bakeoff: Python, Elixir, Clingo, under one conformance suite | 2026-10-16 | Superseded by 0027, except for the relation-level vectors (item 3) and the gate (item 4) |
+| [0007](0007-collections-are-jcs-json.md) | Collections are JCS JSON arrays, identified by SHA-256 | 2026-10-16 | Amended: a collection is a JSON object keyed by relation name |
 | [0008](0008-ledger-one-case-per-request.md) | The ledger: one case per request, an append-only sequence of events | 2026-10-16 | In force |
 | [0009](0009-the-semantics-live-in-clingo.md) | The semantics live in a clingo program: the L9 oracle and the generator | 2026-10-16 | Amended. Role (d), the bakeoff entrant, lapses with 0027. |
 | [0010](0010-the-trace-is-the-explanation.md) | The trace is the explanation | 2026-10-16 | In force |

@@ -1,6 +1,6 @@
 # 0004 — `frontier_complete` is computed by bounded enumeration
 
-**Status:** Decided, 2026-10-11
+**Status:** Decided, 2026-10-11; amended 2026-10-24
 **Context documents:** `due2-workflows.md` §3.5, §6.1–§6.4 · `correctness-strategy.md` §4.5 · `tools/check_completion.py` (fifth phase) · issue #29
 
 ## Finding

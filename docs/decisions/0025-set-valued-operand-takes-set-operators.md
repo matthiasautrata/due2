@@ -5,7 +5,7 @@
 
 ## Question
 
-An operand binding may declare `due2:cardinality due2:set` (`due2-profiles.md` §3), and then a read of several values gives the set. `eq`, `neq`, the four order operators, `isAnyOf`, and `isNoneOf` take one left value (§4). The spec gave these operators no reading on a set-valued operand, and no rejection either. Only `isA` on a set-valued operand was rejected.
+An operand binding may declare `due2:cardinality due2:set` (`due2-profiles.md` §3), and then a read of several values gives the set. `eq`, `neq`, the four order operators, `isAnyOf`, and `isNoneOf` take one left value (`due2-profiles.md` §4). The spec gave these operators no reading on a set-valued operand, and no rejection either. Only `isA` on a set-valued operand was rejected.
 
 The answer matters to the completion key (`due2-workflows.md` §6.4). The key pairs `eq` with `neq`, and `isAnyOf` with `isNoneOf`, as complements. Under an existential reading of both sides ("some value equals", "some value differs"), both can be `T` on one set. Pairing them would then give a wrong definite verdict, as the concept-scheme gap did (`decisions/0023`).
 

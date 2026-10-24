@@ -1,6 +1,6 @@
 # 0019 — A `Pending` basis under unknowns is checked only for its kinds
 
-**Status:** Decided, 2026-10-18 (the owner chose alternative A of #75)
+**Status:** Decided, 2026-10-18 (the owner chose alternative A of #75); amended 2026-10-24
 **Context documents:** `due2-workflows.md` §6.3, §6.4 · `decisions/0016` #4 · `conformance/README.md` (`expected.verdict_basis`) · `tools/check_corpus.py` · issue #75
 
 ## Question
