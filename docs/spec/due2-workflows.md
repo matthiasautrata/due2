@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.37
+**Status:** Draft v0.38
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.37** (2026-10-24, `decisions/0029`, #110): under `invalid`, a void policy loses its permissions and prohibitions and keeps its root obligations, so under `violations = deny` a violated one still denies (§6.2). §6.4's proof covers the void's obligations, and a `Deny` from a violated obligation is explained by role `obligation` (§6.4). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.38** (2026-10-24, `decisions/0030`, #111): each evaluation of a case runs with the case's request, with `at` moved to the evaluation's `effective_at` when it is earlier, so a re-evaluation asks at its own time (§3.2). §7.1's `evaluation` relation names the request it ran with, and the latest evaluation is the case's current answer. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -137,6 +137,8 @@ request_param  (name | value: Term)
 ```
 
 `reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action, an `xsd:dateTime` with a timezone — validity time, what ODRL's `dateTime` constrains. `target` may be absent — a request for an action on no named asset; every relation part is then `U` (§5.2), never `F`. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
+
+**`at` across a case's evaluations [D]** (`decisions/0030`). Each evaluation of a case names the request it ran with (§7.1). That request is the case's request, with `at` moved to the evaluation's `effective_at` when the case's `at` is earlier. A later `at`, as for an action proposed for a future date, is kept. Every other field is unchanged, so `reference`, and with it every grant-scoped instance (§5.3), carries over. The orchestrator (`due2-platform.md` §2.6) builds every access evaluation's request this way, so its `at` is never earlier than its `effective_at`: an action can no longer be taken at an instant that has passed. The evaluator does not compare the two: given an earlier `at`, it answers for that instant. So a payment made after a time window has closed cannot fulfil the window's permission at a later re-evaluation, while a payment made in time and recorded late still counts (`due2-reevaluation-moves-at`).
 
 ### 3.3 SOTW
 
@@ -506,16 +508,18 @@ The ledger holds cases. Each request opens exactly one case, and everything afte
 ```text
 case        (case_id | request)
 event       (case_id, seq | kind, valid_at?, ref)
-evaluation  (case_id, seq | corpus, sotw, config, pins, trace?, verdict?, error?)
+evaluation  (case_id, seq | request, corpus, sotw, config, pins, trace?, verdict?, error?)
 ```
 
 | Relation | Meaning |
 |---|---|
-| `case` | One per request. `case_id` is assigned by the shell. |
+| `case` | One per request: `request` is the request that opened the case. `case_id` is assigned by the shell. |
 | `event` | `seq` counts from 1, in the order the shell recorded events, and numbers `evaluation` tuples too. `kind ∈ {fact, evidence, activation}`; `ref` is the content id of the §3.3 tuple recorded. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events: the next evaluation names the new corpus id. |
-| `evaluation` | The evaluation recorded at `seq`, once; `event` does not repeat it. It holds the corpus, SOTW, and config ids (the request is its case's; §3.5 names all four), the normaliser versions in force (`pins`), and the outcome: `trace` and `verdict`, or `error` with its cause. |
+| `evaluation` | The evaluation recorded at `seq`, once; `event` does not repeat it. It holds the request, corpus, SOTW, and config ids (§3.5 names all four). The request is the case's, with an earlier `at` moved to `effective_at` (§3.2). It also holds the normaliser versions in force (`pins`), and the outcome: `trace` and `verdict`, or `error` with its cause. |
 
 **The SOTW of an evaluation** is the case's events before it, taken as of `sotw.effective_at`: for each fact, the value with the latest `valid_at` no later than `effective_at`. It is frozen as a collection, and its digest is the evaluation's `sotw` id.
+
+**The current answer** for a case is its latest evaluation.
 
 **What did we decide, and when.** Earlier decisions are not recomputed: the answer is the earlier `evaluation` event, which pins its inputs, and replay reproduces its trace (§7).
 

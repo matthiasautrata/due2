@@ -28,3 +28,5 @@ A draft of the same day added a log-position fold, an as-of query over record ti
 - An audit question needs what was known by a past moment, rather than what was decided then.
 
 **Note (2026-10-16, coherence):** workflows v0.16 refines the data model, not the decision — an evaluation is an event of its case (it takes a `seq`) but is recorded once, in the `evaluation` relation; `event` carries the content kinds, and an evaluation's request is its case's.
+
+**Note (2026-10-24, `decisions/0030`, #111):** workflows v0.38 refines the v0.16 note: each `evaluation` names the request it ran with. Its request is the case's, with an earlier `at` moved to the evaluation's `effective_at`, and the latest evaluation is the case's current answer. One case per request still holds: the case keeps the request that opened it.

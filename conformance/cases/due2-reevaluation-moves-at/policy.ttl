@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: a permission with a time window and a payment precondition. The
+# window reads the action instant, request.at: due2-core binds odrl:dateTime to
+# due2:actionTime. DPROD is not selected, because it rebinds odrl:dateTime to
+# dprod:clock, the decision time. A re-evaluation runs with a request whose at
+# the orchestrator has moved to the re-evaluation's effective_at, so a late
+# payment cannot stretch the window (decisions/0030).
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:use .
+
+ex:use a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:dateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2026-04-01T00:00:00Z"^^xsd:dateTime
+    ] ;
+    odrl:duty ex:pay .
+
+ex:pay a odrl:Duty ;
+    odrl:action odrl:compensate .

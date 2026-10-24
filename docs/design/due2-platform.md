@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.3. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.4. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
+**Changes in v0.4** (2026-10-24, `decisions/0030`, #111): §2.6 says that a case's request is fixed except for `at`, which each evaluation moves to its own time, and that the orchestrator never sends an access evaluation an `at` earlier than its `effective_at`. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -228,9 +228,9 @@ replay(case_id, seq, engine)                   -> match | mismatch
 
 **Inquiries.** A request has at most one target (`due2-workflows.md` §3.2), and each request has one case (`decisions/0008`). A person asking about three datasets therefore makes three requests, and the inquiry groups them. How the requests share questions and answers is open (§5 #4). In the simplest form, each request is asked and decided on its own, and the inquiry only groups the answers.
 
-**Draft requests.** A case's request is fixed when its case is created (`due2-workflows.md` §7.1). Request parameters, such as purpose, therefore have to be gathered before the case is created, while the request is a draft. State facts are gathered after, as events on the case. §3.1 walks through the sequence.
+**Draft requests.** A case's request is fixed when its case is created, except for its `at`, which each evaluation moves to its own time (`due2-workflows.md` §3.2, §7.1). Request parameters, such as purpose, therefore have to be gathered before the case is created, while the request is a draft. State facts are gathered after, as events on the case. §3.1 walks through the sequence.
 
-**Re-evaluation.** When facts change, or a policy or normaliser version changes, the orchestrator re-evaluates the affected cases. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated as well.
+**Re-evaluation.** When facts change, or a policy or normaliser version changes, the orchestrator re-evaluates the affected cases. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated as well. Each evaluation asks at its own time: the orchestrator builds its request from the case's, with `at` moved to the evaluation's `effective_at` when the case's `at` is earlier, so it never sends an access evaluation an `at` earlier than its `effective_at`. The latest evaluation is the case's current answer (`due2-workflows.md` §3.2, §7.1; `decisions/0030`).
 
 **Replay.** To check a recorded evaluation, the orchestrator fetches the four collections it names, from the policy store and the ledger, calls `decide` with them, and compares the digest of the new trace with the recorded one (`due2-workflows.md` §7). To the evaluator this is an ordinary call. The orchestrator chooses the `engine` that answers: a replay on the engine that made the evaluation checks the record, and a replay on the current engine checks for a regression. The first needs the ledger to record each evaluation's engine, which is open (§5 #5).
 

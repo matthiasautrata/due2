@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.13 (2026-10-23). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.14 (2026-10-24). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.13** (2026-10-23, `decisions/0023`, #84): §4.8's claim K cites `decisions/0023` and gains the Alloy models as evidence. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.14** (2026-10-24, `decisions/0030`, #111): §4.7 adds the property that an access evaluation's `at` is never earlier than its `effective_at`, and that its request differs from its case's only in `at`; a moved `at` is a cause of a verdict transition. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -164,13 +164,14 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 
 - **Risks.** R10, R6.
 - **Before code.** A ledger data model at the level of `due2-workflows.md` §3: it is `due2-workflows.md` §7.1 (`decisions/0008`). One case per request; facts, evidence, activations, and evaluations are append-only events on it; an evaluation's SOTW is the case's facts as of `effective_at`; earlier decisions are answered from their recorded evaluation. Exercise events (access taken under a permit) stay out of scope.
-- **Oracle.** A from-scratch evaluation over the current inputs. Re-evaluation, whichever trigger is chosen (`due2-architecture.md` §7, issue #14), must agree with it.
+- **Oracle.** A from-scratch evaluation over the current inputs, the request with its moved `at` among them. Re-evaluation, whichever trigger is chosen (`due2-architecture.md` §7, issue #14), must agree with it.
 - **Properties.**
   - *Replay.* Every recorded evaluation, re-run under its pinned normaliser versions, gives byte-identical traces.
   - *Pinning suffices.* Re-running with the SOTW cut down to the evaluation's recorded reads gives the same trace (a consequence of L3); an evaluation that needs more than it pinned is a defect.
   - *Append-only.* No operation changes an earlier event; re-evaluation adds an evaluation to the case.
-  - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
+  - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy, `Permit` to `NotApplicable` when a moved `at` leaves a time window — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
   - *Two clocks.* An as-of query for an earlier decision answers from that evaluation, unaffected by later facts, policy amendments, or normaliser upgrades.
+  - *Asked at its own time.* Every access evaluation has `at` no earlier than its `effective_at`, and its request differs from its case's only in `at` (`due2-workflows.md` §3.2, `decisions/0030`).
 - **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, amend a policy, upgrade the normaliser, re-evaluate, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
 - **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of events, an expected verdict per evaluation.
 

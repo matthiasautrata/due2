@@ -1,0 +1,190 @@
+{
+  "case": "due2-reevaluation-moves-at",
+  "source": "due2-native, after the external review's R10 (docs/briefings/due2-review-2026-10-24.md): which instant a re-evaluation answers for (decisions/0030)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The four scenarios are the evaluations of one case: the request is asked on 1 March, and the permission's window closes on 1 April. Scenario 1 is the first evaluation, before any payment. Scenario 2 is the same evaluation had the case held a payment made on 15 February; the evaluator sees only occurred_at, so the payment counts whether it was recorded at once or recorded later as an event with an earlier valid_at (workflows §7.1). Scenario 3 is a re-evaluation on 20 April after a payment on 15 April: its request is the case's with at moved to the evaluation's effective_at (decisions/0030), so the closed window makes it NotApplicable. Scenario 4 keeps at at 1 March, which is the review's example: the evaluator answers for the action instant it is given and returns Permit. That is the question about an action on 1 March, which the orchestrator never asks once 1 March has passed (workflows §3.2). Only the due2 profile is selected: due2-core binds odrl:dateTime to due2:actionTime, which is request.at for a rule (due2-profiles.md §3), while DPROD rebinds it to dprod:clock, effective_at (due2-profiles.md §2), under which all four scenarios would test the window at effective_at. The bearer of ex:pay is the request subject, since neither the duty nor its permission names an assignee (due2-workflows.md §5.3).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "asked 1 March, not paid",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-03-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-03-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:pay"
+          ]
+        ],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:pay",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "1 March is before 1 April, so ex:use applies. ex:pay is owed and has no witness, so it is outstanding, and the one route is to perform it: Pending."
+      }
+    },
+    {
+      "name": "asked 1 March, paid 15 February",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-03-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-03-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-02-15T12:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {}
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:use applies at 1 March. ev-pay occurred on 15 February, no later than effective_at, so it is a witness and ex:pay is fulfilled. ex:use is ready: Permit."
+      }
+    },
+    {
+      "name": "re-evaluated 20 April, paid 15 April",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-04-20T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-04-20T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-04-15T12:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {}
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The re-evaluation's request has at 20 April, its effective_at, and 20 April is not before 1 April, so ex:use does not apply. No rule applies: NotApplicable, although ev-pay fulfils ex:pay."
+      }
+    },
+    {
+      "name": "stale request: at 1 March, evaluated 20 April, paid 15 April",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-03-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-04-20T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-04-15T12:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {}
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The window is tested at at, 1 March, so ex:use applies, and ev-pay occurred before effective_at, so ex:pay is fulfilled: Permit."
+      }
+    }
+  ]
+}

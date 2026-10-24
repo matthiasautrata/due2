@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.12
+**Status:** Draft v0.13
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.12** (2026-10-24, `decisions/0029`, #110): §6.2 says that a void policy keeps its root obligations, and names the departure from ODRL's reading. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.13** (2026-10-24, `decisions/0030`, #111): §7's case flow says that a re-evaluation asks at its own time, with the request's `at` moved to its `effective_at`. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -208,7 +208,7 @@ Every decision is recorded. Because `decide` is pure over `(corpus, request, SOT
 
 **Two clocks, and two events.** "What is the verdict now" and "what did we decide on 3 March, and why" are different queries; decision time and validity time are both first-class or the audit answer gets reconstructed from today's policy and is wrong. Separately, decision and exercise are distinct events: revoking a permit does not unmake access already taken under it. In the data model, decision time is `sotw.effective_at` and validity time is `request.at` (`due2-workflows.md` §3).
 
-**The case flow.** A request whose verdict is `Pending` records the duty instances it awaits — the trace's `instance` and `alt_duty` relations. Evidence submitted later names the instance it answers. The next evaluation, over a new SOTW, finds it and may return `Permit`; nothing in the earlier trace changes.
+**The case flow.** A request whose verdict is `Pending` records the duty instances it awaits — the trace's `instance` and `alt_duty` relations. Evidence submitted later names the instance it answers. The next evaluation, over a new SOTW, finds it and may return `Permit`; nothing in the earlier trace changes. That evaluation asks at its own time: its request is the case's with `at` moved to its `effective_at`, so a payment made after a time window has closed cannot reopen it (`due2-workflows.md` §3.2, `decisions/0030`).
 
 **Re-evaluation trigger [O]:**
 

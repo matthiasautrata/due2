@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.37** (2026-10-24, `decisions/0029`, #110): under `invalid`, a void policy loses its permissions and prohibitions and keeps its root obligations, so under `violations = deny` a violated one still denies (§6.2). §6.4's proof covers the void's obligations, and a `Deny` from a violated obligation is explained by role `obligation` (§6.4). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.36** (2026-10-24, `decisions/0028`, #109): a duty stays one atom, and its condition is kept in clauses. `constraint` gains `clause`, present on the constraints of an `Oblige` atom (§3.1). The guards hold, or a witness satisfies the witness conditions, when some clause of that kind holds (§5.1–§5.3), and §3.5, §3.6, §4, §6.4, and L9 say so. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.35** (2026-10-24, #36): every field of §3 has a value type, and §2 adds `Instant`, `Flag`, `Count`, `Digest`, and `String`. A policy's profiles move to `policy_profile`, one tuple per IRI, and `policy.version` is the digest of the authored policy. `config` gains `max_mixed` and `max_frontier_vars`, which change the trace, and loses `preference`, whose form is open (#5). `eliminated`, `dominated`, and `verdict_basis` are keyed by all of their fields, since one atom or alternative can have several removers, dominators, or roles. `request.reference` is a `String`, since a caller's identifier need not be an IRI. `decisions/0004` is amended.
@@ -31,6 +33,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Coherence updates, 2026-10-10** (after `decisions/0002`): L9 restated as a refinement — conditional-duty hoisting splits one unknown into correlated findings completed independently, so the equality as previously written cannot hold under unknowns; L6 scoped to §6.2's conflict eliminations, because `eliminated` now also records `violated_precondition` removals (§3.5, §6.1), which give a closed route visibility in `verdict_basis` (role `closed`); the absent conflict term takes a selected profile's declared default first (normalisation spec §3); §5.3's no-guard sentence scoped to the parent relation.
 
 ## `correctness-strategy.md`
+
+**Changes in v0.13** (2026-10-23, `decisions/0023`, #84): §4.8's claim K cites `decisions/0023` and gains the Alloy models as evidence. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.12** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4.1 drops the history of the clingo audit; §4.5 and §9 state `check_completion.py`'s coverage once; §4.8's R9 risk points at claim W; §8 step 1 no longer names row 10; §9 rows 2, 3, 5, and 10 cite their sections instead of restating them, and row 10 cites clingo-i's measured bounds instead of copying them. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
@@ -97,6 +101,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.12** (2026-10-24, `decisions/0029`, #110): §6.2 says that a void policy keeps its root obligations, and names the departure from ODRL's reading. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.11** (2026-10-24, `decisions/0028`, #109): §4 item 3 makes only a root rule's DNF disjuncts atoms; a duty's become clauses of its one atom, and the blowup budget's exact count includes them. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.10** (2026-10-24, #83): §0's reading order and directory map name `due2-platform.md`, `schema/`, `spikes/`, and `formal/`. No design changes.
@@ -109,6 +115,10 @@ Each specification and design document opens with a **Changes** line for its lat
 
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
+## `due2-platform.md`
+
+**Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
+
 ## `odrl-compound-to-atomic-normalization.md`
 
 Changes in 0.14 (2026-10-20, #83): a cold read, spelling `artifact`. §3 lists the constructs outside the fragment that `due2-diagnostics.md` rejects as `UnsupportedConstruct`, with the reason for each; §5.2 and §6.1 no longer say that §3 requires Rules to be named, which §3 does not; §6.2 says whose phrase “each Rule in the Policy” is and where DPROD's rule is compared; §8.1 names `ways-of-working.md` and says where `Den` is formalised (`correctness-strategy.md` §4.8). Admitted input, as the registry and `tools/check_corpus.py` already drew it, and generated identity are unchanged. Earlier changes are in `docs/archive/changes.md`.
@@ -119,7 +129,7 @@ Changes in 0.12: selected profile modules as input (§3); profile policy subclas
 
 ## `conformance/README.md` § Coverage gaps
 
-Earlier re-derivations: 2026-10-24, after `due2-duty-disjunction` (#109); 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
+Earlier re-derivations: 2026-10-24, after `due2-void-keeps-obligation` (#110); 2026-10-24, after `due2-duty-disjunction` (#109); 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
 
 ## README § Status, as it stood on 2026-10-19
 

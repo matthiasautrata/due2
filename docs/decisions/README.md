@@ -37,3 +37,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0027](0027-the-corpus-is-the-boundary.md) | W1 stays Python; the corpus is the boundary; the bakeoff ends; the W2/W3 language is open | 2026-10-24 | In force, except item 1, which is open (#104) |
 | [0028](0028-a-duty-condition-is-kept-in-clauses.md) | A duty's condition is kept in clauses on its one atom | 2026-10-24 | In force |
 | [0029](0029-a-void-policy-keeps-its-obligations.md) | A void policy keeps its root obligations | 2026-10-24 | In force |
+| [0030](0030-a-re-evaluation-moves-the-request-time.md) | A re-evaluation asks at its own time | 2026-10-24 | In force |
