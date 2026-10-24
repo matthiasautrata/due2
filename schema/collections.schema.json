@@ -1110,12 +1110,16 @@
                   "violated",
                   "unknown"
                 ]
+              },
+              "passed": {
+                "$ref": "#/$defs/Flag"
               }
             },
             "required": [
               "instance_key",
               "atom_id",
-              "status"
+              "status",
+              "passed"
             ],
             "additionalProperties": false
           }

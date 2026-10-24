@@ -1,0 +1,110 @@
+{
+  "case": "due2-unknown-fulfilment-deadline",
+  "source": "due2-native, after the external review's R02 (docs/briefings/due2-review-2026-10-24.md): an unknown fulfilment before and after its deadline (decisions/0032)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The review's pair: one corpus, one request, and one payment record, timely for the deadline of 2 June but with no amount, so the witness condition payAmount gteq 5.0 is U and ex:pay's fulfilled finding is U. Its status is unknown in both scenarios. Only effective_at differs, and with it whether the deadline has passed, which W2 records in instance.passed (due2-workflows.md §3.5, §5.3): before the deadline an unfulfilled pay is outstanding, after it violated, which closes ex:use. The request's at equals effective_at, as decisions/0030 has the orchestrator build it. The bearer is the request subject, since neither the duty nor its permission names an assignee (due2-workflows.md §5.3).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "asked before the deadline",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {}
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_range": {
+          "low": "Pending",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:pay",
+            "input": "odrl:payAmount",
+            "status": "missing"
+          }
+        ],
+        "why": "ev-pay is timely, but it states no amount, so ex:pay's fulfilled finding is U, and the deadline has not passed. In a completion where the payment counts, ex:use is ready (Permit); where it does not, pay is outstanding (Pending): Indeterminate, Pending..Permit."
+      }
+    },
+    {
+      "name": "asked after the deadline",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-03T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-03T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {}
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:pay",
+            "input": "odrl:payAmount",
+            "status": "missing"
+          }
+        ],
+        "why": "The same unknown payment, but the deadline has passed. In a completion where the payment counts, ex:use is ready (Permit); where it does not, pay is violated and closes ex:use, so nothing applies (NotApplicable): Indeterminate, NotApplicable..Permit."
+      }
+    }
+  ]
+}

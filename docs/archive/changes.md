@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.39** (2026-10-24, `decisions/0031`, #112): a verdict is the answer of the policies supplied, as written, whatever their class; over an offer, `Permit` says that its terms permit the action, not that it has been accepted (§6.4). §3.1 says that `policy` keeps no class. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.38** (2026-10-24, `decisions/0030`, #111): each evaluation of a case runs with the case's request, with `at` moved to the evaluation's `effective_at` when it is earlier, so a re-evaluation asks at its own time (§3.2). §7.1's `evaluation` relation names the request it ran with, and the latest evaluation is the case's current answer. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.37** (2026-10-24, `decisions/0029`, #110): under `invalid`, a void policy loses its permissions and prohibitions and keeps its root obligations, so under `violations = deny` a violated one still denies (§6.2). §6.4's proof covers the void's obligations, and a `Deny` from a violated obligation is explained by role `obligation` (§6.4). Earlier changes are in `docs/archive/changes.md`.
@@ -119,6 +121,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-platform.md`
 
+**Changes in v0.5** (2026-10-24, `decisions/0031`, #112): §2.3 says that offers are selected like any other policy, and §3.1 shows a `Permit` over an offer as "this offer permits you to proceed". Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.4** (2026-10-24, `decisions/0030`, #111): §2.6 says that a case's request is fixed except for `at`, which each evaluation moves to its own time, and that the orchestrator never sends an access evaluation an `at` earlier than its `effective_at`. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
@@ -133,7 +137,7 @@ Changes in 0.12: selected profile modules as input (§3); profile policy subclas
 
 ## `conformance/README.md` § Coverage gaps
 
-Earlier re-derivations: 2026-10-24, after `due2-void-keeps-obligation` (#110); 2026-10-24, after `due2-duty-disjunction` (#109); 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
+Earlier re-derivations: 2026-10-24, after `due2-reevaluation-moves-at` (#111); 2026-10-24, after `due2-void-keeps-obligation` (#110); 2026-10-24, after `due2-duty-disjunction` (#109); 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
 
 ## README § Status, as it stood on 2026-10-19
 

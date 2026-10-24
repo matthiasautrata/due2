@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native, after the external review's R02: a precondition with a deadline
+# whose only payment record is timely but states no amount, so whether it is
+# fulfilled is unknown. Whether the deadline has passed decides what the
+# unknown can turn into (decisions/0032).
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:use .
+
+ex:use a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset ;
+    odrl:duty ex:pay .
+
+# Pay at least 5.0 by 2 June 2026.
+ex:pay a odrl:Duty ;
+    odrl:action odrl:compensate ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:payAmount ;
+        odrl:operator odrl:gteq ;
+        odrl:rightOperand "5.0"^^xsd:decimal
+    ] ;
+    dprod:deadline "2026-06-02T00:00:00Z"^^xsd:dateTime .

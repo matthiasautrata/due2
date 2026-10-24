@@ -1,0 +1,114 @@
+{
+  "case": "due2-grant-two-targets",
+  "source": "due2-native, after the external review's R09 (docs/briefings/due2-review-2026-10-24.md): a grant-scoped duty with two targets (decisions/0032)",
+  "classification": "odrl-profile",
+  "needs": [
+    "due2:instanceScope"
+  ],
+  "notes": "Authored for due2; no origin result. W1 expands ex:payPerUse into two duty atoms, one per target (odrl-compound-to-atomic-normalization.md §6.3), with one binding_key each. For req-7 each atom's instance key is the digest of its binding_key and req-7, so the two instances are distinct (due2-workflows.md §5.3). Keyed on the authored duty alone, the two instances would share one key, which the instance relation, one atom per key, cannot hold. Evidence names the grant it was submitted against by the authored duty and the reference, {\"duty\": ex:payPerUse, \"reference\": \"req-7\"}, as in due2-grant-signers; its object picks the atom. The frontier and obligations name duties by authored IRI, so the remaining fee shows as ex:payPerUse; the relation-level vector of #37 states the two instances.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "licence fee paid, data fee not",
+      "request": {
+        "reference": "req-7",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-licence",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:LicenceFee",
+            "issuer": "ex:Bank",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:payPerUse"
+          ]
+        ],
+        "obligations": [],
+        "why": "ev-licence is a timely pay by the bearer (Alice, inherited from the permission) against req-7's grant, but its object is ex:LicenceFee, so it witnesses the licence-fee atom only. The data-fee instance is outstanding, so ex:download is pending on ex:payPerUse."
+      }
+    },
+    {
+      "name": "both fees paid",
+      "request": {
+        "reference": "req-7",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-licence",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:LicenceFee",
+            "issuer": "ex:Bank",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          },
+          {
+            "id": "ev-data",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:DataFee",
+            "issuer": "ex:Bank",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "Each atom of ex:payPerUse has a witness against req-7's grant, ev-licence for the licence fee and ev-data for the data fee, so both instances are fulfilled and ex:download is ready: Permit."
+      }
+    }
+  ]
+}

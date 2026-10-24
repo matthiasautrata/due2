@@ -1,0 +1,28 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix due2: <https://w3id.org/due2/profile#> .
+@prefix ex:   <https://example.org/> .
+
+# due2-native, after the external review's R09: a grant-scoped duty with two
+# targets, which W1 expands into two duty atoms. Each atom has its own instance
+# per request, so a payment of one fee does not discharge the other
+# (decisions/0032).
+
+ex:reportPolicy a odrl:Set ;
+    odrl:profile <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:download .
+
+ex:download a odrl:Permission ;
+    odrl:assignee ex:Alice ;
+    odrl:action ex:downloadReport ;
+    odrl:target ex:MarketReport ;
+    odrl:duty ex:payPerUse .
+
+# For each download, pay the licence fee and the data fee.
+ex:payPerUse a odrl:Duty ;
+    odrl:action ex:pay ;
+    odrl:target ex:LicenceFee, ex:DataFee ;
+    due2:instanceScope due2:grant .
+
+ex:downloadReport a odrl:Action .
+ex:pay a odrl:Action .

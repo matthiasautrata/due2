@@ -39,3 +39,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0029](0029-a-void-policy-keeps-its-obligations.md) | A void policy keeps its root obligations | 2026-10-24 | In force |
 | [0030](0030-a-re-evaluation-moves-the-request-time.md) | A re-evaluation asks at its own time | 2026-10-24 | In force |
 | [0031](0031-a-permit-is-the-answer-of-the-terms.md) | A verdict is the answer of the terms supplied | 2026-10-24 | In force |
+| [0032](0032-an-instance-records-whether-its-deadline-passed.md) | An instance records whether its deadline passed; a grant instance is keyed on its binding | 2026-10-24 | In force |

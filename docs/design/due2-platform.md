@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.5. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.6. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.5** (2026-10-24, `decisions/0031`, #112): §2.3 says that offers are selected like any other policy, and §3.1 shows a `Permit` over an offer as "this offer permits you to proceed". Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.6** (2026-10-24, `decisions/0032`, #113): §3.2 says that evidence names the grant it answers, the authored duty and the request's `reference`, not an instance key. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -333,7 +333,7 @@ what_if(corpus_id, case_ids)              -> verdict changes
 
 ### 3.2 Fulfil a duty
 
-A `Pending` verdict records the duty instances it awaits (the trace's `instance` and `alt_duty`). The person performs one, such as obtaining an approval. The evidence is submitted naming the instance it answers (`discharges`), recorded as an event, and the case is evaluated again (`due2-architecture.md` §7, the case flow). Nothing in the earlier evaluation changes.
+A `Pending` verdict records the duty instances it awaits (the trace's `instance` and `alt_duty`). The person performs one, such as obtaining an approval. The evidence is submitted naming the grant it answers, the authored duty and the request's `reference` (`discharges`, `due2-workflows.md` §5.3), recorded as an event, and the case is evaluated again (`due2-architecture.md` §7, the case flow). Nothing in the earlier evaluation changes.
 
 ### 3.3 The world changes
 
