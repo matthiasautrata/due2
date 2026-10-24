@@ -1,0 +1,29 @@
+{
+  "file": "due2-one-permission",
+  "notes": "A fixture for tests/test_schema.py: one permission, no constraints, no duties.",
+  "tags": ["fixture"],
+  "prefixes": { "ex": "https://example.org/", "odrl": "http://www.w3.org/ns/odrl/2/", "xsd": "http://www.w3.org/2001/XMLSchema#" },
+  "corpus": {
+    "policy": [ { "policy_id": "ex:p1", "conflict": "perm", "version": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" } ],
+    "atom": [ { "atom_id": "ex:a1", "effect": "Permit", "action": "odrl:use", "relation": "odrl:target", "relation_value": "ex:DataService", "policy_id": "ex:p1", "source_rule": "ex:r1" } ],
+    "atom_party": { "fields": ["atom_id", "function", "party"], "rows": [ ["ex:a1", "odrl:assignee", "ex:Subscriber"] ] },
+    "root": [ { "atom_id": "ex:a1" } ],
+    "edge": []
+  },
+  "scenarios": [
+    {
+      "name": "the assignee uses the target",
+      "tags": ["party"],
+      "request": {
+        "request": [ { "action": "odrl:use", "target": "ex:DataService", "at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ],
+        "request_party": [ { "function": "odrl:assignee", "party": "ex:Subscriber" } ]
+      },
+      "sotw": { "sotw": [ { "effective_at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ] },
+      "config": { "config": [ { "combination": "prohibit-overrides", "violations": "ignore", "max_mixed": 8, "max_frontier_vars": 8 } ] },
+      "expected": {
+        "trace": { "verdict": [ { "value": "Permit", "frontier_complete": true, "exact": true } ], "eliminated": [] },
+        "why": "The permission's action, target, and assignee match the request, and it has no constraints or duties, so it applies; nothing forbids it."
+      }
+    }
+  ]
+}
