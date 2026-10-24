@@ -17,9 +17,9 @@
  * connectives, which carry OneSided from the leaves to the findings; checked together, the two
  * do not finish in minutes even at scope 3.
  *
- * Each ordered kind is assumed totally ordered. XSD orders `dateTime` and `date` values only
- * partially, with and without a timezone, and due2-profiles.md §4 does not say what an order
- * operator gives on two values XSD leaves unordered. clingo-i declines such values.
+ * Each ordered kind is totally ordered. XSD orders `dateTime` and `date` values only partially,
+ * with and without a timezone, so decisions/0024 admits one shape of each: a value of the other
+ * shape is a misfit, and opaque.
  *
  * What the model leaves out, and why that does not weaken the checks:
  *
@@ -27,9 +27,9 @@
  *   they only split key classes, and a key that is sound without them is sound with them.
  * - The source. Only a state property can be `unresolved` (due2-profiles.md §3), so every
  *   completed part reads one.
- * - Set-valued operands. `eq`, the order operators, and `isAnyOf` compare one left value
- *   (due2-profiles.md §4), and the spec gives them no reading over a set; clingo-i declines it.
- *   Every complement pair is among these operators.
+ * - Set-valued operands. `eq`, the order operators, and `isAnyOf` compare one left value, and
+ *   normalisation rejects them over a set (decisions/0025). Every complement pair is among
+ *   these operators.
  * - The other kinds of due2-profiles.md §3. A numeric kind stands for every totally ordered one,
  *   a string kind for every kind compared by identity, and the IRI kind for the rest.
  *

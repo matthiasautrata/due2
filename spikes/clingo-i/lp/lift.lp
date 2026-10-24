@@ -25,7 +25,8 @@
 %   (`closure_key/1`, `closure/3`, `declared_in_scheme/2`, `coll_kind/2`, `node_kind/2`,
 %   `le_k/3`); the declines (`policy_predicate/1`, `family_predicate/1`, `anywhere_predicate/1`,
 %   `timing_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`, `closure_relation/1`,
-%   `unsupported_input/1`, `compared/1`, `unsupported_value/1`); extends `reject/2`
+%   `unsupported_input/1`, `compared/1`, `input_instant/1`, `off_shape/1`,
+%   `unsupported_value/1`); extends `reject/2`
 %   (structure.lp).
 
 %## Vocabulary
@@ -761,9 +762,29 @@ compared(Lit) :- evidence_param(_, _, Lit).
 compared(Lit) :- right(_, Lit).
 compared(Lit) :- node_deadline(_, Lit).
 
+%*! input_instant(Lit)
+
+`Lit` is an instant of the input: the request's `at`, the SOTW's `effective_at`, an activation,
+or an evidence time.
+*%
+input_instant(Lit) :- request_at(Lit).
+input_instant(Lit) :- sotw_effective_at(Lit).
+input_instant(Lit) :- activation(_, Lit).
+input_instant(Lit) :- evidence(_, Lit, _, _).
+
+%*! off_shape(Reason)
+
+A literal unplaceable for `Reason` has a shape its kind does not admit: a `dateTime` without a
+timezone, or a `date` with one (decisions/0024). It declines only as an input instant. As a right
+operand or a deadline it is a rejection (constraint.lp, structure.lp), and as a value a leaf
+reads, a misfit, so `u` (compare.lp).
+*%
+off_shape("value: dateTime without timezone"; "value: date with timezone").
+
 %*! unsupported_value(Reason)
 
 A compared RDF literal cannot be placed, for `Reason`, so the vector is declined. An
 unplaceable literal the program never compares declines nothing (DESIGN.md § Values).
 *%
-unsupported_value(Reason) :- unplaceable(Lit, Reason), compared(Lit).
+unsupported_value(Reason) :- unplaceable(Lit, Reason), compared(Lit), not off_shape(Reason).
+unsupported_value(Reason) :- unplaceable(Lit, Reason), input_instant(Lit), off_shape(Reason).

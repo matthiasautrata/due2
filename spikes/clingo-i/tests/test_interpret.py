@@ -414,6 +414,11 @@ def leaf(operator: str, right: str) -> str:
         (leaf("eq", "5"), " ; rdfs:range xsd:decimal", {"ex:x": typed("5.00", "decimal")}, "Permit"),
         # Two spaces have no order: u.
         (leaf("lt", "5"), "", {"ex:x": typed("2026-01-01T00:00:00Z", "dateTime")}, "Indeterminate"),
+        # A read dateTime without a timezone fits no operator: u (decisions/0024).
+        (leaf("lt", '"2026-01-01T00:00:00Z"^^xsd:dateTime'), "",
+         {"ex:x": typed("2025-01-01T00:00:00", "dateTime")}, "Indeterminate"),
+        (leaf("neq", '"2026-01-01"^^xsd:date'), "", {"ex:x": typed("2025-01-01Z", "date")},
+         "Indeterminate"),
         # The set operators, over a set-valued operand.
         (leaf("isAnyOf", "ex:v, ex:w"), "", {"ex:x": iri("ex:w")}, "Permit"),
         (leaf("isNoneOf", "ex:v, ex:w"), "", {"ex:x": iri("ex:w")}, "NotApplicable"),
@@ -779,6 +784,14 @@ def test_typed_part_of(
          "OperatorTypeMismatch"),
         (leaf("eq", '"v"'), bound("x", extra=" ; due2:conceptScheme ex:s ; rdfs:range xsd:string"),
          "InvalidBinding"),
+        # A dateTime without a timezone, or a date with one (decisions/0024).
+        (leaf("lt", '"2026-01-01T00:00:00"^^xsd:dateTime'), "", "OperatorTypeMismatch"),
+        (leaf("eq", '"2026-01-01Z"^^xsd:date'), "", "OperatorTypeMismatch"),
+        # An operator of one left value over a set-valued operand (decisions/0025).
+        (leaf("eq", "ex:v"), bound("x", extra=" ; due2:cardinality due2:set"),
+         "OperatorTypeMismatch"),
+        (leaf("isAnyOf", "ex:v, ex:w"), bound("x", extra=" ; due2:cardinality due2:set"),
+         "OperatorTypeMismatch"),
     ],
 )  # fmt: skip
 def test_constraint_rejections(
@@ -860,8 +873,6 @@ def test_distinct_or_idempotent_members_admitted(interpreter: Interpreter, const
          "constraint: cycle"),
         (leaf("eq", "()"), "", "constraint: list on a scalar operator"),
         (leaf("eq", "( ex:v )"), "", "constraint: list on a scalar operator"),
-        (leaf("eq", "ex:v"), " ; due2:cardinality due2:set",
-         "constraint: set-valued operand on a single-value operator"),
         (leaf("eq", "ex:v"), " ; due2:cardinality due2:many", "binding: cardinality"),
         (leaf("eq", "ex:v"), " ; rdfs:range xsd:integer, xsd:string", "binding: range"),
     ],

@@ -315,6 +315,7 @@ def test_deadline_kinds(duty_interpreter: Interpreter, deadline: str, kind: str)
     [
         (obligation(' ; dprod:deadline "tomorrow"'), "InvalidTiming"),
         (obligation(' ; dprod:deadline "P1D"^^xsd:duration, "P2D"^^xsd:duration'), "InvalidTiming"),
+        (obligation(' ; dprod:deadline "2027-01-01T00:00:00"^^xsd:dateTime'), "InvalidTiming"),
         (permission(' ; dprod:deadline "P1D"^^xsd:duration'), "TimingOutsideDuty"),
         (obligation(" ; odrl:target ex:a ; odrl:output ex:b"), "TargetAndOutput"),
         ("    odrl:obligation ex:o .\nex:o a odrl:Duty ; odrl:target ex:a .\n", "MissingAction"),

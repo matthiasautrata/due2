@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.32
+**Status:** Draft v0.33
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.32** (2026-10-23, `decisions/0023`, #84): §6.4 adds the concept reading to the completion key, since an operand with a concept scheme reads `eq` as ⊑ and one without reads it as identity; *What stays approximate* corrects its example: the completion no value gives is `x ≤ 5` and `x > 7` both `T`, not both `F` (#25). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.33** (2026-10-23, `decisions/0024`, #101): an absolute deadline and the instants of a request and a SOTW have a timezone (§3.1–§3.3, §5.3, §5.4), and §5.4 lists a `dateTime` without a timezone, or a `date` with one, as a value that does not fit. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -106,7 +106,7 @@ diagnostic        (policy_id, code, ref)
 | `root` | The atoms that root an Atomic Policy in W1 stage 1: every `Permit` and `Forbid` atom, and every policy-level obligation. Stored, because it is not derivable: one named duty can be both an obligation of its policy and the precondition of a permission, so a root can also be the child of an edge. |
 | `closure` | Direct hierarchy edges declared in the policy and its profile modules — `odrl:includedIn` between actions, typed `odrl:partOf` between assets or parties and their collections, `rdfs:subClassOf`, and `rdf:type` edges — those that type collections and those of individuals an `isA` constraint can compare. Between concepts there are two relations. `skos:broader` is the hierarchy, and a `skos:narrower` triple is recorded as the inverse `skos:broader` edge. `skos:inScheme` relates a concept to each scheme it is in, whether the input states that as `skos:inScheme`, `skos:topConceptOf`, or `skos:hasTopConcept` (`due2-profiles.md` §6). ODRL's own action hierarchy is one such module (`profiles/odrl-actions.ttl`). |
 | `duty` | For every `Oblige` atom: the authored duty it instantiates, its instance scope `Enum {member, grant}`, and `binding_key` — the digest of `source_duty` and its ground binding (parameter values, inherited party roles, target). W2 derives the duty instance from these (§5.3). Scope defaults to `member`. |
-| `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
+| `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term with a timezone (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
 | `duty.recurrence` | An RFC 5545 RRULE string; the duty is owed once per occurrence. W2 derives the instances (§5.3). |
 | `diagnostic` | A warning W1 accepted the policy with: its code (`due2-diagnostics.md` §3) and the node it is about. Only warnings appear, because an error leaves no corpus (§4). W2 and W3 never read it; it is in the corpus so that the corpus digest, and with it the evaluation id, records the reading the policy was normalised under. |
 
@@ -125,7 +125,7 @@ request_party  (function | party)
 request_param  (name | value)
 ```
 
-`reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action — validity time, what ODRL's `dateTime` constrains. `target` may be absent — a request for an action on no named asset; every relation part is then `U` (§5.2), never `F`. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
+`reference` is the caller's identifier for the request; it also identifies grant-scoped duty instances (§5.3). `at` is the instant of the proposed action, an `xsd:dateTime` with a timezone — validity time, what ODRL's `dateTime` constrains. `target` may be absent — a request for an action on no named asset; every relation part is then `U` (§5.2), never `F`. The party with `function = assignee` is the subject — the party seeking to act. A request may name other parties, such as a recipient, under other function predicates. `request_param` carries the values of the normalised request that request-source operands read (`due2-profiles.md` §3), keyed by property IRI: purpose, record count, and so on. Nothing else is visible — no credentials, headers, or session state unless a profile exposes them here.
 
 ### 3.3 SOTW
 
@@ -142,7 +142,7 @@ closure           (module, relation, narrower, broader)
 
 | Relation | Meaning |
 |---|---|
-| `sotw.effective_at` | The instant at which the world is observed — decision time. Evidence counts only if it occurred no later. |
+| `sotw.effective_at` | The instant at which the world is observed, an `xsd:dateTime` with a timezone — decision time. Evidence counts only if it occurred no later. |
 | `fact` | One property of the normalised world-state node, which state-source operands read (`due2-profiles.md` §3), and its `status`: `Enum {resolved, missing, invalid, conflict, unresolved}`, never collapsed. *Missing*: the source says no value exists. *Unresolved*: the source could not be asked or did not answer. Whoever assembles the SOTW flattens onto this node everything the policies read — "the requester's department" becomes one property — so computing values is the assembler's job, never W2's. |
 | `fact_value` | Exactly one value when `resolved` — for a set-valued operand, its members, of which there may be none — two or more when `conflict`, none otherwise. |
 | `evidence` | A record that an action was performed: when, by whom, which action, on what, and who attests it (`issuer`). Approvals, payments, notifications. `discharges` optionally names the duty instance the evidence was submitted against (§5.3). Fulfilment is derived from evidence and never stored as a flag. Signatures and provenance are verified before the SOTW is frozen; W2 only compares `issuer` against configuration (§3.4). |
@@ -343,7 +343,7 @@ A duty with both roles — an obligation of its policy and a precondition of a p
 
 **Truth.** `d`'s witness conditions are evaluated once per witness: witness-source operands read its `evidence_param`, and `due2:actionTime` is its `occurred_at` (`due2-profiles.md` §3). Every other operand reads the request, the SOTW, or the context as usual. The finding is the Kleene disjunction, over all witnesses, of the conjunction of `d`'s witness conditions: `T` if some witness satisfies them all; `F` if every witness fails one, which includes having no witness; `U` otherwise.
 
-**Deadline and status.** A duty atom may carry timing (§3.1): a `deadline` — an absolute `xsd:dateTime`, or an `xsd:duration` relative to the instance's activation — and a `recurrence`. For an instance with activation `A` (the SOTW's `activation` relation, defaulting to `effective_at`: an instance first owed now):
+**Deadline and status.** A duty atom may carry timing (§3.1): a `deadline` — an absolute `xsd:dateTime` with a timezone, or an `xsd:duration` relative to the instance's activation — and a `recurrence`. For an instance with activation `A` (the SOTW's `activation` relation, defaulting to `effective_at`: an instance first owed now):
 
 - the **effective deadline** is `D = deadline` when absolute, `A + duration` when relative, and absent when the duty has none (DPROD `formal-semantics.md` §5.3). Durations are single-kind — day-time or year-month — as §4 of `due2-profiles.md` requires;
 - a witness must be timely: it counts only with `occurred_at ≤ min(effective_at, D)`. Performance after `D` does not fulfil — DPROD's D-FULFILL (§5.2 there) — and a late witness does not reopen a deadline;
@@ -370,10 +370,10 @@ For a constraint with left operand `o`:
 
 1. `o`'s binding (`due2-profiles.md` §3) gives its source — request, state, witness, or context — its property, value type, cardinality, allowed operators, and any concept schemes.
 2. For a state-source operand, W2 records the property in `read` and looks up its `fact`. A request-source operand reads `request_param`, a witness-source operand the witness's `evidence_param` (§5.3), and a context operand its built-in.
-3. Status `resolved` → apply the operator to the value(s) and `constraint_value`(s), giving `T` or `F`, or `U` when a value does not fit the operator: a kind other than the right operand's, or a concept in none of the operand's schemes (`due2-profiles.md` §4). A state property with any other status, or with no fact at all → `U`, with basis kind `fact` and the property as `ref`: what resolves it is the property's fact. Every other `U` from a value has basis kind `constraint` and the constraint as `ref`: a value of any source that does not fit, or a request or witness value that is `missing`, `invalid`, or in `conflict` (`due2-profiles.md` §3). What resolves it is a value that fits, not a state fact. Every `U` part is also recorded in `unknown_part` (§3.5), with the status of what it read: the state property's status (`unresolved` when it has no fact), the request or witness value's status, or `misfit` for a `resolved` value that does not fit. An absent target or party (§5.2) is `missing`.
+3. Status `resolved` → apply the operator to the value(s) and `constraint_value`(s), giving `T` or `F`, or `U` when a value does not fit the operator: a kind other than the right operand's, a `dateTime` without a timezone or a `date` with one (`decisions/0024`), or a concept in none of the operand's schemes (`due2-profiles.md` §4). A state property with any other status, or with no fact at all → `U`, with basis kind `fact` and the property as `ref`: what resolves it is the property's fact. Every other `U` from a value has basis kind `constraint` and the constraint as `ref`: a value of any source that does not fit, or a request or witness value that is `missing`, `invalid`, or in `conflict` (`due2-profiles.md` §3). What resolves it is a value that fits, not a state fact. Every `U` part is also recorded in `unknown_part` (§3.5), with the status of what it read: the state property's status (`unresolved` when it has no fact), the request or witness value's status, or `misfit` for a `resolved` value that does not fit. An absent target or party (§5.2) is `missing`.
 4. The shell finds properties still to resolve as `read` properties with no `fact` in the SOTW. Derived, not recorded twice.
 
-Operators form a closed, typed registry. Strings compare by Unicode code point. No operator consults the clock, the locale, or randomness. Time enters only as `request.at`, `sotw.effective_at`, and evidence times: a constraint on when the action happens (ODRL `dateTime`) reads `request.at` for a permission or prohibition and the witness's `occurred_at` for a duty.
+Operators form a closed, typed registry. Strings compare by Unicode code point. No operator consults the clock, the locale, or randomness. Time enters only as `request.at`, `sotw.effective_at`, and evidence times, each an `xsd:dateTime` with a timezone (`decisions/0024`): a constraint on when the action happens (ODRL `dateTime`) reads `request.at` for a permission or prohibition and the witness's `occurred_at` for a duty.
 
 ### 5.5 Which atoms
 

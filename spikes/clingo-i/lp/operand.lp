@@ -207,15 +207,14 @@ Operator `O` compares one left value. That is its signature in due2-profiles.md 
 *%
 single_left(eq; neq; lt; lteq; gt; gteq; isAnyOf; isNoneOf).
 
-% An operator the binding does not allow, a right operand outside the range, or isA over a
-% set-valued operand (due2-diagnostics.md, OperatorTypeMismatch).
+% An operator the binding does not allow, a right operand outside the range, or isA or an
+% operator of one left value over a set-valued operand (due2-diagnostics.md,
+% OperatorTypeMismatch; decisions/0025).
 reject("OperatorTypeMismatch", C) :- left(C, Op), has_allowed(Op), c_operator(C, Iri),
     not allowed(Op, Iri).
 reject("OperatorTypeMismatch", C) :- left(C, Op), right(C, V), not conforms(V, Op).
 reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, isA).
-% A set-valued operand under an operator of one left value: the spec gives no reading.
-unsupported("constraint: set-valued operand on a single-value operator") :- left(C, Op),
-    card(Op, set), op(C, O), single_left(O).
+reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, O), single_left(O).
 
 %## Concept schemes
 

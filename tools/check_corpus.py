@@ -229,7 +229,8 @@ DURATION_RE = re.compile(
     r"^-?P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?"
     r"(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$"
 )
-DATETIME_RE = re.compile(r"^-?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$")
+# An input instant is an xsd:dateTime with a timezone (decisions/0024).
+DATETIME_RE = re.compile(r"^-?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
 
 
 def single_kind_duration(lexical: str) -> bool:
@@ -1101,12 +1102,18 @@ def check_case(case_dir: Path) -> list[Report]:
         for k in ("action", "at"):  # target may be absent (workflows 3.2)
             if k not in req:
                 r.err(f"{tag}: request.{k} missing")
+        if "at" in req and not DATETIME_RE.match(str(req["at"])):
+            r.err(f"{tag}: request.at is not an xsd:dateTime instant: {req['at']!r}")
         for k in req.get("params", {}):
             if expand(k, prefixes) not in request_props:
                 r.warn(f"{tag}: request param {k} is read by no bound operand")
         sotw = sc.get("sotw", {})
         if "effective_at" not in sotw:
             r.err(f"{tag}: sotw.effective_at missing")
+        elif not DATETIME_RE.match(str(sotw["effective_at"])):
+            r.err(
+                f"{tag}: sotw.effective_at is not an xsd:dateTime instant: {sotw['effective_at']!r}"
+            )
         for k, fact in sotw.get("facts", {}).items():
             if expand(k, prefixes) not in state_props:
                 r.warn(f"{tag}: SOTW fact {k} is read by no bound operand")
@@ -1120,6 +1127,10 @@ def check_case(case_dir: Path) -> list[Report]:
             for k in ("id", "occurred_at", "actor", "action"):
                 if k not in ev:
                     r.err(f"{tag}: evidence missing {k}")
+            if "occurred_at" in ev and not DATETIME_RE.match(str(ev["occurred_at"])):
+                r.err(
+                    f"{tag}: evidence occurred_at is not an xsd:dateTime instant: {ev['occurred_at']!r}"
+                )
             for k in ev.get("params", {}):
                 if expand(k, prefixes) not in witness_props:
                     r.warn(f"{tag}: evidence param {k} is read by no witness-source operand")

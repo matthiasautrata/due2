@@ -278,6 +278,8 @@ These are the value spaces of `due2-profiles.md` §4. The first five are ordered
 
   An unplaceable literal matters only if the program compares it: `unsupported_value(Reason)` holds for `unplaceable(Lit, Reason)` with `compared(Lit)`. `compared` covers the input instants, the input values, the right operand values, and the deadlines. A float or a mixed duration as a right operand is a rejection instead (`FloatingPointOperand`, `MixedDuration`, `constraint.lp`), because solve 1 reads `reject` before `unsupported_value`.
 
+  The two timezone reasons (`off_shape/1`) are a shape the kind does not admit, not a value the spike cannot place (`decisions/0024`). Only an input instant (`input_instant/1`) declines with them. As a right operand the literal is `reject("OperatorTypeMismatch", C)`, as a deadline `reject("InvalidTiming", Duty)`, and as a value a leaf reads it is a misfit, so the leaf is `u`.
+
 ### `lift.lp`
 
 Lifts the triples to relations that name no IRI. It provides:
@@ -368,7 +370,7 @@ The binding gives:
 
 **Concept schemes** (`decisions/0015`). `scheme(Op, S)` gives the schemes of a used operand, and `has_scheme(Op)` makes its `eq`, `neq`, `isAnyOf`, and `isNoneOf` compare IRIs under `skos:broader` (§ `compare.lp`). Three checks of `decisions/0015` #8 reject the binding's constraints: an IRI right operand in none of the schemes by `declared_in_scheme/2` (`declared_concept/2`; normalisation does not see the SOTW, so its memberships do not count) and an operator outside `concept_operator/1` are `reject("OperatorTypeMismatch", C)`, and a scheme on a datatype range is `reject("InvalidBinding", C)`. A literal is not a concept, so a literal right operand is not checked.
 
-`isA` over a set-valued operand is `reject("OperatorTypeMismatch", C)`. A set-valued operand under an operator of one left value (`single_left/1`: `eq`, `neq`, the order operators, `isAnyOf`, `isNoneOf`) has no reading in the spec, and declines as `constraint: set-valued operand on a single-value operator`.
+`isA` over a set-valued operand is `reject("OperatorTypeMismatch", C)`, and so is an operator of one left value over one (`single_left/1`: `eq`, `neq`, the order operators, `isAnyOf`, `isNoneOf`; `decisions/0025`).
 
 **Range conformance** (`conforms/2`, the defaults of `due2-profiles.md` §3). Without a range, or with `rdfs:Resource`, every value conforms. Otherwise a value conforms when its kind is the range's: an IRI to a class, an `xsd:dateTimeStamp` to `xsd:dateTime`. A `numeric` range also needs the literal placed in the numeric space, so `5` and `5.00` both conform to `xsd:decimal`, but an ill-typed number does not, nor an `xsd:double`, which has no exact equality (`due2-profiles.md` §4). `rdfs:Literal` takes any literal. A right operand value that does not conform is `reject("OperatorTypeMismatch", C)`.
 
@@ -757,7 +759,6 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `binding: cardinality`, `binding: range` | `operand.lp` | a cardinality or range the spike cannot read, or two of them |
 | `constraint: cycle`, `constraint: dprod:not with several members`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (§ `completion.lp`) |
-| `constraint: set-valued operand on a single-value operator` | `operand.lp` | no reading in `due2-profiles.md` §4 |
 | `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |
 | `duty: evidence without effective_at` | `duty.lp` | evidence, and no `effective_at`: the `effective` check is `u`, and reads no input an `unknown_part` row can name (`due2-workflows.md` §3.5, § `duty.lp`) |
 | `duty: deadline not comparable` | `duty.lp` | a deadline with no position in the `instant` space, or a deadline and no `effective_at`: the status table of `due2-workflows.md` §5.3 has no row for a deadline it cannot place (§ `duty.lp`) |

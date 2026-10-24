@@ -8,8 +8,8 @@
 % letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `triple/3`, `voc/2`, `operator/2`, `set_based/1`, `connective/1`,
-%   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `stated/3` (lift.lp); `rule/1`, `duty_node/1`,
-%   `action_term/1` (structure.lp).
+%   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `off_shape/1`, `stated/3`
+%   (lift.lp); `rule/1`, `duty_node/1`, `action_term/1` (structure.lp).
 % - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
 %   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`,
 %   `right_value/2`, `right/2`, `unit/2`; extends `reject/2` (structure.lp) and
@@ -177,6 +177,8 @@ reject("UnsupportedConnective", C) :- conn(C, andSequence).
 reject("FloatingPointOperand", C) :- right(C, Term), unplaceable(Term, "value: xsd:double").
 reject("FloatingPointOperand", C) :- right(C, Term), unplaceable(Term, "value: xsd:float").
 reject("MixedDuration", C) :- right(C, Term), unplaceable(Term, "value: mixed xsd:duration").
+% A dateTime without a timezone, or a date with one (decisions/0024).
+reject("OperatorTypeMismatch", C) :- right(C, Term), unplaceable(Term, R), off_shape(R).
 
 %## Declines
 

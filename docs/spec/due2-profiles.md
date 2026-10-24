@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.15
+**Status:** Draft v0.16
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.15** (2026-10-22, #83): a length pass. Dates leave the reference text; §1 and §9 #7 state DPROD's provisional status once, in §8; §4's sentence on warnings is shorter; §7 cites exception 6 instead of restating it; §8.2 cites EKGF/dprod#285 for the gaps reported upstream. No semantics change. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.16** (2026-10-23, `decisions/0024`, `decisions/0025`, #101, #102): §4 gives a `dateTime` a timezone and a `date` none, and rejects an operator of one left value over a set-valued operand; §7's absolute deadline has a timezone. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -118,13 +118,15 @@ A closed, typed core registry. An operand that does not fit an operator's signat
 
 | Operator | Left | Right | Holds when |
 |---|---|---|---|
-| `eq`, `neq` | any | same kind (§3) | equal or not, by value within the kind: numbers by numeric value, strings by code point, IRIs by identity or under a concept scheme (below) |
-| `lt`, `lteq`, `gt`, `gteq` | number, `dateTime`, `date`, single-component duration | same kind | order within the kind |
+| `eq`, `neq` | one value | same kind (§3) | equal or not, by value within the kind: numbers by numeric value, strings by code point, IRIs by identity or under a concept scheme (below) |
+| `lt`, `lteq`, `gt`, `gteq` | one number, `dateTime`, `date`, or single-component duration | same kind | order within the kind |
 | `isAnyOf`, `isNoneOf` | one value | set | `eq` against some right value, or against none: the Kleene disjunction of the `eq`s, or its negation |
 | `isAllOf` | set | set | left ⊇ right: the left covers every listed value, and may hold more |
 | `isPartOf` | IRI, or set of IRIs | IRI, or list of IRIs | every left value ⊑ some right value, under the profile's declared `partOf` closure |
 | `hasPart` | IRI, or set of IRIs | IRI, or list of IRIs | every right value ⊑ some left value, under the same closure |
-| `isA` | IRI | class, or list of classes | left is an instance of every listed class, under a declared `rdfs:subClassOf` module |
+| `isA` | one IRI | class, or list of classes | left is an instance of every listed class, under a declared `rdfs:subClassOf` module |
+
+**One value or a set [D]** (`decisions/0025`, #102). An operator whose left is one value compares one value, as the Vocabulary defines it (`odrl:eq`: "a given value equals the right operand"). Over a set-valued operand (§3), normalisation rejects it with `OperatorTypeMismatch`. A set takes `isAllOf`, `isPartOf`, and `hasPart`: "contains `v`" is `hasPart v`.
 
 **Set-based operators.** The Vocabulary calls six operators set-based — `isA`, `hasPart`, `isPartOf`, `isAllOf`, `isAnyOf`, `isNoneOf` (§3.16.7–3.16.12) — and allows a list right operand for exactly those (§3.14.7; IM §2.5.1). Neither the IM nor the Vocabulary says what `isPartOf`, `hasPart`, or `isA` *mean* with a list, and the published formal semantics disagree: Bonatti, Fornara and Harth (2025) give `isPartOf` and `isA` membership (∈) and `hasPart` ∋; Salas, Pareti et al. (2025) give `isPartOf` ⊂, `hasPart` ⊃, and `isA` as the subject's classes ⊇ the listed classes; the W3C workshop's open issues list it (Rodríguez-Doncel 2026, R-V2). **due2 adopts the Salas–Pareti reading** (`decisions/0005`), with three adjustments: inclusion is non-strict; set inclusion is generalised to the `partOf` closure, so `isPartOf` holds when every left value is part of some right value and `hasPart` when every right value is part of some left value, each the Kleene conjunction of a Kleene disjunction; and logic stays Kleene, so a missing or `invalid` value gives `U`, not false. A single IRI on either side is a singleton, and an empty left set makes `isPartOf` hold vacuously. Under an identity closure the readings are exactly Salas–Pareti's ⊆ and ⊇, and `isPartOf` reproduces OVAL's results (`oval-list-right-operand`).
 
@@ -145,6 +147,8 @@ Because the reading is adopted, not given by ODRL, normalisation accepts a list 
 Only IRIs are concepts. A string compares by code point whether or not the operand has a scheme, and a string against a concept does not fit, so `U`. The baseline's `odrl:purpose`, which has no range, therefore serves both ways of writing a purpose: as a string, or as a concept once a layer names its scheme. Normalisation rejects, with `OperatorTypeMismatch`, an IRI right operand that is in none of the operand's schemes by the memberships the policy and its profile modules declare, and any operator other than `eq`, `neq`, `isAnyOf`, and `isNoneOf` on an operand with a scheme. Normalisation does not see the SOTW, so a membership that only the SOTW supplies does not save a right operand. A `due2:conceptScheme` on an operand whose range is a datatype is rejected with `InvalidBinding`.
 
 Mixed-component durations (months with days) and floating-point values are rejected at normalisation, as RL2 does: they have no total order or no exact equality. Durations are ordered only within one kind — day-time durations (days, hours, minutes, seconds) with each other, year-month durations (years, months) with each other. `P1Y` against `P365D` is `invalid`, so `U`.
+
+**Timezones [D]** (`decisions/0024`, #101). A `dateTime` has a timezone, and a `date` has none. XSD orders `dateTime` values, and `date` values, only partially when some have a timezone and some do not: a value with a timezone and one without are incomparable within 14 hours of each other, and their equality is undetermined (XSD 1.1 Part 2 §3.3.7, §3.3.9). Within one shape the order is total. Normalisation rejects a right operand of the other shape with `OperatorTypeMismatch`, and a deadline with `InvalidTiming` (§7). A read value of the other shape does not fit any operator, so `U`. The instants of a request and a SOTW have a timezone too (`due2-workflows.md` §3).
 
 **Deliberate difference from DPROD.** DPROD's `apply` returns `false` for incomparable operands. due2 returns `U`, because an incomparable value is a data problem, not an unsatisfied condition (§8.2).
 
@@ -189,7 +193,7 @@ Edges declared in the policy and in its profile modules travel with the policy i
 
 DPROD's timing vocabulary is adopted.
 
-- `dprod:deadline` — an `xsd:dateTime` (absolute) or an `xsd:duration` (relative to activation).
+- `dprod:deadline` — an `xsd:dateTime` with a timezone (absolute) or an `xsd:duration` (relative to activation).
 - `dprod:recurrence` — an RFC 5545 RRULE generating instances of a duty.
 
 Both are duty terms. On a Policy, a Permission, or a Prohibition, either is rejected with `TimingOutsideDuty`. A duty has at most one of each; a second deadline or recurrence, a deadline of another datatype, or a recurrence that is not an RRULE is rejected with `InvalidTiming` (`due2-diagnostics.md`).

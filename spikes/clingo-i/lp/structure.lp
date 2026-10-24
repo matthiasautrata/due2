@@ -11,7 +11,7 @@
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
 %   `function/1`, `match_key/1`, `bearer_fn/1`, `timing_predicate/1`, `term_kind/2`, `voc/2`,
-%   `kind/2` (lift.lp); `triple/3` (driver).
+%   `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
 %   `structure_node/1`, `states_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
 %   `family/1`, `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
@@ -470,13 +470,14 @@ duty_relation(a(Duty, A, T, Party), T) :- duty_atom(a(Duty, A, T, Party)), T != 
 
 %*! node_deadline(Duty, Lit)
 
-`Duty` states `dprod:deadline Lit`. At most one, an `xsd:dateTime` or an `xsd:duration`
-(due2-diagnostics.md, InvalidTiming).
+`Duty` states `dprod:deadline Lit`. At most one, an `xsd:dateTime` with a timezone or an
+`xsd:duration` (due2-diagnostics.md, InvalidTiming).
 *%
 node_deadline(Duty, Lit) :- duty_node(Duty), triple(Duty, Pred, Lit), voc(deadline, Pred),
     timing_predicate(Pred).
 reject("InvalidTiming", Duty) :- duty_node(Duty), #count { Lit : node_deadline(Duty, Lit) } > 1.
 reject("InvalidTiming", Duty) :- node_deadline(Duty, Lit), not deadline_kind(Lit, _).
+reject("InvalidTiming", Duty) :- node_deadline(Duty, Lit), unplaceable(Lit, R), off_shape(R).
 % Timing belongs to duties (due2-profiles.md §7).
 reject("TimingOutsideDuty", Node) :- triple(Node, Pred, _), timing_predicate(Pred), policy(Node).
 reject("TimingOutsideDuty", Node) :- triple(Node, Pred, _), timing_predicate(Pred), rule(Node).

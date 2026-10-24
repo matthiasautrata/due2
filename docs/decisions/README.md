@@ -31,3 +31,5 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0021](0021-formalisation-follows-cedar.md) | Formalisation follows Cedar: an executable model, proofs, and differential testing | 2026-10-19 | Amended: a note corrects the #25 example |
 | [0022](0022-repeated-logical-constraint-member.md) | A repeated member of a logical constraint is malformed | 2026-10-22 | In force |
 | [0023](0023-completion-key-includes-concept-reading.md) | The completion key includes the concept reading | 2026-10-23 | In force |
+| [0024](0024-datetime-with-timezone-date-without.md) | A `dateTime` has a timezone; a `date` has none | 2026-10-23 | In force |
+| [0025](0025-set-valued-operand-takes-set-operators.md) | A set-valued operand takes only the set operators | 2026-10-23 | In force |

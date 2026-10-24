@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.8 (2026-10-22)
+**Status:** Draft v0.9 (2026-10-23)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.8** (2026-10-22, `decisions/0022`, #100): `MalformedConstraint` covers a logical constraint whose list names a node twice, and an `odrl:xone` with two members, neither a logical constraint, of the same content. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.9** (2026-10-23, `decisions/0024`, `decisions/0025`, #101, #102): `OperatorTypeMismatch` covers a `dateTime` right operand without a timezone, a `date` right operand with one, and every operator of one left value over a set-valued operand; `InvalidTiming` covers a deadline without a timezone. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -58,11 +58,11 @@ A diagnostic is `(code, severity, ref, message)`:
 | `ConflictingProfileDeclaration` | error | 2 | Two selected profile modules declare the same term differently. | `due2-profiles.md` §2 |
 | `RetypedOperand` | error | 2 | A layer above the one that owns an operand's type states a range, cardinality, or allowed operators different from the owner's. An attribute the owner omits counts as its default. | `due2-profiles.md` §2 (`decisions/0014`) |
 | `OperandRangeMismatch` | error | 2 | A binding whose range is of a different kind from the `rdfs:range` of the property it reads. | `due2-profiles.md` §3 (`decisions/0014`) |
-| `OperatorTypeMismatch` | error | 2 | An operator not allowed for the operand, a right operand not of its range's kind, or `isA` over a set-valued operand. On an operand with a concept scheme: an operator other than `eq`, `neq`, `isAnyOf`, `isNoneOf`, or an IRI right operand in none of its schemes by the memberships the policy and its profile modules declare. | `due2-profiles.md` §3, §4 (`decisions/0015`) |
+| `OperatorTypeMismatch` | error | 2 | An operator not allowed for the operand; a right operand not of its range's kind; a `dateTime` right operand without a timezone; a `date` right operand with a timezone; an operator of one left value (`eq`, `neq`, `lt`, `lteq`, `gt`, `gteq`, `isAnyOf`, `isNoneOf`, `isA`) over a set-valued operand. On an operand with a concept scheme: an operator other than `eq`, `neq`, `isAnyOf`, `isNoneOf`, or an IRI right operand in none of its schemes by the memberships the policy and its profile modules declare. | `due2-profiles.md` §3, §4 (`decisions/0015`, `decisions/0024`, `decisions/0025`) |
 | `FloatingPointOperand` | error | 2 | An `xsd:float` or `xsd:double` right operand. | `due2-profiles.md` §4 |
 | `MixedDuration` | error | 2 | A duration mixing year-month and day-time components. | `due2-profiles.md` §4 |
 | `WitnessOutsideDuty` | error | 2 | A witness-source operand in a constraint that is not a duty's. | `due2-profiles.md` §3 |
 | `MixedDutyConstraint` | error | 2 | `or`, `xone`, or `not` combining a guard and a witness condition. | `due2-workflows.md` §5.2 |
 | `TimingOutsideDuty` | error | 2 | `dprod:deadline` or `dprod:recurrence` on a Policy, Permission, or Prohibition. | `due2-profiles.md` §7 |
-| `InvalidTiming` | error | 2 | More than one deadline or recurrence; a deadline that is not an `xsd:dateTime` or `xsd:duration`; a recurrence that is not an RRULE. | `due2-profiles.md` §7 |
+| `InvalidTiming` | error | 2 | More than one deadline or recurrence; a deadline that is not an `xsd:dateTime` with a timezone or an `xsd:duration`; a recurrence that is not an RRULE. | `due2-profiles.md` §7 (`decisions/0024`) |
 | `ContestedOperatorReading` | warning | 2 | `isPartOf`, `hasPart`, or `isA` with a list right operand, or `isPartOf`/`hasPart` over a set-valued operand: read after Salas–Pareti. | `due2-profiles.md` §4; `decisions/0005` |

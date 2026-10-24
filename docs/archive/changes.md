@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.32** (2026-10-23, `decisions/0023`, #84): §6.4 adds the concept reading to the completion key, since an operand with a concept scheme reads `eq` as ⊑ and one without reads it as identity; *What stays approximate* corrects its example: the completion no value gives is `x ≤ 5` and `x > 7` both `T`, not both `F` (#25). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.31** (2026-10-22, #83): a length pass. Dates leave the headings; the results of `tools/check_completion.py` are cited from the records that hold them; text repeated within §3.3, §6.4, §7, §9, and the appendix is cut. No semantics change. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.30** (2026-10-20, #83): a cold read. Cross-document references name their document; history markers leave the reference text; §6.4 cites `tools/check_completion.py` for the two-extremes check in place of an unrecorded one; §9 lists the open rows with their issues and states rows 1 and 8 as resolved, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
@@ -63,6 +65,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.15** (2026-10-22, #83): a length pass. Dates leave the reference text; §1 and §9 #7 state DPROD's provisional status once, in §8; §4's sentence on warnings is shorter; §7 cites exception 6 instead of restating it; §8.2 cites EKGF/dprod#285 for the gaps reported upstream. No semantics change. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.14** (2026-10-22, `decisions/0022`, #100): §5 rejects a logical constraint whose list names a node twice, and an `odrl:xone` with two members, neither a logical constraint, of the same content. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.13** (2026-10-20, #83): a cold read. §1 says where `formal-semantics.md`, RL2's documents, the IM, and the Vocabulary are; cross-document references name their document, the §2 table's included; history markers leave the reference text, and §3's account of an earlier draft becomes the reason for the present rule; §7 states the timing rejections the registry cites, and names a case where exception 6 diverges; §8.1 says which property `dprod:currentAgent` reads; §8.1's collection-refinement row drops the MDS mapper, a separate project; §9 lists the open rows with their issues and states rows 5 and 6 as closed, keeping the row numbers. No semantics change. Earlier changes are in `docs/archive/changes.md`.
@@ -72,6 +76,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **v0.11** (2026-10-17, `decisions/0013` amendment, #69): §4 rejects an empty list as a set right operand. **v0.10** (2026-10-17, `decisions/0016`): §3 says that only an `unresolved` value is completed. **v0.9** (2026-10-17, #68): §3 *Kinds* says what `rdfs:Literal` and `rdfs:Resource` admit. **v0.8** (2026-10-17, `decisions/0014`, `decisions/0015`, #52, #65): §2 gives an operand's type to the lowest layer that declares it, lets higher layers rebind only its source and property, and drops the order of profile modules; §3 defines kinds, compares values by kind when there is no range, and checks a binding's range against the read property's; §4 and §6 compare concepts under a declared SKOS concept scheme. **v0.7** (2026-10-17, `decisions/0013`, #64): §4 admits a set right operand written as repeated values as well as an RDF list, and rejects the forms with no reading. **v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context table names `dprod:agent`, the `dprod:EvaluationContext` property (`dprod-contracts.ttl`) that the left operand `dprod:currentAgent` reads through `dprod:operandProperty` — the table lists properties, as its `dprod:clock` row does; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
 
 ## `due2-diagnostics.md`
+
+**Changes in v0.8** (2026-10-22, `decisions/0022`, #100): `MalformedConstraint` covers a logical constraint whose list names a node twice, and an `odrl:xone` with two members, neither a logical constraint, of the same content. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.7** (2026-10-20, #93): new row `MisplacedConstraint`; `InvalidNesting` is checked and covers every Rule edge outside the subject the ODRL vocabulary gives it, and a node in two Rule classes; `UnsupportedConstruct` covers an `odrl:constraint` on the Policy. Earlier changes are in `docs/archive/changes.md`.
 
