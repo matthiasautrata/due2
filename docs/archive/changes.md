@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.35** (2026-10-24, #36): every field of §3 has a value type, and §2 adds `Instant`, `Flag`, `Count`, `Digest`, and `String`. A policy's profiles move to `policy_profile`, one tuple per IRI, and `policy.version` is the digest of the authored policy. `config` gains `max_mixed` and `max_frontier_vars`, which change the trace, and loses `preference`, whose form is open (#5). `eliminated`, `dominated`, and `verdict_basis` are keyed by all of their fields, since one atom or alternative can have several removers, dominators, or roles. `request.reference` is a `String`, since a caller's identifier need not be an IRI. `decisions/0004` is amended.
+
 **Changes in v0.34** (2026-10-24, `decisions/0026`, #84): under unknowns, §6.3 lists the non-dominated routes that suffice, those within which every completion has an open route, where v0.33 listed only the routes of the candidates that are ready or pending whatever the unknowns are; §6.4 says how W3 computes them, within `max_frontier_vars` and beyond it, and §3.5's `alternative` follows.
 
 **Changes in v0.33** (2026-10-23, `decisions/0024`, #101): an absolute deadline and the instants of a request and a SOTW have a timezone (§3.1–§3.3, §5.3, §5.4), and §5.4 lists a `dateTime` without a timezone, or a `date` with one, as a value that does not fit. Earlier changes are in `docs/archive/changes.md`.
@@ -93,6 +95,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.10** (2026-10-24, #83): §0's reading order and directory map name `due2-platform.md`, `schema/`, `spikes/`, and `formal/`. No design changes.
+
 **Changes in v0.9** (2026-10-22, #83): a length pass. Dates and version history leave the reference text; §0's walk-through drops clingo-i's status; §4 item 5 states the rejected alternative in one sentence; §10 cites L9 instead of restating it. No design changes.
 
 **Changes in v0.8** (2026-10-20, #83): §0's walk-through follows all six rules of its case; §8.1 opens with what it covers, and SKOS concept schemes are decided; §9 describes the execution choice as `decisions/0002` and `decisions/0006` leave it; §10 states semantic preservation and its oracles in the present tense; §11 drops the four resolved rows and names each open row's issue; references name their documents. Earlier changes are in `docs/archive/changes.md`.
@@ -111,7 +115,7 @@ Changes in 0.12: selected profile modules as input (§3); profile policy subclas
 
 ## `conformance/README.md` § Coverage gaps
 
-Earlier re-derivations: 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
+Earlier re-derivations: 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
 
 ## README § Status, as it stood on 2026-10-19
 

@@ -49,3 +49,7 @@ Workflows v0.6's canonical literals stay load-bearing. `xone` elimination still 
 
 - A real policy needs a guard that reads post-exercise state. Under B that is a witness condition (`due2:witnessSource`, `due2:actionTime`), not a guard; if neither fits, it is a modelling question, not a hoisting one.
 - The monitoring question (workflows §9 #4) is specified. It will read `owed` for obligations too; check that the predicate carries over unchanged.
+
+## Note (2026-10-24, a duty's disjuncts)
+
+Item 1 keeps DNF in stage 2. On a duty's constraint, that DNF does not make atoms: `decisions/0028` keeps the duty as one atom and makes each disjunct a clause on it, so a disjunctive guard does not split the duty into several owed duties (#109). Item 2's rule, `T` when every guard holds and `F` when one fails, applies within each guard clause, and `owed` is the Kleene disjunction of the clauses.

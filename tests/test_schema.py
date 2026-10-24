@@ -83,6 +83,20 @@ def _not_a_root(doc: Obj) -> None:
     _corpus(doc)["root"] = []
 
 
+def _clause_on_a_permit(doc: Obj) -> None:
+    _corpus(doc)["constraint"] = [
+        {
+            "constraint_id": "ex:c1",
+            "atom_id": "ex:a1",
+            "clause": 0,
+            "scope": "rule",
+            "left_operand": "odrl:purpose",
+            "operator": "odrl:eq",
+            "datatype": "xsd:anyURI",
+        }
+    ]
+
+
 def _short_row(doc: Obj) -> None:
     table = cast(Obj, _corpus(doc)["atom_party"])
     table["rows"] = [["ex:a1", "odrl:assignee"]]
@@ -141,6 +155,7 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "schema: a field due2-workflows.md §3 does not define": _undefined_field,
     "set semantics: two tuples with one key": _key_clash,
     "invariant: a Permit atom that is not a root": _not_a_root,
+    "invariant: a clause on a Permit atom's constraint (decisions/0028)": _clause_on_a_permit,
     "table form: a row shorter than its fields": _short_row,
     "table form: null in a required field": _null_required,
     "schema: an empty-key relation with two tuples": _two_verdicts,

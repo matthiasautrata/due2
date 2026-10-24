@@ -131,7 +131,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 - **Risks.** R1 (DNF, `xone`, `dprod:not` pushed inward, instantiation), R3 (the canonical-literal key is derived here).
 - **Oracles.** `I`, through L9 on generated policies.
 - **Properties.** L9. Complement pairs (`eq`/`neq`, `lt`/`gteq`, `lteq`/`gt`, `isAnyOf`/`isNoneOf`) map to one variable with opposite polarity, and identical parts map to one variable, when the parts are completed. An opaque part maps to a variable of its own (`due2-workflows.md` §6.4, `decisions/0016`). The atom-count limit fails before any output.
-- **Lineage.** Every atom's lineage names its authored rule, its stage-1 selection tuple, its constraint disjunct, and its parameter binding (`due2-workflows.md` §3.6), which L10 needs.
+- **Lineage.** Every atom's lineage names its authored rule, its stage-1 selection tuple, its constraint disjunct (for a duty, its clauses), and its parameter binding (`due2-workflows.md` §3.6), which L10 needs.
 - **Done.** L9 holds on the `fast` and `nightly` Hypothesis profiles (`ways-of-working.md` §7.2), and the corpus runs through W1 without rejections other than expected ones.
 
 ### 4.4 W2: evaluate

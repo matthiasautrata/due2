@@ -194,6 +194,13 @@ def check_invariants(corpus: Obj, where: str) -> list[str]:
                 problems.append(f"{where}: {t['effect']} atom {a} is not a root")
             if t.get("relation") != ODRL_TARGET:
                 problems.append(f"{where}: {t['effect']} atom {a} has no relation odrl:target")
+    for t in rows("constraint"):
+        # A duty's condition is kept in clauses on its one atom (decisions/0028).
+        c, a = t["constraint_id"], t["atom_id"]
+        if effect.get(cast(str, a)) == "Oblige" and "clause" not in t:
+            problems.append(f"{where}: constraint {c} of Oblige atom {a} has no clause")
+        if effect.get(cast(str, a)) != "Oblige" and "clause" in t:
+            problems.append(f"{where}: constraint {c} has a clause, and atom {a} is not Oblige")
     children: dict[str, list[str]] = {}
     for t in rows("edge"):
         parent, child = cast(str, t["parent_id"]), cast(str, t["child_id"])

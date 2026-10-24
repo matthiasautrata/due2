@@ -1,0 +1,301 @@
+{
+  "case": "due2-duty-disjunction",
+  "source": "due2-native, after the external review's R01 (docs/briefings/due2-review-2026-10-24.md): a duty whose guards and witness conditions are disjunctions (decisions/0028)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. The duty's constraint is and(or(guard, guard), or(witness condition, witness condition)), each or over two different operands, so no isAnyOf rewrite removes it. odrl:purpose reads the request and odrl:payAmount the witness by the due2-core baseline (due2-profiles.md §9 #6); the policy binds ex:audience to the request and ex:paidWith to the witness. Neither or mixes a guard with a witness condition, so MixedDutyConstraint does not apply (due2-workflows.md §5.2). W1 keeps ex:pay as one atom, with two guard clauses and two witness clauses (decisions/0028). Before that decision, stage 2 made each disjunct of the full DNF a duty atom of its own, all owed: scenario 1 would then have been Pending on the copy the payment did not satisfy, scenario 2 Indeterminate on the copy that reads the absent amount, and scenario 4 Pending on two copies. The bearer is the request subject, since neither the duty nor its permission names an assignee (due2-workflows.md §5.3).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "marketing purpose, paid 6.0 by card",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:marketing"
+          },
+          "ex:audience": {
+            "@id": "ex:internal"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "6.0",
+                "@type": "xsd:decimal"
+              },
+              "ex:paidWith": {
+                "@id": "ex:card"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The guard clause purpose eq marketing is T, so ex:pay is owed. ev-pay satisfies the witness clause payAmount gteq 5.0, so the Kleene disjunction of the two witness clauses is T and the duty is fulfilled. ex:use is ready: Permit."
+      }
+    },
+    {
+      "name": "marketing purpose, paid with a voucher, no amount",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:marketing"
+          },
+          "ex:audience": {
+            "@id": "ex:internal"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {
+              "ex:paidWith": {
+                "@id": "ex:voucher"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:pay",
+            "input": "odrl:payAmount",
+            "status": "missing"
+          }
+        ],
+        "why": "ex:pay is owed as in scenario 1. ev-pay has no payAmount, so the first witness clause is U; the second, paidWith eq voucher, is T, and U ∨ T is T. The duty is fulfilled, ex:use is ready: Permit."
+      }
+    },
+    {
+      "name": "marketing purpose, paid 2.0 by card",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:marketing"
+          },
+          "ex:audience": {
+            "@id": "ex:internal"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:00:00Z",
+            "actor": "ex:Dana",
+            "action": "odrl:compensate",
+            "object": "ex:Dataset",
+            "params": {
+              "odrl:payAmount": {
+                "@value": "2.0",
+                "@type": "xsd:decimal"
+              },
+              "ex:paidWith": {
+                "@id": "ex:card"
+              }
+            }
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:pay"
+          ]
+        ],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:pay",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:pay is owed. ev-pay fails both witness clauses (2.0 < 5.0, card is not voucher), and it is the only witness, so the duty is unfulfilled and outstanding. The one route is to perform ex:pay: Pending."
+      }
+    },
+    {
+      "name": "research purpose, public audience, no payment",
+      "request": {
+        "reference": "req-4",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:research"
+          },
+          "ex:audience": {
+            "@id": "ex:public"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:pay"
+          ]
+        ],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:pay",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The first guard clause is F and the second, audience eq public, is T, so ex:pay is owed. No evidence means no witness, so it is unfulfilled and outstanding: Pending on ex:pay."
+      }
+    },
+    {
+      "name": "research purpose, internal audience, no payment",
+      "request": {
+        "reference": "req-5",
+        "action": "odrl:use",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "odrl:purpose": {
+            "@id": "ex:research"
+          },
+          "ex:audience": {
+            "@id": "ex:internal"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "Both guard clauses are F, so ex:pay is not owed, and ex:use stands without it (due2-workflows.md §5.2). Permit."
+      }
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.10
+**Status:** Draft v0.11
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.10** (2026-10-24, #83): §0's reading order and directory map name `due2-platform.md`, `schema/`, `spikes/`, and `formal/`. No design changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.11** (2026-10-24, `decisions/0028`, #109): §4 item 3 makes only a root rule's DNF disjuncts atoms; a duty's become clauses of its one atom, and the blowup budget's exact count includes them. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -23,7 +23,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 | request | One access question: subject, action, target, time, parameters | `due2-workflows.md` §3.2 |
 | SOTW | The state of the world, frozen for one evaluation | `due2-workflows.md` §3.3 |
 | W1 / W2 / W3 | Normalise · evaluate every atom · fold findings into a verdict | `due2-workflows.md` §1 |
-| atom | A rule narrowed to one action, one target, one party per function, conjunctive constraints | §3 |
+| atom | A rule narrowed to one action, one target, one party per function, conjunctive constraints (a duty's, in clauses) | §3 |
 | corpus | The flat relations of atoms W1 emits and W2/W3 read | `due2-workflows.md` §3.1 |
 | root / edge | An atom a request matches directly / a parent→duty edge | `due2-workflows.md` §3.1 |
 | duty | An obligation; as a child of a permission, a precondition that gates it | `due2-workflows.md` §5.3 |
@@ -89,7 +89,7 @@ This asymmetry drives §10 (where verification effort goes) and §9 (why perform
 
 ## 3. Normal form **[D]**
 
-`normalise` emits the corpus and nothing else: flat relations of atoms, their parties and constraints, and parent→child edges. An **atom** is a rule narrowed to one action, at most one relation value, at most one party per function, and conjunctive constraints — the unit a request is matched against; ODRL's atomic Rule (ODRL 2.2 Information Model, IM, §2.6). The schema is `due2-workflows.md` §3.1. Every atom carries required provenance — source policy and source rule — because every verdict must be explainable back to authored text. Full lineage is a separate collection, and the ledger pins the normaliser versions (§7).
+`normalise` emits the corpus and nothing else: flat relations of atoms, their parties and constraints, and parent→child edges. An **atom** is a rule narrowed to one action, at most one relation value, at most one party per function, and conjunctive constraints, which on a duty are grouped into clauses (item 3 of §4) — the unit a request is matched against; ODRL's atomic Rule (ODRL 2.2 Information Model, IM, §2.6). The schema is `due2-workflows.md` §3.1. Every atom carries required provenance — source policy and source rule — because every verdict must be explainable back to authored text. Full lineage is a separate collection, and the ledger pins the normaliser versions (§7).
 
 Three consequences worth stating explicitly, because each was a live alternative:
 
@@ -130,12 +130,12 @@ Two stages, each with its own preservation property (`due2-workflows.md` §4). T
 
 **Stage 2 — build:**
 
-3. **Constraint DNF, including `xone` elimination.** Each disjunct becomes an atom. This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[D]** (`decisions/0002`) Expansion stays eager: the exact-count limit check below fails a pathological policy before materialising anything, and no corpus case comes near the limit. Set-valued match keys reopen only on the first real policy that needs them.
+3. **Constraint DNF, including `xone` elimination.** Each disjunct of a root rule's constraint becomes an atom, an alternative. A duty's constraint is not split, since its atoms are all owed: its disjuncts become clauses of its one atom (`decisions/0028`). This is the expansion with genuinely bad worst-case behaviour: `xone` over *n* constraints is exponential. **[D]** (`decisions/0002`) Expansion stays eager: the exact-count limit check below fails a pathological policy before materialising anything, and no corpus case comes near the limit. Set-valued match keys reopen only on the first real policy that needs them.
 4. **Parameter substitution, role inheritance, and per-binding instantiation.** A duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5); one that declares any inherits none. The inherited roles are part of the binding, which settles a tension inside ODRL: a shared duty is "fulfilled once", yet takes its roles from each referrer — referrers with different roles yield different instances. A duty that is also a root obligation receives the policy-level values as its own, so it inherits nothing (`due2-profiles.md` §6). See §5 and §3.1.
-5. **Conditional duties stay conditional [D]** (`decisions/0003`). A duty's constraints split, by their bindings, into *guards* — when the duty is owed — and *witness conditions* — what fulfils it, such as "paid at least 100" or "attested after 1 January" (`due2-workflows.md` §5.2). Both stay on the duty atom. W2 evaluates a precondition's guards as `owed`, and a root obligation's as part of `in_force`, so a duty with both roles needs no special case. An inactive duty is simply not owed — DPROD's D-ACTIVATE reading and the W3C CG's (C21). The rejected alternative, hoisting guards into the parent permission, multiplies its atoms by 2^*c* for *c* guarded duties (`decisions/0003`). The question of guards over post-exercise state dissolves with it: such a condition is a witness condition, not a guard.
+5. **Conditional duties stay conditional [D]** (`decisions/0003`). A duty's constraints split, by their bindings, into *guards* — when the duty is owed — and *witness conditions* — what fulfils it, such as "paid at least 100" or "attested after 1 January" (`due2-workflows.md` §5.2). Both stay on the duty atom, as clauses when either is a disjunction (item 3). W2 evaluates a precondition's guards as `owed`, and a root obligation's as part of `in_force`, so a duty with both roles needs no special case. An inactive duty is simply not owed — DPROD's D-ACTIVATE reading and the W3C CG's (C21). The rejected alternative, hoisting guards into the parent permission, multiplies its atoms by 2^*c* for *c* guarded duties (`decisions/0003`). The question of guards over post-exercise state dissolves with it: such a condition is a witness condition, not a guard.
 6. **Projection and provenance.** Project into the corpus relations, joining stage-1 lineage so that every atom carries its source policy and rule.
 
-**Blowup budget:** `|atoms| ≈ |actions| × |targets| × |parties| × |DNF disjuncts| + |duty attachments|`. Only the first term is multiplicative, and within it only DNF (`xone` above all) is exponential. Duties add atoms linearly, since their guards stay on the duty (item 5). Stage 1 computes exact counts and fails a limit before materialising anything. **[O]** — the threshold values, and their diagnostic.
+**Blowup budget:** `|atoms| ≈ |actions| × |targets| × |parties| × |DNF disjuncts| + |duty attachments|`. Only the first term is multiplicative, and within it only DNF (`xone` above all) is exponential. Duties add atoms linearly, since their guards stay on the duty (item 5) and their DNF disjuncts are clauses, not atoms (item 3). A duty's clauses grow as its DNF does, so the exact count includes them. Stage 1 computes exact counts and fails a limit before materialising anything. **[O]** — the threshold values, and their diagnostic.
 
 ---
 

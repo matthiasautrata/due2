@@ -1,0 +1,52 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: a duty whose guards and witness conditions are both disjunctions,
+# each over two different operands, so no isAnyOf rewrite removes them. The duty
+# stays one atom, with its guards and its witness conditions in clauses
+# (decisions/0028).
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:use .
+
+ex:use a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:Dataset ;
+    odrl:duty ex:pay .
+
+# Owed when the purpose is marketing or the audience is public; fulfilled by a
+# payment of at least 5.0 or by one made with a voucher.
+ex:pay a odrl:Duty ;
+    odrl:action odrl:compensate ;
+    odrl:constraint [
+        a odrl:LogicalConstraint ;
+        odrl:and (
+            [
+                a odrl:LogicalConstraint ;
+                odrl:or (
+                    [ a odrl:Constraint ; odrl:leftOperand odrl:purpose ; odrl:operator odrl:eq ; odrl:rightOperand ex:marketing ]
+                    [ a odrl:Constraint ; odrl:leftOperand ex:audience ; odrl:operator odrl:eq ; odrl:rightOperand ex:public ]
+                )
+            ]
+            [
+                a odrl:LogicalConstraint ;
+                odrl:or (
+                    [ a odrl:Constraint ; odrl:leftOperand odrl:payAmount ; odrl:operator odrl:gteq ; odrl:rightOperand "5.0"^^xsd:decimal ]
+                    [ a odrl:Constraint ; odrl:leftOperand ex:paidWith ; odrl:operator odrl:eq ; odrl:rightOperand ex:voucher ]
+                )
+            ]
+        )
+    ] .
+
+ex:audience a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:audience .
+
+ex:paidWith a odrl:LeftOperand ;
+    dprod:operandSource due2:witnessSource ;
+    dprod:operandProperty ex:paidWith .

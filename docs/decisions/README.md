@@ -10,7 +10,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 |---|---|---|---|
 | [0001](0001-rl2-as-donor.md) | due2 stays ODRL-native; RL2 is a donor; DPROD Contracts is a profile | 2026-10-09 | In force |
 | [0002](0002-w1-implementation-and-verification.md) | W1 stays Python; verification enters as a Dafny oracle; Clingo is out of the evaluator pipeline | 2026-10-10 | Amended. Superseded in part: by 0003, which withdraws hoisting; by 0009, which makes the L9 oracle a clingo program (item 7); by 0021, which withdraws Dafny (items 2–4); by 0027, which narrows item 1 to W1, closes item 5's carve-out for a clingo backend, and no longer sets Kotlin aside for W2 and W3 (item 8). |
-| [0003](0003-duty-guards-stay-on-the-duty.md) | Duty guards stay on the duty; conditional-duty hoisting is withdrawn | 2026-10-11 | In force |
+| [0003](0003-duty-guards-stay-on-the-duty.md) | Duty guards stay on the duty; conditional-duty hoisting is withdrawn | 2026-10-11 | In force, with a note: 0028 makes a duty's DNF disjuncts clauses, not atoms |
 | [0004](0004-frontier-complete-by-bounded-enumeration.md) | `frontier_complete` is computed by bounded enumeration | 2026-10-11 | Amended: 0026 changes the listed frontier it compares with, and the bound is config |
 | [0005](0005-set-based-operators-read-after-salas-pareti.md) | Set-based operators with lists are read after Salas–Pareti, with a warning | 2026-10-11 | Amended: an addendum on `isAllOf` |
 | [0006](0006-w2w3-backend-bakeoff.md) | W2 and W3 are built as a bakeoff: Python, Elixir, Clingo, under one conformance suite | 2026-10-16 | Superseded by 0027, except for the relation-level vectors (item 3) and the gate (item 4) |
@@ -35,3 +35,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0025](0025-set-valued-operand-takes-set-operators.md) | A set-valued operand takes only the set operators | 2026-10-23 | In force |
 | [0026](0026-listed-frontier-routes-that-suffice.md) | The listed frontier is the routes that suffice | 2026-10-24 | In force |
 | [0027](0027-the-corpus-is-the-boundary.md) | W1 stays Python; the corpus is the boundary; the bakeoff ends; the W2/W3 language is open | 2026-10-24 | In force, except item 1, which is open (#104) |
+| [0028](0028-a-duty-condition-is-kept-in-clauses.md) | A duty's condition is kept in clauses on its one atom | 2026-10-24 | In force |
