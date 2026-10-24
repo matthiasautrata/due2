@@ -1,6 +1,9 @@
 #!/bin/sh
 # Runs every command of the Alloy models given, or of all models here, and prints one line per
-# command with its outcome and time. Alloy is fetched once into a cache and checked by digest.
+# command with its outcome and time. Alloy is the Maven artifact
+# org.alloytools:org.alloytools.alloy.dist, checked by digest before use. The jar is taken from the
+# local Maven repository when Maven has fetched it; otherwise it is downloaded once into a cache,
+# from $DUE2_MAVEN_REPO (default Maven Central) with any credentials in ~/.netrc.
 #
 #   formal/alloy/run.sh [model.als ...]
 #
@@ -8,16 +11,19 @@
 set -eu
 
 version=6.2.0
-digest=6b8c1cb5bc93bedfc7c61435c4e1ab6e688a242dc702a394628d9a9801edb78d
-cache=${XDG_CACHE_HOME:-$HOME/.cache}/due2/alloy-$version
-jar=$cache/org.alloytools.alloy.dist.jar
+digest=6037cbeee0e8423c1c468447ed10f5fcf2f2743a2ffc39cb1c81f2905c0fdb9d
+path=org/alloytools/org.alloytools.alloy.dist/$version/org.alloytools.alloy.dist-$version.jar
+repo=${DUE2_MAVEN_REPO:-https://repo1.maven.org/maven2}
 here=$(cd "$(dirname "$0")" && pwd)
 
+jar=$HOME/.m2/repository/$path
 if [ ! -f "$jar" ]; then
-  mkdir -p "$cache"
-  curl -fsSL -o "$jar.part" \
-    "https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v$version/org.alloytools.alloy.dist.jar"
-  mv "$jar.part" "$jar"
+  jar=${XDG_CACHE_HOME:-$HOME/.cache}/due2/$(basename "$path")
+  if [ ! -f "$jar" ]; then
+    mkdir -p "$(dirname "$jar")"
+    curl -fsSL --netrc-optional -o "$jar.part" "$repo/$path"
+    mv "$jar.part" "$jar"
+  fi
 fi
 actual=$(shasum -a 256 "$jar" | cut -d' ' -f1)
 if [ "$actual" != "$digest" ]; then

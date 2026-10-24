@@ -9,7 +9,7 @@ formal/alloy/run.sh                          # every model
 formal/alloy/run.sh formal/alloy/<model>.als # one model
 ```
 
-The script needs Java 17 or later. On first use it downloads Alloy 6.2.0 into `~/.cache/due2/` and checks the jar against the SHA-256 digest pinned in `run.sh`. Each command prints one line with its outcome: a `check` should print `UNSAT` (no counterexample), and a `run` prints `SAT` when it finds an instance.
+The script needs Java 17 or later. It runs Alloy 6.2.0, the Maven artifact `org.alloytools:org.alloytools.alloy.dist`, and checks the jar against the SHA-256 digest pinned in `run.sh`. It uses the jar in the local Maven repository (`~/.m2`) if there is one there. Otherwise it downloads the jar once into `~/.cache/due2/`, from Maven Central or from the repository named by `DUE2_MAVEN_REPO`, such as a mirror of Maven Central. Credentials for the download go in `~/.netrc`. Where only Maven can reach the mirror, run `mvn dependency:get -Dartifact=org.alloytools:org.alloytools.alloy.dist:6.2.0` first. Each command prints one line with its outcome: a `check` should print `UNSAT` (no counterexample), and a `run` prints `SAT` when it finds an instance.
 
 ## Models
 
