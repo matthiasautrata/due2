@@ -2,7 +2,7 @@
 
 Each claim of `correctness-strategy.md` §4.8 gets a small Alloy 6 model, which searches for a counterexample within a bound on the size of each signature (`decisions/0021`). A `check` that finds none shows the claim only up to that scope. A `run` shows that an instance exists, either a known gap or a witness that a check is not vacuous. A counterexample is triaged by `correctness-strategy.md` §6.
 
-The models are not part of README § Verify. They belong to the slow tier (`correctness-strategy.md` §7), which does not exist yet. Run them with
+The models are not part of README § Verify. They belong to the slow tier (`correctness-strategy.md` §7), whose results feed the ratchet, not the gate. Run them with
 
 ```bash
 formal/alloy/run.sh                          # every model
@@ -23,7 +23,7 @@ The script needs Java 17 or later. It runs Alloy 6.2.0, the Maven artifact `org.
 | `w_basis_waiver.als` | W: a definite `Permit` or `Deny` with an empty basis has a `U` finding on a variable that another literal reads too | `due2-workflows.md` §6.4; `decisions/0016` |
 | `p_listed_frontier.als` | P: the listed frontier, the non-dominated routes that suffice, omits no route that every completion offers, and its fallback lists only routes that suffice | `due2-workflows.md` §6.3, §6.4; `decisions/0019`, `0026` |
 
-`resolve.als` leaves out instances, timing, the non-default combinations, and grounds; its header gives the reason for each. A model that quantifies over every completion asserts `everyCompletion`: the worlds are closed under flipping one variable, and no two are one completion. Its scope on `World` therefore bounds the unknowns, variables and unknown `fulfilled` findings together: 8 worlds hold every completion of three. At scope 3 there are at most three variables, so a fourth unknown is an unknown `fulfilled` finding.
+`resolve.als` leaves out instances, timing, the non-default combinations, and grounds; its header gives the reason for each. A `World` is one completion: every finding in it is `T` or `F`. A model that quantifies over every completion asserts `everyCompletion`: the worlds are closed under flipping one variable, and no two are one completion. Its scope on `World` therefore bounds the unknowns, variables and unknown `fulfilled` findings together: 8 worlds hold every completion of three. At scope 3 there are at most three variables, so a fourth unknown is an unknown `fulfilled` finding.
 
 ## Scopes and times
 
@@ -70,5 +70,5 @@ The checks that quantify over every completion grow fast with the worlds. `every
 Each counterexample is triaged by `correctness-strategy.md` §6.
 
 - **W, an overflow.** A `check Waiver` that counts the literals reading a variable with Alloy's integers finds a false counterexample: their default width of 4 bits wraps a count of 8 to −8. The error is the model's, so `readTwice` states "read twice" without arithmetic, and the check finds no counterexample.
-- **P, the fallback's exclusion.** Beyond `max_frontier_vars`, W3 lists the routes of the candidates that are ready or pending whatever the unknowns are, and that no `T` prohibition removes (`due2-workflows.md` §6.4, *Computing it*). That alone is unsound: under `invalid`, a `U` prohibition voids the policy in the completions where it is `T`, so its candidate does not survive there (`InvalidNeedsExclusion`). The fallback therefore leaves out a candidate whose policy is under `invalid` with a `U` prohibition, and `FallbackSound` then finds no counterexample.
-- **P, the question.** Before `decisions/0026`, P was an open question, and the model characterised when the listed frontier of v0.33 omits a route that every completion offers. Those shapes are recorded in `decisions/0026` § Question.
+- **P, the fallback's exclusion.** Beyond `max_frontier_vars`, W3 lists the routes of the candidates that are ready or pending whatever the unknowns are, and that no completion removes in `due2-workflows.md` §6.2 (§6.4, *Computing it*). Read as "no `T` prohibition removes", that is unsound: under `invalid`, a `U` prohibition voids the policy in the completions where it is `T`, so its candidate does not survive there (`InvalidNeedsExclusion`). The fallback therefore leaves out a candidate whose policy is under `invalid` with a `U` prohibition, and `FallbackSound` then finds no counterexample.
+- **P, the question.** The shapes the model found while P was open are recorded in `decisions/0026` § Question.
