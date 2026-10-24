@@ -144,7 +144,7 @@ A relation-level vector file gives the W2/W3 evaluator its inputs written direct
 conformance/vectors/<file>.json    one corpus, and the scenarios evaluated against it
 ```
 
-A vector file is named like a case, starting with its origin. Each of its scenarios is one vector of the `decide` task (`spikes/README.md`): a request, SOTW, and config, evaluated against the file's corpus, and the expected trace. In this sketch the `…` stand for tuples:
+A vector file is named like a case, starting with its origin. The directory holds no file until #37; `tests/fixtures/vectors/due2-one-permission.json`, which `tests/test_schema.py` checks, is a complete small one. Each of its scenarios is one vector of the `decide` task (`spikes/README.md`): a request, SOTW, and config, evaluated against the file's corpus, and the expected trace. In this sketch the `…` stand for tuples:
 
 ```json
 {
@@ -195,7 +195,7 @@ Literals take the form `{"v", "t", "l"}` of `due2-workflows.md` §2, not the JSO
 
 **Ids the vector file does not state.**
 
-- **`evaluation`.** The harness computes the four collection ids from the canonical collections it sends. It compares them with the evaluator's `evaluation` tuple whenever the evaluator emits that relation (`spikes/README.md`, `decide`). A vector file does not state them, because any edit to an input changes them.
+- **`evaluation`.** The harness computes the four collection ids from the canonical collections it sends. It compares them with the evaluator's `evaluation` tuple whenever the evaluator declares that relation (`spikes/README.md`, `decide`). A vector file does not state them, because any edit to an input changes them.
 - **Derived ids.** `alt_id`, and the instance key of a `grant` instance or of a recurring duty's occurrence, are digests whose byte construction is open (#107). Until #107 settles it, an expected trace names each by any string of its choosing, and the comparison passes when one one-to-one renaming of those names to the evaluator's, applied across every stated relation, makes each relation equal. The harness searches for the renaming. A `member` instance key is the corpus's `binding_key`, which the vector file states, so it is compared exactly. An input that has to name a `grant` instance or an occurrence, in `activation` or in `evidence.discharges`, cannot be written until #107 is settled.
 - **Operand bindings.** The corpus carries no operand bindings, which W2 needs to evaluate a constraint (`due2-workflows.md` §5.4, step 1). Until #108 settles their relations, a vector file cannot state a constraint.
 

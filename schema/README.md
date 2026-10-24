@@ -14,7 +14,7 @@ These files state, in JSON Schema 2020-12, what the evaluator port of `due2-plat
 ## How a collection is described
 
 - **Collection.** An object with one optional property per relation. Any other property is invalid. The singletons `request`, `sotw`, and `config` are required in their collections. `DecideOutput` is a `Trace` that must contain `verdict`.
-- **Relation.** An array of tuples with at least one item, because an empty relation is omitted, and with no item repeated. A relation with an empty key, such as `verdict`, holds at most one tuple.
+- **Relation.** An array of tuples with at least one item, because an empty relation is omitted, and with no item repeated. A relation with an empty key, such as `verdict`, holds exactly one tuple when it is present.
 - **Tuple.** An object with one property per field. A field marked `?` in `due2-workflows.md` §3 is optional; every other field is required. Any other property is invalid.
 - **`x-key`.** Each relation carries its key fields as the annotation `x-key`. JSON Schema cannot state that no two tuples share a key, so validators ignore `x-key`, and the harness checks it (`check_collection` in `tools/harness/vectors.py`).
 

@@ -82,7 +82,7 @@ The verdict is one of the five. The frontier is a set of alternatives, each a se
 
 ### `decide`
 
-The task of the W2/W3 evaluator, `decide` of `due2-platform.md` §2.1. Its vectors are the scenarios of the relation-level vector files in `conformance/vectors/`, which gate the evaluator (`decisions/0027` #5). Input:
+The task of the W2/W3 evaluator, `decide` of `due2-platform.md` §2.1. Its vectors are the scenarios of the relation-level vector files in `conformance/vectors/` (none until #37), which gate the evaluator (`decisions/0027` #5). Input:
 
 ```json
 {"file": "...", "scenario": "...", "corpus": {...}, "request": {...}, "sotw": {...}, "config": {...}}
