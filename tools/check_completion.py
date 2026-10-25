@@ -44,8 +44,8 @@ enumeration 0 mismatches; with bound 1, fallback in 148, 0 unsound.
 
 Scope: one policy; atoms are flat conjunctions; obligations carry no guards and no duties
 of their own; no recurrence or instances. A sanity check of §6.4's claims, not
-a proof, and not a check of the rest of W3 (that is the brute-force W3
-differential, correctness-strategy.md §4.5).
+a proof, and not a check of the rest of W3 (that is the differential against
+slow I on the relation-level vectors, correctness-strategy.md §4.5).
 """
 
 import itertools

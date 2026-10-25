@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.15 (2026-10-24). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.16 (2026-10-25). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.15** (2026-10-24, #114): §4.4 and §4.5 follow the restated laws L2, L3, L6, and L7 and give each law's first property-test cases; §4.7's *pinning suffices* excepts the `evaluation` tuple. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.16** (2026-10-25, `decisions/0027` amendment of 2026-10-25, #38, #41): clingo-i's slow mode, read through its relation-level face (#41), replaces the brute-force W3 (#38) as the W2/W3 evaluator's executable oracle, beside the vectors' hand-derived traces, in §3, §4.5, §7, §8, and §9; §4.5 states how a fallback is compared with it. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -49,7 +49,7 @@ The three testing modes are:
 |---|---|
 | W1 stage 1 | `Den` (Python, then in the formal model, §4.8) through the lineage bijection |
 | W1 + W2 + W3 | `I`, the direct interpreter (L9) |
-| W3 | Brute-force W3 over every completion of the findings |
+| W2 + W3, on the relation-level vectors | Slow `I`, through clingo-i's relation-level face (#41) |
 | Replay of a recorded evaluation | The original trace, byte for byte |
 | Re-evaluation of a case history | A from-scratch evaluation over the current inputs |
 | Any second backend | The first |
@@ -98,7 +98,7 @@ An oracle is only as useful as it is independent. The question for each one is w
   - **Slow, built first.** It enumerates every assignment of the literal variables (the definition at the top of `due2-workflows.md` §6.4), with no uniform/mixed split and no two-extreme computation — one answer set per assignment, a verdict definite iff cautious-entailed. Above a variable cap on the unknown literals it declines rather than falling back. The cap is 64, set by measurement in clingo-i (#48): at 64 variables the slowest measured shape, an `and` of tautologies (`x eq i or x neq i`), takes about 1.1 s, and at 128 about 7 s; the corpus needs at most 3. Against slow mode, a pipeline disagreement exposes R3 as well as R1; with the shortcut inside, a flaw in the monotonicity argument would be invisible.
   - **Fast, later.** It uses `due2-workflows.md` §6.4's computation, so it has no cap and can run large generated inputs. The two modes are differentially tested against each other below the cap, which checks the shortcut on authored policies.
 - The `Den` oracle has no memoization or fan-out bookkeeping, as `odrl-compound-to-atomic-normalization.md` §8.1 requires.
-- A brute-force W3 (every completion of the actual findings) is the differential target for the production W3, as `check_completion.py` is for the abstract model.
+- Slow `I` is also the differential target for the production W2 and W3 on the relation-level vectors, read through clingo-i's relation-level face (#41), as `check_completion.py`'s brute force is for the abstract model. A separate brute-force W3 (#38) would share the prose, the completion key, and the author's reading with `I`, so it is parked (`decisions/0027`, the amendment of 2026-10-25).
 
 **When oracles disagree** (§6), the corpus is not automatically right. `I` running the corpus derives its hand-derived verdicts a second time from the same prose, so a disagreement exposes R5, a misreading, as readily as a defect in code.
 
@@ -144,10 +144,10 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 ### 4.5 W3: resolve
 
 - **Risks.** R3, R7.
-- **Oracles.** A brute-force W3 over every completion of the actual findings (§3), capped by variable count. `I` end to end.
-- **Properties.** L4–L7. The first cases of L6 and L7 are the ones that their wording must exclude. For L6, under `perm`, timely evidence restores a permission that a passed deadline closed, and the permission then eliminates its policy's prohibition. For L7, under `violations = deny`, a violated root obligation denies though a candidate is ready. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where brute force says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`). For an `Indeterminate` (`decisions/0011`): the `unknown` atoms are exactly those with a pivotal literal, and `verdict_range` equals the least and greatest completion verdict, wherever `exact` is true; past the bound, every `U` atom is named and the range contains brute force's.
-- **Abstract model extended.** **[D]** `check_completion.py` models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier of `decisions/0026` against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` and nested constraints are left to the brute-force W3 differential, and nested constraints to slow `I` as well.
-- **Done.** The differential against brute-force W3 is clean on both profiles; the corpus passes, including `frontier`, `verdict_basis` and `verdict_range`.
+- **Oracles.** The vectors' hand-derived traces. Slow `I` through clingo-i's relation-level face (#41), a second input face of its rules that reads the relation-level vectors (`decisions/0009` #2): it enumerates every completion, declines above its cap of 64 variables, and shares `I`'s rules, the completion key, and the prose with the evaluator (§3). Its frontier is the listed frontier of `decisions/0026` once clingo-i follows it (#103). `I` end to end, once W1 exists. Where the evaluator is exact, every relation both produce must be equal. Where it falls back past `max_mixed` or `max_frontier_vars`, the comparison checks soundness: a definite verdict equals `I`'s, every listed route suffices in every completion, every `U` atom is named, and `verdict_range` contains `I`'s.
+- **Properties.** L4–L7. The first cases of L6 and L7 are the ones that their wording must exclude. For L6, under `perm`, timely evidence restores a permission that a passed deadline closed, and the permission then eliminates its policy's prohibition. For L7, under `violations = deny`, a violated root obligation denies though a candidate is ready. `verdict.exact = true` whenever the mixed-variable count is at most `max_mixed`, and a fallback verdict that is never definite where slow `I` says `Indeterminate`. Golden vectors at `max_mixed` and at `max_mixed + 1` (`due2-max-mixed`). For an `Indeterminate` (`decisions/0011`): the `unknown` atoms are exactly those with a pivotal literal, and `verdict_range` equals the least and greatest completion verdict, wherever `exact` is true; past the bound, every `U` atom is named and the range contains slow `I`'s.
+- **Abstract model extended.** **[D]** `check_completion.py` models deadlines, violated preconditions, `violations = deny` (fourth phase) and the listed frontier of `decisions/0026` against every completion's (fifth phase). It found no mismatch. `frontier_complete` is computed by bounded enumeration over the relevant unknowns (`decisions/0004`), which the fifth phase checks against the definition, fallback included. Multi-policy conflict under `invalid` and nested constraints are left to the differential against slow `I`, which reads both.
+- **Done.** The differential against slow `I` on the relation-level vectors is clean on both profiles; the corpus passes, including `frontier`, `verdict_basis` and `verdict_range`.
 
 ### 4.6 Trace and replay
 
@@ -239,7 +239,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 |---|---|
 | Every commit | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
 | PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L10 and the stage-1 invariants; the L1 determinism matrix |
-| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the brute-force W3 differential at larger sizes; mutation testing on W2, W3, and the builder; the formal model's proofs and its differential (§4.8). Results feed the ratchet, not the gate |
+| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the differential against slow `I` at larger sizes, up to its cap; mutation testing on W2, W3, and the builder; the formal model's proofs and its differential (§4.8). Results feed the ratchet, not the gate |
 
 ---
 
@@ -251,7 +251,7 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (`due2-workflows.md` §6.4's computation) follows, differentially against enumeration.
 5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram, first over clingo-i (#42, #44).
 6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and, for M and W, the bounded-exhaustive search over clingo-i, then the prover spike on M, parked (`decisions/0021`, the amendment of 2026-10-24).
-7. The W2/W3 evaluator (`decisions/0027`; its language is #104): relation-level vectors (#36, #37), the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4 and as in §4.4 and §4.5 as far as the vectors reach.
+7. The W2/W3 evaluator (`decisions/0027`; its language is #104): relation-level vectors (#36, #37), clingo-i's relation-level face (#41), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4 and as in §4.4 and §4.5 as far as the vectors reach.
 8. W1 stage 1 with the Python `Den` oracle. The formal model's `Den` (issue #8) waits for the prover spike.
 9. W1 stage 2, gated by L9 against `I`.
 10. The W2/W3 evaluator on the full corpus through W1, completing the §4.4 and §4.5 gates.
@@ -273,7 +273,7 @@ Rows 1–10 are resolved, each where its section states it:
 - **2.** Oracles implement definitions; `I` is the clingo program, slow mode first, then fast mode, the two differentially tested (§3, `decisions/0009`).
 - **3.** `I` and W1 share only the Turtle reading, and the driver is tested on its own (§4.1, `decisions/0009`).
 - **4.** Negative cases are `expected_rejection` with codes from the diagnostic registry (§4.2, `due2-diagnostics.md`).
-- **5.** `check_completion.py` covers `violations = deny` and `frontier_complete`, and leaves multi-policy conflict under `invalid` and nested constraints to the brute-force W3 differential, the latter also to slow `I` (§4.5).
+- **5.** `check_completion.py` covers `violations = deny` and `frontier_complete`, and leaves multi-policy conflict under `invalid` and nested constraints to the differential against slow `I` (§4.5).
 - **6.** The generator coverage histogram is a failing check (§5).
 - **7.** The disagreement protocol is §6.
 - **8.** The critical features are atomization, evaluation, and case history, tested bounded-exhaustively, by generation, and differentially (§1.1).

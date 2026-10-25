@@ -42,6 +42,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.15** (2026-10-24, #114): §4.4 and §4.5 follow the restated laws L2, L3, L6, and L7 and give each law's first property-test cases; §4.7's *pinning suffices* excepts the `evaluation` tuple.
+
 **Changes in v0.14** (2026-10-24, `decisions/0030`, #111): §4.7 adds the property that an access evaluation's `at` is never earlier than its `effective_at`, and that its request differs from its case's only in `at`; a moved `at` is a cause of a verdict transition. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.13** (2026-10-23, `decisions/0023`, #84): §4.8's claim K cites `decisions/0023` and gains the Alloy models as evidence. No rule changes. Earlier changes are in `docs/archive/changes.md`.

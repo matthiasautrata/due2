@@ -2,7 +2,7 @@
 
 A spike is a candidate implementation, built to be compared. Spikes share one thing: the pinned vectors and their expected results, read from `conformance/` by one Python suite (`tests/`, harness in `tools/harness/`). Everything else is separate. Each spike is built from the same principles and requirements and judged by the same gate (`decisions/0006` #4).
 
-`clingo-i` is the semantics program (issue #9, `decisions/0009`): it implements `interpret` over the corpus, in the role of the L9 oracle. The W2/W3 evaluator (`decisions/0027`) runs here as a spike on the relation-level vectors until W1 exists. clingo-i may gain a relation-level face for the same vectors (#41), as a second oracle.
+`clingo-i` is the semantics program (issue #9, `decisions/0009`): it implements `interpret` over the corpus, in the role of the L9 oracle. The W2/W3 evaluator (`decisions/0027`) runs here as a spike on the relation-level vectors until W1 exists. clingo-i gains a relation-level face for the same vectors (#41), which makes it the evaluator's executable oracle on them, beside their hand-derived traces (`decisions/0027`, the amendment of 2026-10-25).
 
 ## Rules
 

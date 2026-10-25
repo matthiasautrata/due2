@@ -56,6 +56,8 @@
 
 **Note (2026-10-16):** since `decisions/0009` the L9 oracle is a clingo program, so #2's "the oracles stay Python" no longer covers it; the brute-force W3 (#38) remains this bakeoff's oracle. Clingo (#41) and Elixir (#40) run first; the Python backend (#39) is deferred until the production evaluator is written. The gate and scoring are unchanged.
 
+**Note (2026-10-25):** `decisions/0027`'s amendment of 2026-10-25 changes item 4's oracle: the relation-level cases are checked against clingo-i through its relation-level face (#41), and the brute-force W3 (#38) is parked.
+
 ## Revisit when
 
 - Only Python passes the gate: close the bakeoff, and record why.

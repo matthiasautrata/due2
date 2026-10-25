@@ -1,6 +1,6 @@
 # 0027 — W1 stays Python; the corpus is the boundary; the bakeoff ends; the W2/W3 language is open
 
-**Status:** Decided, 2026-10-24 (the owner), except item 1, which is open (#104)
+**Status:** Decided, 2026-10-24 (the owner), except item 1, which is open (#104); amended 2026-10-25: clingo-i's relation-level face is the gate's oracle
 **Context documents:** `decisions/0002` #1, #5, #8 · `decisions/0004`, `0006`, `0007`, `0009`, `0021` #7 · `ways-of-working.md` §7.4, §10 · `due2-architecture.md` §9 · `due2-platform.md` §2.1, §2.3, §2.8 · `due2-workflows.md` §3.1, §5.5, §6.4 · `docs/archive/implementation-alternatives.md` §7 · issues #36–#41, #104, #105
 
 ## Question
@@ -56,3 +56,23 @@ The owner also states two facts about the organisation that will run due2. It ru
 - The `ways-of-working.md` §10.4 measurements show that W2 and W3 are not a clear majority of the latency at agent volume. The language was then not the constraint, and performance work goes to caching and SOTW freshness (`due2-architecture.md` §9).
 - The evaluator cannot meet a vector without changing semantics. That is a finding under `decisions/0006` #4, not a spec change.
 - W1 has to run per request, for example because agents submit policies of their own. W1 is then partly a hot stage.
+
+## Amendment (2026-10-25, the gate's oracle)
+
+The owner decided on 2026-10-25 that clingo-i, read through its relation-level face (#41), a second input face of its rules that reads the relation-level vectors (`decisions/0009` #2), is the oracle of the W2/W3 evaluator's gate, in place of the brute-force W3 (#38). The third item of `decisions/0006` #4's gate now reads: the relation-level cases, against clingo-i's slow mode through its relation-level face. #41 is required, and #38 is parked.
+
+- **The reason for a separate Python oracle has gone.** `decisions/0006` #2 kept the oracles in Python, and the brute-force W3 was planned for a bakeoff in which Clingo (#41) was one of the backends under the gate. A backend cannot be its own oracle. Item 4 takes Clingo out of production, so clingo-i is an oracle only, and the evaluator shares no code or language with it (Why, "The oracle and the implementation must differ").
+- **clingo-i already computes the definition.** Its slow mode enumerates every assignment of the literal variables, with no uniform/mixed split and no two-extreme computation, and declines above 64 variables rather than fall back (`correctness-strategy.md` §3). From the completions it derives the verdict, `verdict_basis`, the `unknown` atoms, `verdict_range`, and `eliminated` (`spikes/clingo-i/DESIGN.md` § Data flow), which are the relations a brute-force W3 was to compute. It also reads what `correctness-strategy.md` §9 row 5 left to the brute-force W3: multi-policy conflict under `invalid`, and nested constraints.
+- **A second enumerator would add little independence.** A brute-force W3 would share with clingo-i what clingo-i shares with the evaluator: the prose of `due2-workflows.md` §5–§6, the completion key, and the author's reading of both. The checks that share none of these are the vectors' hand-derived traces and the Alloy model of the completion key (#84).
+- **Recurrence does not argue for it.** clingo-i declines recurring duties (#80), but recurrence is parked with the rest of an agreement's operational life (#119), and #80 is parked with it.
+
+The amendment has four costs:
+
+- The relation-level face reuses `I`'s rules, so on the vectors the evaluator's one executable oracle is not independent of `I` (item 5). The vectors' hand-derived traces stay the independent one.
+- clingo-i lists the frontier of `decisions/0026` only after #103, so the comparison of frontiers waits for it.
+- clingo-i has no `max_mixed` or `max_frontier_vars` fallback. Where the evaluator falls back, the comparison checks soundness, not equality (`correctness-strategy.md` §4.5).
+- A feature that clingo-i declines has no executable oracle on the vectors, only the hand-derived traces.
+
+`correctness-strategy.md` v0.16 names clingo-i's relation-level face wherever it named the brute-force W3. `decisions/0021`'s amendment of 2026-10-24, which compares the evaluator with the brute-force W3, and the mentions of #38 in `decisions/0009` and `decisions/0011`, are read through this amendment.
+
+Revisit when the evaluator's gate needs a feature that clingo-i declines and cannot be taught to read, and that is not parked. The brute-force W3 (#38) is then the alternative.

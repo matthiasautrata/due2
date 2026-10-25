@@ -13,7 +13,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0003](0003-duty-guards-stay-on-the-duty.md) | Duty guards stay on the duty; conditional-duty hoisting is withdrawn | 2026-10-11 | In force, with a note: 0028 makes a duty's DNF disjuncts clauses, not atoms |
 | [0004](0004-frontier-complete-by-bounded-enumeration.md) | `frontier_complete` is computed by bounded enumeration | 2026-10-11 | Amended: 0026 changes the listed frontier it compares with, and the bound is config |
 | [0005](0005-set-based-operators-read-after-salas-pareti.md) | Set-based operators with lists are read after Salas–Pareti, with a warning | 2026-10-11 | Amended: an addendum on `isAllOf` |
-| [0006](0006-w2w3-backend-bakeoff.md) | W2 and W3 are built as a bakeoff: Python, Elixir, Clingo, under one conformance suite | 2026-10-16 | Superseded by 0027, except for the relation-level vectors (item 3) and the gate (item 4) |
+| [0006](0006-w2w3-backend-bakeoff.md) | W2 and W3 are built as a bakeoff: Python, Elixir, Clingo, under one conformance suite | 2026-10-16 | Superseded by 0027, except for the relation-level vectors (item 3) and the gate (item 4), whose oracle 0027's amendment of 2026-10-25 changes |
 | [0007](0007-collections-are-jcs-json.md) | Collections are JCS JSON arrays, identified by SHA-256 | 2026-10-16 | Amended: a collection is a JSON object keyed by relation name |
 | [0008](0008-ledger-one-case-per-request.md) | The ledger: one case per request, an append-only sequence of events | 2026-10-16 | In force |
 | [0009](0009-the-semantics-live-in-clingo.md) | The semantics live in a clingo program: the L9 oracle and the generator | 2026-10-16 | Amended. Role (d), the bakeoff entrant, lapses with 0027. |
@@ -34,7 +34,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0024](0024-datetime-with-timezone-date-without.md) | A `dateTime` has a timezone; a `date` has none | 2026-10-23 | In force |
 | [0025](0025-set-valued-operand-takes-set-operators.md) | A set-valued operand takes only the set operators | 2026-10-23 | In force |
 | [0026](0026-listed-frontier-routes-that-suffice.md) | The listed frontier is the routes that suffice | 2026-10-24 | In force |
-| [0027](0027-the-corpus-is-the-boundary.md) | W1 stays Python; the corpus is the boundary; the bakeoff ends; the W2/W3 language is open | 2026-10-24 | In force, except item 1, which is open (#104) |
+| [0027](0027-the-corpus-is-the-boundary.md) | W1 stays Python; the corpus is the boundary; the bakeoff ends; the W2/W3 language is open | 2026-10-24 | In force, except item 1, which is open (#104). Amended: clingo-i's relation-level face (#41) replaces the brute-force W3 (#38) as the gate's oracle |
 | [0028](0028-a-duty-condition-is-kept-in-clauses.md) | A duty's condition is kept in clauses on its one atom | 2026-10-24 | In force |
 | [0029](0029-a-void-policy-keeps-its-obligations.md) | A void policy keeps its root obligations | 2026-10-24 | In force |
 | [0030](0030-a-re-evaluation-moves-the-request-time.md) | A re-evaluation asks at its own time | 2026-10-24 | In force |
