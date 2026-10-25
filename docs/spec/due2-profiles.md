@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.16
+**Status:** Draft v0.17
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.16** (2026-10-23, `decisions/0024`, `decisions/0025`, #101, #102): §4 gives a `dateTime` a timezone and a `date` none, and rejects an operator of one left value over a set-valued operand; §7's absolute deadline has a timezone. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.17** (2026-10-24, `decisions/0033`, #115): §2 rejects a declared profile that due2 has no module for. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -38,7 +38,7 @@ A profile may extend ODRL at exactly these points. Anything else a profile defin
 | 8 | Conflict default | `odrl:conflict` on the profile resource | W1 stage 1 |
 | 9 | Duty instance scope | `due2:instanceScope` (default `due2:member`) | W1 stage 2, W2 (`due2-workflows.md` §5.3) |
 
-**Where declarations come from.** A profile that uses this vocabulary declares itself, as DPROD does for operand bindings. For a profile that does not, due2 ships a *binding module*: a small Turtle file mapping that profile's terms onto the points above (`profiles/<name>.ttl`). A binding module adds declarations; it never changes a profile's own.
+**Where declarations come from.** A profile that uses this vocabulary declares itself, as DPROD does for operand bindings. For a profile that does not, due2 ships a *binding module*: a small Turtle file mapping that profile's terms onto the points above (`profiles/<name>.ttl`). A binding module adds declarations; it never changes a profile's own. A policy that declares a profile for which due2 ships no module, neither the profile's own declarations nor a binding module, is rejected at normalisation with `UnrecognisedProfile` (ODRL IM §3.2): due2 cannot tell what the profile declares, and a declaration it missed, such as a conflict default, could change the verdict.
 
 **Layers [D].** Declarations come from three layers: the policy graph, the selected profile modules, and due2's baseline (`profiles/due2-core.ttl`), from highest to lowest. Declaring `odrl:profile <https://w3id.org/due2/profile#>` selects no extra module, because the baseline is always present underneath. The selected modules form one layer and have no order among themselves: two of them that declare the same term differently are rejected with `ConflictingProfileDeclaration`. A left operand's binding (§3) resolves through the layers in two parts (`decisions/0014`):
 

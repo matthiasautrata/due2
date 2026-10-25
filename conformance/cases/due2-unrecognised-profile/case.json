@@ -1,0 +1,15 @@
+{
+  "case": "due2-unrecognised-profile",
+  "source": "due2-native: a policy that declares a profile due2 has no module for",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2: it uses only odrl: terms and declares its profile (IM 2.1). due2 cannot read the profile, so it cannot tell what the profile declares. Here the policy states no odrl:conflict, so with no profile the default is invalid (IM 2.10), but the profile may declare prohibit, and the two give different verdicts when both rules apply. IM 3.2 requires a processor that does not recognise a profile to stop.",
+  "prefixes": {
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": ["UnrecognisedProfile"],
+    "why": "The policy declares <http://example.com/profiles/geo>, which has no due2 module, so due2 cannot read what it declares (IM 3.2, decisions/0033 #2). W1 rejects the policy in stage 1."
+  }
+}

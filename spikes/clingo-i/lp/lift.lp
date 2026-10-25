@@ -66,6 +66,7 @@ voc(andSequence, "http://www.w3.org/ns/odrl/2/andSequence").
 voc(negation,    "https://ekgf.org/dprod/spec/develop/not").
 voc(partOf,      "http://www.w3.org/ns/odrl/2/partOf").
 voc(source,      "http://www.w3.org/ns/odrl/2/source").
+voc(isReplacedBy, "http://purl.org/dc/terms/isReplacedBy").
 voc(assetCollection, "http://www.w3.org/ns/odrl/2/AssetCollection").
 voc(partyCollection, "http://www.w3.org/ns/odrl/2/PartyCollection").
 voc(asset,       "http://www.w3.org/ns/odrl/2/Asset").
@@ -643,6 +644,9 @@ reject("UnsupportedConstruct", Node) :- triple(Node, Pred, _), voc(source, Pred)
     not coll_kind(Node, _).
 reject("UnsupportedConstruct", Node) :- triple(Node, Pred, _), voc(refinement, Pred),
     coll_kind(Node, _).
+% A policy with `dct:isReplacedBy` is void, and its replacement is the policy to evaluate
+% (IM 2.2 §2.8). Every other `dct:` term on it stays an annotation.
+reject("ReplacedPolicy", P) :- policy(P), triple(P, Pred, _), voc(isReplacedBy, Pred).
 
 %## What the spike does not read
 

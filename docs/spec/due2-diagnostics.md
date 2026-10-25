@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.9 (2026-10-23)
+**Status:** Draft v0.10 (2026-10-24)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.9** (2026-10-23, `decisions/0024`, `decisions/0025`, #101, #102): `OperatorTypeMismatch` covers a `dateTime` right operand without a timezone, a `date` right operand with one, and every operator of one left value over a set-valued operand; `InvalidTiming` covers a deadline without a timezone. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.10** (2026-10-24, `decisions/0033`, #115): new rows `ReplacedPolicy` and `UnrecognisedProfile`; `UndeclaredProfile` names the code that rejects a policy whose profile has no due2 module. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -32,12 +32,14 @@ A diagnostic is `(code, severity, ref, message)`:
 | `MultiplePolicies` | error | 1 | More than one Policy node in one input. | `odrl-compound-to-atomic-normalization.md` §3 |
 | `NamedGraph` | error | 1 | The input uses named graphs. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `RequestAsPolicy` | error | 1 | An `odrl:Request` is supplied as a policy. | `due2-profiles.md` §8.1 |
+| `ReplacedPolicy` | error | 1 | The Policy has `dct:isReplacedBy`: it is void, and its replacement is the policy to process. | ODRL IM §2.8; `odrl-compound-to-atomic-normalization.md` §3 (`decisions/0033`) |
 | `MissingPolicyIdentity` | error | 1 | A blank-node Policy without an `odrl:uid`. | `odrl-compound-to-atomic-normalization.md` §3 |
 | `MultipleUid` | error | 1 | A resource with more than one `odrl:uid`. | `odrl-compound-to-atomic-normalization.md` §5.1 |
 | `IdentityConflict` | error | 1 | Distinct resources claim one effective identity. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §5.1 |
 | `SharedAnonymousNode` | error | 1 | A blank node without a uid is the object of more than one triple. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `UnanchoredAnonymousNode` | error | 1 | A blank node reaches no IRI or uid-bearing anchor. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
-| `UndeclaredProfile` | error | 1 | A DPROD or due2 core term used without declaring the profile by `odrl:profile`; or a term in a vocabulary position (an action, or a refined action's `rdf:value`, left operand, operator, function, relation, or conflict value) that is not an `odrl:` term of the ODRL vocabulary, a term of a selected profile's modules, or a term the policy types itself. A `cc:` term needs a profile. The second form is not raised when the policy declares a profile that has no due2 module. | ODRL IM §2.1; `odrl-compound-to-atomic-normalization.md` §3; `conformance/odrl22-conformance.md` §3 (`decisions/0020`) |
+| `UndeclaredProfile` | error | 1 | A DPROD or due2 core term used without declaring the profile by `odrl:profile`; or a term in a vocabulary position (an action, or a refined action's `rdf:value`, left operand, operator, function, relation, or conflict value) that is not an `odrl:` term of the ODRL vocabulary, a term of a selected profile's modules, or a term the policy types itself. A `cc:` term needs a profile. The second form is not raised when the policy declares a profile that has no due2 module, which is rejected with `UnrecognisedProfile` instead. | ODRL IM §2.1; `odrl-compound-to-atomic-normalization.md` §3; `conformance/odrl22-conformance.md` §3 (`decisions/0020`) |
+| `UnrecognisedProfile` | error | 1 | The Policy declares, by `odrl:profile`, a profile that due2 has no module for. The ref names the Policy, the message the profile. | ODRL IM §3.2; `odrl-compound-to-atomic-normalization.md` §3; `due2-profiles.md` §2 (`decisions/0033`) |
 | `UnsupportedProfileTerm` | error | 1 | A profile term needs an extension point not on the list. *Unchecked.* | `due2-profiles.md` §2 |
 | `UnsupportedConstruct` | error | 1 | `odrl:inheritFrom`, `odrl:rightOperandReference`, `odrl:implies`, `odrl:source` outside a collection, a collection `odrl:refinement`, or an `odrl:constraint` on the Policy. The ref names the node, the message the term. | `odrl-compound-to-atomic-normalization.md` §3; `due2-profiles.md` §8.1 |
 | `UnsupportedConnective` | error | 1 | `odrl:andSequence`. | `due2-profiles.md` §5 |

@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.15  
+Version: 0.16  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.15 (2026-10-20, #93): §3 requires every constraint and every Rule to sit where the ODRL vocabulary places it, and rejects a misplaced one with `MisplacedConstraint` or `InvalidNesting`; a constraint on the Policy itself joins the constructs rejected as `UnsupportedConstruct`; §6.3 and §10 follow. Admitted input narrows; generated identity is unchanged. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.16 (2026-10-24, `decisions/0033`, #115): §3 rejects a Policy with `dct:isReplacedBy` (`ReplacedPolicy`) and a declared profile that due2 has no module for (`UnrecognisedProfile`).
 
 The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
@@ -51,7 +51,7 @@ The W3C POE normalization notes and research in §11 are informative. They do no
 
 One invocation accepts one finite RDF default graph. The entire graph is the source and identity domain; there is no configurable closure calculation. It MUST contain exactly one Policy `P0` and the complete component graph required to normalize it. Named graphs and unrelated Policies are rejected.
 
-The invocation also receives the *selected profile modules*: the finite graphs of the profiles `P0` names with `odrl:profile`, together with due2's binding modules for them (`due2-profiles.md` §2). They are read for two things only: declared policy subclasses and a declared conflict default. They are not part of the source graph and do not enter `source_digest`.
+The invocation also receives the *selected profile modules*: the finite graphs of the profiles `P0` names with `odrl:profile`, together with due2's binding modules for them (`due2-profiles.md` §2). They are read for two things only: declared policy subclasses and a declared conflict default. They are not part of the source graph and do not enter `source_digest`. Every profile `P0` names MUST have a module. A profile without one is rejected with `UnrecognisedProfile`: due2 cannot tell what it declares, such as a conflict default that would change a verdict, and ODRL IM §3.2 requires a processor that does not recognise a profile to stop processing the policy.
 
 A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy`, `odrl:Set`, `odrl:Offer`, or `odrl:Agreement`, or of a class that a selected profile module declares `rdfs:subClassOf` one of these — `dprod:DataContract`, for instance. Only declared edges count; no other class inference is performed. Exactly one such node MUST exist; a node with more than one of these types still counts once.
 
@@ -60,7 +60,8 @@ A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy
 - be valid in the supported ODRL 2.2 compact/compound fragment;
 - have an identity: be an IRI node, or carry exactly one `odrl:uid` (the ODRL JSON-LD context maps `uid` to `@id`, so in RDF the IRI is usually the uid);
 - have at least one `odrl:permission`, `odrl:prohibition`, or `odrl:obligation`;
-- have at most one `odrl:conflict`, whose value is `odrl:prohibit`, `odrl:perm`, or `odrl:invalid`; and
+- have at most one `odrl:conflict`, whose value is `odrl:prohibit`, `odrl:perm`, or `odrl:invalid`;
+- not be replaced: a Policy with `dct:isReplacedBy` (`http://purl.org/dc/terms/isReplacedBy`) is void, and a processor MUST process the replacement instead (ODRL IM §2.8). This profile never dereferences an IRI, so it does not fetch the replacement: `P0` is rejected with `ReplacedPolicy`, and the policy store supplies the replacement (`due2-platform.md` §2.3). Other metadata on `P0` are annotations; and
 - be fully materialized, and use none of the constructs outside the fragment: `odrl:inheritFrom`; `odrl:rightOperandReference`, whose right operand is fetched by dereferencing an IRI, an input that is neither the policy nor the request; `odrl:implies`, which action matching does not read (it reads `odrl:includedIn`, `due2-workflows.md` §5.2); `odrl:source` anywhere but on a collection (`due2-profiles.md` §8.1); and an `odrl:constraint` on `P0` itself, which the vocabulary admits (Vocabulary §3.14.2: its domain is Policy or Rule) but the IM gives no meaning: IM §2.1 lists no constraint among a Policy's properties, and IM §2.7.1 shares only actions, relations, and functions with the Rules, so §6.2 interiorises no constraint. Each is rejected with `UnsupportedConstruct`, never approximated (`due2-architecture.md` §1).
 
 Every constraint and every Rule MUST sit where the ODRL vocabulary places it. The vocabulary fixes the subject of each property by its `rdfs:domain`, and this profile reads each property only there. A value anywhere else would be dropped or read as something it is not, so it is rejected instead:

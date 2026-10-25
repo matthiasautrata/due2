@@ -139,7 +139,8 @@ def check_profile_declarations(alone: Graph, vocabulary: Vocabulary) -> list[str
             problems.append(
                 f"IM 2.1: policy uses {label} terms but declares no odrl:profile <{ns}>"
             )
-    # A declared profile due2 has no module for may define any term (#5).
+    # A declared profile due2 has no module for may define any term, so the
+    # policy may be valid ODRL; W1 rejects it (UnrecognisedProfile, decisions/0033).
     if declared - PROFILE_MODULES.keys():
         return problems
     defined = set(vocabulary.baseline) | typed(alone)

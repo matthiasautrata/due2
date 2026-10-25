@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.6. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.7. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.6** (2026-10-24, `decisions/0032`, #113): §3.2 says that evidence names the grant it answers, the authored duty and the request's `reference`, not an instance key. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.7** (2026-10-24, `decisions/0033`, #115): §2.3 says that the store selects the replacement of a replaced policy, never the policy it replaces. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -178,6 +178,8 @@ select(target, ancestors, action, parties) -> policy_ids                  # open
 The store never runs W1. Normalisation (§2.8) produces each corpus as a batch job when a policy or normaliser version is published, and the orchestrator puts it here. On the request path, the orchestrator finds the policies that may apply with `select`, and a stored corpus that covers them with `corpus`. The evaluator then skips atoms within that corpus (§2.1). Which sets of policies get a corpus in advance, and what the orchestrator does when no stored corpus covers a request's policies, are open (§5 #1). The orchestrator does not run W1 on the request path (`decisions/0027` item 3).
 
 **Offers are selected like any other policy.** A store holds offers as well as agreements, and a verdict over an offer says what its terms permit, not that it has been accepted (`due2-workflows.md` §6.4, `decisions/0031`). Accepting an offer, such as by signing a contract, is a separate step outside the evaluator.
+
+**A replaced policy is never selected.** A policy with `dct:isReplacedBy` is void, and its replacement is the policy to process (ODRL IM §2.8). `select` never returns a policy that names a replacement, and returns the replacement wherever it may apply. W1 rejects a replaced policy that reaches it (`ReplacedPolicy`, `decisions/0033`), because W1 never dereferences an IRI and so cannot fetch the replacement itself (`odrl-compound-to-atomic-normalization.md` §3).
 
 **Selection must over-select.** `decide` reads only the policies in its corpus, so choosing that corpus is part of the decision's soundness. Suppose policy A permits reading dataset D and policy B prohibits it. Over both, the verdict is `Deny`; over A alone, it is `Permit`. Prohibition monotonicity (L5, `due2-workflows.md` §8) says only that adding B cannot raise the verdict, not that a corpus may leave B out.
 

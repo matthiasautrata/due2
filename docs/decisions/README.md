@@ -27,7 +27,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0017](0017-empty-logical-constraint-is-malformed.md) | A logical constraint over the empty list is malformed | 2026-10-17 | In force |
 | [0018](0018-each-member-bears-a-collection-duty.md) | Each member bears a duty whose bearer is a party collection | 2026-10-18 | In force |
 | [0019](0019-pending-basis-under-unknowns.md) | A `Pending` basis under unknowns is checked only for its kinds | 2026-10-18 | Amended: 0026 answers its question on the listed frontier |
-| [0020](0020-vocabulary-defined-by-odrl-a-profile-or-the-policy.md) | A vocabulary term is defined by ODRL, a declared profile, or the policy itself | 2026-10-18 | In force |
+| [0020](0020-vocabulary-defined-by-odrl-a-profile-or-the-policy.md) | A vocabulary term is defined by ODRL, a declared profile, or the policy itself | 2026-10-18 | Amended: item 5 is reversed by 0033 |
 | [0021](0021-formalisation-follows-cedar.md) | Formalisation follows Cedar: an executable model, proofs, and differential testing | 2026-10-19 | Amended: the search over clingo-i covers M and W; a note corrects the #25 example; the prover spike is parked, and 0027 answers item 7 |
 | [0022](0022-repeated-logical-constraint-member.md) | A repeated member of a logical constraint is malformed | 2026-10-22 | In force |
 | [0023](0023-completion-key-includes-concept-reading.md) | The completion key includes the concept reading | 2026-10-23 | In force |
@@ -40,3 +40,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0030](0030-a-re-evaluation-moves-the-request-time.md) | A re-evaluation asks at its own time | 2026-10-24 | In force |
 | [0031](0031-a-permit-is-the-answer-of-the-terms.md) | A verdict is the answer of the terms supplied | 2026-10-24 | In force |
 | [0032](0032-an-instance-records-whether-its-deadline-passed.md) | An instance records whether its deadline passed; a grant instance is keyed on its binding | 2026-10-24 | In force |
+| [0033](0033-a-replaced-policy-and-an-unrecognised-profile-are-rejected.md) | A replaced policy and an unrecognised profile are rejected | 2026-10-24 | In force |

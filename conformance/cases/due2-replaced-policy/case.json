@@ -1,0 +1,16 @@
+{
+  "case": "due2-replaced-policy",
+  "source": "due2-native: a policy that names its replacement with dct:isReplacedBy",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2: dct:isReplacedBy is metadata the IM lists (IM 2.8). But it is the one metadata term with a processing rule: the replaced policy is void, and the processor MUST process the replacement. W1 does not follow the link, since it reads only its input graph (odrl-compound-to-atomic-normalization.md §3); the policy store selects the replacement instead (due2-platform.md §2.3). A replaced policy that reaches W1 would otherwise be evaluated as current (decisions/0033).",
+  "prefixes": {
+    "dct": "http://purl.org/dc/terms/",
+    "ex": "http://example.com/"
+  },
+  "expected_rejection": {
+    "codes": ["ReplacedPolicy"],
+    "why": "ex:licence-v1 names ex:licence-v2 with dct:isReplacedBy, so it is void (IM 2.8, decisions/0033 #1). W1 rejects it in stage 1, and nothing is evaluated."
+  }
+}

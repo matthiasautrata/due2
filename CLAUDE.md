@@ -44,7 +44,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 
 1. **The external review's findings** (#118, milestone *Review 2026-10-24*): #109 to #117, in that order, each decision settled with a record and a spec edit. They come first because #37's vectors and #38 would otherwise encode the faults.
 2. **The W2/W3 evaluator** (`decisions/0027`; its language is #104, Kotlin leading): relation-level vectors (#37; their format and the port schema are in `conformance/README.md` and `schema/`) and the brute-force W3 (#38), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4. Record the `ways-of-working.md` §10.4 measurables for the agent workload before any performance work.
-3. **W1**, the normaliser, in Python, whose 29 negative cases wait for it.
+3. **W1**, the normaliser, in Python, whose 31 negative cases wait for it.
 4. **Documentation house-cleaning (#83)**, interleaved.
 
 Parked: the prover spike, Lean on M (#87), and `Den` in the prover (#8), until the evaluator reaches production (`decisions/0021`, amendment of 2026-10-24). The claims' evidence meanwhile is the Alloy models (#84) and the search over clingo-i (#85). clingo-i follows `decisions/0026` with #103.

@@ -156,8 +156,8 @@ class Interpreter:
 
         Raises:
             Declined: The vector uses something the spike does not read.
-            ValueError: The vector is malformed, names an unknown profile, or the policy is
-                not admissible.
+            ValueError: The vector is malformed, or the policy is not admissible, which includes
+                naming a profile with no module (`UnrecognisedProfile`).
             RuntimeError: The program has no model, so it is wrong.
         """
         text = self.facts(vector)
@@ -224,7 +224,8 @@ class Interpreter:
         """The vector as the program's input facts (DESIGN.md § Input facts), one per line.
 
         Raises:
-            ValueError: The vector is malformed or names an unknown profile.
+            ValueError: The vector is malformed, or names a profile with no module, which is
+                not admissible (`UnrecognisedProfile`).
         """
         prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
         graph = flatten.parse(as_str(vector["policy"], "policy"))
@@ -235,7 +236,8 @@ class Interpreter:
         layers: dict[str, Symbol] = {path: Function("core") for path in self._core}
         for iri in flatten.profiles(graph):
             if iri not in self._profiles:
-                raise ValueError(f"unknown profile {iri}")
+                # IM 2.2 §3.2: a processor that does not recognise a profile stops.
+                raise ValueError(f"not admissible: UnrecognisedProfile at {iri}")
             for path in self._profiles[iri]:
                 layers.setdefault(path, Function("module", [String(iri)]))
             facts.append(Function("selected_profile", [String(iri)]))

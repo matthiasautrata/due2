@@ -35,3 +35,7 @@ This is alternative B of #78; the others are listed under Alternatives.
 ## Consequences
 
 The corpus and the vendored DPROD examples pass unchanged. Two negative cases pin the reading: `due2-undeclared-action` (an `ex:` action that nothing defines) and `due2-undeclared-cc-action` (`cc:Distribution`). Both are `odrl22_valid: false`. The first also fails the restored action class check. The DALICC licenses now fail both checkers with `UndeclaredProfile`. The strict reading of IM §2.1 also rejects the `cc:` case, since the `cc:` terms are not in the Core Vocabulary. The departure from IM §2.1's letter is recorded in `odrl22-conformance.md` §3: Common Vocabulary terms and self-typed terms are admitted without a profile.
+
+## Amendment (2026-10-24, an unrecognised profile)
+
+`decisions/0033` reverses item 5. A policy that declares a profile due2 has no module for is rejected at normalisation with `UnrecognisedProfile`, because ODRL IM §3.2 requires a processor that does not recognise a profile to stop, and because such a profile may declare what changes a verdict, such as a conflict default. `tools/check_corpus.py` raises the error where it warned. The vocabulary check of item 2 still does not run for such a policy, since the profile may define any term, so `tools/check_odrl22.py` can still find it valid ODRL 2.2. The rest of the decision stands.

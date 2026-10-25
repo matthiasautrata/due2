@@ -8,7 +8,7 @@ from clingo import Control
 
 from clingo_i.interpret import PROGRAM_FILES, VARIABLE_CAP, Interpreter, load_programs
 from clingo_i.json_types import Json, Obj, as_obj
-from tests.conftest import INIT, PREFIXES, PROF, vector
+from tests.conftest import INIT, POLICY, PREFIXES, PROF, vector
 
 ODRL = "http://www.w3.org/ns/odrl/2/"
 EX = "https://example.org/"
@@ -822,6 +822,24 @@ def test_empty_connective_rejected(interpreter: Interpreter, constraint: str, ru
     """
     reply = interpreter.reply(vector(constrained(constraint, bound("x"), rule=rule)))
     assert "error" in reply and "MalformedConstraint" in str(reply["error"]), reply
+
+
+@pytest.mark.parametrize(
+    ("triple", "code"),
+    [
+        ("ex:p dct:isReplacedBy ex:p2 .", "ReplacedPolicy"),
+        ("ex:p odrl:profile ex:unshipped .", "UnrecognisedProfile"),
+    ],
+)
+def test_policy_rejections(interpreter: Interpreter, triple: str, code: str) -> None:
+    """A replaced policy (IM 2.2 §2.8) and an unrecognised profile (IM 2.2 §3.2) are rejected.
+
+    Without the first rule, `dct:isReplacedBy` would be an annotation, and the void policy would
+    give its own `Permit`. Without the code in the second error, a caller could not tell an
+    unrecognised profile from a malformed vector.
+    """
+    reply = interpreter.reply(vector(POLICY + triple + "\n"))
+    assert "error" in reply and code in str(reply["error"]), reply
 
 
 @pytest.mark.parametrize(

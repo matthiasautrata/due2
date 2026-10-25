@@ -1,0 +1,22 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <http://example.com/> .
+
+# A negative case: a policy that declares a profile due2 has no module for.
+# ODRL IM §3.2: a processor that does not recognise a profile MUST stop. The
+# profile may declare what due2 would need to read, here a conflict default
+# for the permission and the prohibition below, which state none.
+
+ex:policy a odrl:Set ;
+    odrl:profile <http://example.com/profiles/geo> ;
+    odrl:permission ex:read ;
+    odrl:prohibition ex:no-export .
+
+ex:read a odrl:Permission ;
+    odrl:action odrl:use ;
+    odrl:target ex:dataset ;
+    odrl:assignee ex:alice .
+
+ex:no-export a odrl:Prohibition ;
+    odrl:action odrl:distribute ;
+    odrl:target ex:dataset ;
+    odrl:assignee ex:alice .

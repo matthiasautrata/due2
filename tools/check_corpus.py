@@ -29,7 +29,7 @@ from typing import Any
 
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
-from rdflib.namespace import RDF, RDFS, SKOS, XSD
+from rdflib.namespace import DCTERMS, RDF, RDFS, SKOS, XSD
 from rdflib.term import Node
 
 ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
@@ -875,7 +875,8 @@ def check_policy(
 ) -> Used:
     """`policies` are the graph's policy nodes. `defined` is the vocabulary the
     policy may use (decisions/0020), or None when a selected profile has no
-    module and so may define any term."""
+    module: the policy is then rejected (UnrecognisedProfile), and the profile
+    may define any term, so the vocabulary is not checked (decisions/0033)."""
     used: Used = {}
     declared = {str(p) for p in g.objects(policy, ODRL.profile)}
     for ns, label in NAMESPACED_PROFILES.items():
@@ -892,6 +893,9 @@ def check_policy(
                 f"{q(g, t)}: defined by neither the ODRL vocabulary (odrl: namespace), "
                 "a selected profile, nor the policy",
             )
+    if (policy, DCTERMS.isReplacedBy, None) in g:
+        # IM 2.8: the policy is void; the policy store selects its replacement.
+        r.diag("ReplacedPolicy", f"{q(g, policy)}: dct:isReplacedBy; evaluate the replacement")
     if isinstance(policy, BNode) and not list(g.objects(policy, ODRL.uid)):
         r.diag("MissingPolicyIdentity", f"{q(g, policy)}: policy has no identity (IRI or odrl:uid)")
     for node in sorted(set(g.subjects(ODRL.uid, None)), key=str):
@@ -991,7 +995,8 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
         modules: list[Graph] = []
         for p in sel:
             if p not in MODULES:
-                r.warn(f"profile {p} has no due2 binding module; its terms are metadata")
+                # IM 3.2: a processor that does not recognise a profile stops.
+                r.diag("UnrecognisedProfile", f"{q(g, policy)}: profile <{p}> has no due2 module")
             elif MODULES[p]:
                 modules.append(parse(MODULES[p]))
         core = parse(CORE)
