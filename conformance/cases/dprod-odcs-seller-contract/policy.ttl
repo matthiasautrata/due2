@@ -237,7 +237,9 @@ rule:ocs-no-env a odrl:Prohibition ;
 
 # --- domain vocabulary (from the source file) ---
 ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
-ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:conformTo a odrl:Action ; rdfs:label "conform to" ; odrl:includedIn odrl:use .
 ex:notify a odrl:Action ; rdfs:label "notify" ; odrl:includedIn odrl:inform .
 ex:report a odrl:Action ; rdfs:label "report" ; odrl:includedIn odrl:inform .
 

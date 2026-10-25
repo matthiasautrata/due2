@@ -24,5 +24,7 @@ ex:payPerUse a odrl:Duty ;
     odrl:target ex:LicenceFee, ex:DataFee ;
     due2:instanceScope due2:grant .
 
-ex:downloadReport a odrl:Action .
-ex:pay a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:downloadReport a odrl:Action ; odrl:includedIn odrl:use .
+ex:pay a odrl:Action ; odrl:includedIn odrl:use .

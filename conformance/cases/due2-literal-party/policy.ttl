@@ -1,0 +1,17 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# A negative case: an Agreement whose parties are string literals. ODRL IM §2.3
+# and §2.6: the value of a party function is a Party, a resource with an IRI.
+# The literal "Bob" is a name, and nothing ties it to the assignee a request
+# names, so the permission could never be matched (#117).
+
+ex:licence a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:read .
+
+ex:read a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:dataset ;
+    odrl:assigner "Alice" ;
+    odrl:assignee "Bob" .

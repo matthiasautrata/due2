@@ -42,8 +42,10 @@ ex:homeLoanAccessLogDuty a odrl:Duty ;
 
 ex:AnyAsset a odrl:AssetCollection .
 
-ex:read a odrl:Action .
-ex:logAccess a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:read a odrl:Action ; odrl:includedIn odrl:use .
+ex:logAccess a odrl:Action ; odrl:includedIn odrl:use .
 
 ex:Classification a rdfs:Class .
 ex:HomeLoan a ex:Classification .

@@ -23,7 +23,9 @@ ex:distributeSafeDerivative a odrl:Permission ;
         odrl:rightOperand true
     ] .
 
-ex:distribute a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:distribute a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path asset.assessment.nonReconstructing, flattened onto the state node for the target.
 ex:nonReconstructing a odrl:LeftOperand ;

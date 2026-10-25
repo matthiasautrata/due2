@@ -28,7 +28,9 @@ ex:ownerPrivilege a odrl:Permission ;
         odrl:rightOperand true
     ] .
 
-ex:read a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:read a odrl:Action ; odrl:includedIn odrl:use .
 
 ex:requesterIsDataOwner a odrl:LeftOperand ;
     rdfs:comment "True when the request subject equals asset.dataOwner of the target; computed by the assembler." ;

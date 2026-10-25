@@ -31,7 +31,9 @@ ex:erasePersonalDataDuty a odrl:Duty ;
         odrl:rightOperand true
     ] .
 
-ex:erase a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:erase a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path asset.erasureRequestValid: a fact about the requested asset,
 # flattened onto the state node.

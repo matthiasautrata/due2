@@ -14,8 +14,9 @@
 #     not policy input (due2-profiles.md §8.1); the DPROD duty state Σ each scenario
 #     assumes is stated in case.json;
 #   - explicit odrl:conflict odrl:prohibit, equal to the DPROD profile default;
-#   - odrl:display, odrl:derive, odrl:distribute includedIn odrl:use, and odrl:inform
-#     (the parent of ex:notify and ex:report), are taken from the ODRL vocabulary;
+#   - odrl:derive and odrl:distribute includedIn odrl:use, and odrl:inform (the parent of
+#     ex:notify and ex:report), are restated from the ODRL vocabulary (odrl:display is
+#     included in odrl:play there, so not restated);
 #   - dprod:acceptsOffer is kept; the offer it names is a separate policy and not in this file.
 
 ############################# Domain vocabulary (from the example) #########################
@@ -33,7 +34,6 @@ ex:report a odrl:Action, skos:Concept ;
   rdfs:label "report" ;
   odrl:includedIn odrl:inform .
 
-odrl:display odrl:includedIn odrl:use .
 odrl:derive odrl:includedIn odrl:use .
 odrl:distribute odrl:includedIn odrl:use .
 

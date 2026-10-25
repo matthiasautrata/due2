@@ -14,4 +14,6 @@ ex:readDataset a odrl:Permission ;
     odrl:action ex:read ;
     odrl:target ex:Dataset .
 
-ex:read a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:read a odrl:Action ; odrl:includedIn odrl:use .

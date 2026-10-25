@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.17
+**Status:** Draft v0.18
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.17** (2026-10-24, `decisions/0033`, #115): §2 rejects a declared profile that due2 has no module for. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.18** (2026-10-24, `decisions/0034`, #117): §5 rejects a logical constraint with more than one operand property. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -159,6 +159,8 @@ Mixed-component durations (months with days) and floating-point values are rejec
 ## 5. Logical connectives **[D]**
 
 `odrl:and`, `odrl:or`, `odrl:xone`, and `dprod:not`. ODRL has no negation; DPROD adds it with one operand. `odrl:andSequence` is rejected at normalisation (`UnsupportedConnective`): it carries ordering semantics and is not flattened into `and`.
+
+A logical constraint has exactly one operand property (ODRL IM §2.5.2). One with two, `odrl:and` and `odrl:or` on the same node for example, is rejected (`MalformedConstraint`, `decisions/0034`): ODRL does not say whether the node means the conjunction of the two or their disjunction, and the two readings give different verdicts. `odrl:andSequence` counts as an operand property here, although it is rejected on its own too.
 
 A connective's members may be one RDF list or repeated values, as a set right operand's may (§4). A connective over the empty list, `odrl:and ()` for example, is rejected (`MalformedConstraint`, `decisions/0017`): ODRL gives it no meaning, and the empty conjunction's `T` or the empty disjunction's `F` would decide the rule without looking at the request.
 

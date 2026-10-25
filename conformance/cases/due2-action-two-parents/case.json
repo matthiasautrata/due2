@@ -1,0 +1,17 @@
+{
+  "case": "due2-action-two-parents",
+  "source": "due2-native: a policy restates odrl:display under odrl:use (external review R07, #117)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: the ODRL vocabulary includes odrl:display in odrl:play, and the policy adds odrl:use, so odrl:display has two odrl:includedIn values where IM 2.4 allows one. A policy's edges add to the vocabulary's; they never replace them. Two corpus cases, dprod-divergences and dprod-quant-market-data, stated this edge until #117.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidActionHierarchy"
+    ],
+    "why": "With the vocabulary's edge, odrl:display is included in both odrl:play and odrl:use (IM 2.4, decisions/0034). W1 rejects the policy in stage 1."
+  }
+}

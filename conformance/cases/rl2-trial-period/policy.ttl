@@ -39,8 +39,10 @@ ex:readPrivilege a odrl:Permission ;
     odrl:action ex:read ;
     odrl:target ex:Application .
 
-ex:execute a odrl:Action .
-ex:read a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:execute a odrl:Action ; odrl:includedIn odrl:use .
+ex:read a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 core currentDateTime (state.Clock = evaluationTime): due2 decision time.
 ex:currentDateTime a odrl:LeftOperand ;

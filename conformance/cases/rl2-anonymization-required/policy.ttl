@@ -23,7 +23,9 @@ ex:processAnonymizedData a odrl:Permission ;
         odrl:rightOperand true
     ] .
 
-ex:process a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:process a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path asset.anonymization.approved, flattened onto the state node for the requested asset.
 ex:anonymized a odrl:LeftOperand ;

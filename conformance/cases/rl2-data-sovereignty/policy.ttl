@@ -29,8 +29,10 @@ ex:usageRecordDuty a odrl:Duty ;
     odrl:action ex:submitUsageRecord ;
     odrl:target ex:ProductionData .
 
-ex:access a odrl:Action .
-ex:submitUsageRecord a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:access a odrl:Action ; odrl:includedIn odrl:use .
+ex:submitUsageRecord a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path context.purpose: assembler-supplied snapshot context, hence state source.
 ex:purpose a odrl:LeftOperand ;

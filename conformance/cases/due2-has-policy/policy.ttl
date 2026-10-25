@@ -1,0 +1,18 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. The asset names its policy
+# with odrl:hasPolicy, and the permission names no target. ODRL IM §2.2.3: the
+# asset "MUST be inferred to be the target Asset of all the Rules of that
+# Policy", so ex:dataset is ex:read's target. W1 infers nothing beyond the
+# declared edges, so it would see a permission with no target (#117).
+
+ex:dataset odrl:hasPolicy ex:licence .
+
+ex:licence a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:read .
+
+ex:read a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:assignee ex:alice .

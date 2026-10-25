@@ -5,7 +5,8 @@ Information Model 2.2, every constraint cited) over policy files, with the
 official ODRL 2.2 vocabulary and due2's profile modules merged for class
 hierarchy and term typing. Node types the vocabulary entails (rdfs:range of
 odrl:permission etc., rdfs:domain of odrl:leftOperand, the connective of a
-Logical Constraint) are added, since the IM leaves them implicit. Otherwise
+Logical Constraint) are added, since the IM leaves them implicit, and so is
+the target that odrl:hasPolicy entails (IM 2.2.3). Otherwise
 policies are validated *as written* — no preprocessing: compact form (IM 2.7.1), list-valued right operands for
 set-based operators (IM 2.5.1), and list-form logical constraints (IM 2.5.2)
 are all checked natively.
@@ -44,7 +45,7 @@ from pathlib import Path
 
 # pyshacl's own annotations leave parts of validate's return type unknown.
 from pyshacl import validate  # pyright: ignore[reportUnknownVariableType]
-from rdflib import BNode, Graph, Namespace, URIRef
+from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF
 from rdflib.term import Node
 
@@ -212,10 +213,20 @@ CONNECTIVES = [
 
 
 def entailed_types(alone: Graph) -> Graph:
+    """The triples the IM leaves implicit and the vocabulary or the IM entails.
+
+    A literal gets no type: it is a value, never an Asset or a Party, and
+    EntityValueShape reports it where a resource belongs. IM 2.2.3: an Asset
+    with odrl:hasPolicy P "MUST be inferred to be the target Asset of all the
+    Rules of that Policy", which a policy-level target states, since IM 2.7.1
+    shares it with every Rule."""
     t = Graph()
     for p, c in RANGE_TYPES.items():
         for o in alone.objects(None, p):
-            t.add((o, RDF.type, c))
+            if not isinstance(o, Literal):
+                t.add((o, RDF.type, c))
+    for asset, policy in alone.subject_objects(ODRL.hasPolicy):
+        t.add((policy, ODRL.target, asset))
     for o in alone.objects(None, ODRL.action):
         if isinstance(o, BNode):
             t.add((o, RDF.type, ODRL.Action))
@@ -252,8 +263,19 @@ def check_file(
     return name, problems
 
 
+# Vendored files that are not valid ODRL 2.2, and why. They cannot be edited
+# (conformance/README.md), so they are expected to fail, like a negative case.
+VENDORED_INVALID = {
+    "profiles/vendor/dprod/examples/baseline.ttl": "IM 2.4: ex:conformTo has no includedIn",
+    "profiles/vendor/dprod/examples/odcs.ttl": "IM 2.4: ex:conformTo has no includedIn",
+}
+
+
 def expects_invalid(path: Path) -> bool:
-    """A corpus case marked as not ODRL 2.2 (conformance/README.md, negative cases)."""
+    """A corpus case marked as not ODRL 2.2 (conformance/README.md, negative
+    cases), or a vendored file in VENDORED_INVALID."""
+    if str(path.resolve().relative_to(ROOT)) in VENDORED_INVALID:
+        return True
     case = path.parent / "case.json"
     if path.name != "policy.ttl" or not case.exists():
         return False
@@ -310,11 +332,12 @@ def main() -> int:
             if problems:
                 xfail += 1
                 if not args.quiet:
-                    print(f"xfail {name}  (odrl22_valid: false; {len(problems)} violations)")
+                    print(f"xfail {name}  (expected invalid; {len(problems)} violations)")
             else:
                 bad += 1
                 print(
-                    f"FAIL  {name}\n      case.json says odrl22_valid: false, but the policy conforms"
+                    f"FAIL  {name}\n      expected invalid (odrl22_valid: false or VENDORED_INVALID), "
+                    "but the policy conforms"
                 )
             continue
         if problems:

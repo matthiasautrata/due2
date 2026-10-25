@@ -42,8 +42,10 @@ ex:deleteAfterRetention a odrl:Duty ;
     ] ;
     dprod:deadline "2027-01-02T00:00:00Z"^^xsd:dateTime .
 
-ex:retain a odrl:Action .
-ex:delete a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:retain a odrl:Action ; odrl:includedIn odrl:use .
+ex:delete a odrl:Action ; odrl:includedIn odrl:use .
 
 ex:currentDateTime a odrl:LeftOperand ;
     dprod:operandSource dprod:contextSource ;

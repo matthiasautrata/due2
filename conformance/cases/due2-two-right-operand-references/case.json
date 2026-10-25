@@ -1,0 +1,17 @@
+{
+  "case": "due2-two-right-operand-references",
+  "source": "due2-native: an odrl:eq constraint with two odrl:rightOperandReference values (external review R07, #117)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: odrl:rightOperandReference is one IRI, or a list for a set-based operator (IM 2.5.1), and odrl:eq is not set-based. odrl22-shape.ttl accepted it before #117. due2 rejects any rightOperandReference in stage 1, since resolving it would dereference an IRI (odrl-compound-to-atomic-normalization.md §3), so the policy is rejected for that whatever the count; the case pins the ODRL layer.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "UnsupportedConstruct"
+    ],
+    "why": "ex:inRegion uses odrl:rightOperandReference, which due2 does not admit (odrl-compound-to-atomic-normalization.md §3). W1 rejects the policy in stage 1, so the stage-2 MalformedConstraint for its missing odrl:rightOperand is not reported."
+  }
+}

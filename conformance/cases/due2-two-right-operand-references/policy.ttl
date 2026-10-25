@@ -1,0 +1,28 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: an odrl:eq constraint with two odrl:rightOperandReference
+# values. ODRL IM §2.5.1: a reference is one IRI, or a list of them for a
+# set-based operator; eq compares with one value, so two have no reading.
+# due2 rejects every rightOperandReference (it would dereference an IRI), so
+# the policy is both invalid ODRL and outside due2's fragment (#117).
+
+ex:licencePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:read .
+
+ex:read a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:dataset ;
+    odrl:constraint ex:inRegion .
+
+ex:inRegion a odrl:Constraint ;
+    odrl:leftOperand ex:region ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperandReference ex:regionListA, ex:regionListB .
+
+ex:region a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:requestRegion .

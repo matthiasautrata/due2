@@ -36,9 +36,11 @@ ex:notifyIncidentDuty a odrl:Duty ;
         odrl:rightOperand true
     ] .
 
-ex:access a odrl:Action .
-ex:recordUsage a odrl:Action .
-ex:notifyIncident a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:access a odrl:Action ; odrl:includedIn odrl:use .
+ex:recordUsage a odrl:Action ; odrl:includedIn odrl:use .
+ex:notifyIncident a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path global.securityIncident.confirmed, flattened onto the state node.
 ex:securityIncident a odrl:LeftOperand ;

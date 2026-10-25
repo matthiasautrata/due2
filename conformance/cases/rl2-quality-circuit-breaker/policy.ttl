@@ -49,8 +49,10 @@ ex:reportIncidentDuty a odrl:Duty ;
         odrl:rightOperand "0.05"^^xsd:decimal
     ] .
 
-ex:read a odrl:Action .
-ex:report a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:read a odrl:Action ; odrl:includedIn odrl:use .
+ex:report a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path asset.quality.errorRate, flattened onto the state node.
 ex:errorRate a odrl:LeftOperand ;

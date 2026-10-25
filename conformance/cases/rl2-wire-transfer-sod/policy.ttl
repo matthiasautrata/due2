@@ -23,5 +23,7 @@ ex:approvalDuty a odrl:Duty ;
     odrl:action ex:approve ;
     odrl:target ex:WireTransfer .
 
-ex:execute a odrl:Action .
-ex:approve a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:execute a odrl:Action ; odrl:includedIn odrl:use .
+ex:approve a odrl:Action ; odrl:includedIn odrl:use .

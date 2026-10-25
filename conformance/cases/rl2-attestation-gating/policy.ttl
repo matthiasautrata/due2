@@ -44,8 +44,10 @@ ex:attestConformance a odrl:Duty ;
     ] ;
     dprod:deadline "2027-01-01T00:00:00Z"^^xsd:dateTime .
 
-ex:export a odrl:Action .
-ex:attest a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:export a odrl:Action ; odrl:includedIn odrl:use .
+ex:attest a odrl:Action ; odrl:includedIn odrl:use .
 
 # When the attestation was performed: the witness's occurred_at inside a duty.
 ex:performedAt a odrl:LeftOperand ;

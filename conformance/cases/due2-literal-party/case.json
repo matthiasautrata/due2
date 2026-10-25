@@ -1,0 +1,17 @@
+{
+  "case": "due2-literal-party",
+  "source": "due2-native: an Agreement whose parties are string literals (external review R07, #117)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: the value of a party function is a Party (IM 2.3, 2.6), and odrl22-shape.ttl requires an IRI or a blank node there. Read as a name, \"Bob\" would match no assignee a request names, so the permission would never apply definitely. The same holds for odrl:target and odrl:output, whose values are Assets (IM 2.2).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "LiteralEntity"
+    ],
+    "why": "ex:read's odrl:assigner and odrl:assignee are the literals \"Alice\" and \"Bob\", and a party is a resource (IM 2.3, 2.6; decisions/0034). W1 rejects the policy in stage 1."
+  }
+}

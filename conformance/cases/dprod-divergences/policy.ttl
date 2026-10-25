@@ -16,14 +16,15 @@
 #     declared in examples/data-use-policy.ttl (no rdfs:range);
 #   - the offer's obligations are left out: they cannot affect access in either evaluator
 #     (see dprod-quant-market-data);
-#   - explicit odrl:conflict odrl:prohibit (profile default); ODRL includedIn edges added.
+#   - explicit odrl:conflict odrl:prohibit (profile default);
+#   - the ODRL vocabulary's includedIn edges for odrl:derive and odrl:distribute are
+#     restated (odrl:display is included in odrl:play there, so not restated).
 
 ############################# Domain vocabulary (from the examples) #########################
 
 ex:nonDisplay a odrl:Action, skos:Concept ;
   rdfs:label "non-display" ;
   odrl:includedIn odrl:use .
-odrl:display odrl:includedIn odrl:use .
 odrl:derive odrl:includedIn odrl:use .
 odrl:distribute odrl:includedIn odrl:use .
 

@@ -1,0 +1,17 @@
+{
+  "case": "due2-has-policy",
+  "source": "due2-native: an asset names its policy with odrl:hasPolicy (external review R07, #117)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Valid ODRL 2.2: IM 2.2.3 infers ex:dataset as the target of every Rule of ex:licence, and tools/check_odrl22.py applies that inference before validating. due2 does not: W1 reads only the declared edges (odrl-compound-to-atomic-normalization.md §3), so it would drop the target. The author states it as odrl:target on the Policy or the Rule instead (decisions/0034).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MissingTarget",
+      "UnsupportedConstruct"
+    ],
+    "why": "ex:dataset names ex:licence with odrl:hasPolicy, which due2 does not admit, and without that inference ex:read has no target. Both are stage-1 errors, so W1 reports both (decisions/0034)."
+  }
+}

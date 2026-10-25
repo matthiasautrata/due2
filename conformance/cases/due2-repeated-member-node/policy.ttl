@@ -43,7 +43,9 @@ ex:usOnly a odrl:Constraint ;
     odrl:operator odrl:eq ;
     odrl:rightOperand true .
 
-ex:export a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:export a odrl:Action ; odrl:includedIn odrl:use .
 
 ex:euDomiciled a odrl:LeftOperand ;
     dprod:operandSource dprod:stateSource ;

@@ -1,0 +1,17 @@
+{
+  "case": "due2-and-or",
+  "source": "due2-native: one logical constraint with both odrl:and and odrl:or (external review R07, #117)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: a logical constraint has exactly one operand property (IM 2.5.2). Read as a conjunction of its two operands, ex:window is ex:fromStart and ex:untilEnd; read as a disjunction, ex:fromStart or ex:untilEnd. A report published on 2027-03-01 satisfies ex:fromStart only, so the two readings give F and T. clingo-i declined it before this case; tools/check_corpus.py admitted it.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "ex:window has both odrl:and and odrl:or, and a logical constraint has one operand property (IM 2.5.2, due2-profiles.md §5). W1 rejects the policy with MalformedConstraint, in stage 2."
+  }
+}

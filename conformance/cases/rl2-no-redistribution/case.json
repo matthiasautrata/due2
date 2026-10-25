@@ -62,7 +62,7 @@
         "evidence": [], "activation": {}, "closure": []
       },
       "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "odrl:use ⊑ ex:redistribute is F (no includedIn edge), so the prohibition does not apply, and the agreement grants no permission for use." }
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "odrl:use ⊑ ex:redistribute is F (ex:redistribute is included in odrl:use, not the reverse), so the prohibition does not apply, and the agreement grants no permission for use." }
     }
   ]
 }

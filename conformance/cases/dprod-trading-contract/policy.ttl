@@ -74,7 +74,9 @@ duty:mkt-schema-2026-001 a odrl:Duty ;
 
 # --- domain vocabulary (from the source file) ---
 ex:deliver a odrl:Action ; rdfs:label "deliver" ; odrl:includedIn odrl:distribute .
-ex:conformTo a odrl:Action ; rdfs:label "conform to" .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:conformTo a odrl:Action ; rdfs:label "conform to" ; odrl:includedIn odrl:use .
 ex:nonDisplay a odrl:Action ; rdfs:label "non-display" ; odrl:includedIn odrl:use .
 
 ex:recipientType a odrl:LeftOperand ;

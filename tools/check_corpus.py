@@ -30,7 +30,7 @@ from typing import Any
 import rdflib
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
-from rdflib.namespace import DCTERMS, RDF, RDFS, SKOS, XSD
+from rdflib.namespace import DCTERMS, OWL, RDF, RDFS, SKOS, XSD
 from rdflib.term import Node
 
 # Literals keep the lexical form as written, for every graph this process parses: the flag is
@@ -527,6 +527,9 @@ def check_constraint(
                 f"{q(g, c)}: {label} is not admitted",
             )
     conns = [p for p in CONNECTIVES if (c, p, None) in g]
+    if len(conns) + ((c, ODRL.andSequence, None) in g) > 1:
+        # IM 2.5.2: one operand property; two would leave the connective unstated.
+        r.diag("MalformedConstraint", f"{q(g, c)}: more than one operand property")
     if conns:
         for p in conns:
             for o in g.objects(c, p):
@@ -807,11 +810,11 @@ def odrl_terms() -> frozenset[Node]:
     return frozenset(t for t in typed(parse([W3C_VOCABULARY])) if str(t).startswith(str(ODRL)))
 
 
-def vocabulary_terms(g: Graph) -> set[Node]:
-    """The IRIs in vocabulary positions; a refined action names its action by
-    rdf:value (IM 2.5.4)."""
+def vocabulary_terms(g: Graph, positions: tuple[URIRef, ...] = VOCABULARY_POSITIONS) -> set[Node]:
+    """The IRIs in `positions`; a refined action names its action by rdf:value
+    (IM 2.5.4)."""
     terms: set[Node] = set()
-    for p in VOCABULARY_POSITIONS:
+    for p in positions:
         for o in g.objects(None, p):
             if isinstance(o, BNode) and p == ODRL.action:
                 o = g.value(o, RDF.value)
@@ -839,6 +842,12 @@ ASSET_PARTY_EDGES = (
     ODRL.consentingParty,
     ODRL.contractingParty,
     ODRL.trackingParty,
+    ODRL.attributingParty,
+    ODRL.compensatingParty,
+    ODRL.consentedParty,
+    ODRL.contractedParty,
+    ODRL.informingParty,
+    ODRL.trackedParty,
 )
 
 
@@ -850,12 +859,65 @@ def asset_party_nodes(g: Graph) -> set[Node]:
     return nodes
 
 
-def reachable(g: Graph, root: Node, stop: set[Node]) -> set[Node]:
+ROOT_ACTIONS = {ODRL.use, ODRL.transfer}
+
+
+@cache
+def deprecated_actions() -> frozenset[Node]:
+    """The actions the official vocabulary deprecates. They have no odrl:includedIn,
+    so IM 2.4 cannot hold for them, and check_actions exempts them."""
+    v = parse([W3C_VOCABULARY])
+    return frozenset(
+        s
+        for s, o in v.subject_objects(OWL.deprecated)
+        if o == Literal(True) and (s, RDF.type, ODRL.Action) in v
+    )
+
+
+def check_actions(g: Graph, hierarchy: Graph, defined: frozenset[Node], r: Report) -> None:
+    """IM 2.4: an action other than use and transfer has exactly one odrl:includedIn,
+    of type Action, and following odrl:includedIn from it reaches use or transfer.
+
+    Checks the actions the policy uses or defines, and their ancestors, in
+    `hierarchy`: the policy with the core, the selected modules, and the official
+    vocabulary, so that an edge restated in the policy adds to the vocabulary's
+    rather than replacing it. A term outside `defined` is UndeclaredProfile
+    instead, and an action the vocabulary deprecates is exempt."""
+    todo = vocabulary_terms(g, (ODRL.action,))
+    todo |= {s for s in g.subjects(RDF.type, ODRL.Action) if isinstance(s, URIRef)}
+    seen: set[Node] = set()
+    while todo:
+        a = todo.pop()
+        if a in seen or a not in defined or a in ROOT_ACTIONS or a in deprecated_actions():
+            continue
+        seen.add(a)
+        parents = sorted(hierarchy.objects(a, ODRL.includedIn), key=str)
+        todo |= set(parents)
+        if len(parents) != 1:
+            r.diag(
+                "InvalidActionHierarchy",
+                f"{q(g, a)}: {len(parents)} odrl:includedIn values; IM 2.4 requires one",
+            )
+        for parent in parents:
+            if (parent, RDF.type, ODRL.Action) not in hierarchy:
+                r.diag(
+                    "InvalidActionHierarchy",
+                    f"{q(g, a)}: odrl:includedIn {q(g, parent)}, which is not an odrl:Action",
+                )
+        if parents and not reachable(hierarchy, a, set(), ODRL.includedIn) & ROOT_ACTIONS:
+            r.diag(
+                "InvalidActionHierarchy",
+                f"{q(g, a)}: its odrl:includedIn path reaches neither odrl:use nor odrl:transfer",
+            )
+
+
+def reachable(g: Graph, root: Node, stop: set[Node], edge: URIRef | None = None) -> set[Node]:
     """Every node that a path of triples reaches from `root`, `root` included,
-    entering no node of `stop` except `root`."""
+    entering no node of `stop` except `root`. With `edge`, only triples with that
+    predicate."""
     seen, todo = {root}, [root]
     while todo:
-        for o in g.objects(todo.pop(), None):
+        for o in g.objects(todo.pop(), edge):
             if not isinstance(o, Literal) and o not in seen:
                 seen.add(o)
                 if o not in stop:
@@ -976,6 +1038,22 @@ def check_policy(
     for node in sorted(asset_party_nodes(g), key=str):
         if (node, ODRL.refinement, None) in g:
             r.diag("UnsupportedConstruct", f"{q(g, node)}: collection refinement is not admitted")
+    # IM 2.2, 2.3, 2.6: an Asset or a Party is a resource, and a literal is not one.
+    for edge in ASSET_PARTY_EDGES:
+        for owner, node in sorted(g.subject_objects(edge), key=str):
+            if isinstance(node, Literal):
+                r.diag(
+                    "LiteralEntity",
+                    f"{q(g, owner)}: {q(g, edge)} is the literal {node.n3()}, not an IRI",
+                )
+    # IM 2.2.3 infers a target for every Rule from odrl:hasPolicy. Normalisation
+    # infers nothing beyond the declared edges, so it would drop that target.
+    for asset in sorted(g.subjects(ODRL.hasPolicy, policy), key=str):
+        r.diag(
+            "UnsupportedConstruct",
+            f"{q(g, asset)}: odrl:hasPolicy is not admitted; state the asset as odrl:target "
+            "on the Policy or its Rules",
+        )
     # The target and the assignee are what a request matches (workflows 5.2); an
     # anonymous one has a generated identity nothing can name (normalisation 3).
     for edge, field_ in ((ODRL.target, "target"), (ODRL.assignee, "assignee")):
@@ -1056,6 +1134,11 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
         used = check_policy(
             g, policy, set(policies), Bindings(g, modules, core, r), r, named, defined
         )
+        if defined is not None:
+            hierarchy = g + core + parse([W3C_VOCABULARY])
+            for m in modules:
+                hierarchy += m
+            check_actions(g, hierarchy, defined, r)
         out.append((r, used, g))
     return out
 
@@ -1088,6 +1171,39 @@ def check_rejection(case: dict[str, Any], reports: list[Report], r: Report) -> N
         r.err(f"expected rejection {sorted(set(codes))}, the policy gives {got or 'none'}")
         return
     for x in reports:
+        x.expected = [f"{m} [{c}]" for c, m in x.diagnostics]
+        x.diagnostics = []
+
+
+# Vendored upstream policies that W1 rejects, with the codes it rejects them with.
+# They are kept unmodified (conformance/README.md), so the rejection is expected.
+VENDORED_REJECTED = {
+    "profiles/vendor/dprod/examples/baseline.ttl": (
+        ["InvalidActionHierarchy"],
+        "ex:conformTo has no odrl:includedIn",
+    ),
+    "profiles/vendor/dprod/examples/odcs.ttl": (
+        ["InvalidActionHierarchy"],
+        "ex:conformTo has no odrl:includedIn",
+    ),
+}
+
+
+def check_vendored(path: Path, reports: list[Report]) -> None:
+    """A policy file in VENDORED_REJECTED: each of its policies must be rejected
+    with exactly the listed codes."""
+    try:
+        rel = path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return
+    if rel not in VENDORED_REJECTED:
+        return
+    codes, reason = VENDORED_REJECTED[rel]
+    for x in reports:
+        got = sorted(set(x.rejection()))
+        if got != sorted(codes):
+            x.err(f"vendored, expected rejection {sorted(codes)} ({reason}), gives {got or 'none'}")
+            continue
         x.expected = [f"{m} [{c}]" for c, m in x.diagnostics]
         x.diagnostics = []
 
@@ -1414,7 +1530,9 @@ def main() -> int:
             for d in sorted(x for x in p.iterdir() if x.is_dir()):
                 reports += check_case(d)
         else:
-            reports += [r for r, _, _ in check_file(p, args.profile, named=False)]
+            file_reports = [r for r, _, _ in check_file(p, args.profile, named=False)]
+            check_vendored(p, file_reports)
+            reports += file_reports
     errors = 0
     for r in reports:
         fails = r.failures()

@@ -1,0 +1,17 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# A negative case: an action with two odrl:includedIn values. The ODRL
+# vocabulary includes odrl:display in odrl:play; the policy adds odrl:use, which
+# odrl:display already reaches through odrl:play. ODRL IM §2.4 allows exactly
+# one. The policy's edge adds to the vocabulary's rather than replacing it (#117).
+
+odrl:display odrl:includedIn odrl:use .
+
+ex:licence a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:show .
+
+ex:show a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Report .

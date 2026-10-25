@@ -52,8 +52,10 @@ ex:notifyDuty a odrl:Duty ;
         odrl:rightOperand true
     ] .
 
-ex:deployChange a odrl:Action .
-ex:notifyConsumers a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:deployChange a odrl:Action ; odrl:includedIn odrl:use .
+ex:notifyConsumers a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 state.schemaChange.breaking, flattened onto the state node.
 ex:changeIsBreaking a odrl:LeftOperand ;

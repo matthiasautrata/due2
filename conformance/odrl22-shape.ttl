@@ -230,6 +230,64 @@ odrl22:ComponentConstraintShape a sh:NodeShape ;
     odrl:consentingParty, odrl:contractingParty, odrl:trackingParty ;
   sh:property [ sh:path odrl:constraint ; sh:maxCount 0 ] .
 
+# IM §2.6: the function properties relate a Rule to a Party (IM §2.3), and a
+# target or output relates it to an Asset (IM §2.2, §2.6.1). A Party or an
+# Asset is a resource, so a literal value is neither: "Alice" names no party
+# (the ODRL JSON-LD context gives these properties "@type": "@id").
+odrl22:EntityValueShape a sh:NodeShape ;
+  sh:targetSubjectsOf odrl:target, odrl:output, odrl:assigner, odrl:assignee,
+    odrl:informedParty, odrl:compensatedParty, odrl:attributedParty,
+    odrl:consentingParty, odrl:contractingParty, odrl:trackingParty,
+    odrl:informingParty, odrl:compensatingParty, odrl:attributingParty,
+    odrl:consentedParty, odrl:contractedParty, odrl:trackedParty ;
+  sh:property [
+    sh:path [ sh:alternativePath ( odrl:target odrl:output odrl:assigner odrl:assignee
+      odrl:informedParty odrl:compensatedParty odrl:attributedParty
+      odrl:consentingParty odrl:contractingParty odrl:trackingParty
+      odrl:informingParty odrl:compensatingParty odrl:attributingParty
+      odrl:consentedParty odrl:contractedParty odrl:trackedParty ) ] ;
+    sh:message "IM 2.2, 2.3, 2.6: a target, output, or party function has an Asset or a Party as its value, never a literal" ;
+    sh:nodeKind sh:BlankNodeOrIRI
+  ] .
+
+# IM §2.4: "An Action (except for use and transfer) MUST have one includedIn
+# property value (of type Action)". With one parent each, the includedIn edges
+# from an action form a path, and it must end at use or transfer: a path that
+# stops at another action, or runs in a cycle, leaves an action outside both.
+# The targets are every IRI typed as an Action in the merged graph (policy,
+# profile modules, vocabulary) and every includedIn value. A refined action is
+# a blank node whose rdf:value names the action (IM §2.5.4); it is not itself
+# in the hierarchy, so blank nodes are exempt. So are the actions that the
+# ODRL 2.2 vocabulary deprecates (owl:deprecated true): the vocabulary gives
+# 21 of them, odrl:copy and odrl:pay among them, no includedIn.
+odrl22:ActionHierarchyShape a sh:NodeShape ;
+  sh:targetClass odrl:Action ;
+  sh:message "IM 2.4: an action other than odrl:use and odrl:transfer has exactly one odrl:includedIn, of type Action" ;
+  sh:targetObjectsOf odrl:includedIn ;
+  sh:property [
+    sh:path odrl:includedIn ;
+    sh:maxCount 1 ;
+    sh:class odrl:Action
+  ] ;
+  sh:or (
+    [ sh:in ( odrl:use odrl:transfer ) ]
+    [ sh:nodeKind sh:BlankNode ]
+    [ sh:property [ sh:path <http://www.w3.org/2002/07/owl#deprecated> ; sh:hasValue true ] ]
+    [ sh:property [ sh:path odrl:includedIn ; sh:minCount 1 ] ]
+  ) ;
+  sh:sparql [
+    sh:message "IM 2.4: the odrl:includedIn path from this action reaches neither odrl:use nor odrl:transfer" ;
+    sh:select """
+      SELECT ?this WHERE {
+        ?this <http://www.w3.org/ns/odrl/2/includedIn> ?parent .
+        FILTER NOT EXISTS {
+          ?this <http://www.w3.org/ns/odrl/2/includedIn>+ ?root .
+          FILTER (?root = <http://www.w3.org/ns/odrl/2/use> || ?root = <http://www.w3.org/ns/odrl/2/transfer>)
+        }
+      }
+    """
+  ] .
+
 # ---------------------------------------------------------------------------
 # Constraint (IM §2.5.1) and Logical Constraint (IM §2.5.2)
 # ---------------------------------------------------------------------------
@@ -289,6 +347,30 @@ odrl22:ConstraintShape a sh:NodeShape ;
               sh:nodeKind sh:IRI ] ]
         ) ]
     )
+  ] ;
+  sh:sparql [
+    # IM §2.5.1: a rightOperandReference is one IRI, or a list of IRIs for a
+    # set-based operator. Repeated values are read as for rightOperand, since
+    # the ODRL JSON-LD context does not declare it an @list either
+    # (decisions/0013).
+    sh:message "IM 2.5.1: a list or repeated odrl:rightOperandReference values are allowed only for set-based operators (isA, hasPart, isPartOf, isAllOf, isAnyOf, isNoneOf), and never a list together with another value" ;
+    sh:select """
+      SELECT ?this ?value WHERE {
+        ?this <http://www.w3.org/ns/odrl/2/rightOperandReference> ?value .
+        ?this <http://www.w3.org/ns/odrl/2/operator> ?op .
+        FILTER (
+          (EXISTS { ?value <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?f }
+           && EXISTS { ?this <http://www.w3.org/ns/odrl/2/rightOperandReference> ?other . FILTER (?other != ?value) })
+          || ((EXISTS { ?value <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ?f }
+               || EXISTS { ?this <http://www.w3.org/ns/odrl/2/rightOperandReference> ?other . FILTER (?other != ?value) })
+              && ?op != <http://www.w3.org/ns/odrl/2/isAnyOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/isNoneOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/isAllOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/isPartOf>
+              && ?op != <http://www.w3.org/ns/odrl/2/hasPart>
+              && ?op != <http://www.w3.org/ns/odrl/2/isA>))
+      }
+    """
   ] ;
   sh:property [ sh:path odrl:dataType ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;  # IM §2.5.1
   sh:property [ sh:path odrl:unit ;      sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;  # IM §2.5.1
@@ -370,6 +452,19 @@ odrl22:LogicalConstraintShape a sh:NodeShape ;
               sh:or ( [ sh:class odrl:Constraint ] [ sh:class odrl:LogicalConstraint ] ) ] ]
         ) ]
     )
+  ] ;
+  sh:sparql [
+    # IM §2.5.2: "A Logical Constraint MUST have one operand sub-property".
+    # The minCount above asks for at least one; this asks for no second.
+    sh:message "IM 2.5.2: a logical constraint has exactly one operand property (and, or, xone, andSequence, or a profile's)" ;
+    sh:select """
+      SELECT DISTINCT ?this WHERE {
+        ?this ?p1 ?a ; ?p2 ?b .
+        FILTER (?p1 IN (<http://www.w3.org/ns/odrl/2/and>, <http://www.w3.org/ns/odrl/2/or>, <http://www.w3.org/ns/odrl/2/xone>, <http://www.w3.org/ns/odrl/2/andSequence>, <https://ekgf.org/dprod/spec/develop/not>)
+             && ?p2 IN (<http://www.w3.org/ns/odrl/2/and>, <http://www.w3.org/ns/odrl/2/or>, <http://www.w3.org/ns/odrl/2/xone>, <http://www.w3.org/ns/odrl/2/andSequence>, <https://ekgf.org/dprod/spec/develop/not>))
+        FILTER (?p1 != ?p2)
+      }
+    """
   ] ;
   sh:sparql [
     # IM §2.5.2 validation requirement 2: "All of the operand values MUST be

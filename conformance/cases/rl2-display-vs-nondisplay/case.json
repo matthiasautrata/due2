@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/display-vs-nondisplay.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Direct translation: rl2:Privilege → odrl:Permission, rl2:Prohibition → odrl:Prohibition, with the shared parties and target at policy level (compact policy). The two actions are unrelated — no odrl:includedIn edge — so neither rule reaches the other's requests, which is the use case's point. Scenarios 3 and 4 are added: a different subscriber, and a request that names no subject, which exercises the party part of the applies predicate (absent is U, not F).",
+  "notes": "Direct translation: rl2:Privilege → odrl:Permission, rl2:Prohibition → odrl:Prohibition, with the shared parties and target at policy level (compact policy). Neither action is included in the other (each is included in odrl:use only), so neither rule reaches the other's requests, which is the use case's point. Scenarios 3 and 4 are added: a different subscriber, and a request that names no subject, which exercises the party part of the applies predicate (absent is U, not F).",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {

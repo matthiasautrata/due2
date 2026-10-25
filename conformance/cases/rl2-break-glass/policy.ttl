@@ -22,7 +22,9 @@ ex:emergencyAccessPrivilege a odrl:Permission ;
         odrl:rightOperand true
     ] .
 
-ex:accessEmergencyControls a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:accessEmergencyControls a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path agent.breakGlassActive, flattened onto the state node for the request subject.
 ex:breakGlassActive a odrl:LeftOperand ;

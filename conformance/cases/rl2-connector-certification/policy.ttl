@@ -23,7 +23,9 @@ ex:certifiedConnectorAccess a odrl:Permission ;
         odrl:rightOperand true
     ] .
 
-ex:receive a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:receive a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 path agent.connectorCertification.valid, flattened onto the state node
 # for the request subject.

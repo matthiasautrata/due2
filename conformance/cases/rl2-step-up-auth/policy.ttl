@@ -35,8 +35,10 @@ ex:stepUpDuty a odrl:Duty ;
         odrl:rightOperand "2"^^xsd:integer
     ] .
 
-ex:read a odrl:Action .
-ex:authenticate a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:read a odrl:Action ; odrl:includedIn odrl:use .
+ex:authenticate a odrl:Action ; odrl:includedIn odrl:use .
 
 # RL2 agent.authentication.level, flattened onto the state node for the requester.
 ex:authenticationLevel a odrl:LeftOperand ;

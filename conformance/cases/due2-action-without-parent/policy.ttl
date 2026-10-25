@@ -1,0 +1,17 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# A negative case: a policy-defined action with no odrl:includedIn. ODRL IM
+# §2.4: every action other than odrl:use and odrl:transfer is included in
+# exactly one other action, and the chain ends in one of the two. Without it,
+# a request for odrl:use would not tell whether ex:frobnicate is part of it (#117).
+
+ex:licence a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:frob .
+
+ex:frob a odrl:Permission ;
+    odrl:action ex:frobnicate ;
+    odrl:target ex:dataset .
+
+ex:frobnicate a odrl:Action .

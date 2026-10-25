@@ -1,0 +1,17 @@
+{
+  "case": "due2-action-without-parent",
+  "source": "due2-native: a policy-defined action with no odrl:includedIn (external review R07, #117)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: an action other than odrl:use and odrl:transfer has exactly one odrl:includedIn, and the chain reaches one of the two (IM 2.4). Action matching reads the odrl:includedIn closure (due2-workflows.md §5.2), so without the edge a prohibition on odrl:use would not cover ex:frobnicate. Contrast due2-undeclared-action, where the action is not defined at all.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidActionHierarchy"
+    ],
+    "why": "ex:frobnicate has no odrl:includedIn (IM 2.4, decisions/0034). W1 rejects the policy in stage 1."
+  }
+}

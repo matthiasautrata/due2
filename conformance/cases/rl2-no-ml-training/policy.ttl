@@ -18,5 +18,7 @@ ex:noTraining a odrl:Prohibition ;
     odrl:action ex:trainModel ;
     odrl:target ex:TextCorpus .
 
-ex:search a odrl:Action .
-ex:trainModel a odrl:Action .
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# the source names none for these, so odrl:use, the broadest.
+ex:search a odrl:Action ; odrl:includedIn odrl:use .
+ex:trainModel a odrl:Action ; odrl:includedIn odrl:use .
