@@ -93,6 +93,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.20** (2026-10-25, #126): §5 rejects logical constraints whose members form a cycle.
+
 **Changes in v0.19** (2026-10-25, #125): §4 and §7 reject a temporal literal whose lexical form names no value of its datatype.
 
 **Changes in v0.18** (2026-10-24, `decisions/0034`, #117): §5 rejects a logical constraint with more than one operand property.

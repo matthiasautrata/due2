@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.20
+**Status:** Draft v0.21
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.20** (2026-10-25, #126): §5 rejects logical constraints whose members form a cycle. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.21** (2026-10-25, #127): §8.1 states which DPROD examples pass unchanged, and why the others are rejected. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -250,7 +250,7 @@ With `profiles/dprod.ttl` selected:
 | `odrl:source` on a collection, without a refinement | admitted, inert: an annotation naming the collection; membership comes from closure edges as for any collection (§6). DPROD rejects it; FORCE's collection cases use it |
 | collection `odrl:refinement` (with or without `odrl:source`) | rejected — so does DPROD. Open: issue #21. Whoever assembles the policy can supply a refined membership as closure edges instead (§6) |
 
-`odrl-compound-to-atomic-normalization.md` makes DPROD's examples admissible: policies may be typed by a profile subclass (§6); an absent `odrl:conflict` takes the selected profile's declared default before falling back to `invalid`; anonymous rules are admitted; and policy-level values fill only what a rule leaves unstated. With `profiles/dprod.ttl` and `profiles/odrl-actions.ttl` selected, every DPROD example passes `tools/check_corpus.py` unchanged.
+`odrl-compound-to-atomic-normalization.md` makes DPROD's examples admissible: policies may be typed by a profile subclass (§6); an absent `odrl:conflict` takes the selected profile's declared default before falling back to `invalid`; anonymous rules are admitted; and policy-level values fill only what a rule leaves unstated. With `profiles/dprod.ttl` and `profiles/odrl-actions.ttl` selected, the policies of `data-contract.ttl` and `data-use-policy.ttl` pass `tools/check_corpus.py` unchanged. Those of `baseline.ttl` and `odcs.ttl` are rejected with `InvalidActionHierarchy` alone: they define the action `ex:conformTo` without the `odrl:includedIn` that ODRL IM §2.4 requires (`decisions/0034`, EKGF/dprod#286). Each of them is extracted as a `dprod-*` case, and the cases that use `ex:conformTo` state the edge.
 
 ### 8.2 Semantic relation
 

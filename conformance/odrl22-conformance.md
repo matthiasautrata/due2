@@ -19,7 +19,7 @@ So the claim is checked in three layers, each with its own tool:
 | due2 admissibility | Is the corpus admissible W1 input (constructs due2 rejects are diagnosed, never approximated)? | `tools/check_corpus.py` |
 | Semantic soundness | Does due2's evaluation mean what ODRL says? | `due2-workflows.md` §5–§6, the `Den` preservation obligation, and the corpus's hand-derived expected verdicts |
 
-SHACL covers the first layer only. It certifies that due2's policies are standard ODRL, not a dialect; semantic soundness rests on the specs and the corpus, which is where it always rested.
+SHACL covers the first layer only. A policy that passes the shape meets the IM requirements the shape encodes, each cited to its IM section (§2). This does not show that the policy meets every IM requirement (§4), or that each of its literals names a value of its datatype, which the checkers test instead (#125). Semantic soundness rests on the specs and the corpus, which is where it always rested.
 
 ## 2. Why due2 has its own shape
 
@@ -66,8 +66,8 @@ The review found and fixed one real blemish, plus one hygiene gap:
 
 ## 4. What this does not establish
 
-- **Semantic fidelity is not SHACL-checkable.** The shape proves the corpus is grammatical ODRL 2.2; the meaning of due2's evaluation is established by `due2-workflows.md` §5–§6, the preservation obligation, and the corpus's hand-derived verdicts.
-- **The shape checks only the IM requirements it cites.** Each constraint that encodes an IM requirement names its section, and `rg 'IM §?[0-9]' conformance/odrl22-shape.ttl` lists them. A requirement that no constraint cites is unchecked. Items 3 to 5 of §3 each found requirements that the shape did not cite yet, so a policy that passes the shape is valid ODRL 2.2 only as far as these sections reach.
+- **Semantic fidelity is not SHACL-checkable.** The shape establishes that the corpus meets the IM requirements it cites; the meaning of due2's evaluation is established by `due2-workflows.md` §5–§6, the preservation obligation, and the corpus's hand-derived verdicts.
+- **The shape checks only the IM requirements it cites.** Each constraint that encodes an IM requirement names its section, and `rg 'IM §?[0-9]' conformance/odrl22-shape.ttl` lists them. A requirement that no constraint cites is unchecked. Items 3 to 8 of §3 each found requirements that the shape did not cite yet, so a policy that passes the shape is valid ODRL 2.2 only as far as these sections reach.
 - **due2 deliberately rejects some valid ODRL** (`andSequence`, `rightOperandReference`, `inheritFrom`, `implies`, `hasPolicy`, `assignerOf`, `assigneeOf`, collection `odrl:refinement`, floating-point operands; a refinement-free `odrl:source` on a collection is admitted as inert, §5) — rejected at normalisation with diagnostics, never accepted and approximated (`due2-architecture.md` §1). The shape validates ODRL as written and so admits them; `check_corpus.py` draws the due2 line. Subsetting is what the ODRL profile mechanism is for; a profile that declares its supported subset is not a dialect.
 - **The collection-refinement rules are encoded but unexercised.** The shape implements IM §2.5.5/§2.5.6 (a refined `AssetCollection`/`PartyCollection` MUST be referenced via `odrl:source`); no corpus policy uses collection refinements, so the constraint is untested against live data.
 
