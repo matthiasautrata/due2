@@ -851,6 +851,24 @@ ASSET_PARTY_EDGES = (
 )
 
 
+def entity_properties(vocabulary: Graph) -> frozenset[Node]:
+    """The properties whose value must be a resource, never a literal.
+
+    `vocabulary` is the merged graph: the policy, due2's core, the selected profile
+    modules, and the ODRL vocabulary. The result is odrl:function (range odrl:Party),
+    odrl:relation (range odrl:Asset), and every rdfs:subPropertyOf descendant of
+    either, which inherits the range: odrl:assignee, odrl:informedParty,
+    odrl:target, and a profile's own party roles, such as dprod:subjectOfDuty.
+    """
+    found: set[Node] = {ODRL.function, ODRL.relation}
+    frontier = set(found)
+    while frontier:
+        frontier = {s for o in frontier for s in vocabulary.subjects(RDFS.subPropertyOf, o)}
+        frontier -= found
+        found |= frontier
+    return frozenset(found)
+
+
 def asset_party_nodes(g: Graph) -> set[Node]:
     """Every node in an asset or party position, plus every declared collection."""
     nodes = {o for e in ASSET_PARTY_EDGES for o in g.objects(None, e)}
@@ -994,11 +1012,14 @@ def check_policy(
     r: Report,
     named: bool,
     defined: frozenset[Node] | None,
+    entities: frozenset[Node],
 ) -> Used:
     """`policies` are the graph's policy nodes. `defined` is the vocabulary the
     policy may use (decisions/0020), or None when a selected profile has no
     module: the policy is then rejected (UnrecognisedProfile), and the profile
-    may define any term, so the vocabulary is not checked (decisions/0033)."""
+    may define any term, so the vocabulary is not checked (decisions/0033).
+    `entities` are the properties whose value is an Asset or a Party
+    (`entity_properties`)."""
     used: Used = {}
     declared = {str(p) for p in g.objects(policy, ODRL.profile)}
     for ns, label in NAMESPACED_PROFILES.items():
@@ -1051,7 +1072,7 @@ def check_policy(
         if (node, ODRL.refinement, None) in g:
             r.diag("UnsupportedConstruct", f"{q(g, node)}: collection refinement is not admitted")
     # IM 2.2, 2.3, 2.6: an Asset or a Party is a resource, and a literal is not one.
-    for edge in ASSET_PARTY_EDGES:
+    for edge in sorted(entities, key=str):
         for owner, node in sorted(g.subject_objects(edge), key=str):
             if isinstance(node, Literal):
                 r.diag(
@@ -1144,19 +1165,26 @@ def check_file(path: Path, explicit: list[str], named: bool) -> list[tuple[Repor
             elif MODULES[p]:
                 modules.append(parse(MODULES[p]))
         core = parse(CORE)
+        vocabulary = g + core + parse([W3C_VOCABULARY])
+        for m in modules:
+            vocabulary += m
         defined = None
         if all(p in MODULES for p in sel):
             defined = frozenset(
                 odrl_terms().union(typed(core), typed(g), *(typed(m) for m in modules))
             )
         used = check_policy(
-            g, policy, set(policies), Bindings(g, modules, core, r), r, named, defined
+            g,
+            policy,
+            set(policies),
+            Bindings(g, modules, core, r),
+            r,
+            named,
+            defined,
+            entity_properties(vocabulary),
         )
         if defined is not None:
-            hierarchy = g + core + parse([W3C_VOCABULARY])
-            for m in modules:
-                hierarchy += m
-            check_actions(g, hierarchy, defined, r)
+            check_actions(g, vocabulary, defined, r)
         out.append((r, used, g))
     return out
 

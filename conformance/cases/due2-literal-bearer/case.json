@@ -1,0 +1,18 @@
+{
+  "case": "due2-literal-bearer",
+  "source": "due2-native: a DPROD duty whose bearer is a string literal (follow-up review F06, #124)",
+  "classification": "odrl-profile",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: dprod:subjectOfDuty is rdfs:subPropertyOf odrl:function, whose range is odrl:Party, so its value is a resource (IM 2.3, 2.6). Admission and odrl22-shape.ttl read the function and relation properties from the vocabularies rather than from a list, so a profile's own party roles are covered. Read as a name, \"Alice\" would bear a duty that no evidence could fulfil, because an evidence actor is an Id, an IRI (due2-workflows.md §2; schema/collections.schema.json). dprod:agent, which has range odrl:Party but is not a sub-property of odrl:function, is outside the check: it is a property of a DPROD EvaluationContext, never of a policy.",
+  "prefixes": {
+    "dprod": "https://ekgf.org/dprod/spec/develop/",
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "LiteralEntity"
+    ],
+    "why": "ex:report's dprod:subjectOfDuty is the literal \"Alice\", and a sub-property of odrl:function takes a Party, a resource (IM 2.3, 2.6; decisions/0034). W1 rejects the policy in stage 1."
+  }
+}

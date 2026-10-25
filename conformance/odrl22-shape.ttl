@@ -233,21 +233,37 @@ odrl22:ComponentConstraintShape a sh:NodeShape ;
 # IM §2.6: the function properties relate a Rule to a Party (IM §2.3), and a
 # target or output relates it to an Asset (IM §2.2, §2.6.1). A Party or an
 # Asset is a resource, so a literal value is neither: "Alice" names no party
-# (the ODRL JSON-LD context gives these properties "@type": "@id").
+# (the ODRL JSON-LD context gives these properties "@type": "@id"). The
+# properties are odrl:function (range odrl:Party), odrl:relation (range
+# odrl:Asset), and every rdfs:subPropertyOf descendant of either, which
+# inherits the range. That takes in odrl:assignee, odrl:informedParty,
+# odrl:target, odrl:output, and a profile's own party roles, such as
+# dprod:subjectOfDuty. dprod:agent, a property of a DPROD EvaluationContext
+# rather than of a policy, is neither. The properties are read from the
+# vocabularies, not listed here, so the data graph must hold them, as
+# check_odrl22.py merges them in; without them the target selects nothing.
 odrl22:EntityValueShape a sh:NodeShape ;
-  sh:targetSubjectsOf odrl:target, odrl:output, odrl:assigner, odrl:assignee,
-    odrl:informedParty, odrl:compensatedParty, odrl:attributedParty,
-    odrl:consentingParty, odrl:contractingParty, odrl:trackingParty,
-    odrl:informingParty, odrl:compensatingParty, odrl:attributingParty,
-    odrl:consentedParty, odrl:contractedParty, odrl:trackedParty ;
-  sh:property [
-    sh:path [ sh:alternativePath ( odrl:target odrl:output odrl:assigner odrl:assignee
-      odrl:informedParty odrl:compensatedParty odrl:attributedParty
-      odrl:consentingParty odrl:contractingParty odrl:trackingParty
-      odrl:informingParty odrl:compensatingParty odrl:attributingParty
-      odrl:consentedParty odrl:contractedParty odrl:trackedParty ) ] ;
-    sh:message "IM 2.2, 2.3, 2.6: a target, output, or party function has an Asset or a Party as its value, never a literal" ;
-    sh:nodeKind sh:BlankNodeOrIRI
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:select """
+      SELECT DISTINCT ?this WHERE {
+        ?this ?p ?value .
+        FILTER isLiteral(?value)
+        ?p <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>* ?root .
+        FILTER (?root IN (<http://www.w3.org/ns/odrl/2/function>, <http://www.w3.org/ns/odrl/2/relation>))
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:message "IM 2.2, 2.3, 2.6: a function or relation property has a resource as its value, never a literal" ;
+    sh:select """
+      SELECT DISTINCT $this ?path ?value WHERE {
+        $this ?path ?value .
+        FILTER isLiteral(?value)
+        ?path <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>* ?root .
+        FILTER (?root IN (<http://www.w3.org/ns/odrl/2/function>, <http://www.w3.org/ns/odrl/2/relation>))
+      }
+    """
   ] .
 
 # IM §2.4: "An Action (except for use and transfer) MUST have one includedIn

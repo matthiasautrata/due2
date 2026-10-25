@@ -109,6 +109,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.12** (2026-10-25, `decisions/0034` amendment, #122, #123): `UnsupportedConstruct` covers `odrl:assignerOf` and `odrl:assigneeOf`; `InvalidActionHierarchy` covers a blank action node without `rdf:value`.
+
 **Changes in v0.11** (2026-10-24, `decisions/0034`, #117): new rows `InvalidActionHierarchy` and `LiteralEntity`; `UnsupportedConstruct` covers `odrl:hasPolicy`; `MalformedConstraint` covers a logical constraint with more than one operand property.
 
 **Changes in v0.10** (2026-10-24, `decisions/0033`, #115): new rows `ReplacedPolicy` and `UnrecognisedProfile`; `UndeclaredProfile` names the code that rejects a policy whose profile has no due2 module.
@@ -152,6 +154,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.19 (2026-10-25, `decisions/0034` amendment, #122, #123): §3 defines a refined action by its `rdf:value`, whatever its node kind, rejects a blank action node without one, and rejects `odrl:assignerOf` and `odrl:assigneeOf` with `UnsupportedConstruct`.
 
 Changes in 0.18 (2026-10-25, `decisions/0032` amendment, #121): §5.2 notes the two id domains that stage 2 and W2 mint under its namespace. No rule changes.
 

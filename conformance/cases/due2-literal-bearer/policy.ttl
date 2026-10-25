@@ -1,0 +1,18 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# A DPROD duty whose bearer is a string literal. dprod:subjectOfDuty is
+# rdfs:subPropertyOf odrl:function, so its value is a Party, a resource; "Alice"
+# is not one. Read as a name, it would bear a duty that no evidence could ever
+# fulfil, since an evidence actor is an Id, an IRI (due2-workflows.md §2).
+
+ex:offer a odrl:Offer ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner ex:alice ;
+    odrl:obligation ex:report .
+
+ex:report a odrl:Duty ;
+    dprod:subjectOfDuty "Alice" ;
+    odrl:action odrl:inform ;
+    odrl:target ex:dataset .

@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.12 (2026-10-25)
+**Status:** Draft v0.13 (2026-10-25)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.12** (2026-10-25, `decisions/0034` amendment, #122, #123): `UnsupportedConstruct` covers `odrl:assignerOf` and `odrl:assigneeOf`; `InvalidActionHierarchy` covers a blank action node without `rdf:value`. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.13** (2026-10-25, `decisions/0034`, #124): `LiteralEntity` covers every `rdfs:subPropertyOf` descendant of `odrl:function` and `odrl:relation`, a profile's own party roles among them. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -49,7 +49,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `MissingAction` | error | 1 | A rule with no action after interiorisation; a nested duty interiorises none. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `MissingTarget` | error | 1 | A Permission or Prohibition with no `odrl:target` after interiorisation. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `TargetAndOutput` | error | 1 | A rule with both `odrl:target` and `odrl:output`. | `odrl-compound-to-atomic-normalization.md` §6.3 |
-| `LiteralEntity` | error | 1 | A literal as the value of `odrl:target`, `odrl:output`, or a party function: an Asset and a Party are resources. The ref names the node that has the property, the message the property and the literal. | ODRL IM §2.2, §2.3, §2.6; `odrl-compound-to-atomic-normalization.md` §3 (`decisions/0034`) |
+| `LiteralEntity` | error | 1 | A literal as the value of `odrl:function`, `odrl:relation`, or any of their `rdfs:subPropertyOf` descendants, such as `odrl:target`, `odrl:assignee`, or `dprod:subjectOfDuty`: an Asset and a Party are resources. The ref names the node that has the property, the message the property and the literal. | ODRL IM §2.2, §2.3, §2.6; `odrl-compound-to-atomic-normalization.md` §3 (`decisions/0034`) |
 | `MisplacedConstraint` | error | 1 | An `odrl:refinement` on a Policy or a Rule, or an `odrl:constraint` on an Action, an Asset, a Party, or a collection. The ref names the node, the message the property. | `odrl-compound-to-atomic-normalization.md` §3 |
 | `InvalidNesting` | error | 1 | A Rule edge outside its subject: `odrl:permission`, `odrl:prohibition`, or `odrl:obligation` not on the Policy, `odrl:duty` not on a Permission, `odrl:remedy` not on a Prohibition, `odrl:consequence` not on a Duty that `odrl:duty` or `odrl:obligation` references (so not on a Consequence or a Remedy); or a node in two Rule classes. | `odrl-compound-to-atomic-normalization.md` §3, §6.3 |
 | `RuleReferenceCycle` | error | 1 | A cycle of `duty`, `consequence`, `remedy` edges. | `odrl-compound-to-atomic-normalization.md` §6.3 |
