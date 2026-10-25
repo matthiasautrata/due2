@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.41
+**Status:** Draft v0.42
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.41** (2026-10-24, #114): laws L2, L3, L6, and L7 are restated, since each was false as written (§8). §6.4's monotonicity proof says how a candidate that a violated precondition closes or reopens passes through §6.2, and §3.5 and §6.4 say what `verdict.exact` means. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.42** (2026-10-24, #116): §3.1 states the invariants that every id in a corpus tuple names a policy, atom, or constraint that the corpus holds, and that an atom has `relation_value` exactly when it has `relation`. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -126,7 +126,7 @@ Derived, not stored:
 - **guard / witness condition** of a duty's constraint, from its bindings (§5.2).
 - **role(d)** of a child follows from its parent's effect: `Permit` → precondition, `Forbid` → remedy, `Oblige` → consequence (`due2-architecture.md` §3).
 
-Invariants, established by W1 and trusted downstream: `edge` is acyclic; every child is an `Oblige` atom; every `Permit` and `Forbid` atom is a root; every `atom.policy_id` names a `policy`; `Permit` and `Forbid` atoms carry `relation = odrl:target`.
+Invariants, established by W1 and trusted downstream: `edge` is acyclic; every child is an `Oblige` atom; every `Permit` and `Forbid` atom is a root; in every corpus tuple, a `policy_id` names a `policy`, an `atom_id`, `parent_id`, or `child_id` names an `atom`, and a `constraint_id` names a `constraint`; an atom has `relation_value` exactly when it has `relation`; `Permit` and `Forbid` atoms carry `relation = odrl:target`.
 
 ### 3.2 Request
 

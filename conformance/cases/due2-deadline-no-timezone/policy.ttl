@@ -1,0 +1,24 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. The duty's absolute deadline
+# is an xsd:dateTime with no timezone, so whether it has passed at an instant can be
+# undecided (due2-profiles.md §7, decisions/0024).
+
+ex:licencePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:display .
+
+ex:display a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Report ;
+    odrl:duty ex:pay .
+
+ex:pay a odrl:Duty ;
+    odrl:action odrl:compensate ;
+    dprod:deadline "2026-06-02T00:00:00"^^xsd:dateTime .

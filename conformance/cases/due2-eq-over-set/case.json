@@ -1,0 +1,17 @@
+{
+  "case": "due2-eq-over-set",
+  "source": "due2-native: eq over a set-valued operand (decisions/0025, #116)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. eq compares one value, as the Vocabulary defines it. \"Holds the clearance\" is written hasPart ex:Clearance (due2-profiles.md §4).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperatorTypeMismatch"
+    ],
+    "why": "ex:held is set-valued (due2:cardinality due2:set), and eq takes one left value. W1 rejects the policy in stage 2 (due2-profiles.md §4, decisions/0025)."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "case": "due2-date-with-timezone",
+  "source": "due2-native: a date right operand with a timezone (decisions/0024, #116)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. XSD allows a timezone on an xsd:date, but due2 admits a date only without one, so that dates are totally ordered (due2-profiles.md §4, decisions/0024). A policy that means a day in a given zone uses an operand whose range is xsd:dateTime instead: on or before 31 December 2026 in +01:00 is lt 2026-12-31T23:00:00Z, the instant that day ends.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperatorTypeMismatch"
+    ],
+    "why": "The right operand \"2026-12-31+01:00\"^^xsd:date of ex:publicationDate's constraint has a timezone. A date right operand has none (due2-profiles.md §4, decisions/0024), so W1 rejects the policy in stage 2."
+  }
+}

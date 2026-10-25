@@ -125,6 +125,32 @@ def _instant_without_timezone(doc: Obj) -> None:
     sotw[0]["effective_at"] = {"v": "2026-06-01T00:00:00", "t": "xsd:dateTime"}
 
 
+def _impossible_instant(doc: Obj) -> None:
+    sotw = cast(list[Obj], cast(Obj, _scenario(doc)["sotw"])["sotw"])
+    sotw[0]["effective_at"] = {"v": "2026-02-30T12:00:00Z", "t": "xsd:dateTime"}
+
+
+def _relation_without_value(doc: Obj) -> None:
+    del _atom(doc)["relation_value"]
+
+
+def _root_naming_no_atom(doc: Obj) -> None:
+    _corpus(doc)["root"] = [{"atom_id": "ex:a1"}, {"atom_id": "ex:a9"}]
+
+
+def _edge_from_no_atom(doc: Obj) -> None:
+    duty = {**_atom(doc), "atom_id": "ex:a2", "effect": "Oblige"}
+    cast(list[Obj], _corpus(doc)["atom"]).append(duty)
+    _corpus(doc)["edge"] = [{"parent_id": "ex:a9", "child_id": "ex:a2"}]
+
+
+def _constraint_on_no_atom(doc: Obj) -> None:
+    _clause_on_a_permit(doc)
+    constraint = cast(list[Obj], _corpus(doc)["constraint"])[0]
+    del constraint["clause"]
+    constraint["atom_id"] = "ex:a9"
+
+
 def _config_without_bound(doc: Obj) -> None:
     config = cast(list[Obj], cast(Obj, _scenario(doc)["config"])["config"])
     del config[0]["max_mixed"]
@@ -161,6 +187,11 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "schema: an empty-key relation with two tuples": _two_verdicts,
     "decide output: no verdict": _no_verdict,
     "schema: an Instant with no timezone (decisions/0024)": _instant_without_timezone,
+    "value: an Instant on 30 February": _impossible_instant,
+    "invariant: a relation with no relation_value": _relation_without_value,
+    "invariant: a root that names no atom": _root_naming_no_atom,
+    "invariant: an edge whose parent names no atom": _edge_from_no_atom,
+    "invariant: a constraint on no atom": _constraint_on_no_atom,
     "schema: config without max_mixed": _config_without_bound,
     "prefixes: `party` as a prefix name": _party_as_prefix,
 }

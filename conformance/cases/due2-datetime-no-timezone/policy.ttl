@@ -1,0 +1,26 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. The right operand is a typed
+# xsd:dateTime with no timezone. XSD orders such a value only partially against an
+# instant with one, so whether the request's time is before it can be undecided
+# (decisions/0024).
+
+ex:licencePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:display .
+
+ex:display a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand odrl:dateTime ;
+        odrl:operator odrl:lt ;
+        odrl:rightOperand "2027-01-01T00:00:00"^^xsd:dateTime
+    ] .

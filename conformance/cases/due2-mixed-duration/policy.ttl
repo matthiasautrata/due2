@@ -1,0 +1,30 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. The right operand P1Y2D mixes a
+# year-month part with a day-time part. XSD orders such durations only partially, so
+# a comparison with one can be undecided (due2-profiles.md §4).
+
+ex:licencePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:display .
+
+ex:display a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Report ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:age ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "P1Y2D"^^xsd:duration
+    ] .
+
+ex:age a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:reportAge ;
+    rdfs:range xsd:duration .

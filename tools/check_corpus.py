@@ -27,10 +27,16 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+import rdflib
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
 from rdflib.namespace import DCTERMS, RDF, RDFS, SKOS, XSD
 from rdflib.term import Node
+
+# Literals keep the lexical form as written, for every graph this process parses: the flag is
+# global. rdflib's default normalisation is lossy, and check_literal must see what it drops:
+# "2026-12-31+01:00"^^xsd:date would reach it as "2026-12-31" and pass.
+rdflib.NORMALIZE_LITERALS = False
 
 ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
 DPROD = Namespace("https://ekgf.org/dprod/spec/develop/")
@@ -108,6 +114,19 @@ SET_BASED = {
 }  # Vocab §3.16.7-3.16.12: a list, or repeated values, as the right operand (decisions/0013)
 # The operators a concept-scheme operand admits (due2-profiles.md §4, decisions/0015 #8).
 CONCEPT_OPERATORS = {ODRL.eq, ODRL.neq, ODRL.isAnyOf, ODRL.isNoneOf}
+# The operators whose left is one value; a set-valued operand takes isAllOf, isPartOf,
+# or hasPart (due2-profiles.md 4, decisions/0025).
+ONE_VALUE = {
+    ODRL.eq,
+    ODRL.neq,
+    ODRL.lt,
+    ODRL.lteq,
+    ODRL.gt,
+    ODRL.gteq,
+    ODRL.isAnyOf,
+    ODRL.isNoneOf,
+    ODRL.isA,
+}
 CONTESTED = {
     ODRL.isPartOf,
     ODRL.hasPart,
@@ -231,6 +250,7 @@ DURATION_RE = re.compile(
 )
 # An input instant is an xsd:dateTime with a timezone (decisions/0024).
 DATETIME_RE = re.compile(r"^-?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
+TIMEZONE_RE = re.compile(r"(Z|[+-]\d{2}:\d{2})$")
 
 
 def single_kind_duration(lexical: str) -> bool:
@@ -264,6 +284,11 @@ def check_duty_timing(g: Graph, rule: Node, kind: Node, r: Report) -> None:
                 "InvalidTiming",
                 f"{q(g, rule)}: dprod:deadline must be an xsd:dateTime (absolute) or "
                 f"xsd:duration (relative to activation), got {v!r}",
+            )
+        elif v.datatype == XSD.dateTime and not TIMEZONE_RE.search(str(v)):
+            r.diag(
+                "InvalidTiming",
+                f"{q(g, rule)}: dprod:deadline {v!r} has no timezone (decisions/0024)",
             )
         elif v.datatype == XSD.duration and not single_kind_duration(str(v)):
             r.diag(
@@ -583,8 +608,12 @@ def check_constraint(
             f"{q(g, c)}: {q(g, operator)} over a set-valued operand "
             f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)",
         )
-    elif operator == ODRL.isA and card == DUE2.set:
-        r.diag("OperatorTypeMismatch", f"{q(g, c)}: isA takes one left value (due2-profiles.md 4)")
+    elif operator in ONE_VALUE and card == DUE2.set:
+        r.diag(
+            "OperatorTypeMismatch",
+            f"{q(g, c)}: {q(g, operator)} takes one left value, and {q(g, op)} is set-valued "
+            f"(due2-profiles.md 4, decisions/0025)",
+        )
     if bnd.allowed and operator not in bnd.allowed:
         r.diag(
             "OperatorTypeMismatch",
@@ -602,6 +631,7 @@ def check_constraint(
                     "FloatingPointOperand",
                     f"{q(g, c)}: floating-point right operand is not admitted",
                 )
+            check_literal(g, c, v, r)
             have = value_kind(v)
             if LITERAL in want and isinstance(v, Literal):
                 continue
@@ -611,6 +641,24 @@ def check_constraint(
                     f"{q(g, c)}: right operand {q(g, v)} is of kind {have}, "
                     f"not the range's {sorted(want)}",
                 )
+
+
+def check_literal(g: Graph, c: Node, v: Node, r: Report) -> None:
+    """Reports a temporal right operand `v` of constraint `c` that breaks a lexical rule of
+    due2-profiles.md 4 (decisions/0024): a dateTime has a timezone, a date has none, and a
+    duration is single-kind. An IRI, or a literal of another datatype, is not checked here."""
+    if not isinstance(v, Literal):
+        return
+    lex = str(v)
+    if v.datatype == XSD.dateTime and not TIMEZONE_RE.search(lex):
+        r.diag("OperatorTypeMismatch", f"{q(g, c)}: dateTime right operand {lex!r} has no timezone")
+    elif v.datatype == XSD.date and TIMEZONE_RE.search(lex):
+        r.diag("OperatorTypeMismatch", f"{q(g, c)}: date right operand {lex!r} has a timezone")
+    elif v.datatype == XSD.duration and not single_kind_duration(lex):
+        r.diag(
+            "MixedDuration",
+            f"{q(g, c)}: duration right operand {lex!r} mixes year-month and day-time components",
+        )
 
 
 def check_concepts(

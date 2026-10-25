@@ -29,11 +29,63 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = ROOT / "schema"
 VECTORS = ROOT / "conformance" / "vectors"
 ODRL_TARGET = "http://www.w3.org/ns/odrl/2/target"
+XSD_DATETIME = "http://www.w3.org/2001/XMLSchema#dateTime"
+# The fields that name a tuple of another corpus relation, and that relation's key field.
+REFERENCES = {
+    "policy_id": ("policy", "policy_id"),
+    "atom_id": ("atom", "atom_id"),
+    "parent_id": ("atom", "atom_id"),
+    "child_id": ("atom", "atom_id"),
+    "constraint_id": ("constraint", "constraint_id"),
+}
 
 FILE_FIELDS = {"file", "source", "notes", "tags", "prefixes", "corpus", "scenarios"}
 SCENARIO_FIELDS = {"name", "tags", "request", "sotw", "config", "expected"}
 NOT_PREFIXES = {"party", "sha256"}  # constraint.scope values and digests start with these
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+DATETIME = re.compile(
+    r"^(-?\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(?:Z|[+-](\d{2}):(\d{2}))?$"
+)
+
+
+def datetime_value_ok(lexical: str) -> bool:
+    """Whether an `xsd:dateTime` lexical form names a real instant (XSD 1.1 Part 2 §3.3.7).
+
+    The schema checks only the shape, so `2026-02-30T12:00:00Z` and `2026-99-99T99:99:99+99:99`
+    pass it. Here the month is 1 to 12, the day exists in that month of that year (proleptic
+    Gregorian, where year 0 is a leap year), the time is at most `24:00:00`, which only
+    `24:00:00` itself reaches, and the timezone offset is at most 14 hours. A form with no
+    timezone passes here, since the schema's `Instant` pattern already rejects it."""
+    m = DATETIME.match(lexical)
+    if not m:
+        return False
+    year, month, day, hour, minute, second = (int(g) for g in m.groups()[:6])
+    leap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    days = [31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    if not 1 <= month <= 12 or not 1 <= day <= days[month - 1]:
+        return False
+    if hour == 24:
+        if minute or second or int(m.group(7) or 0):
+            return False
+    elif hour > 23 or minute > 59 or second > 59:
+        return False
+    if m.group(8) is not None:
+        oh, om = int(m.group(8)), int(m.group(9))
+        if om > 59 or oh > 14 or (oh == 14 and om):
+            return False
+    return True
+
+
+def _bad_datetimes(value: Json) -> list[str]:
+    """The lexical forms of every `xsd:dateTime` literal in `value` that names no instant."""
+    if isinstance(value, list):
+        return [b for v in value for b in _bad_datetimes(v)]
+    if isinstance(value, dict):
+        lex = value.get("v")
+        if value.get("t") == XSD_DATETIME and isinstance(lex, str):
+            return [] if datetime_value_ok(lex) else [lex]
+        return [b for v in value.values() for b in _bad_datetimes(v)]
+    return []
 
 
 def _load(name: str) -> Obj:
@@ -151,7 +203,9 @@ def expand(
 def check_collection(
     coll: Obj, collection: str, validator: str, schemas: Schemas, where: str
 ) -> list[str]:
-    """Schema errors, and two tuples with one key that differ elsewhere (set semantics, due2-workflows.md §2).
+    """Schema errors, two tuples with one key that differ elsewhere (set semantics,
+    due2-workflows.md §2), and an `xsd:dateTime` whose shape the schema accepts but which names
+    no instant.
 
     `validator` names the schema: a collection, or `"Expected"`, the trace as `decide`'s
     output, which must contain `verdict`. `collection` names the relations and keys."""
@@ -172,28 +226,35 @@ def check_collection(
             if k in seen and seen[k] != t:
                 problems.append(f"{where}.{rel}: two tuples with key {k}")
             seen[k] = t
+    problems += [f"{where}: no such xsd:dateTime: {lex!r}" for lex in _bad_datetimes(coll)]
     return problems
 
 
 def check_invariants(corpus: Obj, where: str) -> list[str]:
-    """The invariants of due2-workflows.md §3.1 that W1 establishes."""
+    """The invariants of due2-workflows.md §3.1 that W1 establishes. A missing relation is
+    empty, so a reference into it names nothing."""
 
     def rows(rel: str) -> list[Obj]:
         return [cast(Obj, t) for t in cast(list[Json], corpus.get(rel, []))]
 
     problems: list[str] = []
-    policies = {cast(str, t["policy_id"]) for t in rows("policy")}
     effect = {cast(str, t["atom_id"]): t["effect"] for t in rows("atom")}
     roots = {cast(str, t["atom_id"]) for t in rows("root")}
     for t in rows("atom"):
         a = cast(str, t["atom_id"])
-        if cast(str, t["policy_id"]) not in policies:
-            problems.append(f"{where}: atom {a} names no policy")
         if t["effect"] in ("Permit", "Forbid"):
             if a not in roots:
                 problems.append(f"{where}: {t['effect']} atom {a} is not a root")
             if t.get("relation") != ODRL_TARGET:
                 problems.append(f"{where}: {t['effect']} atom {a} has no relation odrl:target")
+        if ("relation" in t) != ("relation_value" in t):
+            problems.append(f"{where}: atom {a} has one of relation and relation_value")
+    keys = {rel: {str(t.get(field)) for t in rows(rel)} for rel, field in set(REFERENCES.values())}
+    for rel in corpus:
+        for t in rows(rel):
+            for field, (target, _) in REFERENCES.items():
+                if field in t and str(t[field]) not in keys[target]:
+                    problems.append(f"{where}: {rel}.{field} {t[field]} names no {target}")
     for t in rows("constraint"):
         # A duty's condition is kept in clauses on its one atom (decisions/0028).
         c, a = t["constraint_id"], t["atom_id"]

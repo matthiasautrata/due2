@@ -1,0 +1,17 @@
+{
+  "case": "due2-deadline-no-timezone",
+  "source": "due2-native: an absolute deadline with no timezone (decisions/0024, #116)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. Without a timezone, whether the deadline has passed is undecided at every instant within 14 hours of it (due2-profiles.md §4), so near its deadline the duty's status would be unknown for want of a well-formed policy, not for want of data.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidTiming"
+    ],
+    "why": "ex:pay's dprod:deadline \"2026-06-02T00:00:00\"^^xsd:dateTime has no timezone. An absolute deadline is an xsd:dateTime with a timezone (due2-profiles.md §7, decisions/0024), so W1 rejects the policy in stage 2."
+  }
+}

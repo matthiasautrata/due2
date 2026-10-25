@@ -1,0 +1,17 @@
+{
+  "case": "due2-mixed-duration",
+  "source": "due2-native: a duration right operand that mixes year-month and day-time parts (#116)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. XSD cannot order P1Y2D against P367D: a year is 365 or 366 days, so the first equals the second or is a day longer, depending on where it starts. A policy writes one kind, such as P1Y or P367D.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MixedDuration"
+    ],
+    "why": "The right operand \"P1Y2D\"^^xsd:duration of ex:age's constraint mixes a year-month part, 1Y, with a day-time part, 2D. W1 rejects the policy in stage 2 (due2-profiles.md §4)."
+  }
+}

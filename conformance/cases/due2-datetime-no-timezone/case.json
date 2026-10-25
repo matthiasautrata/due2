@@ -1,0 +1,17 @@
+{
+  "case": "due2-datetime-no-timezone",
+  "source": "due2-native: a typed dateTime right operand with no timezone (decisions/0024, #116)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. oval-untyped-datetime rejects an untyped string; this case types the value, so only its missing timezone is wrong. A dateTime without a timezone and one with a timezone are incomparable within 14 hours of each other (due2-profiles.md §4), so a request at 2026-12-31T20:00:00Z would compare as neither before nor after it.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperatorTypeMismatch"
+    ],
+    "why": "The right operand \"2027-01-01T00:00:00\"^^xsd:dateTime of the dateTime constraint on ex:display has no timezone. A dateTime right operand needs one (decisions/0024), so W1 rejects the policy in stage 2."
+  }
+}
