@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import sys
 from dataclasses import dataclass, field
@@ -28,6 +29,7 @@ from pathlib import Path
 from typing import Any
 
 import rdflib
+from harness.xsd_time import TIMEZONE, date_ok, datetime_ok, duration_kinds, instant_ok
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
 from rdflib.namespace import DCTERMS, OWL, RDF, RDFS, SKOS, XSD
@@ -37,6 +39,9 @@ from rdflib.term import Node
 # global. rdflib's default normalisation is lossy, and check_literal must see what it drops:
 # "2026-12-31+01:00"^^xsd:date would reach it as "2026-12-31" and pass.
 rdflib.NORMALIZE_LITERALS = False
+# rdflib logs a traceback for each literal whose lexical form names no value, such as
+# "2026-02-30T12:00:00Z"^^xsd:dateTime; names_value reports such a literal as a diagnostic.
+logging.getLogger("rdflib.term").setLevel(logging.ERROR)
 
 ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
 DPROD = Namespace("https://ekgf.org/dprod/spec/develop/")
@@ -244,25 +249,6 @@ def members(g: Graph, node: Node) -> list[Node]:
     return [node]
 
 
-DURATION_RE = re.compile(
-    r"^-?P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?"
-    r"(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$"
-)
-# An input instant is an xsd:dateTime with a timezone (decisions/0024).
-DATETIME_RE = re.compile(r"^-?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
-TIMEZONE_RE = re.compile(r"(Z|[+-]\d{2}:\d{2})$")
-
-
-def single_kind_duration(lexical: str) -> bool:
-    """A duration of one kind only: year-month, or day-time (due2-profiles.md §4)."""
-    m = DURATION_RE.match(lexical)
-    if not m:
-        return False
-    ym = bool(m.group(1) or m.group(2))
-    dt = bool(m.group(3) or m.group(4) or m.group(5) or m.group(6) or m.group(7))
-    return ym != dt  # exactly one kind present
-
-
 def check_duty_timing(g: Graph, rule: Node, kind: Node, r: Report) -> None:
     """dprod:deadline and dprod:recurrence — duty timing (due2-profiles.md §7)."""
     dl = list(g.objects(rule, DPROD.deadline))
@@ -285,12 +271,16 @@ def check_duty_timing(g: Graph, rule: Node, kind: Node, r: Report) -> None:
                 f"{q(g, rule)}: dprod:deadline must be an xsd:dateTime (absolute) or "
                 f"xsd:duration (relative to activation), got {v!r}",
             )
-        elif v.datatype == XSD.dateTime and not TIMEZONE_RE.search(str(v)):
+        elif not names_value(v):
+            r.diag(
+                "InvalidTiming", f"{q(g, rule)}: dprod:deadline {str(v)!r} names no {xsd_name(v)}"
+            )
+        elif v.datatype == XSD.dateTime and not TIMEZONE.search(str(v)):
             r.diag(
                 "InvalidTiming",
                 f"{q(g, rule)}: dprod:deadline {v!r} has no timezone (decisions/0024)",
             )
-        elif v.datatype == XSD.duration and not single_kind_duration(str(v)):
+        elif v.datatype == XSD.duration and len(duration_kinds(str(v)) or ()) > 1:
             r.diag(
                 "MixedDuration",
                 f"{q(g, rule)}: duration deadline {v!r} mixes year-month and "
@@ -646,18 +636,39 @@ def check_constraint(
                 )
 
 
+def xsd_name(lit: Literal) -> str:
+    """The datatype of `lit` as `xsd:name`, for messages."""
+    return str(lit.datatype).replace(str(XSD), "xsd:")
+
+
+def names_value(lit: Literal) -> bool:
+    """Whether a dateTime, date, or duration literal names a value of its datatype
+    (`harness.xsd_time`). A literal of any other datatype is not checked, so True."""
+    lex = str(lit)
+    if lit.datatype == XSD.dateTime:
+        return datetime_ok(lex)
+    if lit.datatype == XSD.date:
+        return date_ok(lex)
+    if lit.datatype == XSD.duration:
+        return duration_kinds(lex) is not None
+    return True
+
+
 def check_literal(g: Graph, c: Node, v: Node, r: Report) -> None:
     """Reports a temporal right operand `v` of constraint `c` that breaks a lexical rule of
-    due2-profiles.md 4 (decisions/0024): a dateTime has a timezone, a date has none, and a
-    duration is single-kind. An IRI, or a literal of another datatype, is not checked here."""
+    due2-profiles.md §4 (decisions/0024): it names a value of its datatype (`harness.xsd_time`),
+    a dateTime has a timezone, a date has none, and a duration is single-kind. An IRI, or a
+    literal of another datatype, is not checked here."""
     if not isinstance(v, Literal):
         return
     lex = str(v)
-    if v.datatype == XSD.dateTime and not TIMEZONE_RE.search(lex):
+    if not names_value(v):
+        r.diag("OperatorTypeMismatch", f"{q(g, c)}: right operand {lex!r} names no {xsd_name(v)}")
+    elif v.datatype == XSD.dateTime and not TIMEZONE.search(lex):
         r.diag("OperatorTypeMismatch", f"{q(g, c)}: dateTime right operand {lex!r} has no timezone")
-    elif v.datatype == XSD.date and TIMEZONE_RE.search(lex):
+    elif v.datatype == XSD.date and TIMEZONE.search(lex):
         r.diag("OperatorTypeMismatch", f"{q(g, c)}: date right operand {lex!r} has a timezone")
-    elif v.datatype == XSD.duration and not single_kind_duration(lex):
+    elif v.datatype == XSD.duration and len(duration_kinds(lex) or ()) > 1:
         r.diag(
             "MixedDuration",
             f"{q(g, c)}: duration right operand {lex!r} mixes year-month and day-time components",
@@ -1308,7 +1319,7 @@ def check_case(case_dir: Path) -> list[Report]:
         for k in ("action", "at"):  # target may be absent (workflows 3.2)
             if k not in req:
                 r.err(f"{tag}: request.{k} missing")
-        if "at" in req and not DATETIME_RE.match(str(req["at"])):
+        if "at" in req and not instant_ok(str(req["at"])):
             r.err(f"{tag}: request.at is not an xsd:dateTime instant: {req['at']!r}")
         for k in req.get("params", {}):
             if expand(k, prefixes) not in request_props:
@@ -1316,7 +1327,7 @@ def check_case(case_dir: Path) -> list[Report]:
         sotw = sc.get("sotw", {})
         if "effective_at" not in sotw:
             r.err(f"{tag}: sotw.effective_at missing")
-        elif not DATETIME_RE.match(str(sotw["effective_at"])):
+        elif not instant_ok(str(sotw["effective_at"])):
             r.err(
                 f"{tag}: sotw.effective_at is not an xsd:dateTime instant: {sotw['effective_at']!r}"
             )
@@ -1333,7 +1344,7 @@ def check_case(case_dir: Path) -> list[Report]:
             for k in ("id", "occurred_at", "actor", "action"):
                 if k not in ev:
                     r.err(f"{tag}: evidence missing {k}")
-            if "occurred_at" in ev and not DATETIME_RE.match(str(ev["occurred_at"])):
+            if "occurred_at" in ev and not instant_ok(str(ev["occurred_at"])):
                 r.err(
                     f"{tag}: evidence occurred_at is not an xsd:dateTime instant: {ev['occurred_at']!r}"
                 )
@@ -1342,7 +1353,7 @@ def check_case(case_dir: Path) -> list[Report]:
                     r.warn(f"{tag}: evidence param {k} is read by no witness-source operand")
         has_deadline = (None, DPROD.deadline, None) in g
         for k, at in sotw.get("activation", {}).items():
-            if not DATETIME_RE.match(str(at)):
+            if not instant_ok(str(at)):
                 r.err(f"{tag}: activation of {k} is not an xsd:dateTime instant: {at!r}")
         exp = sc.get("expected", {})
         if exp.get("verdict") not in VERDICTS:
@@ -1365,7 +1376,7 @@ def check_case(case_dir: Path) -> list[Report]:
                     f"{tag}: obligation {ob.get('duty')} is violated, but the policy has no "
                     f"dprod:deadline — without one, a duty is never violated"
                 )
-            if "instance" in ob and not DATETIME_RE.match(str(ob["instance"])):
+            if "instance" in ob and not instant_ok(str(ob["instance"])):
                 r.err(
                     f"{tag}: obligation instance {ob['instance']!r} is not an xsd:dateTime instant"
                 )

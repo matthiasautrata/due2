@@ -24,6 +24,7 @@ from referencing import Registry
 from referencing.jsonschema import DRAFT202012, Schema, SchemaRegistry
 
 from harness.json_types import Json, Obj, as_list, as_obj, as_str, loads
+from harness.xsd_time import datetime_ok
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = ROOT / "schema"
@@ -43,47 +44,18 @@ FILE_FIELDS = {"file", "source", "notes", "tags", "prefixes", "corpus", "scenari
 SCENARIO_FIELDS = {"name", "tags", "request", "sotw", "config", "expected"}
 NOT_PREFIXES = {"party", "sha256"}  # constraint.scope values and digests start with these
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
-DATETIME = re.compile(
-    r"^(-?\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(?:Z|[+-](\d{2}):(\d{2}))?$"
-)
-
-
-def datetime_value_ok(lexical: str) -> bool:
-    """Whether an `xsd:dateTime` lexical form names a real instant (XSD 1.1 Part 2 §3.3.7).
-
-    The schema checks only the shape, so `2026-02-30T12:00:00Z` and `2026-99-99T99:99:99+99:99`
-    pass it. Here the month is 1 to 12, the day exists in that month of that year (proleptic
-    Gregorian, where year 0 is a leap year), the time is at most `24:00:00`, which only
-    `24:00:00` itself reaches, and the timezone offset is at most 14 hours. A form with no
-    timezone passes here, since the schema's `Instant` pattern already rejects it."""
-    m = DATETIME.match(lexical)
-    if not m:
-        return False
-    year, month, day, hour, minute, second = (int(g) for g in m.groups()[:6])
-    leap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
-    days = [31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    if not 1 <= month <= 12 or not 1 <= day <= days[month - 1]:
-        return False
-    if hour == 24:
-        if minute or second or int(m.group(7) or 0):
-            return False
-    elif hour > 23 or minute > 59 or second > 59:
-        return False
-    if m.group(8) is not None:
-        oh, om = int(m.group(8)), int(m.group(9))
-        if om > 59 or oh > 14 or (oh == 14 and om):
-            return False
-    return True
 
 
 def _bad_datetimes(value: Json) -> list[str]:
-    """The lexical forms of every `xsd:dateTime` literal in `value` that names no instant."""
+    """The lexical forms of every `xsd:dateTime` literal in `value` that names no instant
+    (`harness.xsd_time`). The schema checks only the shape, so `2026-02-30T12:00:00Z` passes it,
+    and its `Instant` pattern already rejects a form with no timezone."""
     if isinstance(value, list):
         return [b for v in value for b in _bad_datetimes(v)]
     if isinstance(value, dict):
         lex = value.get("v")
         if value.get("t") == XSD_DATETIME and isinstance(lex, str):
-            return [] if datetime_value_ok(lex) else [lex]
+            return [] if datetime_ok(lex) else [lex]
         return [b for v in value.values() for b in _bad_datetimes(v)]
     return []
 

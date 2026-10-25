@@ -1,0 +1,17 @@
+{
+  "case": "due2-impossible-operand",
+  "source": "due2-native: a typed dateTime right operand on a day that does not exist (#125)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl, which checks a literal's datatype but not whether its lexical form names a value; the rejection is due2's. due2-datetime-no-timezone tests a well-formed value without a timezone; this one has a timezone but no value. clingo-i declines it with the reason `value: ill-typed dateTime` (spikes/clingo-i/clingo_i/values.py, `place`).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperatorTypeMismatch"
+    ],
+    "why": "The right operand \"2026-02-30T12:00:00Z\"^^xsd:dateTime of the dateTime constraint on ex:display names no instant, since February has no 30th (XSD 1.1 Part 2 §3.3.7). A right operand must be a value of its range's kind (due2-profiles.md §4), so W1 rejects the policy in stage 2."
+  }
+}

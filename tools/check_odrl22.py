@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -49,6 +50,10 @@ from pyshacl import validate  # pyright: ignore[reportUnknownVariableType]
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF
 from rdflib.term import Node
+
+# rdflib logs a traceback for each literal whose lexical form names no value, such as
+# "2026-02-30T12:00:00Z"^^xsd:dateTime. Such a literal is valid ODRL; check_corpus.py rejects it.
+logging.getLogger("rdflib.term").setLevel(logging.ERROR)
 
 ROOT = Path(__file__).resolve().parent.parent
 SHAPE = ROOT / "conformance" / "odrl22-shape.ttl"

@@ -1,0 +1,23 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. The duty's absolute deadline
+# has the shape of an xsd:dateTime but names no instant: February has no 30th
+# (XSD 1.1 Part 2 §3.3.7).
+
+ex:licencePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:display .
+
+ex:display a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Report ;
+    odrl:duty ex:pay .
+
+ex:pay a odrl:Duty ;
+    odrl:action odrl:compensate ;
+    dprod:deadline "2026-02-30T12:00:00Z"^^xsd:dateTime .

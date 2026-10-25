@@ -1,0 +1,17 @@
+{
+  "case": "due2-impossible-deadline",
+  "source": "due2-native: an absolute deadline on a day that does not exist (#125)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl, which checks a literal's datatype but not whether its lexical form names a value; the rejection is due2's. The literal matches the dateTime shape that due2-deadline-no-timezone tests, so only a value check catches it. clingo-i declines the policy with the reason `duty: deadline not comparable` (spikes/clingo-i/lp/duty.lp).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidTiming"
+    ],
+    "why": "ex:pay's dprod:deadline \"2026-02-30T12:00:00Z\"^^xsd:dateTime names no instant, since February has no 30th (XSD 1.1 Part 2 §3.3.7). An absolute deadline is an xsd:dateTime (due2-profiles.md §7), so W1 rejects the policy in stage 2."
+  }
+}

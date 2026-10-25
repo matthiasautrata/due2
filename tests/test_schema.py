@@ -130,6 +130,11 @@ def _impossible_instant(doc: Obj) -> None:
     sotw[0]["effective_at"] = {"v": "2026-02-30T12:00:00Z", "t": "xsd:dateTime"}
 
 
+def _padded_year(doc: Obj) -> None:
+    sotw = cast(list[Obj], cast(Obj, _scenario(doc)["sotw"])["sotw"])
+    sotw[0]["effective_at"] = {"v": "02026-01-01T00:00:00Z", "t": "xsd:dateTime"}
+
+
 def _relation_without_value(doc: Obj) -> None:
     del _atom(doc)["relation_value"]
 
@@ -188,6 +193,7 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "decide output: no verdict": _no_verdict,
     "schema: an Instant with no timezone (decisions/0024)": _instant_without_timezone,
     "value: an Instant on 30 February": _impossible_instant,
+    "value: an Instant whose year has a leading zero beyond four digits": _padded_year,
     "invariant: a relation with no relation_value": _relation_without_value,
     "invariant: a root that names no atom": _root_naming_no_atom,
     "invariant: an edge whose parent names no atom": _edge_from_no_atom,

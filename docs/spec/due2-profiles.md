@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.18
+**Status:** Draft v0.19
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.18** (2026-10-24, `decisions/0034`, #117): §5 rejects a logical constraint with more than one operand property. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.19** (2026-10-25, #125): §4 and §7 reject a temporal literal whose lexical form names no value of its datatype. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -148,6 +148,8 @@ Only IRIs are concepts. A string compares by code point whether or not the opera
 
 Mixed-component durations (months with days) and floating-point values are rejected at normalisation, as RL2 does: they have no total order or no exact equality. Durations are ordered only within one kind — day-time durations (days, hours, minutes, seconds) with each other, year-month durations (years, months) with each other. `P1Y` against `P365D` is `invalid`, so `U`.
 
+**Values.** A `dateTime`, `date`, or `duration` right operand whose lexical form names no value of its datatype, by the lexical rules of XSD 1.1 Part 2 §3.3.6, §3.3.7, and §3.3.9, is rejected at normalisation with `OperatorTypeMismatch`. Examples are `2026-02-30T12:00:00Z`, a day February lacks; `02026-01-01T00:00:00Z`, a year longer than four digits that starts with `0`; and `P1W`, ISO 8601's week form, which `xsd:duration` lacks. `tools/harness/xsd_time.py` implements the rules. Such a literal is the author's error, fixed by editing the policy. A value read at evaluation that does not fit is a data problem instead: its fact is `invalid` (`due2-workflows.md` §3.3), so `U`.
+
 **Timezones [D]** (`decisions/0024`, #101). A `dateTime` has a timezone, and a `date` has none. XSD orders `dateTime` values, and `date` values, only partially when some have a timezone and some do not: a value with a timezone and one without are incomparable within 14 hours of each other, and their equality is undetermined (XSD 1.1 Part 2 §3.3.7, §3.3.9). Within one shape the order is total. Normalisation rejects a right operand of the other shape with `OperatorTypeMismatch`, and a deadline with `InvalidTiming` (§7). A read value of the other shape does not fit any operator, so `U`. The instants of a request and a SOTW have a timezone too (`due2-workflows.md` §3).
 
 **Deliberate difference from DPROD.** DPROD's `apply` returns `false` for incomparable operands. due2 returns `U`, because an incomparable value is a data problem, not an unsatisfied condition (§8.2).
@@ -198,7 +200,7 @@ DPROD's timing vocabulary is adopted.
 - `dprod:deadline` — an `xsd:dateTime` with a timezone (absolute) or an `xsd:duration` (relative to activation).
 - `dprod:recurrence` — an RFC 5545 RRULE generating instances of a duty.
 
-Both are duty terms. On a Policy, a Permission, or a Prohibition, either is rejected with `TimingOutsideDuty`. A duty has at most one of each; a second deadline or recurrence, a deadline of another datatype, or a recurrence that is not an RRULE is rejected with `InvalidTiming` (`due2-diagnostics.md`).
+Both are duty terms. On a Policy, a Permission, or a Prohibition, either is rejected with `TimingOutsideDuty`. A duty has at most one of each; a second deadline or recurrence, a deadline of another datatype or whose lexical form names no value of its datatype (§4), or a recurrence that is not an RRULE is rejected with `InvalidTiming` (`due2-diagnostics.md`).
 
 A duty's timing lands in the corpus (`due2-workflows.md` §3.1, `duty`), projected by W1 stage 2 from the authored duty onto every atom it instantiates. W2 computes the effective deadline, the per-instance status, and the occurrences (`due2-workflows.md` §5.3), following DPROD's duty lifecycle (`formal-semantics.md` §5.2–§5.5). Timing applies to preconditions and to obligations in force alike. The vocabulary's readings:
 

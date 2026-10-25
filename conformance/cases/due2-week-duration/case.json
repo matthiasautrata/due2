@@ -1,0 +1,17 @@
+{
+  "case": "due2-week-duration",
+  "source": "due2-native: a relative deadline in ISO 8601's week form (#125)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl, which checks a literal's datatype but not whether its lexical form names a value; the rejection is due2's. ISO 8601 has a week form, PnW, but xsd:duration does not, so a duration regex that allows W accepts what XSD rejects. due2-mixed-duration tests a well-formed duration of two kinds. clingo-i declines the policy too, since its `DURATION` pattern (spikes/clingo-i/clingo_i/values.py) has no week part.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidTiming"
+    ],
+    "why": "ex:pay's dprod:deadline \"P1W\"^^xsd:duration names no xsd:duration, whose parts are years, months, days, hours, minutes, and seconds (XSD 1.1 Part 2 §3.3.6). A relative deadline is an xsd:duration (due2-profiles.md §7), so W1 rejects the policy in stage 2."
+  }
+}
