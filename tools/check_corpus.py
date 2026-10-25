@@ -507,9 +507,56 @@ def check_repeats(g: Graph, c: Node, p: Node, r: Report) -> None:
         )
 
 
+def operands(g: Graph, c: Node) -> list[Node]:
+    """The members of every connective on `c`, a member listed twice twice; none for a leaf
+    constraint."""
+    return [m for p in CONNECTIVES for o in g.objects(c, p) for m in members(g, o)]
+
+
+def constraint_tree(g: Graph, root: Node, r: Report) -> list[Node]:
+    """`root` and every node its connectives reach, each once, members before the logical
+    constraint that lists them; empty, with `MalformedConstraint`, when the members form a
+    cycle (due2-profiles.md §5). An empty tree gets no further checks, so a cycle is the one
+    diagnostic its constraint gets.
+
+    The walk keeps its own stack, so neither a cycle nor deep nesting meets Python's recursion
+    limit. A node shared by two logical constraints is listed once and is no cycle: a cycle
+    is a member that is still on the path from `root`.
+    """
+    order: list[Node] = []
+    done: set[Node] = set()
+    on_path = {root}
+    stack = [(root, iter(operands(g, root)))]
+    while stack:
+        c, todo = stack[-1]
+        m = next(todo, None)
+        if m is None:
+            stack.pop()
+            on_path.discard(c)
+            done.add(c)
+            order.append(c)
+        elif m in done:
+            continue
+        elif m in on_path:
+            path = [n for n, _ in stack]
+            cycle = [*path[path.index(m) :], m]
+            r.diag(
+                "MalformedConstraint",
+                f"logical constraint cycle: {' -> '.join(q(g, n) for n in cycle)} "
+                f"(due2-profiles.md 5)",
+            )
+            return []
+        else:
+            on_path.add(m)
+            stack.append((m, iter(operands(g, m))))
+    return order
+
+
 def check_constraint(
     g: Graph, c: Node, b: Bindings, r: Report, used: Used, in_duty: bool = False
 ) -> None:
+    """The checks on one node of a constraint tree. It does not descend into the members:
+    call it on every node `constraint_tree` returns."""
     for pred, label in REJECTED.items():
         if (c, pred, None) in g:
             r.diag(
@@ -529,8 +576,6 @@ def check_constraint(
                         f"{q(g, c)}: {q(g, p)} over the empty list "
                         f"(due2-profiles.md 5, decisions/0017)",
                     )
-                for m in members(g, o):
-                    check_constraint(g, m, b, r, used, in_duty)
             check_repeats(g, c, p, r)
         return
     left = list(g.objects(c, ODRL.leftOperand))
@@ -712,16 +757,9 @@ def check_concepts(
                 )
 
 
-def witness_kinds(g: Graph, c: Node, b: Bindings) -> set[str]:
-    """'witness' if the subtree reads a witness-dependent operand, 'guard' otherwise."""
-    conns = [p for p in CONNECTIVES if (c, p, None) in g]
-    if conns:
-        kinds: set[str] = set()
-        for p in conns:
-            for o in g.objects(c, p):
-                for m in members(g, o):
-                    kinds |= witness_kinds(g, m, b)
-        return kinds
+def leaf_kinds(g: Graph, c: Node, b: Bindings) -> set[str]:
+    """'witness' if leaf `c` reads a witness-dependent operand, 'guard' otherwise; empty when
+    it has no single left operand."""
     left = list(g.objects(c, ODRL.leftOperand))
     if len(left) != 1:
         return set()
@@ -731,24 +769,27 @@ def witness_kinds(g: Graph, c: Node, b: Bindings) -> set[str]:
     return {"guard"}
 
 
-def check_mixed(g: Graph, c: Node, b: Bindings, r: Report) -> None:
-    """Disjunction, xone, or negation mixing guards and witness conditions (workflows §5.2)."""
-    for p in (ODRL["or"], ODRL.xone, DPROD["not"]):
-        for o in g.objects(c, p):
-            ms = members(g, o)
-            kinds: set[str] = set()
-            for m in ms:
-                kinds |= witness_kinds(g, m, b)
-            if len(kinds) == 2:
-                r.diag(
-                    "MixedDutyConstraint",
-                    f"{q(g, c)}: {q(g, p)} mixes a guard and a witness condition",
-                )
-            for m in ms:
-                check_mixed(g, m, b, r)
-    for o in g.objects(c, ODRL["and"]):
-        for m in members(g, o):
-            check_mixed(g, m, b, r)
+def check_mixed(g: Graph, tree: list[Node], b: Bindings, r: Report) -> None:
+    """Disjunction, xone, or negation mixing guards and witness conditions
+    (due2-workflows.md §5.2).
+
+    `tree` comes from `constraint_tree`, members first, so a logical constraint's kinds are
+    the union of its members' kinds, already computed.
+    """
+    kinds: dict[Node, set[str]] = {}
+    for c in tree:
+        # `set[str]()` types the union, and is its value over no members (`odrl:and ()`).
+        if any((c, p, None) in g for p in CONNECTIVES):
+            kinds[c] = set[str]().union(*(kinds[m] for m in operands(g, c)))
+        else:
+            kinds[c] = leaf_kinds(g, c, b)
+        for p in (ODRL["or"], ODRL.xone, DPROD["not"]):
+            for o in g.objects(c, p):
+                if len(set[str]().union(*(kinds[m] for m in members(g, o)))) == 2:
+                    r.diag(
+                        "MixedDutyConstraint",
+                        f"{q(g, c)}: {q(g, p)} mixes a guard and a witness condition",
+                    )
 
 
 def check_rule(
@@ -796,12 +837,15 @@ def check_rule(
     if targets and (rule, ODRL.output, None) in g:
         r.diag("TargetAndOutput", f"{q(g, rule)}: both target and output")
     for c in g.objects(rule, ODRL.constraint):
-        check_constraint(g, c, b, r, used, kind == ODRL.Duty)
+        tree = constraint_tree(g, c, r)
+        for n in tree:
+            check_constraint(g, n, b, r, used, kind == ODRL.Duty)
         if kind == ODRL.Duty:
-            check_mixed(g, c, b, r)
+            check_mixed(g, tree, b, r)
     for a in actions:
         for ref in g.objects(a, ODRL.refinement):
-            check_constraint(g, ref, b, r, used, kind == ODRL.Duty)
+            for n in constraint_tree(g, ref, r):
+                check_constraint(g, n, b, r, used, kind == ODRL.Duty)
     for pred in (ODRL.consequence, ODRL.remedy):
         if (rule, pred, None) in g:
             r.warn(f"{q(g, rule)}: {q(g, pred)} is carried by stage 1 but not evaluated for access")

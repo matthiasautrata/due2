@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.15 (2026-10-25)
+**Status:** Draft v0.16 (2026-10-25)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.15** (2026-10-25, #125): `OperatorTypeMismatch` and `InvalidTiming` cover a temporal literal whose lexical form names no value of its datatype. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.16** (2026-10-25, #126): `MalformedConstraint` covers logical constraints whose members form a cycle. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -13,7 +13,7 @@ A diagnostic is `(code, severity, ref, message)`:
 
 - **code** — a name from §3. A new rejection or warning lands as a spec edit in the defining section plus a row here, in the same commit.
 - **severity** — `error` rejects the policy: W1 returns its diagnostics and no corpus, no lineage, no partial output (`due2-workflows.md` §4). `warning` accepts it: the policy is normalised as written, and the warning is carried into the corpus (`due2-workflows.md` §3.1 `diagnostic`) and from there into the trace of every case that evaluates the policy (`due2-workflows.md` §3.5).
-- **ref** — the node the diagnostic is about: the policy, rule, constraint, or asset/party node, by IRI or by its stage-1 skolem IRI. `RuleReferenceCycle` refs the cycle, every rule and edge in order (`odrl-compound-to-atomic-normalization.md` §6.3).
+- **ref** — the node the diagnostic is about: the policy, rule, constraint, or asset/party node, by IRI or by its stage-1 skolem IRI. `RuleReferenceCycle` refs the cycle, every rule and edge in order (`odrl-compound-to-atomic-normalization.md` §6.3), and a `MalformedConstraint` for a cycle of logical constraints refs every constraint on it in order (`due2-profiles.md` §5).
 - **message** — free text for the author. Not compared by tests.
 
 **Stage.** W1 reports every error of the first stage that has one, and no later stage runs. Stage 1 is the input profile, identity, and atomic expansion (`odrl-compound-to-atomic-normalization.md`); stage 2 is constraints, operand bindings, and duty timing (`due2-profiles.md`; `due2-workflows.md` §4). So the set of error codes for a rejected policy is deterministic, and a negative corpus case states it exactly (`conformance/README.md`).
@@ -55,7 +55,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `RuleReferenceCycle` | error | 1 | A cycle of `duty`, `consequence`, `remedy` edges. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `LimitExceeded` | error | 1 | Input triples, generated rules, or generated policies over the invocation's limit. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `AnonymousEntity` | warning | 1 | A blank-node target or assignee with no `odrl:uid` and no refinement: no request can name it, so its Rule is never `T`, and `U` on a request without a target or assignee. Also raised when the Rule names other targets. The ref names the node and its Rule. | `odrl-compound-to-atomic-normalization.md` §3 |
-| `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; a set right operand that mixes a list with other values, gives two lists, or is the empty list; a logical constraint with more than one operand property, or with the empty list as an operand value, or whose list names one node twice; or an `odrl:xone` with two members, neither a logical constraint, that have the same left operand, operator, unit, and right operand values. | ODRL IM §2.5.1, §2.5.2; `due2-profiles.md` §4 (`decisions/0013` and its amendment), §5 (`decisions/0017`, `decisions/0022`) |
+| `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; a set right operand that mixes a list with other values, gives two lists, or is the empty list; a logical constraint with more than one operand property, or with the empty list as an operand value, or whose list names one node twice; logical constraints whose members form a cycle; or an `odrl:xone` with two members, neither a logical constraint, that have the same left operand, operator, unit, and right operand values. | ODRL IM §2.5.1, §2.5.2; `due2-profiles.md` §4 (`decisions/0013` and its amendment), §5 (`decisions/0017`, `decisions/0022`) |
 | `UnsupportedOperator` | error | 2 | An operator outside the core registry. | `due2-profiles.md` §4 |
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | `due2-profiles.md` §3 |
 | `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in; or a `due2:conceptScheme` on an operand whose range is a datatype. | `due2-profiles.md` §3, §4 |

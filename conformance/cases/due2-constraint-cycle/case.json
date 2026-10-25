@@ -1,0 +1,17 @@
+{
+  "case": "due2-constraint-cycle",
+  "source": "due2-native: logical constraints whose members form a cycle (#126)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "Authored for due2. The policy passes odrl22-shape.ttl, which checks each logical constraint's members but not whether following them comes back to where it started; the rejection is due2's. ex:inEU is a member of both logical constraints, which alone is admitted: the cycle is ex:domestic -> ex:eitherRegion -> ex:domestic. clingo-i declined it before this case, with the reason `constraint: cycle` (spikes/clingo-i/lp/constraint.lp); tools/check_corpus.py crashed on it.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MalformedConstraint"
+    ],
+    "why": "ex:domestic lists ex:eitherRegion as a member, and ex:eitherRegion lists ex:domestic, so the constraint has no finite expansion. due2-profiles.md §5 rejects a cycle of logical-constraint members with MalformedConstraint, in stage 2."
+  }
+}

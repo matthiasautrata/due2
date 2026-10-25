@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.19
+**Status:** Draft v0.20
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.19** (2026-10-25, #125): §4 and §7 reject a temporal literal whose lexical form names no value of its datatype. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.20** (2026-10-25, #126): §5 rejects logical constraints whose members form a cycle. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -167,6 +167,8 @@ A logical constraint has exactly one operand property (ODRL IM §2.5.2). One wit
 A connective's members may be one RDF list or repeated values, as a set right operand's may (§4). A connective over the empty list, `odrl:and ()` for example, is rejected (`MalformedConstraint`, `decisions/0017`): ODRL gives it no meaning, and the empty conjunction's `T` or the empty disjunction's `F` would decide the rule without looking at the request.
 
 A connective whose list names one node twice is rejected too (`MalformedConstraint`, `decisions/0022`): ODRL IM §2.5.2 requires the operand values to be unique Constraint instances. An `odrl:xone` is also rejected when two of its members that are not logical constraints state the same left operand, operator, unit, and set of right operand values, compared as written terms (`due2-workflows.md` §2 `Term`). The two nodes are distinct instances, so ODRL admits this form, and the rejection is due2's own. Read as positions in the list, as W1's expansion reads it (`due2-workflows.md` §4, stage 2), `xone(a, a, b)` is `b ∧ ¬a` whenever `a` is decided; read as a set, it is `xone(a, b)`. ODRL does not say which reading it means, and an author who lists a condition twice most likely made a mistake. `and` and `or` are idempotent, so two leaves with the same content change nothing there and are admitted.
+
+The members of logical constraints form no cycle: following members from a logical constraint never leads back to it. A cycle is rejected (`MalformedConstraint`), and the diagnostic's ref lists the constraints on it in order: `ex:c odrl:and ( ex:c )`, for example, or `ex:a` listing `ex:b` as a member while `ex:b` lists `ex:a`. ODRL IM §2.5.2 gives a logical constraint's operands as existing Constraint instances and does not say what one that contains itself means, and W1's expansion into DNF (`due2-workflows.md` §4, stage 2) would never end on it. A constraint that two logical constraints list as a member, or that two Rules name, is no cycle and is admitted. Such a constraint is named: stage 1 rejects a blank node referenced twice (`SharedAnonymousNode`) and any cycle of blank nodes (`UnanchoredAnonymousNode`, `odrl-compound-to-atomic-normalization.md` §3), so a cycle that reaches stage 2 runs through named constraints.
 
 Stage 2 of W1 pushes negation inward before DNF: De Morgan for `and` and `or`, and complement operators for atoms — `eq`↔`neq`, `lt`↔`gteq`, `lteq`↔`gt`, `isAnyOf`↔`isNoneOf`. Both rewrites are valid in Kleene logic because an operand that is missing, ill-typed, or a concept outside the operand's schemes (§4) gives `U` on both sides. `not` over `xone` expands `xone` first.
 

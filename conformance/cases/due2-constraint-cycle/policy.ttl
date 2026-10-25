@@ -1,0 +1,41 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native negative case: logical constraints whose members form a cycle
+# (due2-profiles.md §5). ex:domestic is a member of ex:eitherRegion, which is a
+# member of ex:domestic, so the constraint has no finite reading: expanding it
+# into DNF would never end. ex:inEU is shared by both logical
+# constraints, which alone is no cycle.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:domesticExport .
+
+ex:domesticExport a odrl:Permission ;
+    odrl:action ex:export ;
+    odrl:target ex:ClientData ;
+    odrl:constraint ex:domestic .
+
+ex:domestic a odrl:LogicalConstraint ;
+    odrl:and ( ex:inEU ex:eitherRegion ) .
+
+ex:eitherRegion a odrl:LogicalConstraint ;
+    odrl:or ( ex:inEU ex:domestic ) .
+
+ex:inEU a odrl:Constraint ;
+    odrl:leftOperand ex:euDomiciled ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperand true .
+
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# this case needs no particular parent, so odrl:use, the broadest.
+ex:export a odrl:Action ; odrl:includedIn odrl:use .
+
+ex:euDomiciled a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:euDomiciled ;
+    rdfs:range xsd:boolean .
