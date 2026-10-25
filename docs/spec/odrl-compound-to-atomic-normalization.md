@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.17  
+Version: 0.18  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.17 (2026-10-24, `decisions/0034`, #117): §3 requires two properties of the ODRL Information Model that the vocabulary's domains do not state: Assets and Parties are resources (`LiteralEntity`), and every action reaches `odrl:use` or `odrl:transfer` (`InvalidActionHierarchy`); it rejects `odrl:hasPolicy` with `UnsupportedConstruct`.
+Changes in 0.18 (2026-10-25, `decisions/0032` amendment, #121): §5.2 notes the two id domains that stage 2 and W2 mint under its namespace. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
@@ -201,6 +201,8 @@ activity_uid = H(frame(
 `source_digest` is the raw SHA-256 of the canonical N-Quads (§4) of the input graph after skolemization, and `source_ni` the corresponding RFC 6920 `ni:///sha-256;...` URI. Skolemization is deterministic and label-independent, so isomorphic inputs share a source digest. Only the Activity and the lineage depend on it.
 
 These UUIDs are stable names with 122 retained digest bits. They are not signatures or authorization credentials.
+
+Stage 2 and W2 build on these ids under the same `namespace`, with two further domains: `duty-atom`, a duty atom's id when stage 2 adds inherited roles or parameter values (`due2-workflows.md` §3.1), and `duty-instance`, a duty instance's key (`due2-workflows.md` §5.3).
 
 ## 6. Transformation
 

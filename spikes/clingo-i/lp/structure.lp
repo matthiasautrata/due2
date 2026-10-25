@@ -417,10 +417,10 @@ duty_bearer(Duty, Party) :- inh_bearer(_, Duty, Party).
 value `T` (or `none`), and one bearer `Party` (or `none`). A duty atom is not an `atom/1`: it is
 matched against evidence, not against the request (due2-workflows.md §5.3). The bearer is in the
 id, so a duty shared by two parents with one bearer is one atom, with one instance, and shared
-under two bearers it is two (`binding_key` of due2-workflows.md §3.1). Other inherited parties are
-not in the id, though `binding_key` holds them. A witness reads only the bearer of a duty, and a
-`grant` instance is keyed on the request instead (due2-workflows.md §5.3), so two atoms that
-differ only in such a party would have the same findings and the same authored duty IRI.
+under two bearers it is two. Other inherited parties are not in the id, though the corpus's atom
+id holds them (`duty.atom_id` of due2-workflows.md §3.1). A witness reads only the bearer of a
+duty, so two atoms that differ only in such a party would have the same findings and the same
+authored duty IRI.
 *%
 duty_atom(a(Duty, A, T, Party)) :- duty_value(Duty, action, A), duty_rel(Duty, T),
     duty_bearer(Duty, Party).

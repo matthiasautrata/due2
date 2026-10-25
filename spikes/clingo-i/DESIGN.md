@@ -221,7 +221,7 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 | `evidence_object/2`, `evidence_issuer/2` | its optional `object` and `issuer` | `duty.lp` |
 | `evidence_discharges/3`: `evidence_discharges(E, Duty, Ref)` | its optional `discharges` | `duty.lp` |
 | `evidence_param/3`: `evidence_param(E, Prop, Value)` | each of its `params` | `lift.lp`, `operand.lp` (`witness`) |
-| `activation/2`: `activation(Key, Lit)` | each entry of `activation`: an instance key or rule IRI, and its instant. `duty.lp` reads a key that is a duty's IRI, the key of a non-recurring instance (`conformance/README.md`, SOTW) | `lift.lp`, `duty.lp` |
+| `activation/2`: `activation(Key, Lit)` | each entry of `activation`: an instance key or rule IRI, and its instant. `duty.lp` reads a key that is a duty's IRI, as the case format names an activation (`conformance/README.md`, SOTW) | `lift.lp`, `duty.lp` |
 | `sotw_closure/3`: `sotw_closure(Pred, Lo, Hi)` | each `closure` triple, `Pred` expanded | `lift.lp`: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`; any other relation declines |
 
 **Config** (`due2-workflows.md` §3.4).
@@ -302,7 +302,7 @@ Shaped like `due2-workflows.md` §3.1, under `odrl-compound-to-atomic-normalizat
 | `atom(X)`, `atom_effect(X, Eff)`, `atom_policy(X, P)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, policy_id, source_rule)` |
 | `atom_party(X, F, Party)` | `atom_party`, match keys only |
 | `duty_atom(Y)`, `atom_effect(Y, oblige)`, `duty_action(Y, A)`, `duty_relation(Y, T)` | `atom`, for an `Oblige` atom |
-| `duty_of(Y, Duty)`, `duty_scope(Y, InstScope)`, `duty_deadline(Y, Lit)` | `duty(atom_id \| source_duty, scope, binding_key, deadline?, recurrence?)` |
+| `duty_of(Y, Duty)`, `duty_scope(Y, InstScope)`, `duty_deadline(Y, Lit)` | `duty(atom_id \| source_duty, scope, deadline?, recurrence?)` |
 | `bearer(Y, Party)` | `atom_party`, for the bearer role |
 | `pre(X, Y)` | `edge`, a precondition |
 | `obligation(Y)` | `root` |
@@ -320,7 +320,7 @@ Shaped like `due2-workflows.md` §3.1, under `odrl-compound-to-atomic-normalizat
   - **Values.** A root obligation is a root rule, so it takes the policy's values for each family it leaves unstated (`odrl-compound-to-atomic-normalization.md` §6.2). A stated `odrl:output` fills the relation family, so the policy's target is not taken. A precondition duty takes no policy-level value.
   - **Inheritance.** A precondition duty that states no function, and is not a root obligation, inherits its parties from each parent atom (`inherits/1`, `due2-profiles.md` §6). One that states any function inherits none (IM 2.2 §2.6.5).
   - **Bearer.** The bearer is the party of a function that plays the bearer role (`bearer_fn/1`): `odrl:assignee`, or `dprod:subjectOfDuty` under DPROD. For each role, a value the duty states beats one interiorised from the policy level (due2-workflows.md §4, stage 2), so a root obligation that states `dprod:subjectOfDuty` is not also borne by the policy-level `odrl:assignee` it receives (`states_bearer/1`, `bearer_value/3`). An inheriting duty takes the bearer of its parent atom (`inh_bearer/3`). With none, the bearer is `none`: the request subject.
-  - **The id.** The bearer is in the id, and the other inherited parties are not. A duty shared by two parents with one bearer is therefore one atom, with one instance, and shared under two bearers it is two. `binding_key` (`due2-workflows.md` §3.1) also holds the other inherited parties, but a witness reads only the bearer, and a `grant` instance is keyed on the request (`due2-workflows.md` §5.3). So two atoms that differ only in another party would have the same findings, and the reply names both by one duty IRI.
+  - **The id.** The bearer is in the id, and the other inherited parties are not. A duty shared by two parents with one bearer is therefore one atom, with one instance, and shared under two bearers it is two. The corpus's atom id also holds the other inherited parties (`duty.atom_id`, `due2-workflows.md` §3.1), but a witness reads only the bearer, so two atoms that differ only in another party would have the same findings, and the reply names both by one duty IRI. An instance key adds the request's performer and reference to the atom's id (`due2-workflows.md` §5.3). clingo-i evaluates one request at a time, so its instances are already those of that request, and it needs neither.
   - **Edges.** `pre(X, Y)` fans out over every atom of the duty (`odrl-compound-to-atomic-normalization.md` §6.3), so a permission atom's preconditions are read as a conjunction. An inheriting duty gives `X` only its atoms with `X`'s bearer. A permission that is its own precondition is `reject("RuleReferenceCycle", R)`.
   - **Timing and scope.** `dprod:deadline` on a duty, when DPROD is selected, gives `duty_deadline(Y, Lit)`, `absolute` for an `xsd:dateTime` and `relative` for an `xsd:duration` (`deadline_kind/2`). Two deadlines, or one of another type, is `reject("InvalidTiming", Duty)`; a deadline or a recurrence on the policy or a rule is `reject("TimingOutsideDuty", Node)`. `due2:instanceScope` gives `duty_scope(Y, InstScope)`, `member` by default.
 
@@ -487,7 +487,7 @@ For example, take a duty whose constraint is `ex:g eq ex:v and ex:w eq ex:v and 
 
 The collection rows are `decisions/0018`: each member bears a duty whose bearer is a party collection, so the subject's own act witnesses it, and another member's does not. With no subject, a member's act is `u`, since that member may be the subject, and a non-member's is `f`.
 
-The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the corpus gives a non-recurring instance, or `effective_at` when the SOTW has none (`due2-workflows.md` §5.3). An instance is keyed when its scope is `grant` and the request has a `reference`; without one, a `grant` duty falls back to `member`.
+The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the case format gives an activation, or `effective_at` when the SOTW has none (`due2-workflows.md` §5.3). An instance is keyed when its scope is `grant` and the request has a `reference`; without one, a `grant` duty falls back to `member`.
 
 **Fulfilled and status.** `witness(Y, E)` is the Kleene conjunction of the seven checks and of the ranks of `Y`'s witness conditions in world `wit(E)`. `fulfilled(Y)` is the Kleene disjunction of the witnesses, `f` when there is no evidence. `passed(Y)` holds when the deadline is earlier than `effective_at`. It is fixed per evaluation, since both instants are inputs, so it is a fact about the vector, not a finding. The duty status `status(k, Y, S)` is the table of `due2-workflows.md` §5.3:
 

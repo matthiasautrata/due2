@@ -39,7 +39,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0029](0029-a-void-policy-keeps-its-obligations.md) | A void policy keeps its root obligations | 2026-10-24 | In force |
 | [0030](0030-a-re-evaluation-moves-the-request-time.md) | A re-evaluation asks at its own time | 2026-10-24 | In force |
 | [0031](0031-a-permit-is-the-answer-of-the-terms.md) | A verdict is the answer of the terms supplied | 2026-10-24 | In force |
-| [0032](0032-an-instance-records-whether-its-deadline-passed.md) | An instance records whether its deadline passed; a grant instance is keyed on its binding | 2026-10-24 | In force |
+| [0032](0032-an-instance-records-whether-its-deadline-passed.md) | An instance records whether its deadline passed; a grant instance is keyed on its binding | 2026-10-24 | Amended: an instance is its duty atom, with the request's performer, reference, and occurrence added |
 | [0033](0033-a-replaced-policy-and-an-unrecognised-profile-are-rejected.md) | A replaced policy and an unrecognised profile are rejected | 2026-10-24 | In force |
 | [0034](0034-the-odrl-layer-checks-the-action-hierarchy.md) | The ODRL layer checks the action hierarchy, and `odrl:hasPolicy` is rejected | 2026-10-24 | In force |
 | [0035](0035-a-witness-read-is-keyed-by-its-witness.md) | A part read against a witness is keyed by its witness | 2026-10-25 | In force |

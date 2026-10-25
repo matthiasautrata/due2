@@ -39,5 +39,5 @@ The check on `Enum` values catches a misspelt or dropped value, not a value list
 - **Canonical bytes.** Tuple order, the JCS serialisation, and the collection id (`decisions/0007`) are not checked here. The caller canonicalises before it hashes.
 - **Corpus invariants.** The structure that W1 guarantees and `due2-workflows.md` §3.1 states, such as every `Permit` and `Forbid` atom being a root, is checked by `check_invariants` in `tools/harness/vectors.py`.
 - **`PlanOutput`.** Its form, `Reads`, is open (#106), so its definition is a description only.
-- **Derived ids.** A `Digest` is checked for its form only. The bytes behind `binding_key`, `alt_id`, and the instance keys are open (#107).
+- **Derived ids.** A `Digest` is checked for its form only. The bytes behind `discharges` and `alt_id` are open (#107).
 - **Operand bindings.** No relation carries them yet, so no collection can describe a constraint that needs one (#108).

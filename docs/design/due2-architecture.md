@@ -103,7 +103,7 @@ Duties are shared in practice. "Complete annual training" attaches to many permi
 
 Giving every attachment its own atom would conflict with ODRL, where a duty shared by UID across permissions is fulfilled once, and with §8, where fulfilment is derived from evidence rather than discharged against a stored atom. Duty instances handle both cases, following RL2 (§8.2):
 
-- **A duty instance is the authored duty plus its scope.** Scope `member`: the authored duty UID and its ground binding (§5). Attachments that bind the duty identically share one instance, and one fulfilment serves all of them. Scope `grant`: the authored duty UID and the request — one instance per request, for "pay per use".
+- **A duty instance is the authored duty plus its scope.** Scope `member`: the duty atom, whose id holds the authored duty UID and its ground binding (§5), plus the performer when the request supplies it (`due2-workflows.md` §5.3). Attachments that bind the duty identically share one instance, and one fulfilment serves all of them. Scope `grant`: the duty atom and the request's reference — one instance per request, for "pay per use".
 - **Fulfilment is derived from evidence.** A duty is fulfilled by a record that its obligated party performed its action on its object, admitted by the duty's signer configuration (`due2-workflows.md` §5.3). A grant-scoped instance accepts only evidence submitted against it.
 - **"About this dataset" is a binding, not an identity.** The petition duty binds its target to its parent's. X and Y bind differently, so their instances need evidence about different objects and cannot cross-discharge. An authored duty that names no target asks for one petition, and one petition satisfies it everywhere — which is what it says.
 

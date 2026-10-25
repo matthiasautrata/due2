@@ -363,9 +363,6 @@
                   "grant"
                 ]
               },
-              "binding_key": {
-                "$ref": "#/$defs/Digest"
-              },
               "deadline": {
                 "$ref": "#/$defs/Term"
               },
@@ -376,8 +373,7 @@
             "required": [
               "atom_id",
               "source_duty",
-              "scope",
-              "binding_key"
+              "scope"
             ],
             "additionalProperties": false
           }
@@ -721,7 +717,7 @@
             "type": "object",
             "properties": {
               "instance_key": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Id"
               },
               "at": {
                 "$ref": "#/$defs/Instant"
@@ -1183,7 +1179,7 @@
             "type": "object",
             "properties": {
               "instance_key": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Id"
               },
               "atom_id": {
                 "$ref": "#/$defs/Id"

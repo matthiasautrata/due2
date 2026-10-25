@@ -248,8 +248,9 @@ activated(Duty) :- activation(Duty, _).
 The instance of duty atom `Y` was first owed at the instant `Start`: the SOTW's activation for its
 duty, or `effective_at` when there is none. That default is due2-workflows.md §5.3's.
 *%
-% The corpus keys a non-recurring instance by its duty's IRI (conformance/README.md, SOTW), so
-% every atom of one duty shares its activation.
+% The case format names an activation by its duty's IRI (conformance/README.md, SOTW), so every
+% atom of one duty shares its activation. That IRI is the instance key when W1 does not expand the
+% duty and W2 adds no performer (due2-workflows.md §5.3).
 activation_at(a(Duty, Term, T, Party), Start) :- duty_atom(a(Duty, Term, T, Party)),
     activation(Duty, Start).
 activation_at(a(Duty, Term, T, Party), Start) :- duty_atom(a(Duty, Term, T, Party)),

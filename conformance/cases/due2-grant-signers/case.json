@@ -5,7 +5,7 @@
   "needs": [
     "due2:instanceScope"
   ],
-  "notes": "Authored for due2; no origin result. The case format spells a grant instance key as {\"duty\": <source duty>, \"reference\": <request reference>} in evidence.discharges — the inputs of the digest workflows §5.3 defines — so cases stay hand-writable; the evaluator computes the digest. config.signers lists the admissibility record as {duty, issuer} pairs (workflows §3.4).",
+  "notes": "Authored for due2; no origin result. The case format spells the grant that evidence.discharges names as {\"duty\": <source duty>, \"reference\": <request reference>} — the inputs of the digest workflows §5.3 defines — so cases stay hand-writable; the evaluator computes the digest. config.signers lists the admissibility record as {duty, issuer} pairs (workflows §3.4).",
   "prefixes": {
     "ex": "https://example.org/"
   },
@@ -55,7 +55,7 @@
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
-        "why": "ex:payPerUse is grant-scoped, so its instance key is (payPerUse, req-7). ev-pay is a pay on ex:ReportFee by the bearer (Alice, inherited from the permission), before effective_at, issued by ex:Bank which signers admits, and it discharges exactly that key: a witness. The candidate is ready."
+        "why": "ex:payPerUse is grant-scoped, so its instance is req-7's, and only evidence that discharges (payPerUse, req-7) can witness it. ev-pay is a pay on ex:ReportFee by the bearer (Alice, inherited from the permission), before effective_at, issued by ex:Bank which signers admits, and it discharges exactly that grant: a witness. The candidate is ready."
       }
     },
     {
@@ -107,7 +107,7 @@
           ]
         ],
         "obligations": [],
-        "why": "The instance key is now (payPerUse, req-8). ev-pay discharges req-7's instance, so under grant scope it is no witness here (§5.3): the duty is F, outstanding, and the one route is to pay again."
+        "why": "The instance is now req-8's. ev-pay discharges req-7's grant, so under grant scope it is no witness here (§5.3): the duty is F, outstanding, and the one route is to pay again."
       }
     },
     {

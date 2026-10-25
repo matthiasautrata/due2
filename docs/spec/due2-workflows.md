@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.43
+**Status:** Draft v0.44
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.43** (2026-10-25, `decisions/0035`, #120): the parts of a duty's witness conditions are recorded per witness, in the new relations `witness_basis` and `witness_part` (§3.5), and `basis` gains `predicate` in its key. The W2 signature lists `unknown_part` and both new relations (§5); §3.7, §5.1–§5.4, and L10 follow. W3 reads neither new relation: a `fulfilled` finding is a completion variable of its own (§6.4). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.44** (2026-10-25, `decisions/0032` amendment, #121): a duty atom's id identifies what it asks for, by stage 1's construction extended with what stage 2 adds (§3.1, §4), and replaces `binding_key`, which is dropped. A `member` instance is its duty atom; W2 mints an instance id from the atom's id with the request subject when the subject is the performer, the `reference` for a `grant` instance, and the occurrence (§5.3). `instance_key` is an `Id` (§3.3, §3.5). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -64,7 +64,7 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 | `Enum` | A closed set of strings, listed in the field's row of §3 or in the section that row cites. |
 | `Flag` | `true` or `false`. |
 | `Count` | An integer within ±2^53. |
-| `Digest` | `sha256:` followed by 64 lowercase hex digits: the SHA-256 of the bytes that the field's row names, written as a collection id is (below). The bytes behind the derived keys, `binding_key`, `alt_id`, and the instance keys, are open (#107). |
+| `Digest` | `sha256:` followed by 64 lowercase hex digits: the SHA-256 of the bytes that the field's row names, written as a collection id is (below). The bytes behind `discharges` and `alt_id` are open (#107). |
 | `String` | Text that is neither an IRI nor a literal, such as an RFC 5545 RRULE. |
 
 **Canonical form.** Each collection has exactly one canonical serialisation, and its digest is the collection id. **[D]** (`decisions/0007`):
@@ -93,7 +93,7 @@ constraint        (constraint_id | atom_id, clause?: Count, scope: Enum, left_op
 constraint_value  (constraint_id, value: Term)
 edge              (parent_id, child_id)
 root              (atom_id)
-duty              (atom_id | source_duty, scope: Enum, binding_key: Digest, deadline?: Term, recurrence?: String)
+duty              (atom_id | source_duty, scope: Enum, deadline?: Term, recurrence?: String)
 closure           (relation, narrower, broader)
 diagnostic        (policy_id, code: Enum, ref)
 ```
@@ -116,7 +116,8 @@ diagnostic        (policy_id, code: Enum, ref)
 | `edge` | Parent atom → child duty atom. |
 | `root` | The atoms that root an Atomic Policy in W1 stage 1: every `Permit` and `Forbid` atom, and every policy-level obligation. Stored, because it is not derivable: one named duty can be both an obligation of its policy and the precondition of a permission, so a root can also be the child of an edge. |
 | `closure` | Direct hierarchy edges declared in the policy and its profile modules — `odrl:includedIn` between actions, typed `odrl:partOf` between assets or parties and their collections, `rdfs:subClassOf`, and `rdf:type` edges — those that type collections and those of individuals an `isA` constraint can compare. Between concepts there are two relations. `skos:broader` is the hierarchy, and a `skos:narrower` triple is recorded as the inverse `skos:broader` edge. `skos:inScheme` relates a concept to each scheme it is in, whether the input states that as `skos:inScheme`, `skos:topConceptOf`, or `skos:hasTopConcept` (`due2-profiles.md` §6). ODRL's own action hierarchy is one such module (`profiles/odrl-actions.ttl`). |
-| `duty` | For every `Oblige` atom: the authored duty it instantiates, its instance scope `Enum {member, grant}`, and `binding_key` — the digest of `source_duty` and its ground binding (parameter values, inherited party roles, target). W2 derives the duty instance from these (§5.3). Scope defaults to `member`. |
+| `duty` | For every `Oblige` atom: the authored duty it instantiates, and its instance scope `Enum {member, grant}`. Scope defaults to `member`. W2 derives the duty instance from the atom (§5.3). |
+| `duty.atom_id` | The duty atom's id identifies what it asks for. Stage 1 gives each rule it emits an id: the authored duty's own identity, or for a duty it expands, `atomic_rule_uid`, from the source duty's identity and the selected action, relation value, and parties (`odrl-compound-to-atomic-normalization.md` §5.1, §5.2). When stage 2 adds inherited party roles or parameter values (§4), the atom's id is `H(frame(namespace, "duty-atom", rule_uid, additions))`, in that document's notation (§5.2 there): `rule_uid` is stage 1's id, and `additions` is a run of fields, `frame(p, term(v))` for each party function or parameter `p` that stage 2 binds to the value `v`, sorted by unsigned byte order as `local_digest` sorts its pairs. Otherwise the atom keeps stage 1's id. Nothing else enters it, not the parent or the policy, so a named duty bound identically in two places is one atom. `rule_uid` is framed as stage 1 frames an identity, a UUID IRI as its raw bytes and any other IRI as UTF-8. **[D]** (`decisions/0032`, amendment of 2026-10-25) |
 | `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term with a timezone (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
 | `duty.recurrence` | An RFC 5545 RRULE string; the duty is owed once per occurrence. W2 derives the instances (§5.3). |
 | `diagnostic` | A warning W1 accepted the policy with: its code (`due2-diagnostics.md` §3) and the node it is about. Only warnings appear, because an error leaves no corpus (§4). W2 and W3 never read it; it is in the corpus so that the corpus digest, and with it the evaluation id, records the reading the policy was normalised under. |
@@ -149,7 +150,7 @@ fact_value        (property, value: Term)
 attribution       (property, source | observed_at: Instant)
 evidence          (evidence_id | occurred_at: Instant, actor, action, object?, issuer?, discharges?: Digest)
 evidence_param    (evidence_id, name | value: Term)
-activation        (instance_key: Digest | at: Instant)
+activation        (instance_key: Id | at: Instant)
 closure           (module, relation, narrower, broader)
 ```
 
@@ -200,7 +201,7 @@ unknown_part   (atom_id, predicate: Enum, kind: Enum, ref | input, status: Enum)
 witness_basis  (atom_id, witness, ref | truth: Truth)
 witness_part   (atom_id, witness, ref | input, status: Enum)
 read           (property)
-instance       (instance_key: Digest | atom_id, occurrence?: Instant, status: Enum, passed: Flag)
+instance       (instance_key: Id | atom_id, occurrence?: Instant, status: Enum, passed: Flag)
 eliminated     (atom_id, by_atom, rule: Enum)
 alternative    (alt_id: Digest, permission_id)
 alt_duty       (alt_id: Digest, duty_id)
@@ -220,7 +221,7 @@ diagnostic     (policy_id, code: Enum, ref)
 | `witness_basis` | W2 | The parts of a duty's witness conditions that determine its `fulfilled` finding, for each witness (§5.3): `witness` is the witness's `evidence_id`, and `ref` is the constraint. Every part of a witness clause is a constraint that reads the witness (§5.2). The basis rule of §5.2 applies per witness: for `T`, every part of each clause the witness satisfies, so a witness that satisfies none has no rows; for `F`, the failing parts of every clause, for every witness; for `U`, the `U` parts of each clause that is not `F` for that witness. **[D]** (`decisions/0035`) |
 | `witness_part` | W2 | The `U` parts of a duty's witness clauses, when the duty's `fulfilled` finding is `T` or `U`: its atom, the witness, the constraint `ref`, and the `input` and `status` as in `unknown_part`. A part is named under a witness exactly when a clause that reads it is `T` or `U` for that witness, the liveness rule of `unknown_part` applied per witness. One constraint read against two witnesses is two rows, each with the status of what it read. **[D]** (`decisions/0035`) |
 | `read` | W2 | Every state property consulted, determining or not. What the ledger pins (`due2-architecture.md` §7); also the dependency index re-evaluation may use. |
-| `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), its status `Enum {fulfilled, outstanding, violated, unknown}`, and `passed`, whether its deadline has passed: the instance has an effective deadline `D` and `effective_at > D` (§5.3). The instance key is the key under which a case records what is owed and evidence is submitted. |
+| `instance` | W2 | One tuple per evaluated duty instance (§5.3): its atom, the occurrence instant `t` for an instance of a recurring duty (absent otherwise), its status `Enum {fulfilled, outstanding, violated, unknown}`, and `passed`, whether its deadline has passed: the instance has an effective deadline `D` and `effective_at > D` (§5.3). The instance key is the key under which a case records what is owed and when it was first owed (`activation`). |
 | `eliminated` | W3 | A candidate or prohibition removed — by conflict resolution, or by a violated precondition duty instance (§6.1, rule `violated_precondition`) — the atom that removed it, and the rule applied: the policy's `conflict` value within a policy, the `combination` across policies (§6.2), or `violated_precondition`. **[D]** (#57) `by_atom` is one tuple per remover: under `prohibit` and a prohibit-overrides combination, each `T` `Forbid` that eliminates the candidate; under `perm`, each `T` candidate that eliminates the `Forbid`; under `invalid`, each `T` candidate and `T` `Forbid` of the void policy other than the atom itself; under `violated_precondition`, the violated duty. |
 | `alternative`, `alt_duty` | W3 | Candidates collapsed by outstanding duty set: one `alt_id` per distinct set — its digest — with every permission that gives it and every duty in it. Under unknowns, the sets are the routes that suffice (§6.3), and the permissions those that give each in some completion. |
 | `dominated` | W3 | An alternative whose outstanding set strictly contains another's, one tuple per alternative it contains. |
@@ -285,7 +286,7 @@ Two stages, both pure, each with its own preservation obligation:
 | Stage | Does | Specified in |
 |---|---|---|
 | **1. Atomise** | Compact interiorisation; expansion of multi-valued action, relation, and party axes; identity and skolemisation; lineage. Structure-preserving: shared duties stay shared. | `odrl-compound-to-atomic-normalization.md` |
-| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation; party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (`odrl-compound-to-atomic-normalization.md` §6.2); projection into §3.1 — a duty's guards stay on its atom (`decisions/0003`); provenance from stage-1 lineage. | `due2-architecture.md` §4–§5 |
+| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation, each binding a duty atom with its own id (§3.1, `duty.atom_id`); party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (`odrl-compound-to-atomic-normalization.md` §6.2); projection into §3.1 — a duty's guards stay on its atom (`decisions/0003`); provenance from stage-1 lineage. | `due2-architecture.md` §4–§5 |
 
 **Two forms carry a policy through W1.** Stage 1 parses the authored graph into a **lifted tree** — a forest of trees hanging from named rules (`odrl-compound-to-atomic-normalization.md` §3) — and transforms that; RDF is a boundary format, read at the parse and written at the emit (`ways-of-working.md` §2.4). Its artifact is canonical N-Quads. Stage 2 projects the lifted form into the **relations** of §3.1 — collections of tuples whose fields are the terms of §2 — and the relations are all W2 and W3 ever see.
 
@@ -344,8 +345,16 @@ Fulfilment follows RL2 (`spec/RL2_Model.md` §4.3, §7.3). It is derived from ev
 
 **Instance.** Each precondition duty `d` resolves to one duty instance, recorded in `instance`:
 
-- scope `member` — the instance key is `binding_key`: the authored duty with its ground binding. Requests that bind the duty identically share the instance, so one fulfilment serves all of them. "Complete annual training" binds to the person; "petition the council about X" binds to the person and X.
-- scope `grant` — the instance key is the digest of `binding_key` and `request.reference`: one instance per request, fulfilled only by evidence submitted against it ("pay per use"). **[D]** (`decisions/0032`) The key differs where the binding differs, so the atoms an authored duty expands into, one per target say, have one instance each. It is shared where the binding is shared: a duty in two roles, or a duty two permissions share, has one instance for the request. A request without a `reference` falls back to `member`.
+- scope `member` — one instance per duty atom and performer (and occurrence, under *Recurrence* below), shared by every request with that performer, so one fulfilment serves all of them. "Petition the council about X" binds to X, and its atoms for X and Y are two instances.
+- scope `grant` — one instance per request, fulfilled only by evidence submitted against it ("pay per use"). A request without a `reference` falls back to `member`.
+
+The instance key is the duty atom's id, with what the request and the occurrence add **[D]** (`decisions/0032`, amendment of 2026-10-25):
+
+- the **performer**, the request subject, when the witness test below reads it as the actor: the duty has no bearer, or its bearer is an `odrl:PartyCollection` and the subject is not known to be outside it (`subject ⊑ bearer` is `T` or `U`). When membership is `U`, the instance is the subject's if the subject is a member, and the witness test is `U` for any other member's act. "Complete annual training", borne by all employees, is then one instance for Alice and another for Bob, and Alice's training serves every request of hers. A request that names no subject adds none;
+- `request.reference`, for scope `grant`;
+- the occurrence `t`, for a recurring duty (*Recurrence* below).
+
+With nothing added, the key is the atom's id. Otherwise it is `H(frame(namespace, "duty-instance", atom_id, additions))` in the notation of `odrl-compound-to-atomic-normalization.md` §5.2, where `additions` is a run of fields, in this order and each only when added: `frame("performer", term(subject))`, `frame("reference", reference)` with the reference as UTF-8, and `frame("occurrence", term(t))`. Each value carries its name, so no placeholder marks an absent one, and `atom_id` is framed as stage 1 frames an identity, a UUID IRI as its raw bytes and any other IRI as UTF-8. The case history records each key from the trace's `instance` tuple, so a shell that supplies an `activation` copies the key and never computes it (`due2-profiles.md` §7). The atoms an authored duty expands into, one per action or target say, therefore have one instance each, and a duty in two roles, or one that two permissions share with the same inherited roles and parameter values, has one instance for the request.
 
 **Witness.** Evidence `e` is a witness for `d` when:
 
@@ -356,7 +365,7 @@ Fulfilment follows RL2 (`spec/RL2_Model.md` §4.3, §7.3). It is derived from ev
 - `signer` admits `e.issuer` for `d`'s `source_duty` (§3.4);
 - for scope `grant`, `e.discharges` is the digest of `d`'s `source_duty` and `request.reference`: the evidence was submitted against this request's grant of the duty. The atoms of one authored duty share that grant, and the rest of the test picks among them: a payment of one fee has that fee as its `object`. For scope `member`, `discharges` is not consulted.
 
-A duty with both roles — an obligation of its policy and a precondition of a permission — is one atom. For a given request it has one instance key in both roles (for scope `grant`, the same binding and `request.reference` in both), so it has one `fulfilled` finding, which both roles read.
+A duty with both roles — an obligation of its policy and a precondition of a permission — is one atom. For a given request it has one instance key in both roles, since the request adds the same values in both, so it has one `fulfilled` finding, which both roles read.
 
 **Truth.** `d`'s witness conditions are evaluated once per witness: witness-source operands read its `evidence_param`, and `due2:actionTime` is its `occurred_at` (`due2-profiles.md` §3). Every other operand reads the request, the SOTW, or the context as usual; in a duty, those are the guards (§5.2). A witness satisfies the witness conditions when it satisfies some witness clause (§5.2), and any witness satisfies a duty with none. The finding is the Kleene disjunction of that value over all witnesses: `T` if some witness satisfies some clause; `F` if every witness fails every clause, which includes having no witness; `U` otherwise. Each witness's evaluation is recorded under its `evidence_id`: the parts of the witness clauses in `witness_basis`, and their `U` parts in `witness_part` (§3.5). A duty requiring a payment of 5, with one witness that states no amount and another that states an IRI for it, has two `witness_part` rows for the one constraint, with statuses `missing` and `invalid` (`decisions/0035`).
 

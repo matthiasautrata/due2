@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.43** (2026-10-25, `decisions/0035`, #120): the parts of a duty's witness conditions are recorded per witness, in the new relations `witness_basis` and `witness_part` (§3.5), and `basis` gains `predicate` in its key. The W2 signature lists `unknown_part` and both new relations (§5); §3.7, §5.1–§5.4, and L10 follow. W3 reads neither new relation: a `fulfilled` finding is a completion variable of its own (§6.4).
+
 **Changes in v0.42** (2026-10-24, #116): §3.1 states the invariants that every id in a corpus tuple names a policy, atom, or constraint that the corpus holds, and that an atom has `relation_value` exactly when it has `relation`. No rule changes.
 
 **Changes in v0.41** (2026-10-24, #114): laws L2, L3, L6, and L7 are restated, since each was false as written (§8). §6.4's monotonicity proof says how a candidate that a violated precondition closes or reopens passes through §6.2, and §3.5 and §6.4 say what `verdict.exact` means. No rule changes. Earlier changes are in `docs/archive/changes.md`.
@@ -148,6 +150,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.17 (2026-10-24, `decisions/0034`, #117): §3 requires two properties of the ODRL Information Model that the vocabulary's domains do not state: Assets and Parties are resources (`LiteralEntity`), and every action reaches `odrl:use` or `odrl:transfer` (`InvalidActionHierarchy`); it rejects `odrl:hasPolicy` with `UnsupportedConstruct`.
 
 Changes in 0.16 (2026-10-24, `decisions/0033`, #115): §3 rejects a Policy with `dct:isReplacedBy` (`ReplacedPolicy`) and a declared profile that due2 has no module for (`UnrecognisedProfile`).
 
