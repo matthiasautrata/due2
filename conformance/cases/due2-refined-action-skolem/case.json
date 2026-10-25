@@ -1,0 +1,81 @@
+{
+  "case": "due2-refined-action-skolem",
+  "source": "due2-native: a refined action named by a skolem IRI (follow-up review F03, #122)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. A refined action is recognised by its rdf:value, not by its node kind (decisions/0034, amendment of 2026-10-25): the action node here is the skolem IRI .well-known/genid/a1, as a tool that skolemises blank nodes writes it (RDF 1.1 Concepts §3.5), and its rdf:value odrl:print is the action. The node is typed odrl:Action, as in the follow-up review's F03 input (docs/briefings/due2-review-2026-10-25.md). Before the amendment, both checkers read rdf:value only on a blank node: they took the skolem IRI itself as the action, and checked it, as a typed action, for an odrl:includedIn it does not have. w3c-fs-c1 and w3c-fs-c2 keep the W3C CG's names for the same form. Only the due2 profile is selected: due2-core binds odrl:dateTime to due2:actionTime, which is request.at (due2-profiles.md §3).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "print in March",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:print",
+        "target": "ex:report",
+        "at": "2026-03-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-03-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:print",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The action is genid/a1's rdf:value, odrl:print, which the request names, and its refinement holds: 1 March is before 1 April. The target and assignee match, so ex:print applies and has no duties: Permit."
+      }
+    },
+    {
+      "name": "print in April",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:print",
+        "target": "ex:report",
+        "at": "2026-04-15T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-04-15T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "config": {
+        "combination": "prohibit-overrides"
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The refinement narrows the action to printing before 1 April, and 15 April is not before it, so the action part is F and ex:print does not apply. No rule applies: NotApplicable."
+      }
+    }
+  ]
+}

@@ -5,8 +5,9 @@ Information Model 2.2, every constraint cited) over policy files, with the
 official ODRL 2.2 vocabulary and due2's profile modules merged for class
 hierarchy and term typing. Node types the vocabulary entails (rdfs:range of
 odrl:permission etc., rdfs:domain of odrl:leftOperand, the connective of a
-Logical Constraint) are added, since the IM leaves them implicit, and so is
-the target that odrl:hasPolicy entails (IM 2.2.3). Otherwise
+Logical Constraint) are added, since the IM leaves them implicit, and so are
+the target that odrl:hasPolicy entails (IM 2.2.3) and the parties that
+odrl:assignerOf and odrl:assigneeOf entail (IM 2.3.3). Otherwise
 policies are validated *as written* — no preprocessing: compact form (IM 2.7.1), list-valued right operands for
 set-based operators (IM 2.5.1), and list-form logical constraints (IM 2.5.2)
 are all checked natively.
@@ -120,12 +121,13 @@ class Vocabulary:
 
 
 def vocabulary_terms(alone: Graph) -> set[Node]:
-    """The IRIs in vocabulary positions. A refined action is a blank node whose
-    rdf:value names the action (IM 2.5.4)."""
+    """The IRIs in vocabulary positions. An action node that states an rdf:value
+    is a refined action, blank or named, and its rdf:value is the action
+    (IM 2.5.4)."""
     terms: set[Node] = set()
     for p in VOCABULARY_POSITIONS:
         for o in alone.objects(None, p):
-            if isinstance(o, BNode) and p == ODRL.action:
+            if p == ODRL.action and (o, RDF.value, None) in alone:
                 o = alone.value(o, RDF.value)
             if isinstance(o, URIRef):
                 terms.add(o)
@@ -197,9 +199,11 @@ RANGE_TYPES = {
 # it would make IM 2.5.1's "MUST be a LeftOperand" vacuous; whether an operand
 # is declared is a vocabulary fact a profile must supply (IM 2.1), not a type
 # the shape may assume. rdfs:range odrl:Action of odrl:action is applied only to
-# blank nodes, for the same reason: a refined action is an untyped node
-# (IM 2.5.4), and an IRI action is an Action only where a vocabulary or the
-# policy types it so (decisions/0020 #7).
+# refined actions and blank nodes, for the same reason: a refined action is an
+# untyped node with an rdf:value (IM 2.5.4), and any other IRI action is an
+# Action only where a vocabulary or the policy types it so (decisions/0020 #7).
+# A blank action without an rdf:value names nothing, and typing it lets
+# ActionHierarchyShape reject it.
 DOMAIN_TYPES = {ODRL.leftOperand: ODRL.Constraint}  # rdfs:domain odrl:Constraint
 # IM 2.5.2: a Logical Constraint is identified by its operand property; the
 # vocabulary declares no domain for them, so the connective is the evidence.
@@ -219,7 +223,8 @@ def entailed_types(alone: Graph) -> Graph:
     EntityValueShape reports it where a resource belongs. IM 2.2.3: an Asset
     with odrl:hasPolicy P "MUST be inferred to be the target Asset of all the
     Rules of that Policy", which a policy-level target states, since IM 2.7.1
-    shares it with every Rule."""
+    shares it with every Rule. IM 2.3.3 infers the assigner and assignee of
+    every Rule from odrl:assignerOf and odrl:assigneeOf in the same way."""
     t = Graph()
     for p, c in RANGE_TYPES.items():
         for o in alone.objects(None, p):
@@ -227,8 +232,11 @@ def entailed_types(alone: Graph) -> Graph:
                 t.add((o, RDF.type, c))
     for asset, policy in alone.subject_objects(ODRL.hasPolicy):
         t.add((policy, ODRL.target, asset))
+    for edge, function in ((ODRL.assignerOf, ODRL.assigner), (ODRL.assigneeOf, ODRL.assignee)):
+        for party, policy in alone.subject_objects(edge):
+            t.add((policy, function, party))
     for o in alone.objects(None, ODRL.action):
-        if isinstance(o, BNode):
+        if isinstance(o, BNode) or (o, RDF.value, None) in alone:
             t.add((o, RDF.type, ODRL.Action))
     for p, c in DOMAIN_TYPES.items():
         for s in alone.subjects(p, None):

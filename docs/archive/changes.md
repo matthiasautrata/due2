@@ -109,6 +109,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.11** (2026-10-24, `decisions/0034`, #117): new rows `InvalidActionHierarchy` and `LiteralEntity`; `UnsupportedConstruct` covers `odrl:hasPolicy`; `MalformedConstraint` covers a logical constraint with more than one operand property.
+
 **Changes in v0.10** (2026-10-24, `decisions/0033`, #115): new rows `ReplacedPolicy` and `UnrecognisedProfile`; `UndeclaredProfile` names the code that rejects a policy whose profile has no due2 module.
 
 **Changes in v0.9** (2026-10-23, `decisions/0024`, `decisions/0025`, #101, #102): `OperatorTypeMismatch` covers a `dateTime` right operand without a timezone, a `date` right operand with one, and every operator of one left value over a set-valued operand; `InvalidTiming` covers a deadline without a timezone.
@@ -150,6 +152,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.18 (2026-10-25, `decisions/0032` amendment, #121): §5.2 notes the two id domains that stage 2 and W2 mint under its namespace. No rule changes.
 
 Changes in 0.17 (2026-10-24, `decisions/0034`, #117): §3 requires two properties of the ODRL Information Model that the vocabulary's domains do not state: Assets and Parties are resources (`LiteralEntity`), and every action reaches `odrl:use` or `odrl:transfer` (`InvalidActionHierarchy`); it rejects `odrl:hasPolicy` with `UnsupportedConstruct`.
 

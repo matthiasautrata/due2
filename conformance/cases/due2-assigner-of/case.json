@@ -1,0 +1,16 @@
+{
+  "case": "due2-assigner-of",
+  "source": "due2-native: a party names its policy with odrl:assignerOf (follow-up review F04, #123)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Valid ODRL 2.2: IM 2.3.3 infers ex:acme as the assigner of every Rule of ex:agreement, and tools/check_odrl22.py applies that inference before validating, so the Agreement has its assigner (IM 2.1.3). due2 does not: W1 reads only the declared edges (odrl-compound-to-atomic-normalization.md §3), so it would drop the assigner. The author states it as odrl:assigner on the Policy or the Rule instead (decisions/0034, amendment of 2026-10-25). The pattern is due2-has-policy's, for a party.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "UnsupportedConstruct"
+    ],
+    "why": "ex:acme names ex:agreement with odrl:assignerOf, which due2 does not admit, since W1 performs no inference beyond the declared edges. It is a stage-1 error (decisions/0034)."
+  }
+}

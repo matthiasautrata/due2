@@ -55,8 +55,8 @@ def test_a_cc_action_needs_a_profile(checker: Checker) -> None:
 
 @pytest.mark.parametrize("case", ["due2-conditional-duties", "rl2-display-vs-nondisplay"])
 def test_refined_and_self_typed_actions_are_admitted(case: str, checker: Checker) -> None:
-    """Guards the other side of the line. A refined action is an untyped blank node
-    (IM 2.5.4), and an `rl2-*` policy types its own `ex:` actions. Typing no action, or
+    """Guards the other side of the line. A refined action is an untyped node with an
+    `rdf:value` (IM 2.5.4), and an `rl2-*` policy types its own `ex:` actions. Typing no action, or
     requiring a profile for self-typed terms, would fail these."""
     assert problems(case, checker) == []
 

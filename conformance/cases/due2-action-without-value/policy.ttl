@@ -1,0 +1,24 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <https://example.org/> .
+
+# A negative case: not valid ODRL 2.2. The action is a blank node with a
+# refinement but no rdf:value, so it names no action (ODRL IM §2.5.4) and has
+# no odrl:includedIn (IM §2.4). Contrast due2-refined-action-skolem.
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:print .
+
+ex:print a odrl:Permission ;
+    odrl:target ex:report ;
+    odrl:assignee ex:alice ;
+    odrl:action [
+        odrl:refinement [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:dateTime ;
+            odrl:operator odrl:lt ;
+            odrl:rightOperand "2026-04-01T00:00:00Z"^^xsd:dateTime
+        ]
+    ] .

@@ -1,0 +1,17 @@
+{
+  "case": "due2-action-without-value",
+  "source": "due2-native: a refined action with no rdf:value (follow-up review F03, #122)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: an action node names its action by rdf:value when it carries a refinement (IM 2.5.4), and this one states none, so it names no action and has no odrl:includedIn (IM 2.4). Before decisions/0034's amendment of 2026-10-25, both checkers exempted every blank action node from the hierarchy check, so this policy passed the ODRL layer. Contrast due2-refined-action-skolem, which states its rdf:value.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidActionHierarchy"
+    ],
+    "why": "ex:print's action is a blank node with no rdf:value, so it is an action without an odrl:includedIn (IM 2.4, decisions/0034). W1 rejects the policy in stage 1."
+  }
+}

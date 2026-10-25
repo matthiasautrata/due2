@@ -1,0 +1,33 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <https://example.org/> .
+
+# due2-native: a refined action named by a skolem IRI, as a tool that skolemises
+# blank nodes writes it (RDF 1.1 Concepts §3.5). The node is not an action term:
+# its rdf:value, odrl:print, is the action, and its refinement narrows it to
+# printing before 1 April (ODRL IM §2.5.4). Both layers check the hierarchy for
+# odrl:print and never for the node itself (decisions/0034, amendment of
+# 2026-10-25). The node is typed odrl:Action, as in the follow-up review's F03
+# input (docs/briefings/due2-review-2026-10-25.md): the type does not make it a
+# term of the hierarchy. w3c-fs-c1 and w3c-fs-c2 give the same form with
+# ordinary IRIs and no type.
+
+ex:policy a odrl:Set ;
+    odrl:profile <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:print .
+
+ex:print a odrl:Permission ;
+    odrl:target ex:report ;
+    odrl:assignee ex:alice ;
+    odrl:action <https://example.org/.well-known/genid/a1> .
+
+<https://example.org/.well-known/genid/a1> a odrl:Action ;
+    rdf:value odrl:print ;
+    odrl:refinement <https://example.org/.well-known/genid/r1> .
+
+<https://example.org/.well-known/genid/r1> a odrl:Constraint ;
+    odrl:leftOperand odrl:dateTime ;
+    odrl:operator odrl:lt ;
+    odrl:rightOperand "2026-04-01T00:00:00Z"^^xsd:dateTime .

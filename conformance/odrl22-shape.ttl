@@ -256,9 +256,11 @@ odrl22:EntityValueShape a sh:NodeShape ;
 # stops at another action, or runs in a cycle, leaves an action outside both.
 # The targets are every IRI typed as an Action in the merged graph (policy,
 # profile modules, vocabulary) and every includedIn value. A refined action is
-# a blank node whose rdf:value names the action (IM §2.5.4); it is not itself
-# in the hierarchy, so blank nodes are exempt. So are the actions that the
-# ODRL 2.2 vocabulary deprecates (owl:deprecated true): the vocabulary gives
+# a node, blank or named, whose rdf:value names the action (IM §2.5.4); it is
+# not itself in the hierarchy, so a node with an rdf:value is exempt, and
+# vocabulary_terms in tools/check_odrl22.py checks its rdf:value instead. A
+# blank action without one names no action and fails. The actions that the ODRL
+# 2.2 vocabulary deprecates are exempt too (owl:deprecated true): the vocabulary gives
 # 21 of them, odrl:copy and odrl:pay among them, no includedIn.
 odrl22:ActionHierarchyShape a sh:NodeShape ;
   sh:targetClass odrl:Action ;
@@ -271,7 +273,7 @@ odrl22:ActionHierarchyShape a sh:NodeShape ;
   ] ;
   sh:or (
     [ sh:in ( odrl:use odrl:transfer ) ]
-    [ sh:nodeKind sh:BlankNode ]
+    [ sh:property [ sh:path rdf:value ; sh:minCount 1 ] ]
     [ sh:property [ sh:path <http://www.w3.org/2002/07/owl#deprecated> ; sh:hasValue true ] ]
     [ sh:property [ sh:path odrl:includedIn ; sh:minCount 1 ] ]
   ) ;

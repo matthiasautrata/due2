@@ -7,7 +7,7 @@
 @prefix ex:    <http://example.com/> .
 
 # Source: w3c/odrl@1db8e6b formal-semantics/examples/C Evaluation of Conditions (Duties)/C2 (W3C Software and Document License),
-# translated from JSON-LD. Changes: typed; conflict and
+# translated from JSON-LD, its node names kept. Changes: typed; conflict and
 # profiles declared; ex:dayOfWeek
 # bound to the request (the assembler derives it from the action time).
 
@@ -24,15 +24,19 @@ ex:rule\/C2 a odrl:Permission ;
     odrl:duty ex:condition\/1 .
 
 ex:condition\/1 a odrl:Duty ;
-    odrl:action [
-        rdf:value odrl:compensate ;
-        odrl:refinement [ a odrl:Constraint ;
-            odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
-    ] ;
-    odrl:constraint [ a odrl:Constraint ;
-        odrl:leftOperand <https://ex.org/dayOfWeek> ; odrl:operator odrl:eq ;
-        odrl:rightOperand "Sunday"^^xsd:string ] .
+    odrl:action ex:action\/1 ;
+    odrl:constraint ex:constraint\/1 .
+
+ex:constraint\/1 a odrl:Constraint ;
+    odrl:leftOperand <https://ex.org/dayOfWeek> ; odrl:operator odrl:eq ;
+    odrl:rightOperand "Sunday"^^xsd:string .
+
+ex:action\/1 rdf:value odrl:compensate ;
+    odrl:refinement ex:refinement\/1 .
+
+ex:refinement\/1 a odrl:Constraint ;
+    odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
+    odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> .
 
 
 # A guard (it reads the request, not the witness): it decides when the duty is

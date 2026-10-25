@@ -1,0 +1,20 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. The assigner names the
+# Agreement with odrl:assignerOf, and no Rule names an assigner. ODRL IM §2.3.3
+# and the vocabulary's note on odrl:assignerOf: the party "MUST be inferred to
+# undertake the assigner functional role of all the Rules of that Policy", so
+# ex:acme is ex:read's assigner. W1 infers nothing beyond the declared edges, so
+# it would see an Agreement with no assigner.
+
+ex:acme odrl:assignerOf ex:agreement .
+
+ex:agreement a odrl:Agreement ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:read .
+
+ex:read a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:dataset ;
+    odrl:assignee ex:alice .

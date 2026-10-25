@@ -811,12 +811,12 @@ def odrl_terms() -> frozenset[Node]:
 
 
 def vocabulary_terms(g: Graph, positions: tuple[URIRef, ...] = VOCABULARY_POSITIONS) -> set[Node]:
-    """The IRIs in `positions`; a refined action names its action by rdf:value
-    (IM 2.5.4)."""
+    """The IRIs in `positions`; a refined action, blank or named, names its action
+    by rdf:value (IM 2.5.4)."""
     terms: set[Node] = set()
     for p in positions:
         for o in g.objects(None, p):
-            if isinstance(o, BNode) and p == ODRL.action:
+            if p == ODRL.action and (o, RDF.value, None) in g:
                 o = g.value(o, RDF.value)
             if isinstance(o, URIRef):
                 terms.add(o)
@@ -882,9 +882,21 @@ def check_actions(g: Graph, hierarchy: Graph, defined: frozenset[Node], r: Repor
     `hierarchy`: the policy with the core, the selected modules, and the official
     vocabulary, so that an edge restated in the policy adds to the vocabulary's
     rather than replacing it. A term outside `defined` is UndeclaredProfile
-    instead, and an action the vocabulary deprecates is exempt."""
+    instead, and an action the vocabulary deprecates is exempt. A refined action
+    is checked through its rdf:value, never as a node of the hierarchy itself."""
     todo = vocabulary_terms(g, (ODRL.action,))
-    todo |= {s for s in g.subjects(RDF.type, ODRL.Action) if isinstance(s, URIRef)}
+    todo |= {
+        s
+        for s in g.subjects(RDF.type, ODRL.Action)
+        if isinstance(s, URIRef) and (s, RDF.value, None) not in g
+    }
+    for a in sorted(g.objects(None, ODRL.action), key=str):
+        if isinstance(a, BNode) and (a, RDF.value, None) not in g:
+            r.diag(
+                "InvalidActionHierarchy",
+                f"{q(g, a)}: a blank action without rdf:value names no action, so it has "
+                "no odrl:includedIn",
+            )
     seen: set[Node] = set()
     while todo:
         a = todo.pop()
@@ -1046,14 +1058,20 @@ def check_policy(
                     "LiteralEntity",
                     f"{q(g, owner)}: {q(g, edge)} is the literal {node.n3()}, not an IRI",
                 )
-    # IM 2.2.3 infers a target for every Rule from odrl:hasPolicy. Normalisation
-    # infers nothing beyond the declared edges, so it would drop that target.
-    for asset in sorted(g.subjects(ODRL.hasPolicy, policy), key=str):
-        r.diag(
-            "UnsupportedConstruct",
-            f"{q(g, asset)}: odrl:hasPolicy is not admitted; state the asset as odrl:target "
-            "on the Policy or its Rules",
-        )
+    # IM 2.2.3 infers a target for every Rule from odrl:hasPolicy, and IM 2.3.3 an
+    # assigner or assignee from odrl:assignerOf or odrl:assigneeOf. Normalisation
+    # infers nothing beyond the declared edges, so it would drop them.
+    for edge, function in (
+        (ODRL.hasPolicy, "the asset as odrl:target"),
+        (ODRL.assignerOf, "the party as odrl:assigner"),
+        (ODRL.assigneeOf, "the party as odrl:assignee"),
+    ):
+        for node in sorted(g.subjects(edge, policy), key=str):
+            r.diag(
+                "UnsupportedConstruct",
+                f"{q(g, node)}: {q(g, edge)} is not admitted; state {function} "
+                "on the Policy or its Rules",
+            )
     # The target and the assignee are what a request matches (workflows 5.2); an
     # anonymous one has a generated identity nothing can name (normalisation 3).
     for edge, field_ in ((ODRL.target, "target"), (ODRL.assignee, "assignee")):
