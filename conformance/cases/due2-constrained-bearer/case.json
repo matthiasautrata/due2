@@ -1,0 +1,18 @@
+{
+  "case": "due2-constrained-bearer",
+  "source": "due2-native: a constraint on the party that a DPROD duty's dprod:subjectOfDuty names (#129)",
+  "classification": "odrl-profile",
+  "needs": [],
+  "odrl22_valid": false,
+  "notes": "Not valid ODRL 2.2: odrl:constraint has the domain Policy or Rule (Vocabulary §3.14.2), and ex:alice is a Party, since dprod:subjectOfDuty is rdfs:subPropertyOf odrl:function, whose range is odrl:Party. Both checkers test the domain itself rather than a list of the nodes a constraint may not sit on, so a node that a profile's own party role reaches is covered.",
+  "prefixes": {
+    "dprod": "https://ekgf.org/dprod/spec/develop/",
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "MisplacedConstraint"
+    ],
+    "why": "ex:alice, the bearer that ex:report's dprod:subjectOfDuty names, carries an odrl:constraint, and the ODRL vocabulary places a constraint only on a Policy or a Rule (Vocabulary §3.14.2). Normalisation rejects a constraint outside its place in stage 1 (odrl-compound-to-atomic-normalization.md §3), so W1 rejects the policy."
+  }
+}

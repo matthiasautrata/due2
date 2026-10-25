@@ -831,26 +831,6 @@ def ns_terms(g: Graph, ns: str) -> int:
     return n
 
 
-ASSET_PARTY_EDGES = (
-    ODRL.target,
-    ODRL.output,
-    ODRL.assignee,
-    ODRL.assigner,
-    ODRL.informedParty,
-    ODRL.compensatedParty,
-    ODRL.attributedParty,
-    ODRL.consentingParty,
-    ODRL.contractingParty,
-    ODRL.trackingParty,
-    ODRL.attributingParty,
-    ODRL.compensatingParty,
-    ODRL.consentedParty,
-    ODRL.contractedParty,
-    ODRL.informingParty,
-    ODRL.trackedParty,
-)
-
-
 def entity_properties(vocabulary: Graph) -> frozenset[Node]:
     """The properties whose value must be a resource, never a literal.
 
@@ -869,9 +849,10 @@ def entity_properties(vocabulary: Graph) -> frozenset[Node]:
     return frozenset(found)
 
 
-def asset_party_nodes(g: Graph) -> set[Node]:
-    """Every node in an asset or party position, plus every declared collection."""
-    nodes = {o for e in ASSET_PARTY_EDGES for o in g.objects(None, e)}
+def asset_party_nodes(g: Graph, entities: frozenset[Node]) -> set[Node]:
+    """Every node that is the value of one of `entities` (`entity_properties`), plus
+    every declared collection."""
+    nodes = {o for e in entities for o in g.objects(None, e)}
     nodes |= set(g.subjects(RDF.type, ODRL.AssetCollection))
     nodes |= set(g.subjects(RDF.type, ODRL.PartyCollection))
     return nodes
@@ -955,7 +936,9 @@ def reachable(g: Graph, root: Node, stop: set[Node], edge: URIRef | None = None)
     return seen
 
 
-def check_placement(g: Graph, policy: Node, policies: set[Node], r: Report) -> None:
+def check_placement(
+    g: Graph, policy: Node, policies: set[Node], entities: frozenset[Node], r: Report
+) -> None:
     """Constraints and Rules where the ODRL vocabulary places them (normalisation
     3). The rest of this checker reads each property only in its place, so a
     misplaced one would otherwise be dropped silently. Scoped to the policy's
@@ -989,18 +972,26 @@ def check_placement(g: Graph, policy: Node, policies: set[Node], r: Report) -> N
                     ok, place = False, "a Duty that odrl:duty or odrl:obligation references"
             if not ok:
                 r.diag("InvalidNesting", f"{q(g, s)}: {q(g, edge)} belongs on {place} only")
-    # A refinement narrows an Action or a collection; a constraint conditions a
-    # Rule (IM 2.5; Vocabulary 3.14.2-3.14.3). Collection refinements are
-    # rejected in check_policy. The Policy's own constraint is UnsupportedConstruct.
-    for node in sorted({policy, *classes}, key=str):
-        if (node, ODRL.refinement, None) in g:
-            r.diag("MisplacedConstraint", f"{q(g, node)}: odrl:refinement on a Policy or Rule")
+    # The vocabulary's domains: a refinement narrows an Action or a collection, and
+    # a constraint conditions a Policy or a Rule (IM 2.5; Vocabulary 3.14.2-3.14.3).
+    # Each is tested as a domain, not against a list of the nodes it may not sit on,
+    # so a node a profile's own property reaches is covered. `narrowed` holds every
+    # Asset and Party, so a refinement on one passes here and check_policy rejects it
+    # as a collection refinement (UnsupportedConstruct); the Policy's own constraint
+    # passes here and is UnsupportedConstruct there too.
     actions = {a for s, a in g.subject_objects(ODRL.action) if s in scope}
-    for node in sorted((actions | asset_party_nodes(g)) & scope, key=str):
-        if (node, ODRL.constraint, None) in g:
+    narrowed = actions | asset_party_nodes(g, entities)
+    for node in sorted({s for s in g.subjects(ODRL.refinement, None) if s in scope}, key=str):
+        if node not in narrowed:
             r.diag(
                 "MisplacedConstraint",
-                f"{q(g, node)}: odrl:constraint on an Action, Asset, Party, or collection",
+                f"{q(g, node)}: odrl:refinement on neither an Action nor a collection",
+            )
+    for node in sorted({s for s in g.subjects(ODRL.constraint, None) if s in scope}, key=str):
+        if node not in policies and node not in classes:
+            r.diag(
+                "MisplacedConstraint",
+                f"{q(g, node)}: odrl:constraint on neither a Policy nor a Rule",
             )
 
 
@@ -1056,7 +1047,7 @@ def check_policy(
         r.diag(
             "UnsupportedConstruct", f"{q(g, policy)}: odrl:constraint on a Policy is not admitted"
         )
-    check_placement(g, policy, policies, r)
+    check_placement(g, policy, policies, entities, r)
     for term in (DPROD.deadline, DPROD.recurrence):
         if (policy, term, None) in g:
             r.diag(
@@ -1068,7 +1059,7 @@ def check_policy(
     # check_rule and check_constraint, where odrl:source stays rejected.
     # A refinement-free odrl:source on a collection is admitted as an inert
     # annotation (profiles 8.1, 2026-10-11); refined collections are not.
-    for node in sorted(asset_party_nodes(g), key=str):
+    for node in sorted(asset_party_nodes(g, entities), key=str):
         if (node, ODRL.refinement, None) in g:
             r.diag("UnsupportedConstruct", f"{q(g, node)}: collection refinement is not admitted")
     # IM 2.2, 2.3, 2.6: an Asset or a Party is a resource, and a literal is not one.

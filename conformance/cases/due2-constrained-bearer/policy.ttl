@@ -1,0 +1,26 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A DPROD duty whose bearer carries an odrl:constraint. The ODRL vocabulary
+# gives odrl:constraint the domain Policy or Rule (Vocabulary §3.14.2), and
+# ex:alice, the value of dprod:subjectOfDuty, is a Party: a Party is never
+# conditioned by a constraint; only a Policy or a Rule is.
+
+ex:offer a odrl:Offer ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:assigner ex:bob ;
+    odrl:obligation ex:report .
+
+ex:report a odrl:Duty ;
+    dprod:subjectOfDuty ex:alice ;
+    odrl:action odrl:inform ;
+    odrl:target ex:dataset .
+
+ex:alice odrl:constraint [
+    a odrl:Constraint ;
+    odrl:leftOperand odrl:dateTime ;
+    odrl:operator odrl:lt ;
+    odrl:rightOperand "2027-01-01T00:00:00Z"^^xsd:dateTime
+] .

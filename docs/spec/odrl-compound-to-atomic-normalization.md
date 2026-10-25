@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.20  
+Version: 0.21  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.20 (2026-10-25, `decisions/0034`, #124): §3 reads the properties whose value must be a resource from the vocabularies, as `odrl:function`, `odrl:relation`, and their `rdfs:subPropertyOf` descendants, so a profile's own party roles are covered. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.21 (2026-10-25, #129): §3 places a refinement and a constraint by the vocabulary's domains: a constraint on anything other than a Policy or a Rule, and a refinement on anything other than an Action or a collection, are rejected, whatever property reaches the node. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
@@ -66,7 +66,7 @@ A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy
 
 Every constraint and every Rule MUST sit where the ODRL vocabulary places it. The vocabulary fixes the subject of each property by its `rdfs:domain`, and this profile reads each property only there. A value anywhere else would be dropped or read as something it is not, so it is rejected instead:
 
-- An `odrl:refinement` narrows an Action, an Asset Collection, or a Party Collection (IM §2.5; Vocabulary §3.14.3), and an `odrl:constraint` conditions a Rule (IM §2.5, §2.6; Vocabulary §3.14.2). A refinement on a Policy or a Rule, and a constraint on an Action, an Asset, a Party, or a collection, are rejected with `MisplacedConstraint`, which names the node and the property. Neither is read in the other's place: a Rule's refinement read as its constraint would be an approximation.
+- An `odrl:refinement` narrows an Action, an Asset Collection, or a Party Collection (IM §2.5; Vocabulary §3.14.3), and an `odrl:constraint` conditions a Rule (IM §2.5, §2.6; Vocabulary §3.14.2). A refinement on anything other than an Action or a collection, such as a Policy or a Rule, and a constraint on anything other than a Policy or a Rule, such as an Action, an Asset, a Party, or a collection, are rejected with `MisplacedConstraint`, which names the node and the property. The domain is tested, not a list of the places each may not sit, so a Party that only a profile's own role reaches, such as DPROD's `dprod:subjectOfDuty`, is covered. A refinement on an Asset or a Party is read as a collection refinement, which is rejected with `UnsupportedConstruct` (`due2-profiles.md` §8.1), and so is a constraint on the Policy itself (above). Neither is read in the other's place: a Rule's refinement read as its constraint would be an approximation.
 - `odrl:permission`, `odrl:prohibition`, and `odrl:obligation` have a Policy as their subject (Vocabulary §3.9.2, §3.10.2, §3.13.2); `odrl:duty` a Permission (Vocabulary §3.13.3); `odrl:remedy` a Prohibition (Vocabulary §3.13.5); and `odrl:consequence` a Duty that `odrl:duty` or `odrl:obligation` references (Vocabulary §3.13.4; IM §2.6.3). Permission, Prohibition, and Duty are pairwise disjoint (IM §2.6; Vocabulary §3.9.1, §3.10.1, §3.13.1). A Rule edge from any other subject, and a node that its incoming Rule edges and its explicit types place in two Rule classes, are rejected with `InvalidNesting`. A Prohibition nested in a Permission, for instance, is none of `P0`'s Rules, and §6.4 builds Atomic Policies only from `P0`'s Rule edges. Admitting it would drop it, and the Permission would permit what the Prohibition forbids.
 
 `P0` MUST also meet two requirements of the ODRL Information Model that the vocabulary's domains do not state:
@@ -349,7 +349,7 @@ The first implementation MUST include golden positive and negative vectors for:
 - an atomic root Rule with a compound nested Duty producing one newly identified Atomic Policy rather than retaining `P0`'s UID;
 - two structurally equal named Duties remaining distinct, and two structurally equal anonymous siblings — identical refined actions on one Rule — receiving distinct IRIs;
 - obligations, Duties, Consequences, and Remedies retaining their edge roles;
-- each misplacement of §3 rejected with its diagnostic: a refinement on a Policy and on a Rule, a constraint on an Action and on a collection (`MisplacedConstraint`), a constraint on `P0` (`UnsupportedConstruct`), a Prohibition nested in a Permission, a Remedy on a Duty, a Consequence on a Permission, and a Consequence on a Consequence or a Remedy (`InvalidNesting`);
+- each misplacement of §3 rejected with its diagnostic: a refinement on a Policy and on a Rule, a constraint on an Action, on a collection, and on a Party that only a profile's own role names (`MisplacedConstraint`), a constraint on `P0` (`UnsupportedConstruct`), a Prohibition nested in a Permission, a Remedy on a Duty, a Consequence on a Permission, and a Consequence on a Consequence or a Remedy (`InvalidNesting`);
 - authored UID conflicts;
 - deterministic UUID, skolem, source digest, and lineage values across isomorphic serializations;
 - rejection of a literal target and a literal party (`LiteralEntity`), of an action with no `odrl:includedIn` and of one with two (`InvalidActionHierarchy`), of a blank action node without `rdf:value` (`InvalidActionHierarchy`), and of `odrl:hasPolicy`, `odrl:assignerOf`, and `odrl:assigneeOf` (`UnsupportedConstruct`); acceptance of a refined action whose node is a blank node, an authored IRI, and a skolem IRI typed `odrl:Action`;

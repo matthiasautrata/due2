@@ -109,6 +109,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.13** (2026-10-25, `decisions/0034`, #124): `LiteralEntity` covers every `rdfs:subPropertyOf` descendant of `odrl:function` and `odrl:relation`, a profile's own party roles among them.
+
 **Changes in v0.12** (2026-10-25, `decisions/0034` amendment, #122, #123): `UnsupportedConstruct` covers `odrl:assignerOf` and `odrl:assigneeOf`; `InvalidActionHierarchy` covers a blank action node without `rdf:value`.
 
 **Changes in v0.11** (2026-10-24, `decisions/0034`, #117): new rows `InvalidActionHierarchy` and `LiteralEntity`; `UnsupportedConstruct` covers `odrl:hasPolicy`; `MalformedConstraint` covers a logical constraint with more than one operand property.
@@ -154,6 +156,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.20 (2026-10-25, `decisions/0034`, #124): §3 reads the properties whose value must be a resource from the vocabularies, as `odrl:function`, `odrl:relation`, and their `rdfs:subPropertyOf` descendants, so a profile's own party roles are covered.
 
 Changes in 0.19 (2026-10-25, `decisions/0034` amendment, #122, #123): §3 defines a refined action by its `rdf:value`, whatever its node kind, rejects a blank action node without one, and rejects `odrl:assignerOf` and `odrl:assigneeOf` with `UnsupportedConstruct`.
 

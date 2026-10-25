@@ -219,16 +219,19 @@ odrl22:ConsequencePlacementShape a sh:NodeShape ;
   sh:targetObjectsOf odrl:consequence, odrl:remedy ;
   sh:property [ sh:path odrl:consequence ; sh:maxCount 0 ] .
 
-# Vocabulary §3.14.2: odrl:constraint has domain Policy or Rule. An Action,
-# an Asset, a Party, or a collection is narrowed by odrl:refinement instead
-# (IM §2.5.4-2.5.6; OVAL's shape pe:noConstraintsInComponents, SHACL/odrl-shacl.ttl in
-# DIPS-Tools/ODRL-Engine@ee72ffc).
-odrl22:ComponentConstraintShape a sh:NodeShape ;
-  sh:targetClass odrl:Asset, odrl:Party, odrl:AssetCollection, odrl:PartyCollection ;
-  sh:targetObjectsOf odrl:action, odrl:target, odrl:output, odrl:assigner, odrl:assignee,
-    odrl:informedParty, odrl:compensatedParty, odrl:attributedParty,
-    odrl:consentingParty, odrl:contractingParty, odrl:trackingParty ;
-  sh:property [ sh:path odrl:constraint ; sh:maxCount 0 ] .
+# Vocabulary §3.14.2: odrl:constraint has domain Policy or Rule. An Action or
+# a collection is narrowed by odrl:refinement instead, and an Asset or a Party
+# by neither (IM §2.5.4-2.5.6; OVAL's shape pe:noConstraintsInComponents, SHACL/odrl-shacl.ttl in
+# DIPS-Tools/ODRL-Engine@ee72ffc). RDFS reads a domain as entailing a type, and
+# the vocabulary declares Party, Asset, and Rule disjoint nowhere, so it would
+# conclude that a constrained Party is also a Policy or a Rule. The IM defines
+# Party and Rule as separate classes (IM §2.3, §2.6), so the shape tests the
+# domain itself. A Rule is often typed only by the range of the property that
+# reaches it; check_odrl22.py adds those range types.
+odrl22:ConstraintPlacementShape a sh:NodeShape ;
+  sh:targetSubjectsOf odrl:constraint ;
+  sh:or ( [ sh:class odrl:Policy ] [ sh:class odrl:Rule ] ) ;
+  sh:message "Vocabulary §3.14.2: odrl:constraint belongs on a Policy or a Rule" .
 
 # IM §2.6: the function properties relate a Rule to a Party (IM §2.3), and a
 # target or output relates it to an Asset (IM §2.2, §2.6.1). A Party or an
