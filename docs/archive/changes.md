@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.42** (2026-10-24, #116): §3.1 states the invariants that every id in a corpus tuple names a policy, atom, or constraint that the corpus holds, and that an atom has `relation_value` exactly when it has `relation`. No rule changes.
+
 **Changes in v0.41** (2026-10-24, #114): laws L2, L3, L6, and L7 are restated, since each was false as written (§8). §6.4's monotonicity proof says how a candidate that a violated precondition closes or reopens passes through §6.2, and §3.5 and §6.4 say what `verdict.exact` means. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.40** (2026-10-24, `decisions/0032`, #113): `instance` gains `passed`, whether the instance's deadline has passed, which W3 reads where a completion makes an `unknown` instance unfulfilled (§3.5, §5.3, §6.4), and W3's signature lists `instance` (§6). A grant-scoped instance key is the digest of `binding_key` and `request.reference`, so each atom of an authored duty has its own instance, and `discharges` names the grant by the digest of `source_duty` and `request.reference` (§3.3, §5.3). Earlier changes are in `docs/archive/changes.md`.

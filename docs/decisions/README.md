@@ -42,3 +42,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0032](0032-an-instance-records-whether-its-deadline-passed.md) | An instance records whether its deadline passed; a grant instance is keyed on its binding | 2026-10-24 | In force |
 | [0033](0033-a-replaced-policy-and-an-unrecognised-profile-are-rejected.md) | A replaced policy and an unrecognised profile are rejected | 2026-10-24 | In force |
 | [0034](0034-the-odrl-layer-checks-the-action-hierarchy.md) | The ODRL layer checks the action hierarchy, and `odrl:hasPolicy` is rejected | 2026-10-24 | In force |
+| [0035](0035-a-witness-read-is-keyed-by-its-witness.md) | A part read against a witness is keyed by its witness | 2026-10-25 | In force |

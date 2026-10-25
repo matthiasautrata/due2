@@ -968,6 +968,7 @@
           "uniqueItems": true,
           "x-key": [
             "atom_id",
+            "predicate",
             "kind",
             "ref"
           ],
@@ -976,6 +977,14 @@
             "properties": {
               "atom_id": {
                 "$ref": "#/$defs/Id"
+              },
+              "predicate": {
+                "enum": [
+                  "applies",
+                  "in_force",
+                  "owed",
+                  "fulfilled"
+                ]
               },
               "kind": {
                 "enum": [
@@ -996,6 +1005,7 @@
             },
             "required": [
               "atom_id",
+              "predicate",
               "kind",
               "ref",
               "truth"
@@ -1057,6 +1067,84 @@
               "atom_id",
               "predicate",
               "kind",
+              "ref",
+              "input",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "witness_basis": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "atom_id",
+            "witness",
+            "ref"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "atom_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "witness": {
+                "$ref": "#/$defs/Id"
+              },
+              "ref": {
+                "$ref": "#/$defs/Id"
+              },
+              "truth": {
+                "$ref": "#/$defs/Truth"
+              }
+            },
+            "required": [
+              "atom_id",
+              "witness",
+              "ref",
+              "truth"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "witness_part": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "atom_id",
+            "witness",
+            "ref"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "atom_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "witness": {
+                "$ref": "#/$defs/Id"
+              },
+              "ref": {
+                "$ref": "#/$defs/Id"
+              },
+              "input": {
+                "$ref": "#/$defs/Id"
+              },
+              "status": {
+                "enum": [
+                  "missing",
+                  "invalid",
+                  "conflict",
+                  "unresolved",
+                  "misfit"
+                ]
+              }
+            },
+            "required": [
+              "atom_id",
+              "witness",
               "ref",
               "input",
               "status"
