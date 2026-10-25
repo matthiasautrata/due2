@@ -689,6 +689,9 @@ EXAMPLES = [
     # A u leaf under a connective that decides anyway: f and u is f, t or u is t.
     constrained(Node("and", (eq(1), eq(2)), True)),
     constrained(Node("or", (eq(0), eq(2)), False)),
+    # An xone of a t member and a u member is u: read as f, the u member would make it t
+    # (decisions/0022). Generated cases reach this shape too rarely to catch that every run.
+    constrained(Node("xone", (eq(0), eq(2)), False)),
     # A u leaf, and two leaves that read one variable, positively and negatively: the tree is u
     # (Kleene), but t in every completion. Opaque, the two leaves are independent and the tree
     # stays u, so the atom's own variable decides it (decisions/0016 § L9).

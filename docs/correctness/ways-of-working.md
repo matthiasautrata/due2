@@ -357,7 +357,7 @@ Every change to a component is an increment, and every increment takes five step
 
 - **Trunk-based.** The owner commits to `main`, and every commit on `main` passes. Work that does not pass stays on a branch.
 - **Other contributors use pull requests.** A change written by another model or agent (Hermes, Agy, a delegated worker) arrives as a pull request and is reviewed before it merges; it is never pushed to `main` directly. The pull-request template carries the checklist of §14.1.
-- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic, and each job has a ten-minute timeout. A spike's checks and its corpus run are a job of their own, as clingo-i's are. The slow tier's trigger is open (§13 #8).
+- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic, and each job has a twenty-minute timeout. A spike's checks and its corpus run are a job of their own, as clingo-i's are. The slow tier's trigger is open (§13 #8).
 - **Supply chain.** Actions are pinned by commit SHA. Dependabot proposes updates to the actions and the uv lock monthly, grouped, and each update passes CI like any other change.
 
 ---
