@@ -9,7 +9,7 @@ from fractions import Fraction
 
 import pytest
 from clingo import Function, String, Symbol
-from hypothesis import given
+from hypothesis import given, reject
 from hypothesis import strategies as st
 
 from clingo_i.values import XSD, Instant, Placed, add, date_time, duration, place, value_facts
@@ -117,7 +117,11 @@ def test_daytime_sum(dt: datetime, n: int) -> None:
     i = date_time(instant_lex(dt, 6, zulu=True))
     d = duration(f"{'-' if n < 0 else ''}PT{abs(n)}S")
     assert isinstance(i, Instant) and d is not None
-    assert add(i, d[0]) == seconds(dt + timedelta(seconds=n) - EPOCH)
+    try:
+        later = dt + timedelta(seconds=n)
+    except OverflowError:  # outside datetime's years 1 to 9999, where the oracle has no answer
+        reject()
+    assert add(i, d[0]) == seconds(later - EPOCH)
 
 
 # --- positions ---
