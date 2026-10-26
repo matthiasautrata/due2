@@ -57,7 +57,7 @@ Each field changes the trace, so the config is one of the evaluation's four inpu
 - `due2-profiles.md`: §6 adds the attester role; §7 states that a violated obligation never denies; §8.2 exception 6 covers every scenario where DPROD would deny for a violation.
 - `profiles/due2-core.ttl` adds `due2:attester` and `due2:attestingParty`.
 - `conformance/`: scenarios have no `config`. The 12 `violations = deny` scenarios change: five that are now identical to a sibling scenario are removed, and seven take the verdict the obligation no longer gates, each with its notes. `due2-grant-signers` names the bank as the duty's attester. A new case, `due2-violated-precondition-beside-permission`, shows a violated precondition closing its own permission while a second permission for the same read still permits.
-- `decisions/0004`, `decisions/0008`, `decisions/0029`, `decisions/0038`, `decisions/0040`, and `decisions/0042` carry notes.
+- `decisions/0004`, `decisions/0008`, `decisions/0029`, `decisions/0038`, `decisions/0040`, `decisions/0041`, and `decisions/0042` carry notes.
 - `due2-platform.md` follows in its next version: `decide` takes three inputs, and the connector registry admits sources.
 
 ## Revisit when

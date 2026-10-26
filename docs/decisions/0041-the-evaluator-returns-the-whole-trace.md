@@ -36,3 +36,5 @@
 ## Revisit when
 
 - Computing collection digests inside the evaluator costs too much at agent volume (`ways-of-working.md` §10.4). The orchestrator could then pass the digests it already holds, and the evaluator would check none of them.
+
+**Note (2026-10-26, `decisions/0045`):** an evaluation has no config, so `evaluation` holds three input ids, those of the corpus, the request, and the SOTW (`due2-workflows.md` §3.5). Item 2 stands for the three.
