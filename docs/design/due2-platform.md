@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.12. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.13. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.12** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): each state fact is one source's answer, the evaluator combines the admitted ones, and the SOTW service keeps values current (§1.4, §2.4, §2.6, §3.1, §5 #7). `decide` returns the whole trace, and the orchestrator builds no part of it (§2.2, §2.6). A case fixes its request, corpus, config, and pins, so `create_case` takes all four (§2.2, §2.6, §2.10). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.13** (2026-10-26, `decisions/0043`, `decisions/0044`): `resolve` and `edges` return the source's version with each answer, and `edges` answers per request entity with the edges on the paths up from it (§2.4). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -193,8 +193,8 @@ Including a policy that cannot match the request is safe, because root atoms tha
 Fetch the facts a plan names and return them in the form the SOTW records them: one answer per source, with its status and values (`due2-workflows.md` §3.3). One connector serves each bound state property, or a family of them. The registry maps a property IRI to its connector.
 
 ```text
-resolve(property, entities, at)            -> fact(source, status, values)
-edges(module, entities)                    -> closure edges, with the module's version
+resolve(property, entities, at)            -> fact(source, status, values), with the source's version
+edges(module, entities)                    -> per entity, the closure edges on the paths up from it, with the source's version
 register(property | module, connector)
 ```
 
@@ -202,7 +202,7 @@ Five rules from the specification bind every connector:
 
 - **One hop.** "The requester's department" is one property, flattened by the connector. Computing values is the connector's job and never the evaluator's (`due2-profiles.md` §3).
 - **Statuses are never collapsed.** `missing` means the source says no value exists. `unresolved` means the source could not be asked or did not answer. A connector that times out returns `unresolved`, never `missing`.
-- **Answers, not extensions.** The case records the answer to the question asked, such as membership of one group, and the source version it came from. It never records the dataset the answer was computed from (`due2-workflows.md` §3.3).
+- **Answers, not extensions.** The case records the answer to the question asked, such as membership of one group, and, on its event, the version of the source it came from (`decisions/0044`). For a world module, one answer holds the edges on the paths up from one request entity, and a later answer for the entity replaces it (`decisions/0043`). The case never records the dataset the answer was computed from (`due2-workflows.md` §3.3).
 - **The corpus decides what is needed.** A connector is needed for each property that the corpus's constraints read and that a profile binds to the state source. A profile binding that no policy reads needs none. A planned property with no connector is recorded as `unresolved` (§3.6).
 - **The service keeps values current.** When a value it supplied changes in the world, it supplies the new one, and the orchestrator records it as a new event on the cases that read it. No one checks an answer's age, and a re-evaluation asks no source again (`decisions/0040`). How a change is reported is open (§5 #7).
 

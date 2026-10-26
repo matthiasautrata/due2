@@ -50,3 +50,5 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0040](0040-facts-are-kept-per-source.md) | Facts are kept per source, and W2 combines them | 2026-10-26 | In force |
 | [0041](0041-the-evaluator-returns-the-whole-trace.md) | The evaluator returns the whole trace | 2026-10-26 | In force |
 | [0042](0042-a-case-fixes-its-config-and-pins.md) | A case fixes its request, corpus, config, and pins | 2026-10-26 | In force |
+| [0043](0043-world-edges-are-case-events.md) | World hierarchy edges are events on the case | 2026-10-26 | In force |
+| [0044](0044-the-source-version-is-on-the-event.md) | The source version is recorded on the event | 2026-10-26 | In force |

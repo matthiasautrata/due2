@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.50** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): the SOTW keeps each source's answer, `attribution` is dropped, and W2 combines the admitted answers of a property (§3.3, §5.4); `admit_age` is dropped, because keeping values current is the SOTW service's job (§3.4). The evaluator computes `evaluation` and `diagnostic` too, so it returns the whole trace (§3.5). A case fixes its request, corpus, config, and pins, and an evaluation records only its SOTW and outcome (§7.1). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.49** (2026-10-26, `decisions/0039`, #136): the lineage is a collection with relations of its own (§3.6), one per policy version and normaliser version, found by the policy store and never merged; §2 counts six collections, and §3.7 and L10 read the lineage of each policy in the corpus. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.48** (2026-10-26, `decisions/0038`, #107): an id that no author chose is minted, not derived (§2, §3.1). A case fixes its corpus (§7.1). A duty instance is keyed by its atom and occurrence (§3.3, §3.5, §5.3), `alt_id` is a position (§3.5, §6.3), `discharges` is two fields (§3.3, §5.3), and W1 is deterministic up to renaming of minted ids (§4).
@@ -198,6 +200,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `due2-platform.md`
+
+**Changes in v0.12** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): each state fact is one source's answer, the evaluator combines the admitted ones, and the SOTW service keeps values current (§1.4, §2.4, §2.6, §3.1, §5 #7). `decide` returns the whole trace, and the orchestrator builds no part of it (§2.2, §2.6). A case fixes its request, corpus, config, and pins, so `create_case` takes all four (§2.2, §2.6, §2.10). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.11** (2026-10-26, `decisions/0039`, #136): §2.3 finds a policy's lineage by the policy, its version, and the normaliser version, and §2.10 says how explanation reaches it. Earlier changes are in `docs/archive/changes.md`.
 
