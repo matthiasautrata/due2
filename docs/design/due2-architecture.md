@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.13
+**Status:** Draft v0.14
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.13** (2026-10-24, `decisions/0030`, #111): §7's case flow says that a re-evaluation asks at its own time, with the request's `at` moved to its `effective_at`. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.14** (2026-10-26, `decisions/0036`, #130): the in-force row of §0 says that an obligation is in force when one of the policies that state it matches. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -38,7 +38,7 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 | trace / explanation | What W2 and W3 emit for an evaluation; the explanation is the part reachable from the verdict (`verdict_basis`, `eliminated`) | `due2-workflows.md` §3.5, §3.7 |
 | opaque part | A `U` part whose value is missing, invalid, in conflict, or does not fit its operator: a completion variable of its own, never shared or paired with a complement | `due2-workflows.md` §6.4, `decisions/0016` |
 | pivotal literal | A literal whose flip alone changes some completion's verdict; an `Indeterminate` names the `U` atoms that hold one, and its `verdict_range` | `due2-workflows.md` §6.4, `decisions/0011` |
-| in force | An obligation travels with its policy: in force when that policy matches | `due2-workflows.md` §5.2 |
+| in force | An obligation travels with its policies: in force when one of the policies that state it matches | `due2-workflows.md` §5.2 |
 | profile | An ODRL extension, declared as data and compiled mechanically | `due2-profiles.md` §1 |
 
 **A request through the pipeline** (from `conformance/cases/dprod-customer-api-v2`, scenario 3; the expected answer is the case's hand-derived one, and its `why` gives the derivation):

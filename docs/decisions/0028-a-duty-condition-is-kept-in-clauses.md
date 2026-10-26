@@ -37,3 +37,7 @@ The spec already assumed otherwise in two places. `due2-workflows.md` §5.2 reje
 ## Revisit when
 
 - A policy needs a duty whose condition is a disjunction that mixes a guard with a witness condition. That is a `MixedDutyConstraint` rejection today, and this record does not change it.
+
+## Amendment (2026-10-26, the clause moves to `duty_constraint`)
+
+A named constraint can be attached to several atoms, so its attachment is no longer a field of `constraint` (`decisions/0036`). The clause number of item 2 is a field of `duty_constraint (atom_id, clause: Count, constraint_id, scope: Enum)`, the relation that attaches a constraint to an `Oblige` atom, and a `Permit` or `Forbid` atom's constraints are attached by `atom_constraint`, which has no clause (`due2-workflows.md` §3.1). The meaning of a clause is unchanged, and `check_invariants` checks that each relation names an atom of its effect.

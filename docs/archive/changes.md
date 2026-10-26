@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.44** (2026-10-25, `decisions/0032` amendment, #121): a duty atom's id identifies what it asks for, by stage 1's construction extended with what stage 2 adds (§3.1, §4), and replaces `binding_key`, which is dropped. A `member` instance is its duty atom; W2 mints an instance id from the atom's id with the request subject when the subject is the performer, the `reference` for a `grant` instance, and the occurrence (§5.3). `instance_key` is an `Id` (§3.3, §3.5).
+
 **Changes in v0.43** (2026-10-25, `decisions/0035`, #120): the parts of a duty's witness conditions are recorded per witness, in the new relations `witness_basis` and `witness_part` (§3.5), and `basis` gains `predicate` in its key. The W2 signature lists `unknown_part` and both new relations (§5); §3.7, §5.1–§5.4, and L10 follow. W3 reads neither new relation: a `fulfilled` finding is a completion variable of its own (§6.4).
 
 **Changes in v0.42** (2026-10-24, #116): §3.1 states the invariants that every id in a corpus tuple names a policy, atom, or constraint that the corpus holds, and that an atom has `relation_value` exactly when it has `relation`. No rule changes.
@@ -115,6 +117,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.16** (2026-10-25, #126): `MalformedConstraint` covers logical constraints whose members form a cycle.
+
 **Changes in v0.15** (2026-10-25, #125): `OperatorTypeMismatch` and `InvalidTiming` cover a temporal literal whose lexical form names no value of its datatype.
 
 **Changes in v0.14** (2026-10-25, #129): `MisplacedConstraint` covers a refinement or a constraint outside its vocabulary domain on any node, a party that a profile's own role names among them.
@@ -141,6 +145,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.13** (2026-10-24, `decisions/0030`, #111): §7's case flow says that a re-evaluation asks at its own time, with the request's `at` moved to its `effective_at`.
+
 **Changes in v0.12** (2026-10-24, `decisions/0029`, #110): §6.2 says that a void policy keeps its root obligations, and names the departure from ODRL's reading. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.11** (2026-10-24, `decisions/0028`, #109): §4 item 3 makes only a root rule's DNF disjuncts atoms; a duty's become clauses of its one atom, and the blowup budget's exact count includes them. Earlier changes are in `docs/archive/changes.md`.
@@ -166,6 +172,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.21 (2026-10-25, #129): §3 places a refinement and a constraint by the vocabulary's domains: a constraint on anything other than a Policy or a Rule, and a refinement on anything other than an Action or a collection, are rejected, whatever property reaches the node.
 
 Changes in 0.20 (2026-10-25, `decisions/0034`, #124): §3 reads the properties whose value must be a resource from the vocabularies, as `odrl:function`, `odrl:relation`, and their `rdfs:subPropertyOf` descendants, so a profile's own party roles are covered.
 

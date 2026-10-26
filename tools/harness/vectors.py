@@ -42,7 +42,7 @@ REFERENCES = {
 
 FILE_FIELDS = {"file", "source", "notes", "tags", "prefixes", "corpus", "scenarios"}
 SCENARIO_FIELDS = {"name", "tags", "request", "sotw", "config", "expected"}
-NOT_PREFIXES = {"party", "sha256"}  # constraint.scope values and digests start with these
+NOT_PREFIXES = {"party", "sha256"}  # scope values and digests start with these
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
@@ -211,6 +211,7 @@ def check_invariants(corpus: Obj, where: str) -> list[str]:
 
     problems: list[str] = []
     effect = {cast(str, t["atom_id"]): t["effect"] for t in rows("atom")}
+    # A root tuple for each policy that states the atom, so a shared one has several (decisions/0036).
     roots = {cast(str, t["atom_id"]) for t in rows("root")}
     for t in rows("atom"):
         a = cast(str, t["atom_id"])
@@ -227,13 +228,13 @@ def check_invariants(corpus: Obj, where: str) -> list[str]:
             for field, (target, _) in REFERENCES.items():
                 if field in t and str(t[field]) not in keys[target]:
                     problems.append(f"{where}: {rel}.{field} {t[field]} names no {target}")
-    for t in rows("constraint"):
-        # A duty's condition is kept in clauses on its one atom (decisions/0028).
-        c, a = t["constraint_id"], t["atom_id"]
-        if effect.get(cast(str, a)) == "Oblige" and "clause" not in t:
-            problems.append(f"{where}: constraint {c} of Oblige atom {a} has no clause")
-        if effect.get(cast(str, a)) != "Oblige" and "clause" in t:
-            problems.append(f"{where}: constraint {c} has a clause, and atom {a} is not Oblige")
+    # Only a duty's condition is kept in clauses (decisions/0028, decisions/0036). An atom
+    # that names nothing is reported above, so only an atom of the wrong effect is here.
+    for rel, oblige in (("atom_constraint", False), ("duty_constraint", True)):
+        for t in rows(rel):
+            a = cast(str, t["atom_id"])
+            if a in effect and (effect[a] == "Oblige") != oblige:
+                problems.append(f"{where}: {rel} {t['constraint_id']} on {effect[a]} atom {a}")
     children: dict[str, list[str]] = {}
     for t in rows("edge"):
         parent, child = cast(str, t["parent_id"]), cast(str, t["child_id"])

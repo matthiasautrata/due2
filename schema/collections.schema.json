@@ -175,9 +175,6 @@
               "relation_value": {
                 "$ref": "#/$defs/Id"
               },
-              "policy_id": {
-                "$ref": "#/$defs/Id"
-              },
               "source_rule": {
                 "$ref": "#/$defs/Id"
               },
@@ -189,7 +186,6 @@
               "atom_id",
               "effect",
               "action",
-              "policy_id",
               "source_rule"
             ],
             "additionalProperties": false
@@ -237,16 +233,6 @@
               "constraint_id": {
                 "$ref": "#/$defs/Id"
               },
-              "atom_id": {
-                "$ref": "#/$defs/Id"
-              },
-              "clause": {
-                "$ref": "#/$defs/Count"
-              },
-              "scope": {
-                "type": "string",
-                "pattern": "^(rule|action|relation|party:[A-Za-z][A-Za-z0-9+.\\-]*:[^\\s<>\\\"{}|\\\\^`]+)$"
-              },
               "left_operand": {
                 "$ref": "#/$defs/Id"
               },
@@ -262,8 +248,6 @@
             },
             "required": [
               "constraint_id",
-              "atom_id",
-              "scope",
               "left_operand",
               "operator",
               "datatype"
@@ -292,6 +276,73 @@
             "required": [
               "constraint_id",
               "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "atom_constraint": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "atom_id",
+            "constraint_id",
+            "scope"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "atom_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "constraint_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "scope": {
+                "type": "string",
+                "pattern": "^(rule|action|relation|party:[A-Za-z][A-Za-z0-9+.\\-]*:[^\\s<>\\\"{}|\\\\^`]+)$"
+              }
+            },
+            "required": [
+              "atom_id",
+              "constraint_id",
+              "scope"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "duty_constraint": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "atom_id",
+            "clause",
+            "constraint_id",
+            "scope"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "atom_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "clause": {
+                "$ref": "#/$defs/Count"
+              },
+              "constraint_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "scope": {
+                "type": "string",
+                "pattern": "^(rule|action|relation|party:[A-Za-z][A-Za-z0-9+.\\-]*:[^\\s<>\\\"{}|\\\\^`]+)$"
+              }
+            },
+            "required": [
+              "atom_id",
+              "clause",
+              "constraint_id",
+              "scope"
             ],
             "additionalProperties": false
           }
@@ -326,17 +377,22 @@
           "minItems": 1,
           "uniqueItems": true,
           "x-key": [
-            "atom_id"
+            "atom_id",
+            "policy_id"
           ],
           "items": {
             "type": "object",
             "properties": {
               "atom_id": {
                 "$ref": "#/$defs/Id"
+              },
+              "policy_id": {
+                "$ref": "#/$defs/Id"
               }
             },
             "required": [
-              "atom_id"
+              "atom_id",
+              "policy_id"
             ],
             "additionalProperties": false
           }
@@ -1214,6 +1270,7 @@
           "uniqueItems": true,
           "x-key": [
             "atom_id",
+            "policy_id",
             "by_atom",
             "rule"
           ],
@@ -1221,6 +1278,9 @@
             "type": "object",
             "properties": {
               "atom_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "policy_id": {
                 "$ref": "#/$defs/Id"
               },
               "by_atom": {
@@ -1238,6 +1298,7 @@
             },
             "required": [
               "atom_id",
+              "policy_id",
               "by_atom",
               "rule"
             ],

@@ -30,7 +30,7 @@ These files state, in JSON Schema 2020-12, what the evaluator port of `due2-plat
 | `Digest` | `sha256:` and 64 lowercase hex digits |
 | `String` | A string |
 
-The relation blocks do not list an `Enum` field's values, so `tools/gen_schema.py` lists them, and fails if a value appears nowhere in the spec. `diagnostic.code` takes the warning codes of `due2-diagnostics.md` §3. `constraint.scope` takes `rule`, `action`, `relation`, or `party:` followed by the party function's full IRI, which the spec writes `party:<function>`.
+The relation blocks do not list an `Enum` field's values, so `tools/gen_schema.py` lists them, and fails if a value appears nowhere in the spec. `diagnostic.code` takes the warning codes of `due2-diagnostics.md` §3. The `scope` of `atom_constraint` and `duty_constraint` takes `rule`, `action`, `relation`, or `party:` followed by the party function's full IRI, which the spec writes `party:<function>`.
 
 The check on `Enum` values catches a misspelt or dropped value, not a value listed under the wrong field.
 

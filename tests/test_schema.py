@@ -83,17 +83,30 @@ def _not_a_root(doc: Obj) -> None:
     _corpus(doc)["root"] = []
 
 
-def _clause_on_a_permit(doc: Obj) -> None:
+def _add_constraint(doc: Obj) -> None:
     _corpus(doc)["constraint"] = [
         {
             "constraint_id": "ex:c1",
-            "atom_id": "ex:a1",
-            "clause": 0,
-            "scope": "rule",
             "left_operand": "odrl:purpose",
             "operator": "odrl:eq",
             "datatype": "xsd:anyURI",
         }
+    ]
+
+
+def _clause_on_a_permit(doc: Obj) -> None:
+    _add_constraint(doc)
+    _corpus(doc)["duty_constraint"] = [
+        {"atom_id": "ex:a1", "clause": 0, "constraint_id": "ex:c1", "scope": "rule"}
+    ]
+
+
+def _conjunct_on_a_duty(doc: Obj) -> None:
+    _add_constraint(doc)
+    duty = {**_atom(doc), "atom_id": "ex:a2", "effect": "Oblige"}
+    cast(list[Obj], _corpus(doc)["atom"]).append(duty)
+    _corpus(doc)["atom_constraint"] = [
+        {"atom_id": "ex:a2", "constraint_id": "ex:c1", "scope": "rule"}
     ]
 
 
@@ -140,7 +153,14 @@ def _relation_without_value(doc: Obj) -> None:
 
 
 def _root_naming_no_atom(doc: Obj) -> None:
-    _corpus(doc)["root"] = [{"atom_id": "ex:a1"}, {"atom_id": "ex:a9"}]
+    _corpus(doc)["root"] = [
+        {"atom_id": "ex:a1", "policy_id": "ex:p1"},
+        {"atom_id": "ex:a9", "policy_id": "ex:p1"},
+    ]
+
+
+def _root_naming_no_policy(doc: Obj) -> None:
+    _corpus(doc)["root"] = [{"atom_id": "ex:a1", "policy_id": "ex:p9"}]
 
 
 def _edge_from_no_atom(doc: Obj) -> None:
@@ -150,10 +170,10 @@ def _edge_from_no_atom(doc: Obj) -> None:
 
 
 def _constraint_on_no_atom(doc: Obj) -> None:
-    _clause_on_a_permit(doc)
-    constraint = cast(list[Obj], _corpus(doc)["constraint"])[0]
-    del constraint["clause"]
-    constraint["atom_id"] = "ex:a9"
+    _add_constraint(doc)
+    _corpus(doc)["atom_constraint"] = [
+        {"atom_id": "ex:a9", "constraint_id": "ex:c1", "scope": "rule"}
+    ]
 
 
 def _config_without_bound(doc: Obj) -> None:
@@ -186,7 +206,8 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "schema: a field due2-workflows.md §3 does not define": _undefined_field,
     "set semantics: two tuples with one key": _key_clash,
     "invariant: a Permit atom that is not a root": _not_a_root,
-    "invariant: a clause on a Permit atom's constraint (decisions/0028)": _clause_on_a_permit,
+    "invariant: a duty_constraint on a Permit atom (decisions/0028)": _clause_on_a_permit,
+    "invariant: an atom_constraint on an Oblige atom (decisions/0036)": _conjunct_on_a_duty,
     "table form: a row shorter than its fields": _short_row,
     "table form: null in a required field": _null_required,
     "schema: an empty-key relation with two tuples": _two_verdicts,
@@ -196,6 +217,7 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "value: an Instant whose year has a leading zero beyond four digits": _padded_year,
     "invariant: a relation with no relation_value": _relation_without_value,
     "invariant: a root that names no atom": _root_naming_no_atom,
+    "invariant: a root that names no policy": _root_naming_no_policy,
     "invariant: an edge whose parent names no atom": _edge_from_no_atom,
     "invariant: a constraint on no atom": _constraint_on_no_atom,
     "schema: config without max_mixed": _config_without_bound,

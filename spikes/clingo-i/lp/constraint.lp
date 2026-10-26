@@ -77,8 +77,8 @@ reach_c(C, D2) :- reach_c(C, D), member(D, D2).
 %*! scope(C, Scope)
 
 Node `C` refines what `Scope` names: `rule` under a rule's constraint root, `action` under an
-action term's refinement root. It is `constraint.scope` of due2-workflows.md §3.1, and part of
-the completion key (completion.lp).
+action term's refinement root. It is the `scope` of `atom_constraint` and `duty_constraint` in
+due2-workflows.md §3.1, and part of the completion key (completion.lp).
 *%
 scope(C, rule) :- top_constraint(_, C).
 scope(C, action) :- top_refinement(_, C).

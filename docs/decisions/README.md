@@ -35,7 +35,7 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0025](0025-set-valued-operand-takes-set-operators.md) | A set-valued operand takes only the set operators | 2026-10-23 | In force |
 | [0026](0026-listed-frontier-routes-that-suffice.md) | The listed frontier is the routes that suffice | 2026-10-24 | In force |
 | [0027](0027-the-corpus-is-the-boundary.md) | W1 stays Python; the corpus is the boundary; the bakeoff ends; the W2/W3 language is open | 2026-10-24 | In force, except item 1, which is open (#104). Amended: clingo-i's relation-level face (#41) replaces the brute-force W3 (#38) as the gate's oracle |
-| [0028](0028-a-duty-condition-is-kept-in-clauses.md) | A duty's condition is kept in clauses on its one atom | 2026-10-24 | In force |
+| [0028](0028-a-duty-condition-is-kept-in-clauses.md) | A duty's condition is kept in clauses on its one atom | 2026-10-24 | Amended: 0036 moves the clause number to `duty_constraint` |
 | [0029](0029-a-void-policy-keeps-its-obligations.md) | A void policy keeps its root obligations | 2026-10-24 | In force |
 | [0030](0030-a-re-evaluation-moves-the-request-time.md) | A re-evaluation asks at its own time | 2026-10-24 | In force |
 | [0031](0031-a-permit-is-the-answer-of-the-terms.md) | A verdict is the answer of the terms supplied | 2026-10-24 | In force |
@@ -43,3 +43,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0033](0033-a-replaced-policy-and-an-unrecognised-profile-are-rejected.md) | A replaced policy and an unrecognised profile are rejected | 2026-10-24 | In force |
 | [0034](0034-the-odrl-layer-checks-the-action-hierarchy.md) | The ODRL layer checks the action hierarchy, and `odrl:hasPolicy` is rejected | 2026-10-24 | Amended: a refined action is its `rdf:value`, whatever its node kind; `odrl:assignerOf` and `odrl:assigneeOf` are rejected as `odrl:hasPolicy` is |
 | [0035](0035-a-witness-read-is-keyed-by-its-witness.md) | A part read against a witness is keyed by its witness | 2026-10-25 | In force |
+| [0036](0036-an-id-never-includes-its-policy.md) | An id never includes its policy, and an atom roots each policy that states it | 2026-10-26 | In force |

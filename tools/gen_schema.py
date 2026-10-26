@@ -42,7 +42,8 @@ COMBINATION = ["prohibit-overrides"]
 ENUMS: dict[tuple[str, str, str], list[str]] = {
     ("Corpus", "policy", "conflict"): CONFLICT,
     ("Corpus", "atom", "effect"): ["Permit", "Forbid", "Oblige"],
-    ("Corpus", "constraint", "scope"): ["rule", "action", "relation", "party:<function>"],
+    ("Corpus", "atom_constraint", "scope"): ["rule", "action", "relation", "party:<function>"],
+    ("Corpus", "duty_constraint", "scope"): ["rule", "action", "relation", "party:<function>"],
     ("Corpus", "duty", "scope"): ["member", "grant"],
     ("Corpus", "diagnostic", "code"): ["<warnings>"],
     ("Sotw", "fact", "status"): ["resolved", "missing", "invalid", "conflict", "unresolved"],

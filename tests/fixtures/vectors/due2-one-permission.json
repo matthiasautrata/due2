@@ -5,9 +5,9 @@
   "prefixes": { "ex": "https://example.org/", "odrl": "http://www.w3.org/ns/odrl/2/", "xsd": "http://www.w3.org/2001/XMLSchema#" },
   "corpus": {
     "policy": [ { "policy_id": "ex:p1", "conflict": "perm", "version": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" } ],
-    "atom": [ { "atom_id": "ex:a1", "effect": "Permit", "action": "odrl:use", "relation": "odrl:target", "relation_value": "ex:DataService", "policy_id": "ex:p1", "source_rule": "ex:r1" } ],
+    "atom": [ { "atom_id": "ex:a1", "effect": "Permit", "action": "odrl:use", "relation": "odrl:target", "relation_value": "ex:DataService", "source_rule": "ex:r1" } ],
     "atom_party": { "fields": ["atom_id", "function", "party"], "rows": [ ["ex:a1", "odrl:assignee", "ex:Subscriber"] ] },
-    "root": [ { "atom_id": "ex:a1" } ],
+    "root": [ { "atom_id": "ex:a1", "policy_id": "ex:p1" } ],
     "edge": []
   },
   "scenarios": [

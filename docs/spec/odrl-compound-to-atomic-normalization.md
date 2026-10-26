@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.21  
+Version: 0.22  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.21 (2026-10-25, #129): §3 places a refinement and a constraint by the vocabulary's domains: a constraint on anything other than a Policy or a Rule, and a refinement on anything other than an Action or a collection, are rejected, whatever property reaches the node. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.22 (2026-10-26, `decisions/0036`, #130): §5.2 says that an anonymous node is identified by its place, so two anonymous nodes in different places are distinct, and that sharing is stated by naming. §5.1's rule that distinct resources do not claim one identity extends to the policies normalised together. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
@@ -133,7 +133,7 @@ For each Policy, Rule, Asset, Party, Constraint, or LogicalConstraint, its effec
 
 By §3, a Policy always takes case 1 or 2. Case 3 applies to anonymous Rules, Assets, Parties, Constraints, LogicalConstraints, refined-action nodes, and RDF list cells.
 
-An existing valid authored UID is preserved. Distinct resources MUST NOT claim the same effective identity. A resource with more than one UID is invalid.
+An existing valid authored UID is preserved. Distinct resources MUST NOT claim the same effective identity, within one policy or across the policies normalised together (`due2-workflows.md` §4, *Several policies are one corpus*). A resource with more than one UID is invalid.
 
 Output is skolem-only:
 
@@ -176,7 +176,7 @@ anon_node_uid = H(frame(
 
 `parent_effective_uid` is the effective identity of the node's single parent, assigned top-down from the anchor. `duplicate_index` numbers, from 0, the siblings that share parent, predicate, and local digest. Such siblings are indistinguishable, so any assignment of indices yields the same output graph; their descendants differ through their parents.
 
-An anonymous node's identity therefore depends only on its own content, its parent, and the predicate that reaches it. Editing triples anywhere else — an annotation, a different Rule — leaves it unchanged. That is deliberate: an anonymous node is a value, and content is the only identity a value has. Anything whose identity must survive an edit to its content should be a named Rule (§3).
+An anonymous node's identity therefore depends only on its own content, its parent, and the predicate that reaches it. Editing triples anywhere else — an annotation, a different Rule — leaves it unchanged. That is deliberate: an anonymous node has no name, so its place (its parent and the predicate that reaches it) and its content are all that identify it, and two anonymous nodes under different parents are distinct however alike they are. Sharing is stated by naming: a Rule, duty, or constraint that several parents or policies share, or whose identity must survive an edit to its content, should be named (§3, `due2-workflows.md` §3.1, `atom.atom_id`).
 
 **Generated Rules, Policies, and the Activity.**
 
