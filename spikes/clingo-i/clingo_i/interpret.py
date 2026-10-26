@@ -196,9 +196,11 @@ class Interpreter:
             {"ref": ref, "by": by, "rule": rule}
             for ref, by, rule in sorted(
                 {
-                    (_rule(s.arguments[0]), _rule(s.arguments[1]), _text(s.arguments[2]))
+                    # An `elim` row names the removed entry's policy. The reply drops it: the
+                    # corpus compares (source, by source, rule) triples (DESIGN.md § Output).
+                    (_rule(s.arguments[0]), _rule(s.arguments[2]), _text(s.arguments[3]))
                     for s in shown
-                    if s.match("elim", 3)
+                    if s.match("elim", 4)
                 }
             )
             if ref != by  # the authored level: "other than itself" (DESIGN.md § Output)

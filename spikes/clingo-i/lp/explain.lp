@@ -5,9 +5,10 @@
 % not depend on the completion.
 %
 % The `eliminated` rows (due2-workflows.md §3.5, §6.1, §6.2; decisions/0011 #4) name one removed
-% atom, one remover, and the rule; an atom removed by two forbids has two rows
-% (due2-workflows.md §3.5 **[D]**, #57). A permission is removed by its precondition when that
-% duty is owed `t` and violated, which closes it in every completion where it applies. Conflict
+% entry, that is, an atom and one policy that states it (due2-workflows.md §6.2, *Entries*), one
+% remover, and the rule; an entry removed by two forbids has two rows (due2-workflows.md §3.5
+% **[D]**, #57). A permission is removed by its precondition when that duty is owed `t` and
+% violated, which closes it in every completion where it applies. Conflict
 % follows, among the candidates that are not closed. A remover is in conflict in every
 % completion: a forbid with finding `t`, or a permission with finding `t` that no completion
 % closes. A removed atom is in conflict in some completion: its finding is `t` or `u`, and a
@@ -20,7 +21,8 @@
 % (due2-workflows.md §6.1). The `unknown_part` rows name every `u` part of every finding that is
 % not `f`, an atom's or a duty's, with what it reads and why it is `u` (decisions/0016 #3 and its
 % amendment).
-% Variable letters: DESIGN.md § Vocabulary; in an `elim` row `X` is removed and `Y` removes it.
+% Variable letters: DESIGN.md § Vocabulary; in an `elim` row `X` is removed, `P` is the policy of
+% its removed entry, and `Y` removes it.
 %
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
 %   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2` (applies.lp); `conn/2`,
@@ -29,20 +31,23 @@
 %   `voc/2` (lift.lp);
 %   `witness_cond/2`, `obligation_policy/2`, `instance/1`, `passed/1`, `status/3` (duty.lp);
 %   `duty_item/1`, `finding_atom/2`, `item_root/2`, `leaf_status/2` (completion.lp).
-% - **Provides:** `may_apply/1`, `surely_applies/1`, `same_policy/3`, `closed_by/2`,
+% - **Provides:** `may_apply/1`, `surely_applies/1`, `same_policy/4`, `closed_by/2`,
 %   `surely_closed/1`, `maybe_closed/1`, `may_candidate/1`, `sure_candidate/1`, `may_contend/1`,
-%   `sure_contender/1`, `elim_within/3`, `void/1`, `removed_within/1`, `elim/3`, `open_k/2`,
-%   `uncertain/1`, `conflicted/1`, `candidate_state/2`, `listed/1`, `listed_out/2`,
+%   `sure_contender/1`, `elim_within/4`, `void/1`, `removed_in/2`, `elim/4`, `open_k/2`,
+%   `uncertain/1`, `conflict_removes/2`, `conflict_keeps/1`, `conflicted/1`,
+%   `candidate_state/2`, `listed/1`, `listed_out/2`,
 %   `listed_apart/2`, `listed_dominated/1`, `listed_front/1`, `front_duty/2`,
 %   `obligation_row/2`, `reported/1`, `polar/4`, `flip/2`, `conj/2`, `disj/2`,
 %   `xone_pol/4`, `xone_by/3`, `live/4`, `witness_status/3`, `unknown_part/3`.
 
 %## Integrity
 
-% Each atom has one effect, one policy, and one source rule (due2-workflows.md §3.1), so that
-% a row names exactly one of each.
+% Each atom has one effect and one source rule (due2-workflows.md §3.1), so that a row names
+% exactly one of each. It belongs to at least one policy, and has an entry in each. In the spec
+% an atom's policies are its `root` tuples (due2-workflows.md §3.1, decisions/0036); this rule
+% checks only that there is one.
 :- atom(X), #count { Eff : atom_effect(X, Eff) } != 1.
-:- atom(X), #count { P : atom_policy(X, P) } != 1.
+:- atom(X), not atom_policy(X, _).
 :- atom(X), #count { R : atom_rule(X, R) } != 1.
 
 %## Findings
@@ -60,11 +65,11 @@ Atom `X` has finding `t`: it applies in every completion, so it can remove.
 *%
 surely_applies(X) :- holds(applies(X), t).
 
-%*! same_policy(X, Y, Strat)
+%*! same_policy(X, Y, P, Strat)
 
-Atoms `X` and `Y` belong to the same policy, whose conflict strategy is `Strat`.
+Atoms `X` and `Y` both belong to policy `P`, whose conflict strategy is `Strat`.
 *%
-same_policy(X, Y, Strat) :- atom_policy(X, P), atom_policy(Y, P), conflict(P, Strat).
+same_policy(X, Y, P, Strat) :- atom_policy(X, P), atom_policy(Y, P), conflict(P, Strat).
 
 %## Closed by a precondition
 
@@ -122,16 +127,17 @@ sure_contender(X) :- surely_applies(X), atom_effect(X, forbid).
 
 % By the policy's conflict strategy (due2-workflows.md §6.2 #1), one row per remover.
 
-%*! elim_within(X, Y, Strat)
+%*! elim_within(X, P, Y, Strat)
 
-Atom `Y` removes atom `X` within their policy, under its strategy `Strat`: under `prohibit` a `t`
-forbid removes each candidate, under `perm` a sure candidate removes each forbid, and under
-`invalid` every contender of a void policy is removed by each other sure contender of it.
+Atom `Y` removes the entry of atom `X` in policy `P`, under `P`'s strategy `Strat`: under
+`prohibit` a `t` forbid removes each candidate, under `perm` a sure candidate removes each
+forbid, and under `invalid` every contender of a void policy is removed by each other sure
+contender of it.
 *%
-elim_within(X, Y, prohibit) :- may_candidate(X), sure_contender(Y), atom_effect(Y, forbid),
-    same_policy(X, Y, prohibit).
-elim_within(X, Y, perm) :- may_contend(X), atom_effect(X, forbid), sure_candidate(Y),
-    same_policy(X, Y, perm).
+elim_within(X, P, Y, prohibit) :- may_candidate(X), sure_contender(Y), atom_effect(Y, forbid),
+    same_policy(X, Y, P, prohibit).
+elim_within(X, P, Y, perm) :- may_contend(X), atom_effect(X, forbid), sure_candidate(Y),
+    same_policy(X, Y, P, perm).
 
 %*! void(P)
 
@@ -141,32 +147,33 @@ decisions/0029).
 *%
 void(P) :- conflict(P, invalid), sure_candidate(X), atom_policy(X, P), surely_applies(Y),
     atom_effect(Y, forbid), atom_policy(Y, P).
-elim_within(X, Y, invalid) :- void(P), may_contend(X), atom_policy(X, P), sure_contender(Y),
+elim_within(X, P, Y, invalid) :- void(P), may_contend(X), atom_policy(X, P), sure_contender(Y),
     atom_policy(Y, P), X != Y.
 
 %## Across policies
 
-%*! removed_within(Y)
+%*! removed_in(Y, Q)
 
-Atom `Y` is removed within its own policy, so it removes nothing across policies.
+The entry of atom `Y` in policy `Q` is removed within `Q`, so it removes nothing across policies.
 *%
-removed_within(Y) :- elim_within(Y, _, _).
+removed_in(Y, Q) :- elim_within(Y, Q, _, _).
 
-%*! elim(X, Y, Strat)
+%*! elim(X, P, Y, Strat)
 
-Atom `Y` removes atom `X` under rule `Strat`: `violated_precondition`, a strategy of their
-policy, or `"prohibit-overrides"` across policies. Across policies, each `t` forbid its own policy
-did not remove removes each candidate of every other policy (due2-workflows.md §6.2 #2).
-structure.lp admits one policy, so no vector reaches the cross-policy rule. It is there because
-due2-workflows.md §3.5 records every removal with its rule, cross-policy ones included, and
+Atom `Y` removes the entry of atom `X` in policy `P` under rule `Strat`: `violated_precondition`,
+which removes every entry of `X`, a strategy of `P`, or `"prohibit-overrides"` across policies.
+Across policies, each entry of a `t` forbid that its policy `Q` did not remove removes each
+candidate entry in every policy other than `Q` (due2-workflows.md §6.2 #2). structure.lp admits
+one policy, so no vector reaches the cross-policy rule. It is there because due2-workflows.md
+§3.5 records every removal with its rule, cross-policy ones included, and
 `test_combination_rows_on_facts` runs it on hand-written facts.
 *%
-elim(X, Y, violated_precondition) :- closed_by(X, Y).
-elim(X, Y, Strat) :- elim_within(X, Y, Strat).
-elim(X, Y, "prohibit-overrides") :- may_candidate(X), surely_applies(Y), atom_effect(Y, forbid),
-    not removed_within(Y), atom_policy(X, P), atom_policy(Y, Q), P != Q.
+elim(X, P, Y, violated_precondition) :- closed_by(X, Y), atom_policy(X, P).
+elim(X, P, Y, Strat) :- elim_within(X, P, Y, Strat).
+elim(X, P, Y, "prohibit-overrides") :- may_candidate(X), surely_applies(Y), atom_effect(Y, forbid),
+    atom_policy(Y, Q), not removed_in(Y, Q), atom_policy(X, P), P != Q.
 
-#show elim/3.
+#show elim/4.
 
 %## The listed frontier
 
@@ -211,12 +218,25 @@ candidate_state(X, ready) :- may_candidate(X), not uncertain(X),
     #count { Y : listed_out(X, Y) } = 0.
 :- may_candidate(X), #count { S : candidate_state(X, S) } != 1.
 
+%*! conflict_removes(X, P)
+
+Conflict removes the entry of atom `X` in policy `P` in every completion where it takes part: it
+has an `elim` row other than `violated_precondition`.
+*%
+conflict_removes(X, P) :- elim(X, P, _, Strat), Strat != violated_precondition.
+
+%*! conflict_keeps(X)
+
+Atom `X` has an entry that conflict does not remove.
+*%
+conflict_keeps(X) :- atom_policy(X, P), not conflict_removes(X, P).
+
 %*! conflicted(X)
 
-Conflict removes atom `X` in every completion where it takes part: it has an `elim` row other
-than `violated_precondition`.
+Conflict removes every entry of atom `X` in every completion where it takes part. Entries are
+those of due2-workflows.md §6.2.
 *%
-conflicted(X) :- elim(X, _, Strat), Strat != violated_precondition.
+conflicted(X) :- conflict_removes(X, _), not conflict_keeps(X).
 
 %*! listed(X)
 

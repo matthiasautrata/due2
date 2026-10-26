@@ -302,8 +302,9 @@ def test_same_rule_eliminations_are_dropped(interpreter: Interpreter) -> None:
 
 
 def test_combination_rows_on_facts() -> None:
-    # One policy per vector for now (structure.lp), so the cross-policy row is tested on facts:
-    # q's t forbid removes p's u candidate; r's forbid, removed in r under perm, removes nothing.
+    # structure.lp admits one policy per vector, so the cross-policy rows are tested on facts:
+    # q's t forbid y removes the candidates of the other policies, p's u candidate x and r's t
+    # candidate w; r's forbid z, removed in r by w under perm, removes nothing.
     facts = """
 atom(x). atom_effect(x, permit). atom_policy(x, p). atom_rule(x, "x"). holds(applies(x), u).
 atom(y). atom_effect(y, forbid). atom_policy(y, q). atom_rule(y, "y"). holds(applies(y), t).
@@ -317,10 +318,52 @@ conflict(p, prohibit). conflict(q, prohibit). conflict(r, perm).
     rows: set[str] = set()
     ctl.solve(on_model=lambda m: rows.update(str(s) for s in m.symbols(shown=True)))
     assert rows == {
-        'elim(x,y,"prohibit-overrides")',
-        'elim(w,y,"prohibit-overrides")',
-        "elim(z,w,perm)",
+        'elim(x,p,y,"prohibit-overrides")',
+        'elim(w,r,y,"prohibit-overrides")',
+        "elim(z,r,w,perm)",
     }
+
+
+# Entries (due2-workflows.md §6.2, decisions/0036): the permission `read` is stated by two
+# policies. `a`, under invalid, also states the forbid `no`, and both apply, so `a` is void; `b`,
+# under perm, has no forbid. `a`'s entries are removed and `b`'s entry of `read` survives.
+SHARED = """
+atom(read). atom_effect(read, permit). atom_rule(read, "read").
+atom_policy(read, a). atom_policy(read, b).
+atom(no). atom_effect(no, forbid). atom_rule(no, "no"). atom_policy(no, a).
+conflict(a, invalid). conflict(b, perm).
+"""
+
+
+def test_shared_permission_survives_in_its_other_policy() -> None:
+    # The risk is a fold that removes the atom when one policy removes its entry: that would
+    # leave no candidate, and the verdict would be NotApplicable.
+    facts = SHARED + "world(c). completed(c, applies(read), t). completed(c, applies(no), t).\n"
+    ctl = Control(["--warn=none"])
+    ctl.add("base", [], facts + load_programs()["resolve.lp"])
+    ctl.ground([("base", [])])
+    rows: set[str] = set()
+    ctl.solve(on_model=lambda m: rows.update(str(s) for s in m.symbols(shown=True)))
+    assert rows == {'verdict(c,"Permit")', "basis(c,read,permission)"}
+
+
+def test_shared_permission_rows_name_the_entry() -> None:
+    # Each removed entry has a row naming its policy, and `read` keeps its entry in `b`, so it
+    # is not conflicted and stays on the listed frontier. The risk is reading one row as removing
+    # the atom: `read` would be conflicted, so not listed, and the listed frontier would lose it.
+    facts = SHARED + "holds(applies(read), t). holds(applies(no), t).\n"
+    ctl = Control(["--warn=none"])
+    ctl.add("base", [], facts + load_programs()["explain.lp"])
+    ctl.ground([("base", [])])
+    rows: set[str] = set()
+    ctl.solve(on_model=lambda m: rows.update(str(s) for s in m.symbols(atoms=True)))
+    assert {r for r in rows if r.startswith("elim(")} == {
+        "elim(read,a,no,invalid)",
+        "elim(no,a,read,invalid)",
+    }
+    assert "conflicted(read)" not in rows
+    assert "listed(read)" in rows
+    assert "conflicted(no)" in rows
 
 
 # --- constraints (due2-profiles.md §3 to §6) ---

@@ -356,7 +356,7 @@ signed(Duty) :- signer(Duty, _).
 
 %*! admitted(Duty, E)
 
-The evidence `E` has an issuer that a `signer` entry lists for `Duty`.
+The evidence `E` has an issuer that a `signers` element lists for `Duty`.
 *%
 admitted(Duty, E) :- signer(Duty, Issuer), evidence_issuer(E, Issuer).
 

@@ -4,7 +4,7 @@ clingo-i is the semantics program of `decisions/0009`. It is a generic clingo pr
 
 ## Vocabulary
 
-The spec defines most terms: atom, part, finding, candidate, outstanding set, open value, alternative, frontier, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.3, §6.4); duty, precondition, root obligation, bearer, guard, witness condition, evidence, instance, witness, and deadline (`due2-workflows.md` §3.1, §3.3, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
+The spec defines most terms: atom, part, finding, candidate, outstanding set, open value, entry, alternative, frontier, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.2, §6.3, §6.4); duty, precondition, root obligation, bearer, guard, witness condition, evidence, instance, witness, and deadline (`due2-workflows.md` §3.1, §3.3, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
 
 - **Driver.** `flatten.py` and `values.py`: the Python that turns a vector into facts. It is syntactic, and decides nothing.
 - **Duty atom.** A duty node expanded like a rule, to one action term, one relation value, and one bearer: `a(Duty, A, T, Party)`, with the sentinel `none` for a missing relation or bearer (§ `structure.lp`). It is not an `atom/1`, because it is matched against evidence, not against the request.
@@ -37,8 +37,8 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 
 | Letter | Kind |
 |---|---|
-| `X`, `Y` | an atom, or a duty atom. In an elimination row, `X` is removed and `Y` removes it; in `pre(X, Y)`, `Y` is a duty atom of the permission atom `X` |
-| `P`, `Q` | a policy |
+| `X`, `Y` | an atom, or a duty atom. In an elimination row, `X` is removed, in its entry in policy `P`, and `Y` removes it; in `pre(X, Y)`, `Y` is a duty atom of the permission atom `X` |
+| `P`, `Q` | a policy; in the cross-policy elimination rule, `Q` is the remover's policy and `P` the removed entry's |
 | `R` | a rule |
 | `A`, `B` | an action, or an action term in an atom id; `B` is the broader one in an `includedIn` edge |
 | `T` | a target, or a duty's relation value: its target or its `odrl:output` |
@@ -117,7 +117,7 @@ tests/                 the spike's own tests (`TESTS.md`)
 4. **Solve 2:** every file but `pivot.lp`, in cautious mode, over the one world `c`. More than `VARIABLE_CAP`, 64, completion variables declines the vector as `variable-cap` (`correctness-strategy.md` §3 records why 64). `interpret.py` counts the `var/1` atoms of the first model, which `completion.lp` shows: the variables are the same in every model, but grounding leaves `var/1` atoms that no model makes true, so a count of the ground atoms would be too high (`test_variable_cap`). No model at all is an `error`: an integrity constraint failed, so the program is wrong. Otherwise, from the atoms true in every model:
    - the verdict is the one `verdict(c, Verdict)`, or `Indeterminate` if no verdict holds in every completion;
    - `basis(c, X, Role)` gives a definite verdict's basis;
-   - `elim(X, Y, Strat)` gives `eliminated`. It reads no world, so it is the same in every model.
+   - `elim(X, P, Y, Strat)` gives `eliminated`. It reads no world, so it is the same in every model.
 5. **Solve 3**, for an `Indeterminate` only: every file, in brave mode. Each model is a completion `c`, one `pivot(L)`, and the world `flip`, such that `c` and `flip` have different verdicts. The atoms true in some model give the `unknown(X)` atoms, and every `verdict(c, Verdict)` that occurs gives the range (§ `pivot.lp`).
 6. **Reply** (§ Output).
 
@@ -206,22 +206,22 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 | `request_target/1`: `request_target(T)` | `target` | `applies.lp` |
 | `request_absent/1`: `request_absent(target)` | the absence of `target` | `applies.lp` |
 | `request_at/1`: `request_at(Lit)` | `at` | `lift.lp`, `operand.lp` (`actionTime`) |
-| `request_party/2`: `request_party(F, Party)` | each entry of `parties`; `F` is the function predicate IRI | `lift.lp`, `operand.lp` (`agent`), `applies.lp`, `duty.lp` (the request subject) |
+| `request_party/2`: `request_party(F, Party)` | each element of `parties`; `F` is the function predicate IRI | `lift.lp`, `operand.lp` (`agent`), `applies.lp`, `duty.lp` (the request subject) |
 | `request_param/2`: `request_param(Prop, Value)` | each value of `params`, keyed by property IRI | `lift.lp`, `operand.lp` |
-| `request_param_set/1`: `request_param_set(Prop)` | a `params` entry given as a list, so an empty set is not an absent parameter | `operand.lp` |
+| `request_param_set/1`: `request_param_set(Prop)` | a `params` element given as a list, so an empty set is not an absent parameter | `operand.lp` |
 
 **SOTW** (`due2-workflows.md` §3.3).
 
 | Fact | From | Read by |
 |---|---|---|
 | `sotw_effective_at/1` | `effective_at` | `lift.lp`, `operand.lp` (`clock`), `duty.lp` |
-| `fact/2`: `fact(Prop, Status)` | each entry of `facts`. `Status` is one of `resolved`, `missing`, `invalid`, `conflict`, `unresolved` | `operand.lp` |
-| `fact_value/2`: `fact_value(Prop, Value)` | each value of a `facts` entry | `lift.lp`, `operand.lp` |
+| `fact/2`: `fact(Prop, Status)` | each element of `facts`. `Status` is one of `resolved`, `missing`, `invalid`, `conflict`, `unresolved` | `operand.lp` |
+| `fact_value/2`: `fact_value(Prop, Value)` | each value of a `facts` element | `lift.lp`, `operand.lp` |
 | `evidence/4`: `evidence(E, OccurredAt, Actor, Action)` | each `evidence` record, `E` its `id` | `lift.lp`, `operand.lp` (`actionTime` in `wit(E)`), `duty.lp` |
 | `evidence_object/2`, `evidence_issuer/2` | its optional `object` and `issuer` | `duty.lp` |
 | `evidence_discharges/3`: `evidence_discharges(E, Duty, Ref)` | its optional `discharges` | `duty.lp` |
 | `evidence_param/3`: `evidence_param(E, Prop, Value)` | each of its `params` | `lift.lp`, `operand.lp` (`witness`) |
-| `activation/2`: `activation(Key, Lit)` | each entry of `activation`: an instance key or rule IRI, and its instant. `duty.lp` reads a key that is a duty's IRI, as the case format names an activation (`conformance/README.md`, SOTW) | `lift.lp`, `duty.lp` |
+| `activation/2`: `activation(Key, Lit)` | each element of `activation`: an instance key or rule IRI, and its instant. `duty.lp` reads a key that is a duty's IRI, as the case format names an activation (`conformance/README.md`, SOTW) | `lift.lp`, `duty.lp` |
 | `sotw_closure/3`: `sotw_closure(Pred, Lo, Hi)` | each `closure` triple, `Pred` expanded | `lift.lp`: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`; any other relation declines |
 
 **Config** (`due2-workflows.md` §3.4).
@@ -230,7 +230,7 @@ The flatten is syntactic: one fact per triple or per input field, named after th
 |---|---|---|
 | `config_combination/1` | `combination`, a string | `lift.lp` |
 | `config_violations/1` | `violations`, `ignore` or `deny` | `resolve.lp` |
-| `signer/2`: `signer(Duty, Issuer)` | each `signers` entry | `duty.lp` |
+| `signer/2`: `signer(Duty, Issuer)` | each `signers` element | `duty.lp` |
 | `unread/1`: `unread(Field)` | `preference`, `admit_source`, `admit_age`: the case format defines no shape for them (`conformance/README.md`), so their presence is recorded and declined | `lift.lp` (declined) |
 
 **Values** (`values.py`, § Values): `value/3`, read by `operand.lp`, `compare.lp`, and `duty.lp`; `unplaceable/2`, read by `lift.lp` and `constraint.lp`; and `plus/3`, read by `duty.lp` for a relative deadline.
@@ -259,7 +259,7 @@ A field the case format does not define, a missing required field (`action`; an 
 | `yearmonth` | `xsd:yearMonthDuration`, and `xsd:duration` with only year and month components | months |
 | `boolean` | `xsd:boolean` | `false` before `true` |
 
-These are the value spaces of `due2-profiles.md` §4. The first five are ordered within the space, and none is ordered across spaces. Booleans are placed, so they compare by value, but `lt` and its kin give them no order. Strings, tokens, IRIs, and other datatypes are compared only for equality, by their terms, so they get no entry.
+These are the value spaces of `due2-profiles.md` §4. The first five are ordered within the space, and none is ordered across spaces. Booleans are placed, so they compare by value, but `lt` and its kin give them no order. Strings, tokens, IRIs, and other datatypes are compared only for equality, by their terms, so they get no position.
 
 | Fact | Meaning |
 |---|---|
@@ -299,7 +299,8 @@ Shaped like `due2-workflows.md` §3.1, under `odrl-compound-to-atomic-normalizat
 | Relation | `due2-workflows.md` §3.1 counterpart |
 |---|---|
 | `policy(P)`, `conflict(P, Strat)` | `policy(policy_id \| conflict, …)` |
-| `atom(X)`, `atom_effect(X, Eff)`, `atom_policy(X, P)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, policy_id, source_rule)` |
+| `atom(X)`, `atom_effect(X, Eff)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, source_rule)` |
+| `atom_policy(X, P)` | `root(atom_id, policy_id)`: one tuple for each policy that states the atom (`decisions/0036`) |
 | `atom_party(X, F, Party)` | `atom_party`, match keys only |
 | `duty_atom(Y)`, `atom_effect(Y, oblige)`, `duty_action(Y, A)`, `duty_relation(Y, T)` | `atom`, for an `Oblige` atom |
 | `duty_of(Y, Duty)`, `duty_scope(Y, InstScope)`, `duty_deadline(Y, Lit)` | `duty(atom_id \| source_duty, scope, deadline?, recurrence?)` |
@@ -581,10 +582,12 @@ Opaque findings miss correlations too: their `fin(I)` and `ful(Y)` are independe
 The four steps of `due2-workflows.md` §6.1–§6.4, in order. Every relation carries the world `W`, and within a world every completed value, the duty findings included, is `t` or `f`:
 
 1. **Candidates** (`due2-workflows.md` §6.1). An instance is violated when it is not fulfilled and its deadline has passed (`violated/2`). A permission that applies is closed when one of its preconditions is owed and violated (`closed/2`), and every other permission that applies is a candidate (`candidate/2`). A candidate's outstanding set is its preconditions that are owed and not fulfilled (`outstanding/3`). Closure comes before conflict (`due2-workflows.md` §6), so a closed permission removes no prohibition, under either value of `config.violations`.
-2. **Conflict** (`due2-workflows.md` §6.2), among the candidates and the prohibitions that apply. Within the policy, by its strategy (`due2-workflows.md` §6.2 #1):
+2. **Conflict** (`due2-workflows.md` §6.2), among the candidates and the prohibitions that apply. A `permit` or `forbid` atom takes part once in each policy that states it, as its entry there (`due2-workflows.md` §6.2, *Entries*). Within each policy, by its strategy (`due2-workflows.md` §6.2 #1), conflict removes entries (`entry_eliminated/3`):
    - `prohibit`: an applying `forbid` eliminates the policy's candidates;
    - `perm`: a candidate eliminates the policy's `forbid` atoms;
    - `invalid`: a candidate and an applying `forbid` together eliminate every `permit` and `forbid` atom of the policy that applies, and its root obligations stay in force (`decisions/0029`).
+
+   An atom is eliminated (`eliminated/2`) when every policy that states it removes its entry, and remains a candidate or a prohibition while any entry is kept (`entry_kept/2`). So a permission that a void policy and a `perm` policy both state survives, by its entry in the second. `structure.lp` admits one policy, so no vector has a shared atom, and `test_shared_permission_survives_in_its_other_policy` runs the rule on hand-written facts.
 
    Across policies (`due2-workflows.md` §6.2 #2), something denies (`deny/1`) when a `forbid` survives, or when `config.violations` is `deny` and an obligation in force is violated (`due2-workflows.md` §6.4). Either eliminates every candidate (prohibit-overrides), so a candidate survives (`survives/2`) when conflict does not remove it and nothing denies. Under `ignore`, the default, whether stated or absent, `config_violations(deny)` does not hold, and obligations never change the verdict.
 3. **The frontier** (`due2-workflows.md` §6.3). A surviving candidate is dominated when another's outstanding set is a strict subset of its own (`not_within/3`, `dominated/2`), and the frontier is the surviving candidates that are not dominated (`frontier/2`). The program compares candidates, not sets: two candidates with one set are both in the frontier, and `interpret.py` collapses them into one alternative (§ Output).
@@ -630,13 +633,13 @@ They are why a rule deleted from the program fails loudly. Without its rule, som
 
 ### `explain.lp`
 
-`due2-workflows.md` §3.5, §6.2, `decisions/0011` #4. Elimination is read from the findings, not from a world, so `elim(X, Y, Strat)` carries no world and is the same in every completion. A precondition closes first (`due2-workflows.md` §6.1), then conflict removes. A remover in conflict takes part in it in every completion (`sure_contender/1`): a `forbid` with finding `t`, or a permission with finding `t` that no completion closes (`sure_candidate/1`, `maybe_closed/1`). A removed atom takes part in some completion (`may_contend/1`): its finding is `t` or `u`, and a permission is one no precondition surely closes (`may_candidate/1`, `surely_closed/1`). `u` atoms eliminate nothing (`due2-workflows.md` §6.2), but they can be removed.
+`due2-workflows.md` §3.5, §6.2, `decisions/0011` #4. Elimination is read from the findings, not from a world, so `elim(X, P, Y, Strat)` carries no world and is the same in every completion. A row removes one entry: the atom `X` in policy `P` (`due2-workflows.md` §6.2, *Entries*). A precondition closes first (`due2-workflows.md` §6.1), then conflict removes. A remover in conflict takes part in it in every completion (`sure_contender/1`): a `forbid` with finding `t`, or a permission with finding `t` that no completion closes (`sure_candidate/1`, `maybe_closed/1`). A removed atom takes part in some completion (`may_contend/1`): its finding is `t` or `u`, and a permission is one no precondition surely closes (`may_candidate/1`, `surely_closed/1`). `u` atoms eliminate nothing (`due2-workflows.md` §6.2), but they can be removed.
 
-- `violated_precondition`: each permission with finding `t` or `u` is removed by each of its preconditions that is owed `t` and violated (`closed_by/2`), which closes it in every completion where it applies;
+- `violated_precondition`: each permission with finding `t` or `u` is removed by each of its preconditions that is owed `t` and violated (`closed_by/2`), which closes it in every completion where it applies. Closure is a fact about the atom, so every entry of it has a row;
 - `prohibit`: each `t` `forbid` of the policy removes each permission that may be a candidate;
 - `perm`: each sure candidate removes each of the policy's `forbid` atoms that may apply;
 - `invalid`: a policy with a sure candidate and a `t` `forbid` is void (`void/1`). Each of its contenders is removed by each other sure contender of the policy;
-- the combination (`prohibit-overrides`, the only one read): each `t` `forbid` that its own policy did not remove removes each candidate of every other policy. `structure.lp` admits one policy, so no vector reaches this rule. It is there because `due2-workflows.md` §3.5 records every elimination with its rule, cross-policy ones included, and `test_combination_rows_on_facts` runs it on hand-written facts.
+- the combination (`prohibit-overrides`, the only one read): each entry of a `t` `forbid` that its policy `Q` did not remove (`removed_in/2`) removes each candidate entry in every policy other than `Q`. `structure.lp` admits one policy, so no vector reaches this rule. It is there because `due2-workflows.md` §3.5 records every elimination with its rule, cross-policy ones included, and `test_combination_rows_on_facts` runs it on hand-written facts.
 
 **One row per remover.** An atom removed by two `forbid` atoms has two rows (`due2-workflows.md` §3.5, #57). Each row is a complete reason. In a conflict row, whenever `X` applies, `Y` applies too, because `Y` is `t`, and `Y` removes it. In a `violated_precondition` row, `Y` is the duty atom, owed `t` and violated, so it closes `X` wherever `X` applies. A reader can check each row against the policy alone. A single row naming the first remover would hide the others, and which one is "first" would depend on the order of the facts. A `u` remover gives no row, because it removes `X` only in some completions, and that is not a reason that holds whatever the unknowns are.
 
@@ -645,7 +648,7 @@ They are why a rule deleted from the program fails loudly. Without its rule, som
 - `uncertain` when its finding is `u`, a precondition's open value is `u`, or a violated precondition's `owed` is `u` (`uncertain/1`);
 - otherwise `pending` when some precondition's open value is `t`, so that it is in the outstanding set (`listed_out/2`), and `ready` when none is.
 
-A ready or pending candidate that conflict does not remove (`conflicted/1`) is listed (`listed/1`). The listed frontier is the listed candidates that no other listed candidate dominates (`listed_apart/2`, `listed_dominated/1`, `listed_front/1`), with their outstanding duties (`front_duty/2`). An uncertain candidate is not listed: it reaches the reply only through the verdict, which the completions decide. So under a definite `Pending` the listed frontier can differ from the frontier of a completion (§ `resolve.lp`, `decisions/0019`). This is the listed frontier that version 0.33 of `due2-workflows.md` gave. Version 0.34 lists the routes that suffice instead (`decisions/0026`), and clingo-i follows it with #103.
+A ready or pending candidate that conflict does not remove is listed (`listed/1`). Conflict removes a candidate when it has a conflict row for every entry (`conflict_removes/2`, `conflict_keeps/1`, `conflicted/1`), so a permission that one policy removes and another keeps is listed. As with the combination, no vector reaches this, and `test_shared_permission_rows_name_the_entry` runs it on hand-written facts. The listed frontier is the listed candidates that no other listed candidate dominates (`listed_apart/2`, `listed_dominated/1`, `listed_front/1`), with their outstanding duties (`front_duty/2`). An uncertain candidate is not listed: it reaches the reply only through the verdict, which the completions decide. So under a definite `Pending` the listed frontier can differ from the frontier of a completion (§ `resolve.lp`, `decisions/0019`). This is the listed frontier that version 0.33 of `due2-workflows.md` gave. Version 0.34 lists the routes that suffice instead (`decisions/0026`), and clingo-i follows it with #103.
 
 **Obligations** (`due2-workflows.md` §6.1). `obligation_row(Y, S)` names each root obligation in force `t` with its duty status, and each whose `in_force` is `u` as `unknown`. An obligation that is not in force is not reported.
 
@@ -664,7 +667,7 @@ W1's atoms are the disjuncts of the DNF of each authored tree (`due2-workflows.m
 
 Under a status the same for every rule, as an absent target is, every atom carries the row, so `interpret.py` projects them to the rule or duty node, and the reply has one row per rule, input, and status.
 
-The same file holds the structure's one-value constraints: every atom has exactly one `atom_effect`, `atom_policy`, and `atom_rule`, so a row names exactly one of each, as `due2-workflows.md` §3.1 requires.
+The same file holds the structure's constraints: every atom has exactly one `atom_effect` and one `atom_rule`, so a row names exactly one of each, as `due2-workflows.md` §3.1 requires, and at least one `atom_policy`. In the spec an atom's policies are its `root` tuples (`due2-workflows.md` §3.1, `decisions/0036`); the constraint checks only that there is one.
 
 ### `pivot.lp`
 
@@ -694,11 +697,11 @@ Conversely, `c` in every model is a completion. So the brave `verdict(c, _)` ato
 - `frontier`: under `Pending`, the listed frontier of § `explain.lp`, and `[]` under any other verdict. Each alternative is a sorted list of duty IRIs, and the alternatives are sorted by size, then by their IRIs. Candidates whose outstanding duties have one set of IRIs are one alternative (`due2-workflows.md` §6.3), so `interpret.py` collapses them. A duty atom is named by its node (`due2-workflows.md` §3.7), so two sets that differ only in which atom of one node they hold collapse too, where `due2-workflows.md` §6.3, comparing by duty id, keeps them apart: the reply could not tell the two apart;
 - `obligations`: each `obligation_row(Y, S)` as `{"duty", "status"}`;
 - `verdict_basis`: the rows of solve 2 for a definite verdict, or role `unknown` for each `unknown(X)` of solve 3; and, under any verdict, role `obligation` for each obligation the reply lists;
-- `eliminated`: each `elim(X, Y, Strat)`, with `Strat` the conflict strategy, the combination, or `violated_precondition`;
+- `eliminated`: each `elim(X, P, Y, Strat)` as `{"ref", "by", "rule"}`, with `Strat` the conflict strategy, the combination, or `violated_precondition`. The reply drops the policy `P`: `expected.eliminated` is the set of `(source, source of by_atom, rule)` triples (`due2-workflows.md` §3.7, *What the corpus asserts*), so the rows of two entries with one remover and rule are one;
 - `unknown_parts`: each `unknown_part(X, Input, S)` as `{"ref", "input", "status"}`, under any verdict. `input` is `odrl:target`, the party function's IRI, or the property's IRI. The rows are sorted by their full IRIs;
 - `verdict_range` `{"low", "high"}`, for an `Indeterminate` only.
 
-Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)`, and duty atoms to their duty node (`due2-workflows.md` §3.7). So the atoms of one rule are one entry. An elimination whose `ref` and `by` come from the same rule (under `invalid`, two atoms of one rule) is dropped, because at the authored level the rule would remove itself, and `invalid` says "other than itself".
+Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)`, and duty atoms to their duty node (`due2-workflows.md` §3.7). So the atoms of one rule share one `ref`. An elimination whose `ref` and `by` come from the same rule (under `invalid`, two atoms of one rule) is dropped, because at the authored level the rule would remove itself, and `invalid` says "other than itself".
 
 The spike has no beyond-`max_mixed` fallback (`decisions/0009` #5), so `backend.toml` sets `exact_only` (`spikes/README.md`). The harness reports a scenario that states `exact: false` as `unsupported: max_mixed fallback` without asking the spike.
 

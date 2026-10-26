@@ -11,8 +11,9 @@
 %   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `passed/1` (duty.lp);
 %   `config_violations/1` (driver).
 % - **Provides:** `applying/2`, `permitting/2`, `violated/2`, `closed/2`, `candidate/2`,
-%   `outstanding/3`, `forbidding/2`, `has_candidate/2`, `has_forbidding/2`, `eliminated/2`,
-%   `deny/1`, `survives/2`, `not_within/3`, `dominated/2`, `frontier/2`, `has_outstanding/2`,
+%   `outstanding/3`, `forbidding/2`, `has_candidate/2`, `has_forbidding/2`,
+%   `entry_eliminated/3`, `entry_kept/2`, `eliminated/2`, `deny/1`, `survives/2`,
+%   `not_within/3`, `dominated/2`, `frontier/2`, `has_outstanding/2`,
 %   `ready/1`, `pending/1`, `verdict/2`, `basis/3`.
 
 %## Candidates
@@ -70,11 +71,14 @@ forbidding(W, X) :- applying(W, X), atom_effect(X, forbid).
 
 %## Conflict within the policy
 
-% By the policy's conflict strategy (due2-workflows.md §6.2 #1).
+% By the policy's conflict strategy (due2-workflows.md §6.2 #1). A `permit` or `forbid` atom
+% takes part once in each policy that states it (`atom_policy/2`): its entry in that policy
+% (due2-workflows.md §6.2, *Entries*). Each policy's fold reads its own entries, and removes an
+% entry, not the atom.
 
 %*! has_candidate(W, P)
 
-Policy `P` has a candidate in world `W`.
+Policy `P` has a candidate in world `W`: an atom that is a candidate and has an entry in `P`.
 *%
 has_candidate(W, P) :- candidate(W, X), atom_policy(X, P).
 
@@ -84,17 +88,37 @@ Policy `P` has an applying prohibition in world `W`.
 *%
 has_forbidding(W, P) :- forbidding(W, X), atom_policy(X, P).
 
+%*! entry_eliminated(W, X, P)
+
+Atom `X` applies in world `W`, and policy `P`'s conflict strategy removes its entry in `P`: under
+`prohibit` a forbid removes the candidates, under `perm` a candidate removes the forbids, and
+under `invalid` a candidate and a forbid together void the policy, removing its applying permit
+and forbid entries. A void policy's root obligations stay in force (decisions/0029).
+*%
+entry_eliminated(W, X, P) :- candidate(W, X), atom_policy(X, P), conflict(P, prohibit),
+    has_forbidding(W, P).
+entry_eliminated(W, X, P) :- forbidding(W, X), atom_policy(X, P), conflict(P, perm),
+    has_candidate(W, P).
+entry_eliminated(W, X, P) :- applying(W, X), not atom_effect(X, oblige), atom_policy(X, P),
+    conflict(P, invalid), has_candidate(W, P), has_forbidding(W, P).
+
+%*! entry_kept(W, X)
+
+The applying permit or forbid atom `X` has an entry that its policy does not eliminate in
+world `W`.
+*%
+entry_kept(W, X) :- applying(W, X), not atom_effect(X, oblige), atom_policy(X, P),
+    not entry_eliminated(W, X, P).
+
 %*! eliminated(W, X)
 
-Atom `X` applies in world `W` but its policy's conflict strategy removes it: under `prohibit` a
-forbid removes the candidates, under `perm` a candidate removes the forbids, and under
-`invalid` a candidate and a forbid together void the policy, removing its applying permit and
-forbid atoms. A void policy's root obligations stay in force (decisions/0029).
+Atom `X` applies in world `W`, and every policy that states it removes its entry there. An atom
+is not eliminated while any of its entries survives (due2-workflows.md §6.2, *Entries*), so a
+permission that two policies state is removed only when both remove it. structure.lp admits
+one policy, so no vector has a shared atom; `test_shared_permission_survives_in_its_other_policy`
+runs this rule on hand-written facts.
 *%
-eliminated(W, X) :- candidate(W, X), atom_policy(X, P), conflict(P, prohibit), has_forbidding(W, P).
-eliminated(W, X) :- forbidding(W, X), atom_policy(X, P), conflict(P, perm), has_candidate(W, P).
-eliminated(W, X) :- applying(W, X), not atom_effect(X, oblige), atom_policy(X, P),
-    conflict(P, invalid), has_candidate(W, P), has_forbidding(W, P).
+eliminated(W, X) :- entry_eliminated(W, X, _), not entry_kept(W, X).
 
 %## Across policies
 
