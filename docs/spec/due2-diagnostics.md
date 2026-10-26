@@ -1,11 +1,11 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.17 (2026-10-25)
+**Status:** Draft v0.18 (2026-10-26)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.17** (2026-10-26, `decisions/0036`, #130): `IdentityConflict` covers two policies normalised together whose corpora say different things of one node, found by the union, a step after stage 2 (§1). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.18** (2026-10-26, `decisions/0036` amendment, #132): `IdentityConflict` across policies is found when a policy is published, not when corpora are combined (§1). Earlier changes are in `docs/archive/changes.md`.
 
-Every diagnostic W1 can emit, in one table. Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
+Every diagnostic W1 can emit, in one table, and the one the policy store emits when it publishes a policy's corpus (`IdentityConflict` across policies). Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
 ## 1. Shape **[D]**
 
@@ -16,7 +16,7 @@ A diagnostic is `(code, severity, ref, message)`:
 - **ref** — the node the diagnostic is about: the policy, rule, constraint, or asset/party node, by IRI or by its stage-1 skolem IRI. `RuleReferenceCycle` refs the cycle, every rule and edge in order (`odrl-compound-to-atomic-normalization.md` §6.3), and a `MalformedConstraint` for a cycle of logical constraints refs every constraint on it in order (`due2-profiles.md` §5).
 - **message** — free text for the author. Not compared by tests.
 
-**Stage.** W1 reports every error of the first stage that has one, and no later stage runs. Stage 1 is the input profile, identity, and atomic expansion (`odrl-compound-to-atomic-normalization.md`); stage 2 is constraints, operand bindings, and duty timing (`due2-profiles.md`; `due2-workflows.md` §4). The *union* of the corpora of several policies follows stage 2, once both stages have accepted every policy, and its one error is `IdentityConflict`. So the set of error codes for a rejected policy is deterministic, and a negative corpus case states it exactly (`conformance/README.md`).
+**Stage.** W1 reports every error of the first stage that has one, and no later stage runs. Stage 1 is the input profile, identity, and atomic expansion (`odrl-compound-to-atomic-normalization.md`); stage 2 is constraints, operand bindings, and duty timing (`due2-profiles.md`; `due2-workflows.md` §4). *Publish* follows stage 2 and is not part of W1: the policy store compares a policy that both stages accept with the published policies when it is asked to publish its corpus (`put_corpus`, `due2-platform.md` §2.3), and its one error is `IdentityConflict` (`due2-workflows.md` §4, *Several policies are one corpus*). Evaluation never meets it. So the set of error codes for a rejected policy is deterministic, and a negative corpus case states it exactly (`conformance/README.md`).
 
 **Not diagnostics.** The request-time part statuses `MissingValue`, `TypeMismatch`, and `MultipleValues` (`due2-profiles.md` §3) are statuses of an evaluated part, not of a policy. They make the part `U` and appear in the trace's `basis`. A missing binding, by contrast, is an authoring error (`UnboundLeftOperand`), never a runtime unknown.
 
@@ -35,7 +35,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `ReplacedPolicy` | error | 1 | The Policy has `dct:isReplacedBy`: it is void, and its replacement is the policy to process. | ODRL IM §2.8; `odrl-compound-to-atomic-normalization.md` §3 (`decisions/0033`) |
 | `MissingPolicyIdentity` | error | 1 | A blank-node Policy without an `odrl:uid`. | `odrl-compound-to-atomic-normalization.md` §3 |
 | `MultipleUid` | error | 1 | A resource with more than one `odrl:uid`. | `odrl-compound-to-atomic-normalization.md` §5.1 |
-| `IdentityConflict` | error | 1, union | Distinct resources claim one effective identity. Within one policy, stage 1 finds it. Across the policies normalised together, the union finds it: two corpora say different things of one node, and the ref is the node (`due2-workflows.md` §4, *Several policies are one corpus*). *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §5.1; `due2-workflows.md` §4 |
+| `IdentityConflict` | error | 1, publish | Distinct resources claim one effective identity. Within one policy, stage 1 finds it. Across policies, publishing finds it: the policy's corpus says something different of a node that a published policy's corpus holds, and the ref is the node (`due2-workflows.md` §4, *Several policies are one corpus*). *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §5.1; `due2-workflows.md` §4 |
 | `SharedAnonymousNode` | error | 1 | A blank node without a uid is the object of more than one triple. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `UnanchoredAnonymousNode` | error | 1 | A blank node reaches no IRI or uid-bearing anchor. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `UndeclaredProfile` | error | 1 | A DPROD or due2 core term used without declaring the profile by `odrl:profile`; or a term in a vocabulary position (an action, or a refined action's `rdf:value`, left operand, operator, function, relation, or conflict value) that is not an `odrl:` term of the ODRL vocabulary, a term of a selected profile's modules, or a term the policy types itself. A `cc:` term needs a profile. The second form is not raised when the policy declares a profile that has no due2 module, which is rejected with `UnrecognisedProfile` instead. | ODRL IM §2.1; `odrl-compound-to-atomic-normalization.md` §3; `conformance/odrl22-conformance.md` §3 (`decisions/0020`) |

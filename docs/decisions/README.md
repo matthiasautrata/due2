@@ -43,4 +43,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0033](0033-a-replaced-policy-and-an-unrecognised-profile-are-rejected.md) | A replaced policy and an unrecognised profile are rejected | 2026-10-24 | In force |
 | [0034](0034-the-odrl-layer-checks-the-action-hierarchy.md) | The ODRL layer checks the action hierarchy, and `odrl:hasPolicy` is rejected | 2026-10-24 | Amended: a refined action is its `rdf:value`, whatever its node kind; `odrl:assignerOf` and `odrl:assigneeOf` are rejected as `odrl:hasPolicy` is |
 | [0035](0035-a-witness-read-is-keyed-by-its-witness.md) | A part read against a witness is keyed by its witness | 2026-10-25 | In force |
-| [0036](0036-an-id-never-includes-its-policy.md) | An id never includes its policy, and an atom roots each policy that states it | 2026-10-26 | In force |
+| [0036](0036-an-id-never-includes-its-policy.md) | An id never includes its policy, and an atom roots each policy that states it | 2026-10-26 | Amended: agreement between corpora is a precondition, checked at publish |

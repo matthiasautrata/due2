@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.22  
+Version: 0.23  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.22 (2026-10-26, `decisions/0036`, #130): §5.2 says that an anonymous node is identified by its place, so two anonymous nodes in different places are distinct, and that sharing is stated by naming. §5.1's rule that distinct resources do not claim one identity extends to the policies normalised together. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.23 (2026-10-26, `decisions/0036` amendment, #132): §1 defines `EvalSet` over the union of agreeing corpora, and §5.1 says that a policy that disagrees with a published one is rejected when it is published. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
@@ -27,9 +27,9 @@ For the supported profile:
 Den(P0) ≅ Den(N(P0))
 ```
 
-where `Den` is the denotation of §8.1 and `≅` is the bijection the lineage graph records. Every due2 evaluation depends on a Policy only through its denotation (`due2-workflows.md` §4), so this implies `Eval(P0, C) = EvalSet(N(P0), C)` for every evaluator context `C`.
+where `Den` is the denotation of §8.1 and `≅` is the bijection the lineage graph records. Every due2 evaluation depends on a Policy only through its denotation (`due2-workflows.md` §4), so this implies `Eval(P0, C) = EvalSet(N(P0), C)` for every evaluator context `C`. Policies `P1 … Pn` evaluated together are evaluated over the union of `N(P1) … N(Pn)`.
 
-`EvalSet` consumes the complete `N(P0)` artifact. It is not defined over an arbitrary union of independently normalized artifacts.
+`EvalSet` consumes complete artifacts: the whole `N(P0)`, or the union of the corpora of several policies, which agree on every node they share (`due2-workflows.md` §4, *Several policies are one corpus*). It is not defined over part of an artifact, or over corpora that disagree.
 
 The key words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are interpreted as in BCP 14 when written in capitals.
 
@@ -133,7 +133,7 @@ For each Policy, Rule, Asset, Party, Constraint, or LogicalConstraint, its effec
 
 By §3, a Policy always takes case 1 or 2. Case 3 applies to anonymous Rules, Assets, Parties, Constraints, LogicalConstraints, refined-action nodes, and RDF list cells.
 
-An existing valid authored UID is preserved. Distinct resources MUST NOT claim the same effective identity, within one policy or across the policies normalised together (`due2-workflows.md` §4, *Several policies are one corpus*). A resource with more than one UID is invalid.
+An existing valid authored UID is preserved. Distinct resources MUST NOT claim the same effective identity, within one policy or across published policies (as `due2-workflows.md` §4 defines them): a policy whose corpus says something different of a node that a published policy's corpus holds is rejected when it is published (`due2-workflows.md` §4, *Several policies are one corpus*). A resource with more than one UID is invalid.
 
 Output is skolem-only:
 

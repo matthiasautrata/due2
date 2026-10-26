@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.7. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.8. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.7** (2026-10-24, `decisions/0033`, #115): §2.3 says that the store selects the replacement of a replaced policy, never the policy it replaces. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.8** (2026-10-26, `decisions/0036` amendment, #132): §2.3 publishes one policy's corpus at a time, refuses one that disagrees with a published corpus, and returns the union of exactly the selected policies' corpora; §5 #1 no longer asks which sets of policies get a corpus. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -167,15 +167,17 @@ Holds authored policies, their corpora, configs, profile modules with their oper
 
 ```text
 put_policy(document)                       -> policy_id, version
-put_corpus(policy_ids, normaliser_version, corpus, lineage) -> corpus_id   # W1's output (§2.8)
-corpus(policy_ids, normaliser_version)     -> corpus_id | absent          # one covering at least these
+put_corpus(policy_id, normaliser_version, corpus, lineage) -> corpus_id | IdentityConflict  # W1's output (§2.8)
+corpus(policy_ids, normaliser_version)     -> corpus_id | absent          # the union of these policies' corpora
 get(collection_id)                         -> collection
 profiles()                                 -> profile modules
 binding(property)                          -> operand binding             # due2-profiles.md §3
 select(target, ancestors, action, parties) -> policy_ids                  # open (§5 #1)
 ```
 
-The store never runs W1. Normalisation (§2.8) produces each corpus as a batch job when a policy or normaliser version is published, and the orchestrator puts it here. On the request path, the orchestrator finds the policies that may apply with `select`, and a stored corpus that covers them with `corpus`. The evaluator then skips atoms within that corpus (§2.1). Which sets of policies get a corpus in advance, and what the orchestrator does when no stored corpus covers a request's policies, are open (§5 #1). The orchestrator does not run W1 on the request path (`decisions/0027` item 3).
+The store never runs W1. Normalisation (§2.8) produces each corpus as a batch job when a policy version or a normaliser version is stored, and the orchestrator puts it here, which publishes it. On the request path, the orchestrator finds the policies that may apply with `select`, and their corpus with `corpus`: the union of their published corpora, relation by relation, which needs no normalisation and has no conflicts (`due2-workflows.md` §4). It is absent when a selected policy has no published corpus for the normaliser version, and what the request gets then is open (§5 #1). The store keeps each union it returns, so an evaluation can pin it. The evaluator then skips atoms within that corpus (§2.1). The orchestrator does not run W1 on the request path (`decisions/0027` item 3).
+
+**Publishing checks agreement.** `put_corpus` publishes one policy's corpus; `put_policy` only stores its document. It refuses a corpus that says something different of a node that a published corpus of the same normaliser version holds, with `IdentityConflict` naming the node and the policy that holds it. The refused policy is not published, and the published ones are unaffected (`due2-workflows.md` §4, *Several policies are one corpus*). Only the current version of each other published policy is compared, never an earlier version of the same policy. A conflict within a set of policies is a conflict between two of them, so every set of published policies agrees, and every union `corpus` returns is well-formed. Building the checker is #133.
 
 **Offers are selected like any other policy.** A store holds offers as well as agreements, and a verdict over an offer says what its terms permit, not that it has been accepted (`due2-workflows.md` §6.4, `decisions/0031`). Accepting an offer, such as by signing a contract, is a separate step outside the evaluator.
 
@@ -252,7 +254,7 @@ Its useful work rests on what the trace already reports. For an `Indeterminate`,
 W1 behind a port: authored policies and their profiles in, a corpus or rejection diagnostics out (`due2-workflows.md` §4, `due2-diagnostics.md`). It runs once per policy version and normaliser version, never per request. It sits beside the policy store, off the request path: the orchestrator runs it as a batch job when a policy or normaliser version is published, and puts its corpus in the store (§2.3).
 
 ```text
-normalise(policies, profiles)             -> corpus, lineage, warnings | rejections
+normalise(policy, profiles)               -> corpus, lineage, warnings | rejections
 ```
 
 ### 2.9 Explanation
@@ -301,7 +303,7 @@ what_if(corpus_id, case_ids)              -> verdict changes
 
 1. **Identify.** The person names datasets. The orchestrator finds them in the catalog (`search`) for the intelligent services.
 2. **Describe.** For each dataset, the catalog returns its classification edges and attached policies (§2.5).
-3. **Select.** The orchestrator asks the policy store for a corpus that covers every policy that may apply (§2.3), and fetches it.
+3. **Select.** The orchestrator asks the policy store for the corpus of every policy that may apply (§2.3), and fetches it.
 4. **Draft.** The orchestrator drafts a request: the action, the dataset as target, the subject from authentication, and the time.
 5. **Plan.** `plan` names everything the decision can read: request parameters, state properties, and hierarchy modules.
 6. **Ask for parameters.** The planned request parameters are questions for the requester. When they are answered, the request is complete and the case is created. `plan` runs again on the complete request, since what it names can depend on the request.
@@ -404,7 +406,7 @@ Either way, the ledger has to record which engine produced each evaluation, besi
 
 | # | Question | Where | Issue |
 |---|---|---|---|
-| 1 | Policy selection: which sets of policies get a corpus, what `select` may use, and how both levels are shown to over-select | §2.3 | #94, #105 |
+| 1 | Policy selection: what `select` may use, how it is shown to over-select, per policy and per atomic policy, and what a request gets when a selected policy has no published corpus | §2.3 | #94, #105 |
 | 2 | A hierarchy lookup that fails cannot be recorded, because `closure` has no status, and hierarchy is closed-world, so a missing classification makes a part `F` | §2.5 | #95 |
 | 3 | Asking request parameters in order of importance: a status for a parameter not yet asked, or an evaluation of the draft outside the ledger | §3.1 | #96 |
 | 4 | Inquiries: how the requests of one inquiry share questions, answers, and presentation | §2.6 | #97 |

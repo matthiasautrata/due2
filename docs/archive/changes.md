@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.45** (2026-10-26, `decisions/0036`, #130): no named node's id includes its policy (§3.1, `atom.atom_id`). An atom's policies are in `root`, which becomes `(atom_id, policy_id)`, with a tuple for each policy that states the atom, and `atom` drops `policy_id`. A constraint's attachment moves out of `constraint` into `atom_constraint` and `duty_constraint`, which holds the clause number, so a named constraint is one tuple. A shared permission or prohibition takes part once in each of its policies, and remains while any of these entries survives; `eliminated` gains `policy_id` (§3.5, §6.2). A duty that several policies state as an obligation is in force when any of them matches the request (§5.1, §5.2, L2). The corpus of policies evaluated together is the union of their corpora, and two corpora that say different things of one node are `IdentityConflict` (§4). §6.4's proof covers an atom with several entries, and §3.7 follows.
+
 **Changes in v0.44** (2026-10-25, `decisions/0032` amendment, #121): a duty atom's id identifies what it asks for, by stage 1's construction extended with what stage 2 adds (§3.1, §4), and replaces `binding_key`, which is dropped. A `member` instance is its duty atom; W2 mints an instance id from the atom's id with the request subject when the subject is the performer, the `reference` for a `grant` instance, and the occurrence (§5.3). `instance_key` is an `Id` (§3.3, §3.5).
 
 **Changes in v0.43** (2026-10-25, `decisions/0035`, #120): the parts of a duty's witness conditions are recorded per witness, in the new relations `witness_basis` and `witness_part` (§3.5), and `basis` gains `predicate` in its key. The W2 signature lists `unknown_part` and both new relations (§5); §3.7, §5.1–§5.4, and L10 follow. W3 reads neither new relation: a `fulfilled` finding is a completion variable of its own (§6.4).
@@ -117,6 +119,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.17** (2026-10-26, `decisions/0036`, #130): `IdentityConflict` covers two policies normalised together whose corpora say different things of one node, found by the union, a step after stage 2 (§1).
+
 **Changes in v0.16** (2026-10-25, #126): `MalformedConstraint` covers logical constraints whose members form a cycle.
 
 **Changes in v0.15** (2026-10-25, #125): `OperatorTypeMismatch` and `InvalidTiming` cover a temporal literal whose lexical form names no value of its datatype.
@@ -163,6 +167,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-platform.md`
 
+**Changes in v0.7** (2026-10-24, `decisions/0033`, #115): §2.3 says that the store selects the replacement of a replaced policy, never the policy it replaces.
+
 **Changes in v0.6** (2026-10-24, `decisions/0032`, #113): §3.2 says that evidence names the grant it answers, the authored duty and the request's `reference`, not an instance key.
 
 **Changes in v0.5** (2026-10-24, `decisions/0031`, #112): §2.3 says that offers are selected like any other policy, and §3.1 shows a `Permit` over an offer as "this offer permits you to proceed". Earlier changes are in `docs/archive/changes.md`.
@@ -172,6 +178,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.22 (2026-10-26, `decisions/0036`, #130): §5.2 says that an anonymous node is identified by its place, so two anonymous nodes in different places are distinct, and that sharing is stated by naming. §5.1's rule that distinct resources do not claim one identity extends to the policies normalised together.
 
 Changes in 0.21 (2026-10-25, #129): §3 places a refinement and a constraint by the vocabulary's domains: a constraint on anything other than a Policy or a Rule, and a refinement on anything other than an Action or a collection, are rejected, whatever property reaches the node.
 

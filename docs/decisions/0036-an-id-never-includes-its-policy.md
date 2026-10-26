@@ -1,7 +1,7 @@
 # 0036 — An id never includes its policy, and an atom roots each policy that states it
 
-**Status:** Decided, 2026-10-26 (the owner, on #130)
-**Context documents:** `due2-workflows.md` §3.1, §3.5, §4, §5.1, §5.2, §6.2, §8 (L2) · `odrl-compound-to-atomic-normalization.md` §5.1, §5.2 · `due2-diagnostics.md` §3 · `decisions/0028` · `decisions/0032` · `spikes/clingo-i/lp/duty.lp` · issues #130, #107, #131
+**Status:** Decided, 2026-10-26 (the owner, on #130); amended 2026-10-26 (the owner, on #132)
+**Context documents:** `due2-workflows.md` §3.1, §3.5, §4, §5.1, §5.2, §6.2, §8 (L2) · `odrl-compound-to-atomic-normalization.md` §5.1, §5.2 · `due2-diagnostics.md` §3 · `due2-platform.md` §2.3 · `decisions/0028` · `decisions/0032` · `spikes/clingo-i/lp/duty.lp` · issues #130, #107, #131
 
 ## Question
 
@@ -44,7 +44,7 @@ The policy is read in two places: the per-policy conflict fold (`due2-workflows.
    A `root` tuple says that the atom roots an Atomic Policy of that policy. Every `Permit` and `Forbid` atom, and every policy-level obligation, has one for each policy that states it. A duty that is only a precondition, remedy, or consequence has none. `atom_constraint` attaches a constraint to a `Permit` or `Forbid` atom, and `duty_constraint` to an `Oblige` atom, in the clauses of `decisions/0028`, which this record amends.
 3. **A shared permission or prohibition takes part once in each of its policies.** Its part in one policy is its *entry* there. The conflict fold of `due2-workflows.md` §6.2 eliminates entries, and an atom remains a candidate, or a prohibition, while any of its entries survives. The trace relation `eliminated` gains `policy_id`, one tuple for each entry removed. A case's `expected.eliminated` projection is unchanged.
 4. **A root obligation is in force when one of its root policies matches** the request: its match is the Kleene disjunction of its root policies' matches, and its guards must hold as before (`due2-workflows.md` §5.2). clingo-i reads it so: `lp/duty.lp` relates a duty to every policy that states it as an obligation (`obligation_policy/2`) and takes the greatest match over them.
-5. **The corpus of policies evaluated together is the union of their corpora,** relation by relation, formed after both stages have accepted every policy. Two corpora that both hold a node must say the same of it: its keyed tuple (`policy`, `atom`, `constraint`, `duty`), and the tuples that name it in the first field of `policy_profile`, `atom_party`, `constraint_value`, `atom_constraint`, `duty_constraint`, and `edge`. `root` differs by design and is not compared. If two corpora say different things of one node, W1 rejects the union with `IdentityConflict`, whose ref is the node. For example, if `A` gives `duty:deliver-2026-001` the deadline `P1D` and `B` gives it `P2D`, the two `duty` tuples share the key and differ in `deadline`. If `A` attaches a constraint to `rule:read` and `B` does not, their `atom_constraint` tuples for `rule:read` differ. `priority` is a field of `atom`, so two policies that give one rule different priorities conflict too.
+5. **The corpus of policies evaluated together is the union of their corpora,** relation by relation, formed after both stages have accepted every policy. Two corpora that both hold a node must say the same of it: its keyed tuple (`policy`, `atom`, `constraint`, `duty`), and the tuples that name it in the first field of `policy_profile`, `atom_party`, `constraint_value`, `atom_constraint`, `duty_constraint`, and `edge`. `root` differs by design and is not compared. If two corpora say different things of one node, W1 rejects the union with `IdentityConflict`, whose ref is the node. For example, if `A` gives `duty:deliver-2026-001` the deadline `P1D` and `B` gives it `P2D`, the two `duty` tuples share the key and differ in `deadline`. If `A` attaches a constraint to `rule:read` and `B` does not, their `atom_constraint` tuples for `rule:read` differ. `priority` is a field of `atom`, so two policies that give one rule different priorities conflict too. *Amended below: agreement is a precondition, checked when a policy is published, and the union cannot fail.*
 
 ## Why this holds
 
@@ -79,3 +79,21 @@ The policy is read in two places: the per-policy conflict fold (`due2-workflows.
 ## Revisit when
 
 - A policy is evaluated together with one it supersedes. `ReplacedPolicy` rejects the replaced policy (`decisions/0033`), so the union never holds both. If replaced policies are ever admitted, a duty restated by the replacement with a different deadline would be an `IdentityConflict`, and versioning would need its own rule.
+
+## Amendment (2026-10-26, agreement is a precondition, checked at publish)
+
+Item 5 formed the union as a step of W1 after stage 2, which could reject the union with `IdentityConflict`. A conflict was then a property of a set of policies, found only when a corpus holding both was built, and possibly for a request, where the orchestrator does not run W1 (`decisions/0027` item 3) and nothing said what the request gets (#132).
+
+An IRI names one thing, so two policies that describe a named node differently do not hold two versions of it: one of them is in error. An error is not resolved at evaluation. The policy in error is rejected, loudly, and the others carry on.
+
+1. **Agreement is a precondition of the union.** The corpora of the policies evaluated together say the same of every node they share, compared as item 5 says. The union is formed relation by relation and cannot fail.
+2. **Agreement is checked when a policy is published,** that is, when the policy store accepts its corpus (`put_corpus`, `due2-platform.md` §2.3). It is checked against the current version of every other published policy, normalised by the same normaliser version, and never against an earlier version of the same policy. A policy whose corpus says something different of a node that a published corpus holds is rejected with `IdentityConflict`, whose ref is the node, and the published policies are unaffected. In item 5's example, if `A` is published first, `B` is rejected.
+3. **A request's corpus is the union of exactly its selected policies' corpora** (`due2-platform.md` §2.3), so no corpus built for another set of policies is reused.
+
+A conflict within a set of policies is a conflict between two of them, so if every published policy agrees with every other, every set of them agrees, and no union fails.
+
+**Rejected.** Checking agreement when the union is formed, as item 5 did: the error reaches whoever asks for the set, possibly a requester, and not the author who can fix it. Choosing one description, the first or the latest, at evaluation: that repairs a policy while evaluating it.
+
+**Publishing is order-dependent, by design.** Of two policies that disagree, the one published later fails. The later one is the one whose author can still fix it, and restating a published IRI with a different description does not redefine it. So a shared node's description changes only under a new id, or by publishing new versions of every policy that holds it at once, if the store offers that.
+
+**Consequences.** `due2-workflows.md` v0.46 states the precondition in §4. `odrl-compound-to-atomic-normalization.md` 0.23 defines `EvalSet` over agreeing corpora in §1 and extends §5.1 to published policies. `due2-diagnostics.md` v0.18 gives `IdentityConflict` the stage "1, publish". `due2-platform.md` v0.8 publishes one policy's corpus at a time in §2.3, and §5 #1 no longer asks which sets of policies get a corpus. Building the checker is #133.
