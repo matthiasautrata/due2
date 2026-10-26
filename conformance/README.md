@@ -191,9 +191,9 @@ Literals take the form `{"v", "t", "l"}` of `due2-workflows.md` §2, not the JSO
 
 **Ids the vector file does not state.**
 
-- **`evaluation`.** The harness computes the four collection ids from the canonical collections it sends. It compares them with the evaluator's `evaluation` tuple whenever the evaluator declares that relation (`spikes/README.md`, `decide`). A vector file does not state them, because any edit to an input changes them.
+- **`evaluation`.** The harness computes the three collection ids from the canonical collections it sends. It compares them with the evaluator's `evaluation` tuple whenever the evaluator declares that relation (`spikes/README.md`, `decide`). A vector file does not state them, because any edit to an input changes them.
 - **Minted ids.** None arise. A vector's corpus is an input, so its atom ids are those the file writes, and W2 mints no id. An instance is keyed by its atom and occurrence, `alt_id` is a position in the order of `due2-workflows.md` §6.3, and `discharges_duty` and `discharges_reference` are authored values (`decisions/0038`), so an expected trace states each exactly.
-- **Operand bindings.** The corpus carries no operand bindings, which W2 needs to evaluate a constraint (`due2-workflows.md` §5.4, step 1). Until #108 settles their relations, a vector file cannot state a constraint.
+- **Operand bindings.** None are looked up. A constraint's binding is a set of fields of its `constraint` tuple, and its schemes are `constraint_scheme` tuples (`due2-workflows.md` §3.1), so a vector file states each binding it uses, and the evaluator reads no profile module.
 
 ## Coverage gaps
 

@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.52** (2026-10-26, `decisions/0045`): an evaluation has no config, so `decide` takes three inputs and a case holds no config id (§3.4, §3.5, §7.1). Prohibit-overrides is the fixed rule across policies (§6.2). A violated obligation is reported and never denies (§6.1, §6.4, L7). A duty's attester replaces the signer record (§5.3). `max_mixed` and `max_frontier_vars` are constants (§3.4). Every recorded answer is admitted (§3.3). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.51** (2026-10-26, `decisions/0043`, `decisions/0044`): world hierarchy edges reach the case as `closure` events, one answer per module and request entity, and the latest answer replaces an earlier one (§3.3, §7.1). An event carries the version of the source that answered, which W2 never reads (§7.1). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.50** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): the SOTW keeps each source's answer, `attribution` is dropped, and W2 combines the admitted answers of a property (§3.3, §5.4); `admit_age` is dropped, because keeping values current is the SOTW service's job (§3.4). The evaluator computes `evaluation` and `diagnostic` too, so it returns the whole trace (§3.5). A case fixes its request, corpus, config, and pins, and an evaluation records only its SOTW and outcome (§7.1). Earlier changes are in `docs/archive/changes.md`.
@@ -127,6 +129,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.24** (2026-10-26, `decisions/0045`): there is no config. §3 *Admissibility*: the orchestrator records answers only from the sources registered for a property, so W2 combines every recorded answer. §6 adds the role `due2:attester`, played by `due2:attestingParty`, which names whose evidence counts for a duty. §7 *Violations and access*: a violated obligation never denies. §8.2 exception 6 covers every case where DPROD denies for a violation. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.23** (2026-10-26, `decisions/0040`, #137): §3 *Admissibility* keeps `admit_source`, which W2 applies when it combines the answers of several sources, and drops `admit_age`, because keeping values current is the SOTW service's job. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.22** (2026-10-26, `decisions/0038`, #107): §7 keys `activation` by the duty atom, and §8.1 says that an anonymous rule's identity is minted. Earlier changes are in `docs/archive/changes.md`.
@@ -185,6 +189,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.18** (2026-10-26, `decisions/0046`): §7's first re-evaluation trigger is an explicit call per case, with no subscription. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.17** (2026-10-26, `decisions/0045`): there is no config, so `decide` takes the corpus, the request, and the SOTW (§2, §7). §6.2 fixes prohibit-overrides across policies, and a void policy's violated obligation is reported, not denied. A duty's attester names whose evidence counts (§3). §0's worked example is the case's `Permit` scenario, with the violated delivery reported. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.16** (2026-10-26, `decisions/0040`, `decisions/0042`, #137, #139): §7 says that a case and its evaluations together pin their inputs (`decisions/0042`), and §8 harvests RL2's admissibility by source but not its freshness filter, which is the SOTW service's job (`decisions/0040`). Earlier changes are in `docs/archive/changes.md`.
@@ -210,6 +216,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `due2-platform.md`
+
+**Changes in v0.14** (2026-10-26, `decisions/0045`, `decisions/0046`): `decide` takes three inputs, and the connector registry, keyed by property and source, decides whose answers a case records (§1.4, §2.4). §1.3 tells apart the two relations named `evaluation`, and §2.3 drops the configured rule for violated obligations. Publication is a workflow of its own (§2.11). A case changes only by explicit calls, among them `record_facts`, `refresh`, `reevaluate`, and `reopen` (§2.6). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.13** (2026-10-26, `decisions/0043`, `decisions/0044`): `resolve` and `edges` return the source's version with each answer, and `edges` answers per request entity with the edges on the paths up from it (§2.4). Earlier changes are in `docs/archive/changes.md`.
 

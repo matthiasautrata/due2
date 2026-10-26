@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.24
+**Status:** Draft v0.25
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.24** (2026-10-26, `decisions/0045`): there is no config. §3 *Admissibility*: the orchestrator records answers only from the sources registered for a property, so W2 combines every recorded answer. §6 adds the role `due2:attester`, played by `due2:attestingParty`, which names whose evidence counts for a duty. §7 *Violations and access*: a violated obligation never denies. §8.2 exception 6 covers every case where DPROD denies for a violation. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.25** (2026-10-26, `decisions/0047`): §2: W1 writes each constraint's operand binding into the corpus, which is where W2 reads it. §6: the world edges fetched are those above the entities a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -28,7 +28,7 @@ A profile may extend ODRL at exactly these points. Anything else a profile defin
 
 | # | Extension point | Declared by | Used in |
 |---|---|---|---|
-| 1 | Left operand binding | `dprod:operandSource`, `dprod:operandProperty`, `rdfs:range`, `due2:cardinality`, `due2:allowedOperator`, `due2:conceptScheme` | W2 (`due2-workflows.md` §5.4) |
+| 1 | Left operand binding | `dprod:operandSource`, `dprod:operandProperty`, `rdfs:range`, `due2:cardinality`, `due2:allowedOperator`, `due2:conceptScheme` | W1 stage 2, which checks the operator and writes the rest into the corpus `constraint` and `constraint_scheme`; W2 (`due2-workflows.md` §3.1, §5.4) |
 | 2 | Operator | closed core registry; profile operators by reduction | W2 (`due2-workflows.md` §5.4) |
 | 3 | Logical connective | `odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not` | W1 stage 2 |
 | 4 | Policy class | `rdfs:subClassOf` an ODRL policy class | W1 stage 1 |
@@ -204,7 +204,7 @@ A duty with both roles is one atom with one set of parties. As a root obligation
 
 **Hierarchies.** Actions follow the `odrl:includedIn` closure. Assets and parties follow the typed `odrl:partOf` closure: an asset path may pass only through `odrl:AssetCollection`, a party path only through `odrl:PartyCollection`, and a cross-kind path is invalid (`formal-semantics.md` §5.4). `isA` follows `rdf:type` and `rdfs:subClassOf`; the `rdf:type` edges of the individuals it compares travel in the closure like any other edge (`due2-workflows.md` §3.1). Concepts follow `skos:broader`, within the concept schemes their operand names (§4; `decisions/0015`). A `skos:narrower` triple is read as the inverse `skos:broader` edge. A concept is in a scheme when it states `skos:inScheme` or `skos:topConceptOf` for it, or the scheme states `skos:hasTopConcept` for the concept (SKOS Reference S7, S8). Membership is not inherited along the hierarchy, as in SKOS, and cross-scheme mappings such as `skos:exactMatch` are not read.
 
-Edges declared in the policy and in its profile modules travel with the policy into the corpus `closure`. ODRL's own action hierarchy is shipped as one such module, `profiles/odrl-actions.ttl`, so `odrl:read ⊑ odrl:use` holds without each policy restating it. Edges about the world — who is in which team today — arrive in the SOTW `closure`; only the edges above the request's own entities are fetched and recorded (`due2-workflows.md` §3.3). W2 uses the transitive closure of both (`due2-workflows.md` §3.1, §3.3). The reading is closed-world over the declared edges: a membership that no edge establishes does not hold. A catch-all collection therefore needs its membership edges supplied, or nothing matches it.
+Edges declared in the policy and in its profile modules travel with the policy into the corpus `closure`. ODRL's own action hierarchy is shipped as one such module, `profiles/odrl-actions.ttl`, so `odrl:read ⊑ odrl:use` holds without each policy restating it. Edges about the world — who is in which team today — arrive in the SOTW `closure`; only the edges above the entities that the case's comparisons name are fetched and recorded (`due2-workflows.md` §3.3). W2 uses the transitive closure of both (`due2-workflows.md` §3.1, §3.3). The reading is closed-world over the declared edges: a membership that no edge establishes does not hold. A catch-all collection therefore needs its membership edges supplied, or nothing matches it.
 
 ---
 

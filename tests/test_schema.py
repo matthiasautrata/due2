@@ -89,6 +89,9 @@ def _add_constraint(doc: Obj) -> None:
             "left_operand": "odrl:purpose",
             "operator": "odrl:eq",
             "datatype": "xsd:anyURI",
+            "source": "request",
+            "property": "odrl:purpose",
+            "cardinality": "one",
         }
     ]
 
@@ -175,6 +178,10 @@ def _constraint_on_no_atom(doc: Obj) -> None:
     ]
 
 
+def _scheme_of_no_constraint(doc: Obj) -> None:
+    _corpus(doc)["constraint_scheme"] = [{"constraint_id": "ex:c9", "scheme": "ex:purposes"}]
+
+
 def _sotw_without_effective_at(doc: Obj) -> None:
     sotw = cast(list[Obj], cast(Obj, _scenario(doc)["sotw"])["sotw"])
     del sotw[0]["effective_at"]
@@ -204,6 +211,7 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "invariant: a root that names no policy": _root_naming_no_policy,
     "invariant: an edge whose parent names no atom": _edge_from_no_atom,
     "invariant: a constraint on no atom": _constraint_on_no_atom,
+    "invariant: a constraint_scheme that names no constraint (decisions/0047)": _scheme_of_no_constraint,
     "schema: a SOTW without effective_at": _sotw_without_effective_at,
     "prefixes: `party` as a prefix name": _party_as_prefix,
 }

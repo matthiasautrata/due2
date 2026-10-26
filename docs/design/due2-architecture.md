@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.18
+**Status:** Draft v0.19
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.18** (2026-10-26, `decisions/0046`): §7's first re-evaluation trigger is an explicit call per case, with no subscription. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.19** (2026-10-26, `decisions/0047`): §2: the edges above a state property's values are planned by property and fetched once its facts are recorded. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -74,7 +74,7 @@ plan      : Corpus x Request                -> Reads    (per request, before dec
 decide    : Corpus x Request x SOTW         -> Trace    (hot, per evaluation)           W3 ∘ W2
 ```
 
-`plan` is the sweep the operand bindings exist for (`due2-profiles.md` §3): every value an evaluation can consult is named by a binding, so the reads are known from the corpus and the request before anything is fetched. The shell fetches what the case lacks, records it, and calls `decide` only when every planned read is in the case (`due2-workflows.md` §3.3). `decide` returns the trace, and the verdict is one relation in it. Re-evaluation is `decide` over the case's current SOTW: a distinct operational trigger (§7), not a distinct function.
+`plan` is the sweep the operand bindings exist for (`due2-profiles.md` §3): every value an evaluation can consult is named by a binding, so the reads are planned from the corpus and the request before anything is fetched. Only the edges above a state property's values wait for its facts (`due2-workflows.md` §3.3). The shell fetches what the case lacks, records it, and calls `decide` only when every planned read is in the case (`due2-workflows.md` §3.3). `decide` returns the trace, and the verdict is one relation in it. Re-evaluation is `decide` over the case's current SOTW: a distinct operational trigger (§7), not a distinct function.
 
 `decide` is itself two workflows with a hard boundary between them. W2 evaluates: it gives each relevant atom a three-valued finding from the request and a frozen SOTW, and never looks at another atom's finding. W3 resolves: it folds the findings into one verdict and never looks at the request or the SOTW. `due2-workflows.md` specifies all three workflows, their data, and their laws. This document gives the reasons.
 

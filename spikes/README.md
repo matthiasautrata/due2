@@ -102,13 +102,11 @@ A spike lists the trace relations it emits in its `ready` reply:
 <- {"ready": {"tasks": ["decide"], "relations": {"decide": ["evaluation", "verdict", "eliminated"]}}}
 ```
 
-The list is needed because the canonical form omits a relation with no tuples, so an absent relation in the output means "emitted, and empty" only if the spike declares it. A relation the spike emits without declaring it is an error. A scenario that states a relation the spike does not declare is reported unsupported (`not emitted: <relation>`), never as a pass. The harness canonicalises the output, then compares every other stated relation as the section Relation-level vectors of `conformance/README.md` describes. When the spike declares `evaluation`, the harness also checks its four ids against the collections it sent.
-
-The corpus does not yet carry the operand bindings that W2 needs to evaluate a constraint (#108); until it does, `decide` vectors have no constraints.
+The list is needed because the canonical form omits a relation with no tuples, so an absent relation in the output means "emitted, and empty" only if the spike declares it. A relation the spike emits without declaring it is an error. A scenario that states a relation the spike does not declare is reported unsupported (`not emitted: <relation>`), never as a pass. The harness canonicalises the output, then compares every other stated relation as the section Relation-level vectors of `conformance/README.md` describes. When the spike declares `evaluation`, the harness also checks its three ids against the collections it sent.
 
 ### `plan`
 
-Reserved for `plan` of `due2-platform.md` §2.1. The relations of its output, `Reads`, are open (#106), and the task is defined once they are settled.
+Reserved for `plan` of `due2-platform.md` §2.1, whose output is a `Reads` collection (`due2-workflows.md` §3.3). The task is defined when a relation-level vector can state an expected `Reads` (#37).
 
 ## Running
 

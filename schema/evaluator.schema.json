@@ -21,7 +21,7 @@
       "additionalProperties": false
     },
     "PlanOutput": {
-      "description": "Reads (due2-workflows.md §3.3); its form is open (#106)."
+      "$ref": "collections.schema.json#/$defs/Reads"
     },
     "DecideInput": {
       "type": "object",
