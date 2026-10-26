@@ -1,0 +1,39 @@
+# The slow tier (ways-of-working.md §8, correctness-strategy.md §7): finders, not gates. Nightly,
+# because commits go to main directly and no merge queue sees them, and on demand.
+name: slow
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The Alloy models of the formal claims (#84): each command's outcome against its `expect`.
+  alloy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: formal/alloy/run.sh
+
+  # clingo-i's tests at the slow bounds (spikes/clingo-i/TESTS.md).
+  clingo-i:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: spikes/clingo-i
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest -m slow

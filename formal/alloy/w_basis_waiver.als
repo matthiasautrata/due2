@@ -69,7 +69,7 @@ assert Waiver {
 }
 
 // Not vacuous: an empty basis under `Permit`, and one under `Deny`.
-run EmptyPermit { definite[Permit] and no permitBasis } for 3 but 4 World
-run EmptyDeny { definite[Deny] and no denyBasis } for 3 but 4 World
+run EmptyPermit { definite[Permit] and no permitBasis } for 3 but 4 World expect 1
+run EmptyDeny { definite[Deny] and no denyBasis } for 3 but 4 World expect 1
 
-check Waiver for 3 but 8 World
+check Waiver for 3 but 8 World expect 0

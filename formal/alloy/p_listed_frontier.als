@@ -100,33 +100,33 @@ run NoSingleGiver {
   definitePending
   some w: World, p: Permission | isListed[w, p] and no q: Permission | all w2: World |
     q in survivors[w2] and outstanding[w2, q] = outstanding[w, p]
-} for 3 but 4 World
+} for 3 but 4 World expect 1
 
 // A listed route that some completion does not offer at all: a `fulfilled` finding is `U`.
 run OpenInSome {
   definitePending
   some w: World, p: Permission | isListed[w, p] and some w2: World |
     no q: survivors[w2] | outstanding[w2, q] = outstanding[w, p]
-} for 3 but 4 World
+} for 3 but 4 World expect 1
 
 // decisions/0019's first run: a listed route that a smaller one dominates in some completion.
 run DominatedInSome {
   definitePending
   some w: World, p: Permission | isListed[w, p] and some w2: World | p in survivors[w2] - frontier[w2]
-} for 3 but 4 World
+} for 3 but 4 World expect 1
 
 // What to do depends on an unknown: nothing suffices.
 run EmptyListed {
   definitePending
   no w: World, p: Permission | isListed[w, p]
-} for 3 but 4 World
+} for 3 but 4 World expect 1
 
 // Without removedByU, the fallback would list a candidate that some completion removes.
 run InvalidNeedsExclusion {
   definitePending
   some p: Permission, w: World | definite[p] and not removedByT[p] and p not in survivors[w]
-} for 3 but 4 World
+} for 3 but 4 World expect 1
 
-check NoOmission for 3 but 8 World
-check PermitListsEmpty for 3 but 8 World
-check FallbackSound for 3 but 8 World
+check NoOmission for 3 but 8 World expect 0
+check PermitListsEmpty for 3 but 8 World expect 0
+check FallbackSound for 3 but 8 World expect 0

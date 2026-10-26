@@ -75,14 +75,14 @@ assert OpenRoutes {
 run RelevantMoves {
   verdict[C1] = Pending and verdict[C2] = Pending
   frontier[C1] != frontier[C2]
-} for 3
+} for 3 expect 1
 
 // Not vacuous: two `Pending` completions that differ on an unknown that is not relevant.
 run IrrelevantDiffers {
   verdict[C1] = Pending and verdict[C2] = Pending
   agreeOnRelevant[C1, C2]
   C1.val != C2.val
-} for 3
+} for 3 expect 1
 
-check Relevant for 6
-check OpenRoutes for 6
+check Relevant for 6 expect 0
+check OpenRoutes for 6 expect 0

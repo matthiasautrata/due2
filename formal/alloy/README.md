@@ -2,14 +2,14 @@
 
 Each claim of `correctness-strategy.md` §4.8 gets a small Alloy 6 model, which searches for a counterexample within a bound on the size of each signature (`decisions/0021`). A `check` that finds none shows the claim only up to that scope. A `run` shows that an instance exists, either a known gap or a witness that a check is not vacuous. A counterexample is triaged by `correctness-strategy.md` §6.
 
-The models are not part of README § Verify. They belong to the slow tier (`correctness-strategy.md` §7), whose results feed the ratchet, not the gate. Run them with
+The models are not part of README § Verify. They belong to the slow tier (`correctness-strategy.md` §7), whose results feed the ratchet, not the gate, and `.github/workflows/slow.yml` runs them nightly. Run them with
 
 ```bash
 formal/alloy/run.sh                          # every model
 formal/alloy/run.sh formal/alloy/<model>.als # one model
 ```
 
-The script needs Java 17 or later. It runs Alloy 6.2.0, the Maven artifact `org.alloytools:org.alloytools.alloy.dist`, and checks the jar against the SHA-256 digest pinned in `run.sh`. It uses the jar in the local Maven repository (`~/.m2`) if there is one there. Otherwise it downloads the jar once into `~/.cache/due2/`, from Maven Central or from the repository named by `DUE2_MAVEN_REPO`, such as a mirror of Maven Central. Credentials for the download go in `~/.netrc`. Where only Maven can reach the mirror, run `mvn dependency:get -Dartifact=org.alloytools:org.alloytools.alloy.dist:6.2.0` first. Each command prints one line with its outcome: a `check` should print `UNSAT` (no counterexample), and a `run` prints `SAT` when it finds an instance.
+The script needs Java 17 or later, curl, and python3. It runs Alloy 6.2.0, the Maven artifact `org.alloytools:org.alloytools.alloy.dist`, and checks the jar against the SHA-256 digest pinned in `run.sh`. It uses the jar in the local Maven repository (`~/.m2`) if there is one there. Otherwise it downloads the jar once into `~/.cache/due2/`, from Maven Central or from the repository named by `DUE2_MAVEN_REPO`, such as a mirror of Maven Central. Credentials for the download go in `~/.netrc`. Where only Maven can reach the mirror, run `mvn dependency:get -Dartifact=org.alloytools:org.alloytools.alloy.dist:6.2.0` first. Each command prints one line with its outcome: `UNSAT` when a `check` finds no counterexample or a `run` no instance, and `SAT` when it finds one. Each command states the outcome it expects with Alloy's `expect` (`expect 0`: none; `expect 1`: one exists), as the table below lists, and `run.sh` exits 1 when a command states none or its outcome differs. A model with no commands, `resolve.als`, is compiled by the models that open it.
 
 ## Models
 

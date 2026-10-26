@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.20 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.21 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.20** (2026-10-26, `decisions/0039`, #136): §4.3's lineage bullet names the lineage relation that L10 reads, and §4.6 reads the lineage of each policy. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.21** (2026-10-26, #23): §7 names the workflows of the tiers; the slow tier's runs the Alloy models and clingo-i's slow bounds. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -233,13 +233,13 @@ Each disagreement leaves a commit that names it.
 
 ## 7. Gates
 
-The tier placement is `ways-of-working.md` §8. What each tier runs, as the pieces come to exist:
+The tier placement is `ways-of-working.md` §8. `.github/workflows/verify.yml` runs the every-commit and PR tiers on each push, and `.github/workflows/slow.yml` runs two parts of the slow tier nightly: the Alloy models (`formal/alloy/README.md`) and clingo-i's tests at their slow bounds (`spikes/clingo-i/TESTS.md`). What each tier runs, as the pieces come to exist:
 
 | Tier | Runs |
 |---|---|
 | Every commit | The commands in `README.md` § Verify: four checkers, plus type checking and lint |
 | PR | The above, plus: the corpus through every backend, including `I`; the status matrix and Kleene tables; bounded-exhaustive enumeration at small bounds; Hypothesis `fast` for L1–L10 and the stage-1 invariants; the L1 determinism matrix |
-| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the differential against slow `I` at larger sizes, up to its cap; mutation testing on W2, W3, and the builder; the formal model's proofs and its differential (§4.8). Results feed the ratchet, not the gate |
+| Slow | Bounded-exhaustive enumeration at full bounds; Hypothesis `nightly`; the differential against slow `I` at larger sizes, up to its cap; mutation testing on W2, W3, and the builder; the Alloy models of the claims, and the formal model's proofs and its differential (§4.8). Results feed the ratchet, not the gate |
 
 ---
 

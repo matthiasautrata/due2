@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.9 (2026-10-26)
+**Status:** Draft v0.10 (2026-10-26)
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.9** (2026-10-26, `decisions/0038`, #107): §2.4 drops the canonical N-Quads term form, which no id is computed from any more, and says that a digest is a collection id. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.10** (2026-10-26, #23): the slow tier runs nightly and on demand (§8, §13 row 8, §14.3). Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -214,7 +214,7 @@ Placement is *tool × scope*. Scope is the cheaper lever: mutation testing is un
 
 **PR tier hard rule:** same commit, same result, always. Non-determinism at this tier is worse than absence.
 
-**[O] Slow-tier trigger:** nightly cron vs merge-queue entry. Merge-queue gives slower feedback on a busy repo and faster on a quiet one, and never leaves a bad commit on main overnight. Under a few merges a day, merge-queue wins. Decide by observed merge frequency.
+**[D] Slow-tier trigger:** nightly, and on demand. A merge queue only sees pull requests, and the owner commits to `main` directly (§14.3), so a queue would miss most commits. `.github/workflows/slow.yml` runs the slow tier at 02:17 UTC and whenever it is dispatched by hand. A failure fails that workflow run, which GitHub reports to the owner by its notification settings, and is a finding, triaged by `correctness-strategy.md` §6.
 
 ---
 
@@ -322,12 +322,11 @@ Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend e
 | # | Decision | Section | Blocked on | Issue |
 |---|---|---|---|---|
 | 4 | Persistent-structure library | §2.1 | First real use case | #23 |
-| 8 | Slow tier: nightly vs merge-queue | §8 | Observed merge frequency | #23 |
 | 10 | Rust toolchain in the build image | §10.3 | Platform team conversation | #16 |
 | 11 | Backend selection criterion and thresholds | §10.4 | Measurement on realistic volume | #16 |
 | 13 | OPA approval and version pinning, if the Rego path is taken | §10.3 | Only on exercising the option | #16 |
 
-Rows 1–3, 5–7, and 14 are the provisional picks above, each stated in the section named: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); `icontract`, trialled on the Kleene tables (§6); and, as row 14, JSON Schema 2020-12 as the language of the port schema, from which the OpenAPI and MCP adapters are generated (`due2-platform.md` §1.2). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12, whether a direct interpreter is maintained as a specification artifact (§7.1), is answered yes: clingo-i renders the evaluation semantics as the L9 oracle and the generator, and is not a pipeline stage (`decisions/0009`); the Python `Den` oracle, and later the chosen prover's, render W1 stage 1 (`decisions/0021`, issue #8).
+Rows 1–3, 5–7, and 14 are the provisional picks above, each stated in the section named: basedpyright strict as editor checker and gate (§4); msgspec at the JSON boundary (§5); `Result` for expected failure and a crash otherwise, with one handler at the shell (§2.2); beartype in test environments only, through system test, optional in UAT (§5); contracts in production checking preconditions only (§6); `icontract`, trialled on the Kleene tables (§6); and, as row 14, JSON Schema 2020-12 as the language of the port schema, from which the OpenAPI and MCP adapters are generated (`due2-platform.md` §1.2). Row 8, the slow tier's trigger, is nightly and on demand (§8). Row 9, Dafny's availability, is moot: `decisions/0021` withdraws Dafny. Row 12, whether a direct interpreter is maintained as a specification artifact (§7.1), is answered yes: clingo-i renders the evaluation semantics as the L9 oracle and the generator, and is not a pipeline stage (`decisions/0009`); the Python `Den` oracle, and later the chosen prover's, render W1 stage 1 (`decisions/0021`, issue #8).
 
 ---
 
@@ -357,7 +356,7 @@ Every change to a component is an increment, and every increment takes five step
 
 - **Trunk-based.** The owner commits to `main`, and every commit on `main` passes. Work that does not pass stays on a branch.
 - **Other contributors use pull requests.** A change written by another model or agent (Hermes, Agy, a delegated worker) arrives as a pull request and is reviewed before it merges; it is never pushed to `main` directly. The pull-request template carries the checklist of §14.1.
-- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic, and each job has a twenty-minute timeout. A spike's checks and its corpus run are a job of their own, as clingo-i's are. The slow tier's trigger is open (§13 #8).
+- **CI is the PR tier of §8** (§12 step 9). `.github/workflows/verify.yml` runs README § Verify on every push and pull request, against the locked environment. It is deterministic, and each job has a twenty-minute timeout. A spike's checks and its corpus run are a job of their own, as clingo-i's are. `.github/workflows/slow.yml` runs the slow tier nightly and on demand (§8).
 - **Supply chain.** Actions are pinned by commit SHA. Dependabot proposes updates to the actions and the uv lock monthly, grouped, and each update passes CI like any other change.
 
 ---

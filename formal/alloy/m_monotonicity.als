@@ -46,7 +46,7 @@ run MonotoneStrict {
   verdict[Lo] = Deny
   verdict[Hi] = Permit
   Permission.policy.conflict = Invalid
-} for 3
+} for 3 expect 1
 
 // The direction of each occurrence of a variable (§6.4, Computing it): upward when making it
 // true can only raise the verdict, downward when it can only lower it. An `in_force` finding
@@ -90,7 +90,7 @@ run MixedVariable {
   some mixed
   lowerExtreme[Hi, Lo]
   verdict[Lo] != verdict[Hi]
-} for 3
+} for 3 expect 1
 
-check Monotone for 8
-check UniformBound for 7
+check Monotone for 8 expect 0
+check UniformBound for 7 expect 0

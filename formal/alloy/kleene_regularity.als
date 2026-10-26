@@ -66,6 +66,6 @@ assert Regular {
 // members are `T`. Expected: an instance.
 run XoneDecidedOverU {
   some c: Conn | c.conn = Xone and some c.members & (Lo.v3).U and c.(Lo.v3) != U
-} for 4
+} for 4 expect 1
 
-check Regular for 7
+check Regular for 7 expect 0

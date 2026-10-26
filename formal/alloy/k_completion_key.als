@@ -270,7 +270,7 @@ run SchemeGap {
     fits[a, v] and fits[b, v]
     val[a, v] = val[b, v]
   }
-} for 3
+} for 3 expect 1
 
 // #25: `x lteq 5` and `x gt 7` stay independent, so a completion may make both `T`, which no
 // value of `x` gives. Expected: an instance.
@@ -283,7 +283,7 @@ run Issue25BothT {
     some v: Value | fits[a, v] and fits[b, v]
     no v: Value | fits[a, v] and fits[b, v] and val[a, v] = T and val[b, v] = T
   }
-} for 4
+} for 4 expect 1
 
 // due2-workflows.md §6.4 stated the gap as both `F` before v0.32, and decisions/0021 still
 // does. A value above 5 and at most 7, such as 7, gives that. Expected: no instance.
@@ -294,7 +294,7 @@ run Issue25BothF {
     b.right.denotes in a.right.denotes.less
     no v: Value | fits[a, v] and fits[b, v] and val[a, v] = F and val[b, v] = F
   }
-} for 4
+} for 4 expect 0
 
 // decisions/0016: pairing a misfit with its complement would be unsound. `x eq 5` and
 // `x neq 5` are both `U` on a string. Expected: an instance.
@@ -304,7 +304,7 @@ run MisfitBreaksPairing {
     not samePolarity[a, b]
     val[a, v] = U and val[b, v] = U
   }
-} for 3
+} for 3 expect 1
 
 // Non-vacuity: a real world in which two distinct leaves form a complement pair, and a
 // completed leaf is `F`. Expected: an instance.
@@ -312,8 +312,8 @@ run ComplementPair {
   some disj a, b: Completed | sameVar[a, b] and not samePolarity[a, b]
   F in Completed.(CompW.v3)
   some Opaque
-} for 4
+} for 4 expect 1
 
-check KeyIsEquivalence for 6
-check KeySound for 6
-check OneSidedAtLeaves for 6
+check KeyIsEquivalence for 6 expect 0
+check KeySound for 6 expect 0
+check OneSidedAtLeaves for 6 expect 0

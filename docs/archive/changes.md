@@ -56,6 +56,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.20** (2026-10-26, `decisions/0039`, #136): §4.3's lineage bullet names the lineage relation that L10 reads, and §4.6 reads the lineage of each policy. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.19** (2026-10-26, `decisions/0038`, #107): §4.2 drops invariant 10 (*Locality*), and the model-based tests of §4.7 open a new case on an amendment.
 
 **Changes in v0.18** (2026-10-26, #83): §8 lists only the steps that remain, and §9 says in one line where each resolved row is settled; the steps taken and the rows' statements moved to `docs/archive/correctness-strategy-completed.md`. No rule changes. Earlier changes are in `docs/archive/changes.md`.
@@ -94,6 +96,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L10) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
 
 ## `ways-of-working.md`
+
+**Changes in v0.9** (2026-10-26, `decisions/0038`, #107): §2.4 drops the canonical N-Quads term form, which no id is computed from any more, and says that a digest is a collection id. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.8** (2026-10-26, `decisions/0037`, #134): §2.4 names one RDF boundary, the input; W1 emits no RDF. Earlier changes are in `docs/archive/changes.md`.
 
