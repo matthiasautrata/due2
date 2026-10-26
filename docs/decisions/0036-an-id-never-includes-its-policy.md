@@ -101,3 +101,9 @@ A conflict within a set of policies is a conflict between two of them, so if eve
 ## Note (2026-10-26, no Atomic Policy node)
 
 Decision item 2 says that a `root` tuple says the atom "roots an Atomic Policy of that policy". Stage 1 builds no Atomic Policy node (`decisions/0037`), so a `root` tuple says that the atom is a root atom of the authored policy it names. Nothing else in this record changes.
+
+## Note (2026-10-26, minted ids, `decisions/0038`)
+
+Item 1's table gives three rows ids computed from content: an expanded rule (`atomic_rule_uid`), a duty with added roles or parameter values (`duty-atom`), and an anonymous node (its place and content). Each is now minted once, and so is the open row, a disjunct atom or a derived constraint. A named node still keeps its authored identity, and two anonymous nodes are still distinct however alike they are, so the "pay 100 EUR" example and its rejected alternative stand.
+
+The agreement check of the amendment compares corpora up to the renaming of minted ids. When a corpus agrees, `put_corpus` renames the ids it minted for a published node's parts to the published ones, so a node that two policies state, with its parts, is one individual (`due2-workflows.md` §4).

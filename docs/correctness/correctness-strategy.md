@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.18 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.19 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.18** (2026-10-26, #83): §8 lists only the steps that remain, and §9 says in one line where each resolved row is settled; the steps taken and the rows' statements moved to `docs/archive/correctness-strategy-completed.md`. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.19** (2026-10-26, `decisions/0038`, #107): §4.2 drops invariant 10 (*Locality*), and the model-based tests of §4.7 open a new case on an amendment. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -90,7 +90,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 | `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | Its §6 algorithm: memoization and fan-out | `Sel`, and the lifted tree it reads `N(P0)` from | **[D]**, issue #8 |
 | The formal model (§4.8): a small executable model in a prover | The claims of `due2-workflows.md` §6.4, by proof; the verdict of every input it covers, by running | clingo-i's encoding and the algorithms of W1–W3 | The prose of `due2-workflows.md` §5–§6 and the formaliser's reading of it (R4); the reader that turns a vector into its input, chosen at the spike | **[D]** (`decisions/0021`), issue #70 |
 | `tools/check_completion.py` | `due2-workflows.md` §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]** |
-| Laws L1–L10, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
+| Laws L1–L10, invariants 1–9 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
 
 **Principle: the oracle implements the definition, the implementation implements the algorithm.** **[D]** Wherever the spec gives both a definition and an efficient way to compute it, the oracle uses the definition. Concretely:
 
@@ -123,7 +123,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 - **Risks.** R1, R6.
 - **Before code.** Negative cases in the case format: `expected_rejection` (`conformance/README.md`), with codes from `due2-diagnostics.md`. The rejection codes with no negative case are listed in `conformance/README.md` § Coverage gaps; `odrl-compound-to-atomic-normalization.md` §10 names the stage-1 vectors.
 - **Oracles.** `Den` through the lineage bijection (invariant 3). Golden vectors from `odrl-compound-to-atomic-normalization.md` §10.
-- **Properties.** Invariants 6 (determinism over permuted triples, JSON-LD order, and blank-node labels), 7 (idempotence: an all-atomic policy normalises to itself), and 10 (locality: an unrelated edit changes no identity). Invariant 8 as exact-limit success and limit-plus-one failure.
+- **Properties.** Invariants 6 (determinism up to the renaming of minted ids, over permuted triples, JSON-LD order, and blank-node labels) and 7 (idempotence: an all-atomic policy normalises to itself). Invariant 8 as exact-limit success and limit-plus-one failure.
 - **Done.** The minimum suite of `odrl-compound-to-atomic-normalization.md` §10 passes, `Den` agrees on every positive vector and on generated policies, and the formal model's `Den` (§4.8, issue #8) follows as the second, machine-checked oracle.
 
 ### 4.3 W1 stage 2: the builder (lifted form to relations)
@@ -172,7 +172,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
   - *Both directions.* Transitions occur in both directions — `Pending` to `Permit` on evidence, `Permit` to `Deny` on a changed fact or policy, `Permit` to `NotApplicable` when a moved `at` leaves a time window — and only resolving unknowns, with nothing else changed, never moves one definite verdict to another (L4).
   - *Two clocks.* An as-of query for an earlier decision answers from that evaluation, unaffected by later facts, policy amendments, or normaliser upgrades.
   - *Asked at its own time.* Every access evaluation has `at` no earlier than its `effective_at`, and its request differs from its case's only in `at` (`due2-workflows.md` §3.2, `decisions/0030`).
-- **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, amend a policy, upgrade the normaliser, re-evaluate, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
+- **Model-based.** A Hypothesis stateful machine (`ways-of-working.md` §7.1) drives event sequences — request, submit evidence, change or resolve a fact, re-evaluate, amend a policy or upgrade the normaliser and open a new case over the new corpus, query as-of — against a reference model that recomputes everything from scratch. Sequences are also enumerated exhaustively up to a small length.
 - **Done.** The stateful machine and the enumerated sequences are clean, and every corpus scenario that awaits a duty has a history case that carries it through to its next verdict. That needs a case-format extension: one case, a sequence of events, an expected verdict per evaluation.
 
 ### 4.8 The formal model (issue #70, `decisions/0021`)

@@ -52,8 +52,8 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
   Read by duty.lp.
 - `evidence_param/3`, `evidence_param(E, Prop, Value)`: each of its `params`. Read by lift.lp
   and operand.lp (`witness`).
-- `activation/2`, `activation(Key, Lit)`: each element of `activation`, an instance key or rule
-  IRI, and its instant. duty.lp reads a key that is a duty's IRI, as the case format names an
+- `activation/2`, `activation(Key, Lit)`: each element of `activation`, a duty atom's id or a
+  rule IRI, and its instant. duty.lp reads a key that is a duty's IRI, as the case format names an
   activation (`conformance/README.md`, SOTW). Read by lift.lp and duty.lp.
 - `sotw_closure/3`, `sotw_closure(Pred, Lo, Hi)`: each `closure` triple, `Pred` expanded. Read
   by lift.lp: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`, and

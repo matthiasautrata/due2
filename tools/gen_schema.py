@@ -162,8 +162,6 @@ def parse_relation(line: str) -> Relation:
             if f is None:
                 raise ValueError(f"{name}: not a field: {raw!r}")
             into.append(Field(f[1], f[3] or "Id", f[2] is not None))
-    if any(f.optional for f in key):
-        raise ValueError(f"{name}: an optional key field")
     return Relation(name, tuple(f.name for f in key), (*key, *values))
 
 

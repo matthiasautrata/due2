@@ -261,7 +261,7 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
 % | `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
 % | `signer` | the config lists no signer for the duty (`signed/1`), or lists the evidence's issuer (`admitted/2`) | it lists signers, and not the issuer | never |
-% | `discharges` | the instance is not keyed on the request (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is keyed, and the evidence does not | never |
+% | `discharges` | the instance is not the request's grant (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is the request's grant, and the evidence does not | never |
 %
 % The collection rows are decisions/0018: each member bears a duty whose bearer is a party
 % collection, so the subject's own act witnesses it, and another member's does not. With no subject,
@@ -270,8 +270,8 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation
 % (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the case
 % format gives an activation, or `effective_at` when the SOTW has none (due2-workflows.md §5.3). An
-% instance is keyed when its scope is `grant` and the request has a `reference`; without one, a
-% `grant` duty falls back to `member`.
+% instance is the request's grant (`keyed/1`) when its scope is `grant` and the request has a
+% `reference`; without one, a `grant` duty falls back to `member`.
 
 %*! witness_pair(Y, E)
 
@@ -325,8 +325,8 @@ The instance of duty atom `Y` was first owed at the instant `Start`: the SOTW's 
 duty, or `effective_at` when there is none. That default is due2-workflows.md §5.3's.
 *%
 % The case format names an activation by its duty's IRI (conformance/README.md, SOTW), so every
-% atom of one duty shares its activation. That IRI is the instance key when W1 does not expand the
-% duty and W2 adds no performer (due2-workflows.md §5.3).
+% atom of one duty shares its activation. That IRI is the duty atom's id, which keys `activation`
+% (due2-workflows.md §3.3), when W1 does not expand the duty.
 activation_at(a(Duty, Term, T, Party), Start) :- duty_atom(a(Duty, Term, T, Party)),
     activation(Duty, Start).
 activation_at(a(Duty, Term, T, Party), Start) :- duty_atom(a(Duty, Term, T, Party)),
@@ -445,8 +445,8 @@ holds(check(a(Duty, Term, T, Party), E, signer), f) :- witness_pair(a(Duty, Term
 
 %*! keyed(Y)
 
-The instance of duty atom `Y` is keyed on the request: its scope is `grant` and the request has
-a `reference`. Without a reference, a `grant` duty falls back to scope `member`, as
+The instance of duty atom `Y` is the request's grant: its scope is `grant` and the request has
+a `reference`, which evidence must name to discharge it. Without a reference, a `grant` duty falls back to scope `member`, as
 due2-workflows.md §5.3 says.
 *%
 keyed(Y) :- duty_scope(Y, grant), request_reference(_).

@@ -86,3 +86,14 @@ Listing more ingredients would mend the first case. Both cases come from one des
 ### Revisit when
 
 - #119 gives a recurring duty's occurrence a canonical `t` other than an `Instant` term.
+
+## Note (2026-10-26, minted ids, `decisions/0038`)
+
+`decisions/0038` replaces every key this record computes:
+
+- **Amendment item 1.** A duty atom that stage 2 binds roles or parameter values into gets a minted id, not one computed under the `duty-atom` domain. A duty that two policies state with the same binding is found again by its duty and its binding when the second policy is published, so it stays one atom.
+- **Amendment item 3.** A duty instance is keyed by its atom and, for a recurring duty, its occurrence: `instance (atom_id, occurrence?: Instant | status: Enum, passed: Flag)`. The performer and the reference are fixed within a case, which has one request, so the key does not hold them, and the `duty-instance` domain is dropped. `activation` is keyed by `atom_id`.
+- **Original item 4.** `discharges` still names the grant, the authored duty and the request's `reference`. It is now two plain fields, `discharges_duty` and `discharges_reference`, with no digest.
+- **Original Consequences.** #107 is closed: `discharges` and `alt_id` have no bytes to settle, since `alt_id` is a position (`due2-workflows.md` §6.3).
+
+The cases this record pins, the compound action and Alice and Bob under one PartyCollection bearer, give the same instances as before: two atoms each.

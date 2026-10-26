@@ -9,7 +9,6 @@ a vector file invalid.
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -18,7 +17,7 @@ from typing import cast
 import pytest
 from gen_schema import SCHEMA, generate
 from harness.json_types import Obj
-from harness.vectors import VECTORS, Schemas, check_collection, check_vector_file, expand
+from harness.vectors import VECTORS, Schemas, check_vector_file
 from jsonschema import Draft202012Validator
 
 FIXTURE = Path(__file__).parent / "fixtures" / "vectors" / "due2-one-permission.json"
@@ -183,21 +182,6 @@ def _config_without_bound(doc: Obj) -> None:
 
 def _party_as_prefix(doc: Obj) -> None:
     cast(Obj, doc["prefixes"])["party"] = "https://example.org/party/"
-
-
-def test_a_placeholder_derived_id_becomes_a_digest(schemas: Schemas) -> None:
-    """Guards the authoring rule for derived ids (#107): without it, an expected trace that
-    names an alternative `alt1`, as conformance/README.md allows, would fail the schema."""
-    raw: Obj = {
-        "alternative": [{"alt_id": "alt1", "permission_id": "ex:a1"}],
-        "alt_duty": [{"alt_id": "alt1", "duty_id": "ex:d1"}],
-    }
-    trace, problems = expand(raw, "Trace", {"ex": "https://example.org/"}, schemas, "t")
-    assert problems == []
-    assert check_collection(trace, "Trace", "Trace", schemas, "t") == []
-    alt = cast(list[Obj], trace["alternative"])[0]["alt_id"]
-    assert alt == cast(list[Obj], trace["alt_duty"])[0]["alt_id"]
-    assert alt == "sha256:" + hashlib.sha256(b"alt1").hexdigest()
 
 
 # Each mutation breaks one rule of conformance/README.md (Relation-level vectors) or of

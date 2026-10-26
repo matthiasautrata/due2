@@ -343,9 +343,9 @@ atom_party(a(R, A, T, Party), F, Party) :- atom(a(R, A, T, Party)), rule_value(R
 % two. The corpus's atom id also holds the other inherited parties (`duty.atom_id`,
 % due2-workflows.md §3.1), but a witness reads only the bearer, so two atoms that differ only in
 % another party would have the same findings, and the reply names both by one duty IRI. An
-% instance key adds the request's performer and reference to the atom's id (due2-workflows.md
-% §5.3). clingo-i evaluates one request at a time, so its instances are already those of that
-% request, and it needs neither.
+% instance is keyed by its atom and occurrence (due2-workflows.md §5.3). A case has one request,
+% so its performer and reference are fixed, and clingo-i, which evaluates one request at a time,
+% needs neither.
 %
 % `pre(X, Y)` fans out over every atom of the duty (odrl-compound-to-atomic-normalization.md
 % §6.3), so a permission atom's preconditions are read as a conjunction. An inheriting duty gives

@@ -110,7 +110,7 @@
                 ]
               },
               "version": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Id"
               }
             },
             "required": [
@@ -720,8 +720,11 @@
               "issuer": {
                 "$ref": "#/$defs/Id"
               },
-              "discharges": {
-                "$ref": "#/$defs/Digest"
+              "discharges_duty": {
+                "$ref": "#/$defs/Id"
+              },
+              "discharges_reference": {
+                "$ref": "#/$defs/String"
               }
             },
             "required": [
@@ -767,12 +770,12 @@
           "minItems": 1,
           "uniqueItems": true,
           "x-key": [
-            "instance_key"
+            "atom_id"
           ],
           "items": {
             "type": "object",
             "properties": {
-              "instance_key": {
+              "atom_id": {
                 "$ref": "#/$defs/Id"
               },
               "at": {
@@ -780,7 +783,7 @@
               }
             },
             "required": [
-              "instance_key",
+              "atom_id",
               "at"
             ],
             "additionalProperties": false
@@ -1229,14 +1232,12 @@
           "minItems": 1,
           "uniqueItems": true,
           "x-key": [
-            "instance_key"
+            "atom_id",
+            "occurrence"
           ],
           "items": {
             "type": "object",
             "properties": {
-              "instance_key": {
-                "$ref": "#/$defs/Id"
-              },
               "atom_id": {
                 "$ref": "#/$defs/Id"
               },
@@ -1256,7 +1257,6 @@
               }
             },
             "required": [
-              "instance_key",
               "atom_id",
               "status",
               "passed"
@@ -1317,7 +1317,7 @@
             "type": "object",
             "properties": {
               "alt_id": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Count"
               },
               "permission_id": {
                 "$ref": "#/$defs/Id"
@@ -1342,7 +1342,7 @@
             "type": "object",
             "properties": {
               "alt_id": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Count"
               },
               "duty_id": {
                 "$ref": "#/$defs/Id"
@@ -1367,10 +1367,10 @@
             "type": "object",
             "properties": {
               "alt_id": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Count"
               },
               "by_alt": {
-                "$ref": "#/$defs/Digest"
+                "$ref": "#/$defs/Count"
               }
             },
             "required": [

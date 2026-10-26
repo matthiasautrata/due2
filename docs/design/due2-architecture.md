@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.14
+**Status:** Draft v0.15
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.14** (2026-10-26, `decisions/0036`, #130): the in-force row of §0 says that an obligation is in force when one of the policies that state it matches. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.15** (2026-10-26, `decisions/0038`, #107): §3 says that an anonymous rule's identity is minted, and §7 that an amendment reaches an earlier request through a new case, what evidence for a grant names, and that the re-evaluation trigger is a change of facts or evidence. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -109,7 +109,7 @@ Giving every attachment its own atom would conflict with ODRL, where a duty shar
 
 Normalisation stage 1 keeps authored sharing exactly (`odrl-compound-to-atomic-normalization.md`, invariant 4). Stage 2 instantiates per binding after parameter substitution (§4). Sharing survives in lineage, which is what lets the canonical duty be edited in one place.
 
-Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. Rules may still be anonymous, as ODRL allows; their identity is then derived from their content, which is the only identity an unnamed thing has (`odrl-compound-to-atomic-normalization.md` §3, §5.2). A rule whose identity must survive edits — above all a duty that evidence names — should be named.
+Identity is **nominal**, from the author's URI. Content hashing would silently merge two duties that coincide today and diverge next quarter, and would destroy the explanation trace. Rules may still be anonymous, as ODRL allows; W1 then mints their identity, once, when their policy is first published, so nothing outside due2 can name them beforehand (`odrl-compound-to-atomic-normalization.md` §3, §5.2; `decisions/0038`). A rule that something outside its policy names, above all a duty that evidence names, should be named.
 
 ### 3.2 Acyclicity **[D]**
 
@@ -202,17 +202,17 @@ Every decision is recorded. Because `decide` is pure over `(corpus, request, SOT
 
 **Re-evaluate, never patch.** The temptation is to find `Pending` cases whose petition has been approved and flip them. A `Pending` record is not a promise; it is a decision made under facts that have since changed, and the only sound way to learn the new answer is to ask again.
 
-**An evaluation pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change can move a verdict with no policy edit) — and the SOTW, which is the case's own record of the world: the facts consulted, with their values (the trace's `read` relation; `due2-workflows.md` §3.3). Values, not timestamps into a source, so the entry stands even when the source keeps no history.
+**An evaluation pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change gives a new corpus, and a new case over it can get another verdict with no policy edit) — and the SOTW, which is the case's own record of the world: the facts consulted, with their values (the trace's `read` relation; `due2-workflows.md` §3.3). Values, not timestamps into a source, so the entry stands even when the source keeps no history.
 
-**The direction is not only upward.** Re-evaluation can turn Permit into Deny — a role changed, a dataset was reclassified, a policy was amended. A mechanism built as "upgrade pending to permit" has no path for that, and revocation matters more to a control function than issuance. The operation is verdict-agnostic and the ledger records transitions both ways.
+**The direction is not only upward.** Re-evaluation can turn Permit into Deny — a role changed, a dataset was reclassified, a policy was amended. An amendment reaches an earlier request through a new case over the new corpus, since a case fixes its corpus (`due2-workflows.md` §7.1). A mechanism built as "upgrade pending to permit" has no path for that, and revocation matters more to a control function than issuance. The operation is verdict-agnostic and the ledger records transitions both ways.
 
 **Two clocks, and two events.** "What is the verdict now" and "what did we decide on 3 March, and why" are different queries; decision time and validity time are both first-class or the audit answer gets reconstructed from today's policy and is wrong. Separately, decision and exercise are distinct events: revoking a permit does not unmake access already taken under it. In the data model, decision time is `sotw.effective_at` and validity time is `request.at` (`due2-workflows.md` §3).
 
-**The case flow.** A request whose verdict is `Pending` records the duty instances it awaits — the trace's `instance` and `alt_duty` relations. Evidence submitted later names the instance it answers. The next evaluation, over a new SOTW, finds it and may return `Permit`; nothing in the earlier trace changes. That evaluation asks at its own time: its request is the case's with `at` moved to its `effective_at`, so a payment made after a time window has closed cannot reopen it (`due2-workflows.md` §3.2, `decisions/0030`).
+**The case flow.** A request whose verdict is `Pending` records the duty instances it awaits — the trace's `instance` and `alt_duty` relations. Evidence submitted later is recorded in the case's SOTW, and evidence for a grant-scoped duty names the duty and the request's `reference` (`due2-workflows.md` §3.3, §5.3). The next evaluation, over a new SOTW, finds it and may return `Permit`; nothing in the earlier trace changes. That evaluation asks at its own time: its request is the case's with `at` moved to its `effective_at`, so a payment made after a time window has closed cannot reopen it (`due2-workflows.md` §3.2, `decisions/0030`).
 
 **Re-evaluation trigger [O]:**
 
-- *Recompute all pending on any change.* Trivially correct, no bookkeeping. Pending sets in governance are small and approvals are rare, so this is almost certainly sufficient. **Start here.**
+- *Recompute all pending on any change of facts or evidence.* A policy or normaliser change opens new cases instead (above). Trivially correct, no bookkeeping. Pending sets in governance are small and approvals are rare, so this is almost certainly sufficient. **Start here.**
 - *Dependency index.* Index pending cases by the state properties in their `read` relation, which W2 already produces as a byproduct. Justified only when the first option measurably hurts.
 
 ---

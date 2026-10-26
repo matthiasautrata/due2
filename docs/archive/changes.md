@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.47** (2026-10-26, `decisions/0037`, #134): W1 emits no RDF. Stage 1's output stays inside W1 (§2, §4), and `root` names the root atoms of stage 1 (§3.1). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.46** (2026-10-26, `decisions/0036` amendment, #132): agreement between the corpora of the policies evaluated together is a precondition of their union, checked when a policy is published, so the union never fails (§4). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.45** (2026-10-26, `decisions/0036`, #130): no named node's id includes its policy (§3.1, `atom.atom_id`). An atom's policies are in `root`, which becomes `(atom_id, policy_id)`, with a tuple for each policy that states the atom, and `atom` drops `policy_id`. A constraint's attachment moves out of `constraint` into `atom_constraint` and `duty_constraint`, which holds the clause number, so a named constraint is one tuple. A shared permission or prohibition takes part once in each of its policies, and remains while any of these entries survives; `eliminated` gains `policy_id` (§3.5, §6.2). A duty that several policies state as an obligation is in force when any of them matches the request (§5.1, §5.2, L2). The corpus of policies evaluated together is the union of their corpora, and two corpora that say different things of one node are `IdentityConflict` (§4). §6.4's proof covers an atom with several entries, and §3.7 follows.
@@ -52,6 +54,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.18** (2026-10-26, #83): §8 lists only the steps that remain, and §9 says in one line where each resolved row is settled; the steps taken and the rows' statements moved to `docs/archive/correctness-strategy-completed.md`. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.17** (2026-10-26, `decisions/0037`, #134): §4.2's invariant 7 is that an all-atomic policy normalises to itself, and §3's `Den` row no longer names Atomic Policy construction. No rule changes.
 
 **Changes in v0.16** (2026-10-25, `decisions/0027` amendment of 2026-10-25, #38, #41): clingo-i's slow mode, read through its relation-level face (#41), replaces the brute-force W3 (#38) as the W2/W3 evaluator's executable oracle, beside the vectors' hand-derived traces, in §3, §4.5, §7, §8, and §9; §4.5 states how a fallback is compared with it. Earlier changes are in `docs/archive/changes.md`.
@@ -87,6 +91,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `ways-of-working.md`
 
+**Changes in v0.8** (2026-10-26, `decisions/0037`, #134): §2.4 names one RDF boundary, the input; W1 emits no RDF. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.7** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4 drops a recommendation its pick overrides; §7.1 and §11 lose history; §13 states the resolved rows more briefly. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.6** (2026-10-20, #83): a cold read. §4 no longer calls its tool undecided; §2.2 names the diagnostics document; §10.2, §10.3, §11, §12, and §14.3 lose their status and history markers; §13 lists the open rows with their issues and states the resolved rows below the table, row 12 as `decisions/0009` and `decisions/0021` leave it; §15 states its reason without the history. No rule changes. Earlier changes are in `docs/archive/changes.md`.
@@ -104,6 +110,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.2:** §2.3 (where exhaustiveness actually pays), new §5.1 (absent / unknown / false), §7.1 (semantic-preservation property), §9 (verification retargeted at the normaliser), §10 (rewritten around the two-stage split; Rego/OPA added), §11 (generated-code rule generalised), §13 (register extended). Companion document: `due2-architecture.md`.
 
 ## `due2-profiles.md`
+
+**Changes in v0.21** (2026-10-25, #127): §8.1 states which DPROD examples pass unchanged, and why the others are rejected. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.20** (2026-10-25, #126): §5 rejects logical constraints whose members form a cycle.
 
@@ -157,6 +165,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.14** (2026-10-26, `decisions/0036`, #130): the in-force row of §0 says that an obligation is in force when one of the policies that state it matches. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.13** (2026-10-24, `decisions/0030`, #111): §7's case flow says that a re-evaluation asks at its own time, with the request's `at` moved to its `effective_at`.
 
 **Changes in v0.12** (2026-10-24, `decisions/0029`, #110): §6.2 says that a void policy keeps its root obligations, and names the departure from ODRL's reading. Earlier changes are in `docs/archive/changes.md`.
@@ -175,6 +185,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-platform.md`
 
+**Changes in v0.9** (2026-10-26, `decisions/0037`, #134): §2.3 and §5 #1 say "per root atom", since stage 1 builds no Atomic Policy. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.8** (2026-10-26, `decisions/0036` amendment, #132): §2.3 publishes one policy's corpus at a time, refuses one that disagrees with a published corpus, and returns the union of exactly the selected policies' corpora; §5 #1 no longer asks which sets of policies get a corpus. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.7** (2026-10-24, `decisions/0033`, #115): §2.3 says that the store selects the replacement of a replaced policy, never the policy it replaces.
@@ -188,6 +200,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.24 (2026-10-26, `decisions/0037`, #134): `N(P0)` is internal to W1 and never serialised (§1, §4). The `atomic-policy` and `activity` id domains and the Atomic Policy node are dropped, and each atomic root Rule occurrence is a root atom of the authored policy (§5.2, §6.4). The lineage is recorded as tuples, without PROV-O (§7), and invariant 7 says that an all-atomic policy normalises to itself (§8). Earlier changes are in `docs/archive/changes.md`.
 
 Changes in 0.23 (2026-10-26, `decisions/0036` amendment, #132): §1 defines `EvalSet` over the union of agreeing corpora, and §5.1 says that a policy that disagrees with a published one is rejected when it is published. Earlier changes are in `docs/archive/changes.md`.
 

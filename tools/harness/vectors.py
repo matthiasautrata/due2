@@ -14,8 +14,6 @@ Sorting into canonical order and computing collection ids belong to the runner o
 
 from __future__ import annotations
 
-import hashlib
-import re
 from pathlib import Path
 from typing import cast
 
@@ -43,7 +41,6 @@ REFERENCES = {
 FILE_FIELDS = {"file", "source", "notes", "tags", "prefixes", "corpus", "scenarios"}
 SCENARIO_FIELDS = {"name", "tags", "request", "sotw", "config", "expected"}
 NOT_PREFIXES = {"party", "sha256"}  # scope values and digests start with these
-DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 def _bad_datetimes(value: Json) -> list[str]:
@@ -65,8 +62,8 @@ def _load(name: str) -> Obj:
 
 
 class Schemas:
-    """The validators of each collection, and the key, optional, and `Digest` fields of each
-    relation, read from `schema/`."""
+    """The validators of each collection, and the key and optional fields of each relation,
+    read from `schema/`."""
 
     def __init__(self) -> None:
         collections, evaluator = _load("collections.schema.json"), _load("evaluator.schema.json")
@@ -93,12 +90,6 @@ class Schemas:
             as_str(k, "x-key") for k in as_list(self.relations[collection][relation]["x-key"], "")
         ]
 
-    def digests(self, collection: str, relation: str) -> set[str]:
-        """The fields of a relation whose type is `Digest`."""
-        items = as_obj(self.relations[collection][relation]["items"], relation)
-        props = as_obj(items["properties"], relation)
-        return {f for f, s in props.items() if as_obj(s, f).get("$ref") == "#/$defs/Digest"}
-
     def optional(self, collection: str, relation: str) -> set[str]:
         items = as_obj(self.relations[collection][relation]["items"], relation)
         required = {as_str(f, "") for f in as_list(items["required"], relation)}
@@ -115,29 +106,13 @@ def _expand_value(value: Json, prefixes: dict[str, str]) -> Json:
     return value
 
 
-def _digest_placeholders(t: Json, fields: set[str]) -> Json:
-    """The tuple with each placeholder name in `fields` replaced by its digest (`expand`)."""
-    if not isinstance(t, dict):
-        return t  # reported by the schema
-    return {
-        f: "sha256:" + hashlib.sha256(v.encode()).hexdigest()
-        if f in fields and isinstance(v, str) and not DIGEST.match(v)
-        else v
-        for f, v in t.items()
-    }
-
-
 def expand(
     raw: Json, collection: str, prefixes: dict[str, str], schemas: Schemas, where: str
 ) -> tuple[Obj, list[str]]:
     """One collection from the authoring form: tables to tuples, prefixes expanded, a
     repeated tuple counted once, and an empty relation omitted. Returns it and its problems.
 
-    `collection` selects the relations, their optional fields, and, for `"Trace"`, the rule
-    below. In the expected trace, a `Digest` field may hold a placeholder name instead of a digest,
-    because the bytes behind the derived ids are open (#107). The name becomes the digest
-    of its UTF-8 bytes, so it passes the schema, and two tuples that use one name keep one
-    value. The comparison then matches names up to renaming (conformance/README.md)."""
+    `collection` selects the relations and their optional fields."""
     problems: list[str] = []
     out: Obj = {}
     for rel, value in as_obj(raw, where).items():
@@ -161,8 +136,6 @@ def expand(
                 tuples.append({f: c for f, c in zip(fields, cells, strict=True) if c is not None})
         else:
             tuples = as_list(value, f"{where}.{rel}")
-        if collection == "Trace" and rel in schemas.relations[collection]:
-            tuples = [_digest_placeholders(t, schemas.digests(collection, rel)) for t in tuples]
         unique: list[Json] = []
         for t in (_expand_value(t, prefixes) for t in tuples):
             if t not in unique:

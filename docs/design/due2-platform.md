@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.9. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.10. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.9** (2026-10-26, `decisions/0037`, #134): §2.3 and §5 #1 say "per root atom", since stage 1 builds no Atomic Policy. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.10** (2026-10-26, `decisions/0038`, #107): a case fixes its corpus, so `create_case` takes one, and an amended policy reaches an earlier request through a new case (§2.2, §2.6, §2.11, §3.3, §3.5). Evidence names its grant in two fields (§3.2). `put_corpus` renames the ids W1 minted for a published node's parts to the published ones (§2.3), and a policy version is a minted id (§2.3). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -146,13 +146,13 @@ All four inputs arrive by value, and the evaluator fetches nothing (§1.2). §1.
 
 ### 2.2 Ledger
 
-Holds cases: one per request, with every fact, piece of evidence, activation, and evaluation recorded as an event, append-only (`due2-workflows.md` §7.1).
+Holds cases: one per request and corpus, with every fact, piece of evidence, activation, and evaluation recorded as an event, append-only (`due2-workflows.md` §7.1).
 
 ```text
-create_case(request)                       -> case_id
+create_case(request, corpus_id)            -> case_id
 append(case_id, event)                     -> seq
 record_evaluation(case_id, evaluation)     -> seq            # built by the orchestrator (§2.6)
-case(case_id)                              -> request, events, evaluations
+case(case_id)                              -> request, corpus, events, evaluations
 sotw(case_id, effective_at)                -> sotw_id        # the case's events as of effective_at, frozen
 get(collection_id)                         -> collection     # a request, SOTW, or evaluation it holds
 cases(latest_verdict?)                     -> case_ids       # for re-evaluation (§3.3)
@@ -163,7 +163,7 @@ The orchestrator calls `decide` and builds the `evaluation` (its ids, pins, and 
 
 ### 2.3 Policy store
 
-Holds authored policies, their corpora, configs, profile modules with their operand bindings, and the vocabularies and concept schemes policies refer to. Every item is immutable and named by its digest. A policy's current version is a pointer to one of them.
+Holds authored policies, their corpora, configs, profile modules with their operand bindings, and the vocabularies and concept schemes policies refer to. Every item is immutable. A collection is named by its digest (`decisions/0007`), and a policy version by an id minted when it is stored (`decisions/0038`). A policy's current version is a pointer to one of them.
 
 ```text
 put_policy(document)                       -> policy_id, version
@@ -177,7 +177,7 @@ select(target, ancestors, action, parties) -> policy_ids                  # open
 
 The store never runs W1. Normalisation (§2.8) produces each corpus as a batch job when a policy version or a normaliser version is stored, and the orchestrator puts it here, which publishes it. On the request path, the orchestrator finds the policies that may apply with `select`, and their corpus with `corpus`: the union of their published corpora, relation by relation, which needs no normalisation and has no conflicts (`due2-workflows.md` §4). It is absent when a selected policy has no published corpus for the normaliser version, and what the request gets then is open (§5 #1). The store keeps each union it returns, so an evaluation can pin it. The evaluator then skips atoms within that corpus (§2.1). The orchestrator does not run W1 on the request path (`decisions/0027` item 3).
 
-**Publishing checks agreement.** `put_corpus` publishes one policy's corpus; `put_policy` only stores its document. It refuses a corpus that says something different of a node that a published corpus of the same normaliser version holds, with `IdentityConflict` naming the node and the policy that holds it. The refused policy is not published, and the published ones are unaffected (`due2-workflows.md` §4, *Several policies are one corpus*). Only the current version of each other published policy is compared, never an earlier version of the same policy. A conflict within a set of policies is a conflict between two of them, so every set of published policies agrees, and every union `corpus` returns is well-formed. Building the checker is #133.
+**Publishing checks agreement.** `put_corpus` publishes one policy's corpus; `put_policy` only stores its document. For each node that a published corpus of the same normaliser version holds, it compares the new corpus with the published one up to the renaming of minted ids. If they agree, it renames the ids W1 minted for the node's parts to the published ones, in the corpus and in its lineage, so the node and its parts are one individual across policies (`decisions/0038`). If they do not, it refuses the corpus with `IdentityConflict`, naming the node and the policy that holds it. The refused policy is not published, and the published ones are unaffected (`due2-workflows.md` §4, *Several policies are one corpus*). Only the current version of each other published policy is compared, never an earlier version of the same policy. A conflict within a set of policies is a conflict between two of them, so every set of published policies agrees, and every union `corpus` returns is well-formed. Building the checker is #133.
 
 **Offers are selected like any other policy.** A store holds offers as well as agreements, and a verdict over an offer says what its terms permit, not that it has been accepted (`due2-workflows.md` §6.4, `decisions/0031`). Accepting an offer, such as by signing a contract, is a separate step outside the evaluator.
 
@@ -236,7 +236,7 @@ replay(case_id, seq, engine)                   -> match | mismatch
 
 **Draft requests.** A case's request is fixed when its case is created, except for its `at`, which each evaluation moves to its own time (`due2-workflows.md` §3.2, §7.1). Request parameters, such as purpose, therefore have to be gathered before the case is created, while the request is a draft. State facts are gathered after, as events on the case. §3.1 walks through the sequence.
 
-**Re-evaluation.** When facts change, or a policy or normaliser version changes, the orchestrator re-evaluates the affected cases. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated as well. Each evaluation asks at its own time: the orchestrator builds its request from the case's, with `at` moved to the evaluation's `effective_at` when the case's `at` is earlier, so it never sends an access evaluation an `at` earlier than its `effective_at`. The latest evaluation is the case's current answer (`due2-workflows.md` §3.2, §7.1; `decisions/0030`).
+**Re-evaluation.** When facts change, the orchestrator re-evaluates the affected cases. When a policy or normaliser version changes, it opens a new case over the new corpus for each affected request instead, because a case fixes its corpus (`due2-workflows.md` §7.1, `decisions/0038`). The new case starts without the earlier one's activations and evidence. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated, or reopened over a new corpus, as well. Each evaluation asks at its own time: the orchestrator builds its request from the case's, with `at` moved to the evaluation's `effective_at` when the case's `at` is earlier, so it never sends an access evaluation an `at` earlier than its `effective_at`. The latest evaluation is the case's current answer, and the newest case of a request gives the request's (`due2-workflows.md` §3.2, §7.1; `decisions/0030`).
 
 **Replay.** To check a recorded evaluation, the orchestrator fetches the four collections it names, from the policy store and the ledger, calls `decide` with them, and compares the digest of the new trace with the recorded one (`due2-workflows.md` §7). To the evaluator this is an ordinary call. The orchestrator chooses the `engine` that answers: a replay on the engine that made the evaluation checks the record, and a replay on the current engine checks for a regression. The first needs the ledger to record each evaluation's engine, which is open (§5 #5).
 
@@ -284,7 +284,7 @@ Supports writing and amending policies:
 
 - **Lint:** W1's diagnostics.
 - **Explain:** policy explanation (§2.9).
-- **What-if:** before a version is published, call `decide` on recent cases and pending ones over the new corpus and list the verdicts that would change, revocations first.
+- **What-if:** before a version is published, call `decide` on recent cases and pending ones over the new corpus and list the verdicts that would change, revocations first. Nothing is recorded: each case keeps its corpus, and the new version reaches a request only through a new case (§2.6).
 
 `decide` is pure and each case holds its SOTW, so a what-if run reads the ledger and writes nothing to it. The orchestrator runs it, as it runs a replay (§2.6). Whether what-if results are recorded at all is open (§5 #6).
 
@@ -337,11 +337,11 @@ what_if(corpus_id, case_ids)              -> verdict changes
 
 ### 3.2 Fulfil a duty
 
-A `Pending` verdict records the duty instances it awaits (the trace's `instance` and `alt_duty`). The person performs one, such as obtaining an approval. The evidence is submitted naming the grant it answers, the authored duty and the request's `reference` (`discharges`, `due2-workflows.md` §5.3), recorded as an event, and the case is evaluated again (`due2-architecture.md` §7, the case flow). Nothing in the earlier evaluation changes.
+A `Pending` verdict records the duty instances it awaits (the trace's `instance` and `alt_duty`). The person performs one, such as obtaining an approval. The evidence is submitted naming the grant it answers, the authored duty and the request's `reference` (`discharges_duty` and `discharges_reference`, `due2-workflows.md` §5.3), recorded as an event, and the case is evaluated again (`due2-architecture.md` §7, the case flow). Nothing in the earlier evaluation changes.
 
 ### 3.3 The world changes
 
-A role changes, a dataset is reclassified, or a policy is amended. The orchestrator re-evaluates the affected cases (§2.6), and the ledger records each new verdict as a new evaluation. Re-evaluation can turn a `Permit` into a `Deny`, a revocation, and the operation is the same in both directions (`due2-architecture.md` §7).
+A role changes or a dataset is reclassified, and the orchestrator re-evaluates the affected cases. A policy is amended, and it opens a new case over the new corpus for each affected request (§2.6). The ledger records each new verdict as a new evaluation. Re-evaluation can turn a `Permit` into a `Deny`, a revocation, and the operation is the same in both directions (`due2-architecture.md` §7).
 
 ### 3.4 Audit a past decision
 
@@ -349,7 +349,7 @@ A role changes, a dataset is reclassified, or a policy is amended. The orchestra
 
 ### 3.5 Amend a policy
 
-The author edits the policy, lints it through W1, reads its explanation, and runs a what-if over recent cases and pending ones (§2.11). Publishing stores a new version. Re-evaluation of affected cases follows as in §3.3.
+The author edits the policy, lints it through W1, reads its explanation, and runs a what-if over recent cases and pending ones (§2.11). Publishing stores a new version, and new cases for the affected requests follow as in §3.3.
 
 ### 3.6 Add a source of facts
 

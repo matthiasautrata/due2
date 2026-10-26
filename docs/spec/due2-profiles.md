@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.21
+**Status:** Draft v0.22
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.21** (2026-10-25, #127): §8.1 states which DPROD examples pass unchanged, and why the others are rejected. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.22** (2026-10-26, `decisions/0038`, #107): §7 keys `activation` by the duty atom, and §8.1 says that an anonymous rule's identity is minted. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -207,7 +207,7 @@ Both are duty terms. On a Policy, a Permission, or a Prohibition, either is reje
 A duty's timing lands in the corpus (`due2-workflows.md` §3.1, `duty`), projected by W1 stage 2 from the authored duty onto every atom it instantiates. W2 computes the effective deadline, the per-instance status, and the occurrences (`due2-workflows.md` §5.3), following DPROD's duty lifecycle (`formal-semantics.md` §5.2–§5.5). Timing applies to preconditions and to obligations in force alike. The vocabulary's readings:
 
 - **A deadline is inclusive.** A witness at exactly `D` fulfils; violation needs `effective_at > D`, as in DPROD. RL2's window ends are exclusive, so an RL2 window ending at `E` maps to a deadline one tick before `E`, or to `E` with that one-instant difference accepted.
-- **Activation is first owed.** A duty instance is activated at the instant it was first owed — the first trace in which it appears. The case history records it, and the shell supplies it in the SOTW as `activation (instance_key | at)`. An instance with no entry is first owed now: its activation is `effective_at`. No hidden evaluator state. Instances activate separately, so two obligations whose guards first held at different times have different activations.
+- **Activation is first owed.** A duty atom's instance is activated at the instant it was first owed in its case: the first trace in which it appears. The case history records it, and the shell supplies it in the SOTW as `activation (atom_id | at)` (`due2-workflows.md` §3.3). An instance with no entry is first owed now: its activation is `effective_at`. No hidden evaluator state. Duty atoms activate separately, so two obligations whose guards first held at different times have different activations. An instance of one occurrence of a recurring duty is activated at that occurrence, and needs no entry.
 - **Recurrence anchors.** The occurrences of a recurring duty are anchored on the rule's `DTSTART`, or the duty's activation without one — which always exists, by the default above. An anchor the rule itself does not generate is not an occurrence (RFC 5545 leaves that case undefined). The first time a recurring duty is owed, its activation defaults to now, so its first instance is the rule's next occurrence; later evaluations read the recorded activation from the case history.
 - **Violation is derived, not remembered** (`due2-workflows.md` §5.3). DPROD's `Violated` is terminal in its duty state Σ (`formal-semantics.md` §9.4); due2 recomputes per evaluation from evidence, so timely evidence found late fulfils. That disagreement is exception 2 (§8.2).
 - **A violated precondition removes its candidate** (`due2-workflows.md` §6.1): W3 does not offer a route that can no longer be taken. Without a deadline, a duty is never violated.
@@ -243,7 +243,7 @@ With `profiles/dprod.ttl` selected:
 | lifecycle statuses (`offerLifecycleStatus`, `contractLifecycleStatus`) | metadata; usable in constraints once flattened onto the request or state node |
 | validity dates (`effectiveDate`, `expirationDate`), `acceptsOffer` | metadata, never evaluated — DPROD's policy grammar has no place for them either (`formal-semantics.md` §3.4). A validity window meant to gate a decision is written as a constraint on `dprod:clock` |
 | Policy-level target and parties | shared defaults that a rule's own value overrides — DPROD's "inherited from policy if absent" (`odrl-compound-to-atomic-normalization.md` §6.2) |
-| Anonymous rules | admitted, with content-derived identity (`odrl-compound-to-atomic-normalization.md` §3) |
+| Anonymous rules | admitted, with a minted identity (`odrl-compound-to-atomic-normalization.md` §3, §5.2) |
 | ODRL action hierarchy (`odrl:read` ⊑ `odrl:use`) | `profiles/odrl-actions.ttl`, which DPROD's examples assume |
 | `Policy.condition` (`formal-semantics.md` §3.4) | no RDF encoding in DPROD, so nothing to map (§8.2) |
 | `odrl:Request` as a policy | rejected — so does DPROD |

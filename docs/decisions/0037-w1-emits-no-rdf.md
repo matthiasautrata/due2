@@ -56,3 +56,5 @@ Is the atomised graph something due2 ships, or a step inside W1?
 ## Revisit when
 
 A consumer needs atomised ODRL, such as the predecessor during migration (`due2-platform.md` §4) or an ODRL tool compared against due2. The answer then is an exporter, and stage 1 still writes no normative RDF.
+
+**Note (2026-10-26, `decisions/0038`, #107):** `odrl-compound-to-atomic-normalization.md` 0.25 drops the rest of §5.2: every id that no author chose is minted, and `source_digest` is gone. The canonical N-Quads that this record's Consequences place in §5.2 go with it. Item 4 and the rest of this record stand.
