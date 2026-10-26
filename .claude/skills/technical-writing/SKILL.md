@@ -44,7 +44,7 @@ rg -n '§\s?[0-9]' FILE | rg -v '\.md §|decisions/[0-9]{4}'   # candidate bare 
 rg -n -i 'increment [0-9]|for now|this increment|lands with' FILE  # candidate status in reference
 ```
 
-For clingo-i, `tests/test_docs.py` checks the doc blocks, their summary sentences, the header lists, the input facts in `DESIGN.md`, and the references (§15.10). The MkDocs build checks that every docstring and doc block renders.
+For clingo-i, `tests/test_docs.py` checks the doc blocks, their summary sentences, the header lists, the input facts in `clingo_i/flatten.py`, and the references (§15.10). The MkDocs build checks that every docstring and doc block renders.
 
 ## Templates
 
@@ -120,7 +120,7 @@ Use this section order. Skip any section that would be empty.
 3. **Layout**: one line per file.
 4. **Data flow**: the stages, in order.
 5. **Worked example**: one input followed through every stage, pinned by a test.
-6. **Interfaces**: the input facts, then, for each file, what it consumes, what it provides (with meanings), and its semantics with their arguments.
+6. **Interfaces**: a pointer to where they live, beside the code (file headers, doc blocks, module docstrings), and to the generated reference. Cite them; don't restate them (`ways-of-working.md` §15.4).
 7. **Output**, **Declines**, **Errors**: compact.
 8. **Tests**: for each test, the risk it guards and its counterfactual.
 

@@ -3,7 +3,8 @@
 % Reads the constraints of each rule and duty, and each action term's refinements, as the tree
 % the policy authored: a leaf compares a left operand with right operand values, and a connective
 % node combines its members (due2-profiles.md §4, §5). The tree is not rewritten to DNF:
-% compare.lp gives every node its Kleene value directly (DESIGN.md § `compare.lp`). A tree that is
+% compare.lp gives every node its Kleene value directly. Under strong Kleene logic the tree has
+% the value normalisation stage 2 would give its rewrite (compare.lp, *Connectives*). A tree that is
 % not admissible gets a `reject`; one whose reading the spike does not trust is declined. Variable
 % letters: DESIGN.md § Vocabulary.
 %
@@ -16,6 +17,11 @@
 %   `unsupported/1` (lift.lp).
 
 %## The roots
+
+% A rule's `odrl:constraint` values are its roots (`top_constraint/2`), and an action term's
+% `odrl:refinement` values are its refinement roots (`top_refinement/2`). A list value gives one
+% root per item. Each root is one conjunct of every atom of the rule or the action term
+% (applies.lp).
 
 %*! top_value(Kind, Owner, C)
 
@@ -43,6 +49,12 @@ top_refinement(Term, C) :- top_value(refinement, Term, C), not is_list(C).
 top_refinement(Term, C) :- top_value(refinement, Term, List), is_list(List), list_item(List, C).
 
 %## The nodes
+
+% `cnode(C)` is a root or a member. A node with an `odrl:leftOperand` is a `leaf(C)`, with `left(C,
+% Op)`, `op(C, O)` (its core operator), and `right(C, Term)` (its right operand values). A node with
+% a connective predicate is `conn(C, K)`, with `member(C, D)`. Members, like the right operand
+% values of a set-based operator, may be one RDF list or repeated values, and both are the same set
+% (decisions/0013).
 
 %*! cnode(C)
 
@@ -140,12 +152,20 @@ unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
 
 %## Rejections
 
-% A node that is neither a leaf nor a connective; a leaf without one left operand, one
-% operator, and a right operand; several values on a scalar operator; a list with other values,
-% or two lists; the empty list on a set-based operator, which ODRL gives no meaning and which
-% would make the leaf's value independent of the request (due2-diagnostics.md,
-% MalformedConstraint; decisions/0013, amendment); a connective over the empty list, for the
-% same reasons (decisions/0017); a repeated member (decisions/0022).
+% The codes (due2-diagnostics.md):
+%
+% - `MalformedConstraint`: a node that is neither a leaf nor a connective; a leaf without one left
+%   operand, one operator, and a right operand; several values on a scalar operator; a list with
+%   other values, or two lists; the empty list on a set-based operator, which ODRL gives no
+%   meaning and which would make the leaf's value independent of the request (decisions/0013,
+%   amendment); a connective over the empty list, for the same reasons (decisions/0017); a
+%   repeated member (decisions/0022).
+% - `UnsupportedOperator`: an operator IRI outside the 12 core operators.
+% - `UnsupportedConnective`: `odrl:andSequence`. It is rejected, not read as `odrl:and`. Under
+%   frozen evaluation it would be the same as `odrl:and`, but due2-diagnostics.md rejects it, and
+%   the spike follows the spec.
+% - `FloatingPointOperand`: an `xsd:double` or `xsd:float` right operand.
+% - `MixedDuration`: an `xsd:duration` right operand with both year-month and day-time components.
 reject("MalformedConstraint", C) :- cnode(C), not leaf(C), not conn(C, _).
 reject("MalformedConstraint", C) :- leaf(C), #count { Op : left(C, Op) } != 1.
 reject("MalformedConstraint", C) :- leaf(C), #count { Iri : c_operator(C, Iri) } != 1.
@@ -182,7 +202,10 @@ reject("OperatorTypeMismatch", C) :- right(C, Term), unplaceable(Term, R), off_s
 
 %## Declines
 
-% A node with readings the spec does not settle, or none at all.
+% A node with readings the spec does not settle, or none at all: a leaf that is also a
+% connective; a node with two connectives; `dprod:not` without exactly one member; a cycle
+% (`reach_c/2`, the transitive closure of `member/2`); and a list, the empty list included, as the
+% one value of a scalar operator.
 unsupported("constraint: leaf with a connective") :- leaf(C), conn(C, _).
 unsupported("constraint: two connectives") :- conn(C, K), conn(C, K2), K != K2.
 % With no member, `dprod:not` is over the empty list, which the rejections cover.

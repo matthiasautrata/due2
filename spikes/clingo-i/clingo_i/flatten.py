@@ -1,12 +1,101 @@
 """The driver's flatten: Turtle and JSON to facts, and no semantics.
 
-Each triple becomes one fact, and each input field one fact or a few, named after the relations
-of due2-workflows.md §3.2 to §3.4. The flatten drops nothing and decides nothing: a field the
-program does not read is still flattened, and the program declines it (DESIGN.md § Input facts).
-A field the case format does not define is a `ValueError`, because the vector is malformed.
+The flatten is syntactic: one fact per triple, and one fact or a few per input field, named
+after the relations of due2-workflows.md §3.2 to §3.4. It drops nothing and decides nothing,
+and it adds only the value table (`values.py`). A field the program does not read is still
+flattened, so that a later reader finds it and the round-trip tests cover it; the program
+declines a field it cannot answer for. These facts are the program's input: every relation a
+file of `lp/` consumes and no file defines is listed below, with the files that read it.
 
-The terms: an IRI is a clingo string, a blank node `b(Scope, Label)`, and an RDF literal
-`lit(Lex, Datatype)` or `lit(Lex, rdf:langString, Tag)`, with the lexical form as written.
+**Graphs.**
+
+- `triple/3`, `triple(S, P, O)`: each policy triple. Read by lift.lp, structure.lp, and
+  constraint.lp.
+- `module/4`, `module(Path, S, P, O)`: each triple of a selected module, `Path` the module's
+  path. Its blank nodes are scoped by `Path`. Read by lift.lp.
+- `layer/2`, `layer(Path, core | module(Iri))`: each selected module file, `core` for a core
+  file and `module(Iri)` for a file of the selected profile `Iri`, so a profile whose module is
+  several files is one layer; a file in both is `core` (`interpret.py`). Read by lift.lp.
+- `pred_ns/2`, `pred_ns(P, NS)`: each policy predicate. `NS` is `P` up to and including its
+  last `#` or `/`. Read by lift.lp.
+- `selected_profile/1`, `selected_profile(Iri)`: each `odrl:profile` value that names a shipped
+  profile. Read by lift.lp.
+
+**Request** (due2-workflows.md §3.2).
+
+- `request_reference/1`: `reference`, as given. Read by duty.lp.
+- `request_action/1`, `request_action(A)`: `action`. Read by applies.lp.
+- `request_target/1`, `request_target(T)`: `target`. Read by applies.lp.
+- `request_absent/1`, `request_absent(target)`: the absence of `target`. Read by applies.lp.
+- `request_at/1`, `request_at(Lit)`: `at`. Read by lift.lp, and by operand.lp for
+  `actionTime`.
+- `request_party/2`, `request_party(F, Party)`: each element of `parties`, `F` the function
+  predicate IRI. Read by lift.lp, operand.lp (`agent`), applies.lp, and duty.lp (the request
+  subject).
+- `request_param/2`, `request_param(Prop, Value)`: each value of `params`, keyed by property
+  IRI. Read by lift.lp and operand.lp.
+- `request_param_set/1`, `request_param_set(Prop)`: a `params` element given as a list, so an
+  empty set is not an absent parameter. Read by operand.lp.
+
+**SOTW** (due2-workflows.md §3.3).
+
+- `sotw_effective_at/1`: `effective_at`. Read by lift.lp, operand.lp (`clock`), and duty.lp.
+- `fact/2`, `fact(Prop, Status)`: each element of `facts`. `Status` is one of `resolved`,
+  `missing`, `invalid`, `conflict`, `unresolved`. Read by operand.lp.
+- `fact_value/2`, `fact_value(Prop, Value)`: each value of a `facts` element. Read by lift.lp
+  and operand.lp.
+- `evidence/4`, `evidence(E, OccurredAt, Actor, Action)`: each `evidence` record, `E` its
+  `id`. Read by lift.lp, operand.lp (`actionTime` in `wit(E)`), and duty.lp.
+- `evidence_object/2`, `evidence_issuer/2`: its optional `object` and `issuer`. Read by
+  duty.lp.
+- `evidence_discharges/3`, `evidence_discharges(E, Duty, Ref)`: its optional `discharges`.
+  Read by duty.lp.
+- `evidence_param/3`, `evidence_param(E, Prop, Value)`: each of its `params`. Read by lift.lp
+  and operand.lp (`witness`).
+- `activation/2`, `activation(Key, Lit)`: each element of `activation`, an instance key or rule
+  IRI, and its instant. duty.lp reads a key that is a duty's IRI, as the case format names an
+  activation (`conformance/README.md`, SOTW). Read by lift.lp and duty.lp.
+- `sotw_closure/3`, `sotw_closure(Pred, Lo, Hi)`: each `closure` triple, `Pred` expanded. Read
+  by lift.lp: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`, and
+  any other relation declines.
+
+**Config** (due2-workflows.md §3.4).
+
+- `config_combination/1`: `combination`, a string. Read by lift.lp.
+- `config_violations/1`: `violations`, `ignore` or `deny`. Read by resolve.lp.
+- `signer/2`, `signer(Duty, Issuer)`: each `signers` element. Read by duty.lp.
+- `unread/1`, `unread(Field)`: `preference`, `admit_source`, `admit_age`. The case format
+  defines no shape for them (`conformance/README.md`), so their presence is recorded, and
+  lift.lp declines it.
+
+**Values** (`values.py`): `value/3`, read by operand.lp, compare.lp, and duty.lp;
+`unplaceable/2`, read by lift.lp and constraint.lp; and `plus/3`, read by duty.lp for a
+relative deadline.
+
+A field the case format does not define, a missing required field (`action`; an evidence
+record's `id`, `occurred_at`, `actor`, `action`), a duplicate evidence `id`, or an unknown
+status is a `ValueError`, which the reply reports as an `error`: the vector is malformed, and
+nothing is guessed.
+
+**Terms.**
+
+- **IRIs** are clingo strings.
+- **RDF literals** are `lit(Lex, Datatype)`, with the lexical form exactly as written. rdflib
+  normalises lexical forms by default, and its normalisation is lossy: it truncates fractional
+  seconds to six digits and drops a date's timezone. The driver therefore parses with
+  normalisation off. A plain literal is `xsd:string`. A language-tagged one is
+  `lit(Lex, rdf:langString, Tag)`.
+- **Blank nodes** are `b(Scope, Label)`. The label is rdflib's canonical one
+  (`rdflib.compare.to_canonical_graph`), so it does not depend on the labels the parser chose.
+  `Scope` is `"policy"` or the module's path, so blank nodes from different graphs never meet.
+- **Input names** are expanded with the vector's prefixes, the same way the harness expands
+  them. A name is a string or `{"@id": …}`. `reference` is not a name, and stays as given.
+- **Input values** (`params`, `fact_value`, an evidence record's `params`) are `{"@id": …}`,
+  read as its IRI; `{"@value": …, "@type": …}`, read as `lit` with the type expanded;
+  `{"@value": …}`, read as `xsd:string`; or `{"@value": …, "@language": …}`. A bare string is
+  an error, because it is ambiguous between a name and a string.
+- **Input instants** (`at`, `effective_at`, `occurred_at`, activation instants) are
+  `lit(I, xsd:dateTime)`.
 """
 
 from __future__ import annotations
@@ -100,7 +189,7 @@ def policy_facts(graph: ReadOnlyGraphAggregate) -> list[Symbol]:
 
 def module_facts(path: str, text: str) -> list[Symbol]:
     """The module at `path`: one `module(Path, S, P, O)` per triple, blank nodes scoped by the
-    path. The path names the module's layer (DESIGN.md § Input facts)."""
+    path. The path names the module's layer (module docstring, **Graphs**)."""
     return [
         Function("module", [String(path), term(s, path), term(p, path), term(o, path)])
         for s, p, o in parse(text)

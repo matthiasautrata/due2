@@ -63,3 +63,5 @@ clingo-i gives an `xone` its value by counting its members: with `T` members `t`
 
 - The ODRL WG or CG gives two `xone` members with the same content a meaning.
 - A real policy turns up that repeats an `xone` member on purpose.
+
+**Note (2026-10-26):** the clingo-i sections this record cites moved beside the code (#135). `spikes/clingo-i/DESIGN.md` § `compare.lp` is now `spikes/clingo-i/lp/compare.lp`, *Connectives*, which holds the `xone` case analysis; § `explain.lp`'s liveness rules are now the `live/4` doc block of `spikes/clingo-i/lp/explain.lp`.

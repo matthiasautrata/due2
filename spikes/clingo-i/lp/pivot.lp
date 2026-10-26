@@ -36,3 +36,26 @@ variable (completion.lp).
 unknown(X) :- reads(I, L), pivot(L), finding_atom(I, X).
 
 #show unknown/1.
+
+%## The range is exact
+
+% Brave enumeration gives the union over the answer sets. The `unknown` atoms are those with a
+% pivotal variable (decisions/0011 #1). The range is the least and the greatest `verdict(c,
+% Verdict)` that occurs, in the chain `Deny < NotApplicable < Pending < Permit` (decisions/0011 #3).
+%
+% The flip constraint drops answer sets, so it is not obvious that every verdict some completion
+% takes survives in some answer set. It does:
+%
+% 1. The completions are the corners of an `n`-dimensional cube, and two corners are neighbours when
+%    they differ in one variable. The cube is connected: any corner reaches any other by flipping,
+%    one at a time, the variables in which they differ.
+% 2. An `Indeterminate` means at least two verdicts occur. Let corner `c₁` have verdict `V`, and
+%    corner `c₂` some other verdict.
+% 3. On the path from `c₁` to `c₂` the verdict starts at `V` and ends elsewhere, so some step goes
+%    from a corner `c` with verdict `V` to a neighbour without it.
+% 4. That step is an answer set of solve 3: completion `c`, pivot the flipped variable. So
+%    `verdict(c, V)` is true in some answer set.
+%
+% Conversely, `c` in every answer set is a completion. So the brave `verdict(c, _)` atoms are
+% exactly the verdicts the completions take, and the range is exact. In DESIGN.md § Worked example,
+% `NotApplicable` occurs only at (`f`, `f`), and it survives through both of that corner's flips.

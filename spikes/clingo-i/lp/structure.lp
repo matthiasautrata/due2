@@ -8,6 +8,21 @@
 % the columns of the atom table of due2-workflows.md §3.1. A policy that is not admissible gets a
 % `reject`. Variable letters: DESIGN.md § Vocabulary.
 %
+% Each relation and its due2-workflows.md §3.1 counterpart:
+%
+% | Relation | due2-workflows.md §3.1 counterpart |
+% |---|---|
+% | `policy(P)`, `conflict(P, Strat)` | `policy(policy_id \| conflict, …)` |
+% | `atom(X)`, `atom_effect(X, Eff)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, source_rule)` |
+% | `atom_policy(X, P)` | `root(atom_id, policy_id)`: one tuple for each policy that states the atom (`decisions/0036`) |
+% | `atom_party(X, F, Party)` | `atom_party`, match keys only |
+% | `duty_atom(Y)`, `atom_effect(Y, oblige)`, `duty_action(Y, A)`, `duty_relation(Y, T)` | `atom`, for an `Oblige` atom |
+% | `duty_of(Y, Duty)`, `duty_scope(Y, InstScope)`, `duty_deadline(Y, Lit)` | `duty(atom_id \| source_duty, scope, deadline?, recurrence?)` |
+% | `bearer(Y, Party)` | `atom_party`, for the bearer role |
+% | `pre(X, Y)` | `edge`, a precondition |
+% | `obligation(Y)` | `root` |
+% | `reject(Code, Node)` | a W1 rejection (`due2-diagnostics.md`) |
+%
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
 %   `function/1`, `match_key/1`, `bearer_fn/1`, `timing_predicate/1`, `term_kind/2`, `voc/2`,
@@ -27,6 +42,11 @@
 %   `unsupported/1` (lift.lp).
 
 %## The policy
+
+% A policy is a node typed by a policy class, or by a class that a selected module declares
+% `rdfs:subClassOf` one. Only declared, direct edges count (odrl-compound-to-atomic-normalization.md
+% §3). No policy is `reject("NoPolicy", none)`, and more than one is `reject("MultiplePolicies",
+% P)`.
 
 %*! policy_type(Cls)
 
@@ -105,6 +125,12 @@ structure_node(Node) :- duty_node(Node).
 
 %## The conflict strategy
 
+% The strategy is the policy's own `odrl:conflict` if it states one; otherwise the selected
+% profile's default; otherwise `invalid` (odrl-compound-to-atomic-normalization.md §3). Two
+% stated values, or a value outside the three, is `reject("InvalidConflict", P)`. Two selected
+% profiles with different defaults is `unsupported`, because the normalisation does not say which
+% wins.
+
 %*! states_conflict(P)
 
 Policy `P` states an `odrl:conflict`, valid or not.
@@ -138,7 +164,8 @@ conflict(P, invalid) :- policy(P), not states_conflict(P), not some_profile_conf
 %## Interiorisation
 
 % A root rule that states nothing for a family takes all of the policy's values for it
-% (odrl-compound-to-atomic-normalization.md §6.2).
+% (odrl-compound-to-atomic-normalization.md §6.2). The families are the actions, the target, and
+% each function predicate.
 
 %*! family(Fam)
 
@@ -173,9 +200,18 @@ reject("MissingTarget", R) :- rule(R), not has_value(R, target).
 
 %## Expansion
 
-% One atom per action × target × assignee (odrl-compound-to-atomic-normalization.md §6.3).
-% Carried functions (every function but the match keys) are not axes: expanding over them would
-% only copy atoms whose findings are identical.
+% One atom per action term × target × assignee (odrl-compound-to-atomic-normalization.md §6.3).
+% A rule left with no action or no target is `reject("MissingAction" | "MissingTarget", R)`.
+%
+% An atom id is `a(R, A, T, Party)`: its source rule, action term, target, and assignee, or the
+% sentinel `none` for a rule with no assignee. The id holds the action term, not the action, so
+% that applies.lp can find the term's refinements; `atom_action/2` gives the action. Digests stay
+% host-side (decisions/0007); the spike needs only ids that are distinct and stable.
+%
+% Carried functions (every function but the match keys) are carried, not matched
+% (due2-workflows.md §5.2), and they are not axes: expanding over them would only copy atoms
+% whose findings are identical. A carried function that plays the bearer role still reaches a
+% duty: `parent_bearer/2` reads it from the rule's values.
 
 %*! has_match_value(R)
 
@@ -196,6 +232,10 @@ assignee(R, none) :- rule(R), not has_match_value(R).
 % An action may be given as a node: `odrl:action [ rdf:value odrl:use ; odrl:refinement … ]`
 % (IM 2.2 §2.5). The node is the action term, which carries the refinements; its `rdf:value`
 % is the action that is matched.
+%
+% `action_term(Term)` is each stated action. `action_of(Term, A)` is its `rdf:value` if it states
+% one, or the term itself if it is an IRI. A blank node with no `rdf:value`, or a term with two,
+% is declined (`action: blank node without rdf:value`, `action: several rdf:value`).
 
 %*! action_term(Term)
 
@@ -271,14 +311,46 @@ atom_party(a(R, A, T, Party), F, Party) :- atom(a(R, A, T, Party)), rule_value(R
 
 %## Duties
 
-% A duty is expanded like a rule, over its actions, its relation values, and its bearers
-% (odrl-compound-to-atomic-normalization.md §6.3). A root obligation is a root rule, so it fills
+% A duty node is a precondition duty (`odrl:duty` of a permission, `pre_rule/2`), a root
+% obligation (`odrl:obligation` of the policy), or both. A duty of a duty, a remedy, and a
+% consequence are not evaluated for access (due2-workflows.md §5.5).
+%
+% A duty is expanded like a rule, into duty atoms `a(Duty, A, T, Party)`: one per action term,
+% relation value, and bearer (odrl-compound-to-atomic-normalization.md §6.3). The relation `T` is
+% the duty's `odrl:target` or its `odrl:output` (`duty_rel/2`), or `none` when it states neither.
+% Both together is `reject("TargetAndOutput", Duty)`.
+%
+% A root obligation is a root rule, so it fills
 % each family it leaves unstated from the policy (odrl-compound-to-atomic-normalization.md
 % §6.2); a precondition duty takes no policy-level value. Its parties come from its parent
 % permission instead, after expansion (due2-workflows.md §4, stage 2): a duty that states no
 % function takes all of them from the parent atom, and one that states any takes none (IM 2.2
 % §2.6.5). A duty that is both a root obligation and a precondition is one atom with the
-% policy-level values, which count as its own, so it inherits nothing (due2-profiles.md §6).
+% policy-level values, which count as its own, so it inherits nothing (due2-profiles.md §6). A
+% stated `odrl:output` fills the relation family, so a root obligation that states one does not
+% take the policy's target. An inheriting duty is `inherits/1`.
+%
+% The bearer is the party of a function that plays the bearer role (`bearer_fn/1`):
+% `odrl:assignee`, or `dprod:subjectOfDuty` under DPROD. For each role, a value the duty states
+% beats one interiorised from the policy level (due2-workflows.md §4, stage 2), so a root
+% obligation that states `dprod:subjectOfDuty` is not also borne by the policy-level
+% `odrl:assignee` it receives (`states_bearer/1`, `bearer_value/3`). An inheriting duty takes the
+% bearer of its parent atom (`inh_bearer/3`). With none, the bearer is `none`: the request
+% subject.
+%
+% The bearer is in the id, and the other inherited parties are not. A duty shared by two parents
+% with one bearer is therefore one atom, with one instance, and shared under two bearers it is
+% two. The corpus's atom id also holds the other inherited parties (`duty.atom_id`,
+% due2-workflows.md §3.1), but a witness reads only the bearer, so two atoms that differ only in
+% another party would have the same findings, and the reply names both by one duty IRI. An
+% instance key adds the request's performer and reference to the atom's id (due2-workflows.md
+% §5.3). clingo-i evaluates one request at a time, so its instances are already those of that
+% request, and it needs neither.
+%
+% `pre(X, Y)` fans out over every atom of the duty (odrl-compound-to-atomic-normalization.md
+% §6.3), so a permission atom's preconditions are read as a conjunction. An inheriting duty gives
+% `X` only its atoms with `X`'s bearer. A permission that is its own precondition is
+% `reject("RuleReferenceCycle", R)`.
 
 %*! duty_stated(Duty, Fam, Term)
 
@@ -467,6 +539,12 @@ a relation has none.
 duty_relation(a(Duty, A, T, Party), T) :- duty_atom(a(Duty, A, T, Party)), T != none.
 
 %## Duty timing and scope
+
+% `dprod:deadline` on a duty, when DPROD is selected, gives `duty_deadline(Y, Lit)`, `absolute` for
+% an `xsd:dateTime` and `relative` for an `xsd:duration` (`deadline_kind/2`). Two deadlines, or one
+% of another type, is `reject("InvalidTiming", Duty)`; a deadline or a recurrence on the policy or a
+% rule is `reject("TimingOutsideDuty", Node)`. `due2:instanceScope` gives `duty_scope(Y,
+% InstScope)`, `member` by default.
 
 %*! node_deadline(Duty, Lit)
 

@@ -11,7 +11,8 @@
  *
  * Only a completed part, one whose operand is `unresolved`, shares a variable (decisions/0016),
  * and such a part is listed as an unknown part (§5.4). So the claim gives the scenario a listed
- * `unresolved` part. The argument is in spikes/clingo-i/DESIGN.md § resolve.lp.
+ * `unresolved` part. The argument is in spikes/clingo-i/lp/resolve.lp,
+ * *The cautious basis*.
  *
  * The basis roles are those of §6.4: under `Permit`, the ready alternative's permissions, here
  * every permission in the frontier; under `Deny`, the surviving prohibitions, and, under

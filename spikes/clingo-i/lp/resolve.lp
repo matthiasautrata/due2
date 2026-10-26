@@ -217,3 +217,86 @@ basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X).
 
 #show verdict/2.
 #show basis/3.
+
+%## The cautious basis
+
+% Solve 2 reports a basis row only if it holds in every completion: an atom that carries a definite
+% verdict whatever the unknowns are. An `Indeterminate` has no such row, and its basis comes from
+% solve 3 instead. When no single atom carries a definite verdict in every completion, the basis is
+% empty, and `unknown_parts` names what was unknown (decisions/0016 #4). The brute-force oracle
+% computes the same basis. Two shapes show where it differs from "the atoms with finding `t` that
+% survive" (`test_completed_basis`):
+%
+% - **An empty basis.** Prohibitions `ex:x eq 5` and `ex:x neq 5`, with `ex:x` unresolved, read one
+%   variable with opposite polarities. Each completion applies one of them, so the verdict is `Deny`
+%   in both, and no prohibition survives in both. The basis is empty.
+% - **A `u` atom in the basis.** A permission under `ex:x eq 5 or ex:x neq 5` has finding `u`, but
+%   its tree is `t` in every completion, so it carries the `Permit` in every completion and is in
+%   the basis.
+%
+% A paired guard empties a basis too. In an example among `DUTY_EXAMPLES`
+% (`tests/test_brute_force.py`), `ex:r0` requires `ex:d0`, lapsed and unwitnessed, whose guard
+% `ex:o2 eq 1` repeats the constraint of `ex:r1`, and `ex:o2` is unresolved. Where the shared
+% variable is `t`, `ex:d0` is owed and violated, so `ex:r0` is closed and `ex:r1` permits; where it
+% is `f`, `ex:r0` permits. The verdict is `Permit` in both, and the basis is empty. Both empty
+% bases, this one and the first shape's, read a paired leaf, and the next argument shows that the
+% empty basis of every definite `Deny` or `Permit` must.
+%
+% **Without a paired leaf, the basis is not empty.** Suppose no `u` finding reads a `cons` variable,
+% so no open leaf is paired; duty findings may be `u`, and the connectives are any. Then every
+% variable is a `fin(I)` or a `ful(Y)`, read by one finding only, and that finding is its variable's
+% value in every completion: an opaque part keeps rank 1, and with no paired leaf nothing an open
+% node reads differs from world `k`, so every open node keeps rank 1, and the finding's conjunction
+% stays `u`. Call a variable's value *lenient* when it makes its finding the one that permits more:
+% `applies` `t` for a permission and `f` for a prohibition, `owed` and `in_force` `f`, `fulfilled`
+% `t`; and *strict* when it is the other value. Let `L` be the completion with every variable
+% lenient, and `S` the one with every variable strict. Every completion `C` lies between them,
+% finding by finding: a permission applies in `C` if it does in `S`, and a prohibition applies in
+% `C` only if it does in `S`; a precondition is owed in `C` only if it is in `S`, and fulfilled in
+% `C` if it is in `S`. So a permission that applies in `S` is closed in `C`, or waits on a duty
+% there, only if it is so in `S`. And a permission that is a candidate in `C` is one in `L`: it
+% applies in `L`, since a permission that applies anywhere applies in `L`, and it is not closed in
+% `L`, since a precondition owed and violated in `L` is owed and violated in every completion. These
+% are facts about findings, not about verdicts, which are not monotone in them: under `invalid`, a
+% permission that applies can void the policy. The two cases use only these facts.
+%
+% - **A definite `Permit`.** `S` permits, so some candidate `X` survives in `S` and is ready. `X`'s
+%   finding is `t`, since strict makes a `u` permission `f`. In `C`, `X` applies, it is not closed
+%   and waits on no duty, since it does neither in `S`, and no prohibition of its policy applies to
+%   remove it under `prohibit` or `invalid`, since none applies in `S`. The verdict is definite, so
+%   `C` permits too, and nothing denies in `C`. So `X` survives in `C` with an empty outstanding
+%   set, which no other set is a strict subset of, and `X` is a ready candidate of `C`'s frontier.
+%   `X` is in role `permission` in every completion, so the basis holds it.
+% - **A definite `Deny`.** `L` denies. If a prohibition `X` survives in `L`, its finding is `t`,
+%   since lenient makes a `u` prohibition `f`, so it applies in every `C`; and a strategy that
+%   removes it in `C` needs a candidate of its policy in `C`, which would be one in `L`, where none
+%   removed `X`. If instead a violated obligation in force denies in `L`, its `in_force` is `t` and
+%   its `fulfilled` `f` there; lenient would make a `u` `in_force` `f` and a `u` `fulfilled` `t`, so
+%   these are its findings, the same in every `C`, and it denies in every `C`; `interpret.py` gives
+%   it role `obligation`.
+%
+% So an empty basis under a definite `Deny` or `Permit` needs a `u` finding that reads a paired
+% leaf, whose operand is `unresolved` and is listed as an unknown part: claim W of
+% correctness-strategy.md §4.8. `tools/check_corpus.py` asks such a scenario to list it, and
+% `check_waiver` checks the claim on every reply the differentials see (TESTS.md, claim W).
+%
+% **`Pending` is the exception.** Dominance is not monotone: a candidate whose finding is `u` can
+% dominate a `t` one in the completions where it applies, and not in the others. So the basis of a
+% definite `Pending` can lack a permission, and can name a duty that the listed frontier does not
+% (explain.lp, *The listed frontier*). Both tests are in `tests/test_duty.py`:
+%
+% - In `test_pending_basis_under_an_uncertain_route`, `ex:perm` (finding `t`) needs `ex:d` and
+%   `ex:d2`, and `ex:perm2` (finding `u`, on a missing request parameter) needs `ex:d`. Where
+%   `ex:perm2` applies, `{ex:d}` dominates; elsewhere `ex:perm` is the frontier. No permission is in
+%   both frontiers, so the basis is `ex:d` alone, outstanding in both. The listed frontier is
+%   `[[ex:d, ex:d2]]`, because `ex:perm2` is uncertain in world `k`.
+% - In `test_pending_basis_beyond_the_listed_frontier`, `ex:perm` (finding `t`) needs `ex:d`, and
+%   `ex:permA` on `ex:x eq 5` and `ex:permB` on `ex:x neq 5` both need `ex:d3`, with `ex:x`
+%   unresolved. One of the two applies in each completion, so each frontier offers `{ex:d}` and
+%   `{ex:d3}`, and the basis is `ex:perm`, `ex:d`, and `ex:d3`. Neither of the two is listed, so the
+%   listed frontier is `[[ex:d]]`.
+%
+% The basis stays cautious: each `duty` row is outstanding in the frontier of every completion, and
+% each `permission` row is in every frontier. Without unknowns, `tools/check_corpus.py` asks a
+% `Pending` basis for a permission and for exactly the frontier's duties; when a scenario lists an
+% unknown part, it checks only their kinds (decisions/0019).

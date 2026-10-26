@@ -412,7 +412,7 @@ def outcome(reply: Obj) -> object:
     return verdict(reply)
 
 
-# DESIGN.md § `compare.lp`, the worked example: `and` is the least of its members, so an f
+# compare.lp, *Worked example*: `and` is the least of its members, so an f
 # member decides it whatever the u one is, and a u that decides the finding is completed: the
 # permission applies in one completion and not in the other, so Indeterminate.
 WORKED_CONSTRAINT = """ex:c .
@@ -1095,8 +1095,8 @@ def test_concept_scheme_in_key(interpreter: Interpreter) -> None:
             },
         ),
         # One rule applies in each completion, a different one in each: no rule applies in
-        # every completion, so the basis is empty. The permissions are DESIGN.md's example in
-        # § completion.lp.
+        # every completion, so the basis is empty. The permissions are the worked example
+        # of completion.lp.
         (
             leaf("eq", "5"),
             leaf("neq", "5"),
@@ -1360,7 +1360,7 @@ EVIDENCE: Obj = {
             },
             "config.combination",
         ),
-        # A value the program compares, and cannot place (DESIGN.md § Values).
+        # A value the program compares, and cannot place (values.py).
         ({"request": {"at": "2026-06-01T00:00:00"}}, "value: dateTime without timezone"),
         ({"sotw": {"effective_at": "2026-13-01T00:00:00Z"}}, "value: ill-typed xsd:dateTime"),
         # The input declines come first.

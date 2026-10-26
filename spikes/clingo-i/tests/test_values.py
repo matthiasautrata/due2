@@ -1,4 +1,4 @@
-"""The value table (DESIGN.md § Values): order against Python's own arithmetic, pass-through,
+"""The value table (values.py): order against Python's own arithmetic, pass-through,
 sums, and the placement edges."""
 
 from __future__ import annotations

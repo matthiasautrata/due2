@@ -223,7 +223,7 @@ class Interpreter:
         return out
 
     def facts(self, vector: Obj) -> str:
-        """The vector as the program's input facts (DESIGN.md § Input facts), one per line.
+        """The vector as the program's input facts (flatten.py), one per line.
 
         Raises:
             ValueError: The vector is malformed, or names a profile with no module, which is

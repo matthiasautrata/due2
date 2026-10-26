@@ -791,7 +791,8 @@ def holds_by_cases(got: Obj, violations: str = "ignore") -> bool:
 def check_waiver(got: Obj, violations: str = "ignore") -> None:
     """Claim W (correctness-strategy.md §4.8, #77): a verdict that holds by cases lists an
     `unresolved` unknown part, the premise of the basis waiver in `tools/check_corpus.py`.
-    DESIGN.md § `resolve.lp` argues it; this checks it on every reply the differentials see."""
+    resolve.lp argues it (*The cautious basis*); this checks it on every reply the differentials
+    see."""
     if holds_by_cases(got, violations):
         parts = got["unknown_parts"]
         assert isinstance(parts, list)
@@ -1563,9 +1564,10 @@ DUTY_EXAMPLES = [
         obligation=Duty((eq(2),), past=True),
         violations="deny",
     ),
-    # A definite Permit with an empty basis (DESIGN.md § `resolve.lp`): ex:d0's guard repeats
-    # r1's constraint on an unresolved operand. Where it holds, ex:d0 is owed and violated, so r0
-    # is closed and r1 permits; where it does not, r1 does not apply and r0 permits.
+    # A definite Permit with an empty basis (resolve.lp, *The cautious basis*): ex:d0's guard
+    # repeats r1's constraint on an unresolved operand. Where it holds, ex:d0 is owed and
+    # violated, so r0 is closed and r1 permits; where it does not, r1 does not apply and r0
+    # permits.
     duties(
         Case(
             "perm",

@@ -6,7 +6,7 @@
 % IRI: every later file reads the relations it provides. Variable letters: DESIGN.md
 % § Vocabulary.
 %
-% - **Consumes:** the driver's facts (DESIGN.md § Input facts): the graphs (`triple/3`,
+% - **Consumes:** the driver's facts (flatten.py): the graphs (`triple/3`,
 %   `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
 %   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`,
 %   `fact_value/2`, `evidence/4`, `evidence_param/3`, `activation/2`, `sotw_closure/3`), the
@@ -30,6 +30,15 @@
 %   (structure.lp).
 
 %## Vocabulary
+
+% `voc/2` maps each short name to its IRI. The registries list the conflict strategies, the policy
+% classes, the 14 function predicates of odrl-compound-to-atomic-normalization.md §3, the match keys
+% (due2-workflows.md §5.2; v1 has one, `odrl:assignee`), the 12 core operators of due2-profiles.md
+% §4 (`operator/2`, six of them `set_based/1`), the connectives (`connective/1`), the binding
+% attributes, sources, context built-ins, and cardinalities of due2-profiles.md §3, the XSD
+% datatypes a range can name (`xsd_datatype/1`, `numeric_datatype/1`, `floating_datatype/1`,
+% `derived_from/2`), and the two RDF Schema classes that admit values of several kinds
+% (`any_literal/1`, `any_resource/1`).
 
 %*! voc(Key, Pred)
 
@@ -349,8 +358,8 @@ any_resource("http://www.w3.org/2000/01/rdf-schema#Resource").
 
 %*! floating_datatype(Iri)
 
-`Iri` is `xsd:float` or `xsd:double`. They are numeric, but a value of either declines (DESIGN.md
-§ Values), and a right operand of either is rejected (due2-profiles.md §4).
+`Iri` is `xsd:float` or `xsd:double`. They are numeric, but a value of either declines
+(values.py), and a right operand of either is rejected (due2-profiles.md §4).
 *%
 floating_datatype("http://www.w3.org/2001/XMLSchema#float").
 floating_datatype("http://www.w3.org/2001/XMLSchema#double").
@@ -374,6 +383,21 @@ derived_from("http://www.w3.org/2001/XMLSchema#ENTITY", "http://www.w3.org/2001/
 derived_from("http://www.w3.org/2001/XMLSchema#dateTimeStamp", "http://www.w3.org/2001/XMLSchema#dateTime").
 derived_from("http://www.w3.org/2001/XMLSchema#dayTimeDuration", "http://www.w3.org/2001/XMLSchema#duration").
 derived_from("http://www.w3.org/2001/XMLSchema#yearMonthDuration", "http://www.w3.org/2001/XMLSchema#duration").
+
+%## The lifted policy
+
+% The lifted policy is `type/2`, `subclass/2` (declared, direct edges from the selected modules),
+% `has_rule/3`, `stated/3` (the value a policy or rule node states for a family),
+% `stated_conflict/2`, and `profile_conflict/1`.
+%
+% Terms and lists: `term/1` collects every term of the graphs and of the inputs the constraints
+% read, and `kind/2` gives each its shape: `iri`, `lit`, or `blank`. `list_cell/2`, `list_item/2`,
+% and `is_list/1` read RDF lists of the policy graph; `rdf:nil` is the empty list.
+%
+% Bindings: `decl(Layer, Op, Key, Value)` is one attribute of a binding stated in one layer:
+% `policy` for the policy graph, `module(Iri)` for the files of a selected profile, or `core`.
+% `layer_rank/2` orders the layers of due2-profiles.md §2 from the top: the policy 0, every profile
+% module 1, the core 2. The profile modules share a rank because they have no order.
 
 %*! type(Node, Cls)
 
@@ -429,7 +453,7 @@ profile_conflict(Strat) :- selected_profile(Prof), module(_, Prof, Pred, Iri), v
 %*! kind(Term, K)
 
 The RDF term `Term` is an `iri`, a `lit` (an RDF literal), or a `blank` node, by the shape the
-driver gives it. The shapes are in DESIGN.md § Input facts. Defined for every term of the
+driver gives it. The shapes are in flatten.py. Defined for every term of the
 graphs and the inputs the constraints read.
 *%
 kind(Term, lit) :- term(Term), Term = lit(_, _).
@@ -508,6 +532,12 @@ concept_scheme(Op, S) :- module(_, Op, Pred, S), voc(conceptScheme, Pred).
 
 %## Kinds
 
+% `dt_kind(Dt, K)` gives a datatype's kind (due2-profiles.md §3 *Kinds*): `numeric` for every XSD
+% numeric type, the primitive for a derived XSD type, and the datatype itself otherwise.
+% `term_kind(Term, K)` gives a term's kind, `iri` for an IRI. `admits_kind(Rg, K)` gives the kind a
+% stated range admits: `literal` for `rdfs:Literal`, none for `rdfs:Resource`, and `iri` for a
+% class.
+
 %*! declared_datatype(Dt)
 
 `Dt` is typed `rdfs:Datatype` in the policy graph or a selected module: a datatype outside XSD.
@@ -567,6 +597,19 @@ Some layer states the IRI `Rg` as a range.
 range_iri(Rg) :- decl(_, _, range, Rg), kind(Rg, iri).
 
 %## Hierarchies
+
+% `closure(Key, Lo, Hi)` holds each declared `includedIn`, `partOf`, `rdf:type`, `rdfs:subClassOf`,
+% `skos:broader`, or `skos:inScheme` edge from the policy, a selected module, or the SOTW closure. A
+% `skos:narrower` triple is the inverse `broader` edge, and `skos:topConceptOf` and the inverse
+% `skos:hasTopConcept` are `inScheme` edges (decisions/0015 #5, #8); `declared_in_scheme/2` holds
+% the memberships of the policy and the modules alone. `concept_scheme(Op, S)` holds each
+% `due2:conceptScheme` a layer states, a union rather than a binding attribute (decisions/0015 #6).
+% The edges are closed-world: an undeclared edge does not hold (due2-profiles.md §6).
+%
+% `coll_kind/2` types a collection (`odrl:AssetCollection` is `asset`, `odrl:PartyCollection` is
+% `party`), and `node_kind/2` also types an `odrl:Asset` or `odrl:Party`. `le_k(Lo, Hi, K)` is the
+% typed `partOf` of due2-profiles.md §6: the transitive closure through collections of kind `K`
+% only. It is not reflexive; its readers add identity.
 
 %*! closure_key(Key)
 
@@ -649,6 +692,21 @@ reject("UnsupportedConstruct", Node) :- triple(Node, Pred, _), voc(refinement, P
 reject("ReplacedPolicy", P) :- policy(P), triple(P, Pred, _), voc(isReplacedBy, Pred).
 
 %## What the spike does not read
+
+% The declines and the rejections of the graph (DESIGN.md § Declines):
+%
+% - A `partOf` edge into an untyped node, or one typed both ways, declines as `odrl:partOf: untyped
+%   collection`, and an edge from a node of one kind into a collection of the other as `odrl:partOf:
+%   cross-kind edge`. A cross-kind path is invalid (due2-profiles.md §6), and the spike has no
+%   reading it trusts for either.
+% - `odrl:source` off a collection, or `odrl:refinement` on a collection, is
+%   `reject("UnsupportedConstruct", Node)` (due2-diagnostics.md). On a collection, `odrl:source` is
+%   inert: the spike reads membership only from the `partOf` edges.
+% - `rdf:value` is read only on an action term, and declines anywhere else.
+% - A policy with `dct:isReplacedBy` is void (IM 2.2 §2.8) and is `reject("ReplacedPolicy", P)`.
+% - A policy that names a profile with no module among those the driver loaded at init is not
+%   admissible either (`UnrecognisedProfile`, IM 2.2 §3.2). The driver reports it while building the
+%   input facts, before solve 1, since it has no module to load.
 
 %*! policy_predicate(Key)
 
@@ -754,7 +812,7 @@ unsupported_input(Field) :- unread(Field).
 %*! compared(Lit)
 
 The program compares the RDF literal `Lit`, so it needs `Lit`'s position. These are the input
-instants and input values, whose positions the spec fixes (DESIGN.md § Values).
+instants and input values, whose positions the spec fixes (values.py).
 *%
 compared(Lit) :- request_at(Lit).
 compared(Lit) :- sotw_effective_at(Lit).
@@ -788,7 +846,7 @@ off_shape("value: dateTime without timezone"; "value: date with timezone").
 %*! unsupported_value(Reason)
 
 A compared RDF literal cannot be placed, for `Reason`, so the vector is declined. An
-unplaceable literal the program never compares declines nothing (DESIGN.md § Values).
+unplaceable literal the program never compares declines nothing (values.py).
 *%
 unsupported_value(Reason) :- unplaceable(Lit, Reason), compared(Lit), not off_shape(Reason).
 unsupported_value(Reason) :- unplaceable(Lit, Reason), input_instant(Lit), off_shape(Reason).

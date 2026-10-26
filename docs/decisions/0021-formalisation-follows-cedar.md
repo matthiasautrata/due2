@@ -80,3 +80,5 @@ The owner parked the prover spike of item 4 on 2026-10-24, so that the productio
 - **Item 7 is answered** by `decisions/0027` for W1, which stays Python. The W2/W3 language is open (#104).
 
 Resume the spike when the evaluator reaches production, when a paper needs the proofs, or when an Alloy scope is judged too small for a claim that production relies on.
+
+**Note (2026-10-26):** clingo-i's argument for W, cited above as `spikes/clingo-i/DESIGN.md` § `resolve.lp`, moved beside the code: it is now `spikes/clingo-i/lp/resolve.lp`, *The cautious basis* (#135).

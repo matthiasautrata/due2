@@ -33,6 +33,29 @@
 
 %## The split
 
+% A duty's conditions are its constraint roots and the refinement roots of its action terms
+% (`duty_root/2`); a root obligation that takes the policy's action takes its refinements too. They
+% split into guards and witness conditions:
+%
+% - a leaf is a *witness leaf* when its left operand is bound to `due2:witnessSource`, or reads the
+%   context property `due2:actionTime`, the evidence's `occurred_at` (`witness_leaf/1`,
+%   due2-workflows.md §5.3);
+% - a conjunction splits into its members, recursively (`duty_part/2`), and each conjunct that is
+%   not a conjunction is a *split part* (`split_part/2`);
+% - `has_witness(C)` and `has_guard(C)` say that the tree under `C` has a witness leaf, or a leaf
+%   that is not one;
+% - a split part with no witness leaf is a guard (`guard(Y, C)`), and one whose leaves are all
+%   witness leaves is a witness condition (`witness_cond(Y, C)`);
+% - a split part with both, an `or`, `xone`, or `dprod:not` over a guard leaf and a witness leaf, is
+%   `reject("MixedDutyConstraint", C)` (due2-diagnostics.md). A guard is read once, in world `k`,
+%   before any evidence, and a witness condition once per piece of evidence, so a node that mixes
+%   them has no single place to be read.
+%
+% For example, take a duty whose constraint is `ex:g eq ex:v and ex:w eq ex:v and ex:t eq ex:v`,
+% with `ex:g` bound to the state, `ex:w` to `due2:witnessSource`, and `ex:t` to the context property
+% `due2:actionTime`. The `and` splits into three parts: one guard, the `ex:g` leaf, and two witness
+% conditions (`test_conjunction_splits_into_guard_and_witness`).
+
 %*! duty_root(Y, C)
 
 `C` is a root of duty atom `Y`'s conditions: a constraint root of its duty, or a refinement root
@@ -103,6 +126,17 @@ witness_cond(Y, C) :- split_part(Y, C), has_witness(C), not has_guard(C).
 
 %## The worlds of the witness conditions
 
+% A witness condition has no value against the request: its leaves read the evidence, and world `k`
+% has none. So world `k` skips the nodes that lie in a witness condition (`in_witness/1`), and the
+% conjunctions of a duty's conditions with a witness condition below them, since the findings take
+% the guards one by one. These are the witness-only nodes (`witness_only/1`). A node that also lies
+% in a rule's tree (`rule_node/1`) is not one: world `k` evaluates it for the rule. That happens to
+% a `due2:actionTime` leaf that a rule and a duty share, which reads the request's `at` in `k` and
+% the evidence's `occurred_at` in `wit(E)` (operand.lp). Each piece of evidence `E` has its world
+% `wit(E)`, which evaluates every node of every witness condition (`evaluates(wit(E), C)`), so
+% compare.lp gives each one a rank `crank(wit(E), C, N)` from what `E` records. One algebra serves
+% the request and the evidence: the same leaf and connective rules, in another world.
+
 %*! in_witness(C)
 
 Node `C` lies in a witness condition: it is one, or below one.
@@ -134,6 +168,23 @@ witness_only(C) :- duty_part(_, C), conn(C, and), has_witness(C), not rule_node(
 evaluates(wit(E), C) :- evidence(E, _, _, _), in_witness(C).
 
 %## Owed and in force
+
+% These are the findings of due2-workflows.md §5.2, in world `k`:
+%
+% - `owed(Y)`, for a precondition duty atom: the Kleene conjunction of its guards, `t` when it has
+%   none. due2-workflows.md §5.2 makes an unguarded duty owed whenever its parent applies. The
+%   finding does not read the parent: W3 reads it only for a parent candidate (due2-workflows.md
+%   §6.1).
+% - `in_force(Y)`, for a root obligation atom: the Kleene conjunction of `policy_match(Y, N)` and
+%   its guards. `policy_match` is the Kleene disjunction, `f` when there are none, over the `Permit`
+%   and `Forbid` atoms of the obligation's policy (`obligation_policy/2`) of `matched(X, N)`: the
+%   conjunction of the atom's action, target, and party parts (`match_part/2`), its constraint parts
+%   left out (`cons_part/1`). An obligation is in force when its policy matches the request, not
+%   when its own action does: in the worked example at the end of this file, the request plays and
+%   the duty is to delete.
+% - `instance(Y)` when `owed(Y)` or `in_force(Y)` is `t` or `u`. Only an instance is tested against
+%   the evidence. A `u` instance is tested too, so that its `fulfilled` finding has a value whatever
+%   the guard turns out to be.
 
 % Each finding is an item, so integrity.lp's one-value constraint covers it.
 item(owed(Y)) :- pre(_, Y).
@@ -196,6 +247,31 @@ instance(Y) :- holds(owed(Y), V), V != f.
 instance(Y) :- holds(in_force(Y), V), V != f.
 
 %## The witness test
+
+% Under due2-workflows.md §5.3, each instance is paired with each piece of evidence
+% (`witness_pair(Y, E)`), and each pair has seven checks, `check(Y, E, K)` for each `check_kind(K)`,
+% each an item. `occurred_pos(E, N)` and `effective_pos(N)` place the evidence's `occurred_at` and
+% the SOTW's `effective_at` in the `instant` space:
+%
+% | Check `K` | `t` when | `f` when | `u` when |
+% |---|---|---|---|
+% | `effective` | `occurred_at` ≤ the SOTW's `effective_at` | `occurred_at` is later | the SOTW has no `effective_at`, which declines (*Fulfilled and status*) |
+% | `deadline` | the duty has no deadline, or `occurred_at` ≤ the deadline (`deadline_at/2`) | `occurred_at` is later | never: an unplaceable deadline declines |
+% | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/2`) | otherwise | never: the closure is closed-world |
+% | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
+% | `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
+% | `signer` | the config lists no signer for the duty (`signed/1`), or lists the evidence's issuer (`admitted/2`) | it lists signers, and not the issuer | never |
+% | `discharges` | the instance is not keyed on the request (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is keyed, and the evidence does not | never |
+%
+% The collection rows are decisions/0018: each member bears a duty whose bearer is a party
+% collection, so the subject's own act witnesses it, and another member's does not. With no subject,
+% a member's act is `u`, since that member may be the subject, and a non-member's is `f`.
+%
+% The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation
+% (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the case
+% format gives an activation, or `effective_at` when the SOTW has none (due2-workflows.md §5.3). An
+% instance is keyed when its scope is `grant` and the request has a `reference`; without one, a
+% `grant` duty falls back to `member`.
 
 %*! witness_pair(Y, E)
 
@@ -389,6 +465,29 @@ holds(check(Y, E, discharges), f) :- witness_pair(Y, E), keyed(Y), not discharge
 
 %## Fulfilled and status
 
+% `witness(Y, E)` is the Kleene conjunction of the seven checks and of the ranks of `Y`'s witness
+% conditions in world `wit(E)`. `fulfilled(Y)` is the Kleene disjunction of the witnesses, `f` when
+% there is no evidence. `passed(Y)` holds when the deadline is earlier than `effective_at`. It is
+% fixed per evaluation, since both instants are inputs, so it is a fact about the vector, not a
+% finding. The duty status `status(k, Y, S)` is the table of due2-workflows.md §5.3:
+%
+% | `fulfilled(Y)` | `passed(Y)` | Duty status |
+% |---|---|---|
+% | `t` | either | `fulfilled` |
+% | `f` | no | `outstanding` |
+% | `f` | yes | `violated` |
+% | `u` | either | `unknown` |
+%
+% A duty with no deadline never passes, so it is never `violated`. The table has no row for a
+% deadline it cannot place against `effective_at`, so a duty whose deadline has no position, or a
+% vector with a deadline and no `effective_at`, declines as `duty: deadline not comparable`.
+%
+% A `u` duty finding, `owed`, `in_force`, or `fulfilled`, is completed like an atom's
+% (completion.lp), and the reply names the inputs that made it `u` (explain.lp). One `u` has no such
+% input: the `effective` check of evidence when the SOTW has no `effective_at`. `effective_at` is
+% not a field an `unknown_part` row can name (due2-workflows.md §3.5), so the reply could not say
+% what was unknown, and the vector declines as `duty: evidence without effective_at`.
+
 % Each pair is an item: the witness test conjoined with the witness conditions in world wit(E).
 % The seven checks are always in the set, so the #min always has a value.
 item(witness(Y, E)) :- witness_pair(Y, E).
@@ -420,3 +519,34 @@ status(k, Y, fulfilled) :- holds(fulfilled(Y), t).
 status(k, Y, outstanding) :- holds(fulfilled(Y), f), not passed(Y).
 status(k, Y, violated) :- holds(fulfilled(Y), f), passed(Y).
 status(k, Y, unknown) :- holds(fulfilled(Y), u).
+
+%## Worked example
+
+% This is the vector of `test_late_witness_is_not_timely`, with the relations copied from a run.
+% A permission to use `ex:a` travels with an obligation to delete it by 1 May:
+%
+% ```turtle
+% ex:p a odrl:Set ; odrl:profile dprod: ; odrl:target ex:a ;
+%     odrl:permission ex:perm ; odrl:obligation ex:o .
+% ex:perm a odrl:Permission ; odrl:action odrl:use .
+% ex:o a odrl:Duty ; odrl:action odrl:delete ;
+%     dprod:deadline "2026-05-01T00:00:00Z"^^xsd:dateTime .
+% ```
+%
+% The request asks `ex:alice` to play `ex:a` at 1 June, with `reference` `req-1`. The SOTW is
+% effective at 1 June, and records one piece of evidence, `ex:e1`: `ex:alice` deleted `ex:a` on
+% 15 May. With `O` the obligation's atom `a("ex:o", "odrl:delete", "ex:a", none)`:
+%
+% 1. `matched(a("ex:perm", "odrl:use", "ex:a", none), 2)`: `odrl:play` is included in
+%    `odrl:use`, and the target is `ex:a`. So `policy_match(O, 2)`, and with no guard
+%    `holds(in_force(O), t)` and `instance(O)`.
+% 2. `witness_pair(O, "ex:e1")`. Six checks are `t`: `effective`, `action`, `object`, `actor`
+%    (the bearer is `none` and `ex:alice` is the subject), `signer`, and `discharges`. `deadline`
+%    is `f`, since 15 May is after 1 May. So `holds(witness(O, "ex:e1"), f)`, and
+%    `holds(fulfilled(O), f)`.
+% 3. `deadline_at(O, 0)`, since 1 May is the earliest instant of the vector and positions are
+%    dense ranks from 0 (values.py). `effective_at` is later, so `passed(O)`, and
+%    `status(k, O, violated)`.
+%
+% Evidence that came too late is no witness: the duty was violated on 1 May, and deleting the
+% asset afterwards does not undo that.

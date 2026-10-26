@@ -4,7 +4,8 @@ The generated reference (`docs/`, built by mkdocs with clindocs and mkdocstrings
 as the doc blocks it reads, so these tests hold the blocks to the program. Every relation the
 program defines has exactly one `%*!` doc block, with the relation's arity and a summary
 sentence that clindocs can cut at its first full stop. Each file's header lists what it
-consumes and provides, and the lists match the rules. The documentation entry point includes
+consumes and provides, and the lists match the rules. Every input fact the program reads is
+named in the module docstring of `clingo_i/flatten.py`. The documentation entry point includes
 the files the interpreter loads, in the same order. No section reference is bare: each `§`
 names its document.
 
@@ -171,11 +172,12 @@ def test_header_lists_match_the_rules(name: str) -> None:
     assert sorted(consumes - read) == [], "in Consumes but not used here"
 
 
-def test_inputs_are_documented_in_design() -> None:
+def test_inputs_are_documented_in_flatten() -> None:
     used_anywhere = _union(u for _, u in PARSED.values())
-    design = (ROOT / "DESIGN.md").read_text()
+    # The module docstring: the text between the file's first two triple quotes.
+    docstring = (ROOT / "clingo_i" / "flatten.py").read_text().split('"""')[1]
     inputs = sorted(used_anywhere - DEFINED_ANYWHERE)
-    assert [f"{n}/{a}" for n, a in inputs if f"`{n}/{a}`" not in design] == []
+    assert [f"{n}/{a}" for n, a in inputs if f"`{n}/{a}`" not in docstring] == []
 
 
 def test_docs_entry_point_includes_the_program_in_order() -> None:

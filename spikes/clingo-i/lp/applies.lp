@@ -38,7 +38,9 @@ It is the value before completion; completion.lp gives each world's value.
 
 %## Action
 
-% Only a request action that is the atom's action or narrower matches.
+% The action part is `t` when `request_action ⊑ atom_action` under the reflexive-transitive
+% `includedIn` closure, and `f` otherwise: only a request action that is the atom's action, or
+% narrower, matches.
 
 %*! reaches(A, B)
 
@@ -60,8 +62,9 @@ holds(part(X, action), f) :- atom(X), not action_matches(X).
 
 %## Target
 
-% The requested asset is the target, or part of it under the typed partOf closure
-% (due2-profiles.md §6). An absent request target is u.
+% The target part is `u` when `request_absent(target)` holds. Otherwise it is `t` when the
+% requested asset is the target, or part of it under the typed `partOf` closure
+% (`le_k(Asked, T, asset)`, due2-profiles.md §6), and `f` otherwise (`target_matches/1`).
 
 %*! target_matches(X)
 
@@ -75,8 +78,10 @@ holds(part(X, target), f) :- atom(X), request_target(_), not target_matches(X).
 
 %## Party
 
-% For each match key: a named party that is the atom's party, or part of it. A function the
-% request names no party for is u.
+% A party part is checked for each `atom_party(X, F, Party)` with `F` a match key. It is `u` when
+% the request names no party for `F`, `t` when a named party is `Party` or part of it
+% (`le_k(Asked, Party, party)`), and `f` otherwise (`party_matches/2`). An atom with no assignee
+% has no party part.
 
 %*! named(F)
 
@@ -96,6 +101,10 @@ holds(part(X, party(F)), t) :- party_matches(X, F).
 holds(part(X, party(F)), f) :- atom_party(X, F, _), named(F), not party_matches(X, F).
 
 %## Constraints
+
+% A constraint part, `part(X, cons(C))`, exists for each root `C` of `atom_constraint(X, C)`: the
+% rule's constraint roots and the action term's refinement roots. It takes the node's value,
+% `holds(c(C), V)`.
 
 %*! atom_constraint(X, C)
 

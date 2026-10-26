@@ -384,7 +384,7 @@ Each passage does one job (Diátaxis): **reference** (what is: interfaces, schem
 
 ### 15.4 Interfaces
 
-Every file, module, and public function states what it consumes, what it provides, and why it exists. That includes the invariants and sentinels a caller has to know, such as "`none` when the rule has no assignee". The interface can be read without the implementation. A design note lists each file's interface, so a reader can find a relation by name without grepping.
+Every file, module, and public function states what it consumes, what it provides, and why it exists. That includes the invariants and sentinels a caller has to know, such as "`none` when the rule has no assignee". The interface can be read without the implementation. It lives in the file itself, beside the code, as in literate programming: an ASP file's header and doc blocks, a Python module's docstring. The semantics of what the file defines, and the arguments for them, live there too. The generated reference renders them (§15.10), so a reader can find a relation by name without grepping. A design note cites them and does not restate them, because two copies drift apart.
 
 ### 15.5 Worked examples
 
@@ -420,7 +420,7 @@ What can be measured is checked, so that the rules hold without a reviewer.
 - every relation the program defines has exactly one doc block, in the file that defines it;
 - each block's summary sentence is whole (§15.8);
 - each file header's **Consumes** and **Provides** lists match its rules;
-- every relation the program reads but does not define is an input fact named in `DESIGN.md`;
+- every relation the program reads but does not define is an input fact named in the module docstring of `clingo_i/flatten.py`;
 - the docs entry point includes the program files in the order the interpreter loads them;
 - `DESIGN.md`, the docs pages, and every Python and ASP file carry no bare `§` references.
 

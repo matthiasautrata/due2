@@ -1,12 +1,68 @@
-"""The driver's value table (DESIGN.md § Values): value spaces, positions, and sums.
+"""The driver's value table: value spaces, positions, and sums.
 
 The program compares but never computes, and clingo's integers are 32-bit, so every
 ordered literal reaches it as a position within its value space (decisions/0009 #4).
-Nothing is truncated or rounded: a literal that cannot be placed exactly is reported.
+The driver places each RDF literal `lit(Lex, Dt)` among the facts (policy, selected modules,
+and inputs), and the program reads the value table, never the lexical form. Nothing is
+truncated or rounded: a literal that cannot be placed exactly is reported.
 
 In: the `lit(Lex, Datatype)` terms of one vector's facts (`literals`). Out (`value_facts`):
-`value(Lit, Space, N)`, `plus(I, D, N)` for each instant and duration, and
-`unplaceable(Lit, Reason)`. A position means something only within its space and its vector.
+
+- `value(Lit, Space, N)`: `Lit` lies in `Space`, at position `N`;
+- `plus(Start, Lit, N)`: instant `Start` plus duration `Lit` lies at position `N` in the
+  `instant` space;
+- `unplaceable(Lit, Reason)`: `Lit` has a datatype the driver must place, but it cannot place
+  it.
+
+**Spaces.** These are the value spaces of due2-profiles.md §4.
+
+| Space | Datatypes | Value |
+|---|---|---|
+| `numeric` | `xsd:decimal`, `xsd:integer`, and the integer types derived from it | the exact number; `5` and `5.00` are equal |
+| `instant` | `xsd:dateTime` and `xsd:dateTimeStamp` with a timezone | the point on the UTC timeline, exact to any fractional digit |
+| `date` | `xsd:date` without a timezone | the day |
+| `daytime` | `xsd:dayTimeDuration`, and `xsd:duration` with only day and time components | seconds, exact |
+| `yearmonth` | `xsd:yearMonthDuration`, and `xsd:duration` with only year and month components | months |
+| `boolean` | `xsd:boolean` | `false` before `true` |
+
+The first five are ordered within the space, and none is ordered across spaces. Booleans are
+placed, so they compare by value, but `lt` and its kin give them no order. Strings, tokens,
+IRIs, and other datatypes are compared only for equality, by their terms, so they get no
+position.
+
+**Positions.** In the `numeric` space, if every value is an integer within 32 bits, `N` is the
+value itself. Otherwise, and in every other space, `N` is the dense rank `0..k−1` of the
+space's distinct values in the vector. Equal values get equal ranks. A rank means nothing
+across vectors; within one, `N₁ < N₂` exactly when the values are so ordered.
+
+**Sums.** A relative deadline is the activation plus a duration (due2-workflows.md §5.3).
+`plus` is given for every `instant` literal and every `daytime` or `yearmonth` literal among
+the facts. The sum is XSD 1.1 Part 2 Appendix E: add the months in the instant's own timezone,
+clamp the day to the end of the month, then add the seconds. The sums join the `instant`
+ranking.
+
+**Unplaceable values.** Nothing is truncated, rounded, or guessed. `Reason` is one of:
+
+- `value: xsd:double` or `value: xsd:float`: due2 has no floats (due2-profiles.md §4);
+- `value: dateTime without timezone`: an instant must be on the UTC timeline;
+- `value: date with timezone`: such a date is an interval, and dates in different zones
+  overlap;
+- `value: mixed xsd:duration`: year-month and day-time components together have no single
+  order (due2-profiles.md §4);
+- `value: ill-typed <datatype>`: the lexical form is not in the datatype's lexical space, or
+  is out of its range.
+
+An unplaceable literal matters only if the program compares it: `unsupported_value(Reason)`
+holds for `unplaceable(Lit, Reason)` with `compared(Lit)` (lift.lp). `compared` covers the
+input instants, the input values, the right operand values, and the deadlines. A float or a
+mixed duration as a right operand is a rejection instead (`FloatingPointOperand`,
+`MixedDuration`, constraint.lp), because solve 1 reads `reject` before `unsupported_value`.
+
+The two timezone reasons (`off_shape/1`) are a shape the kind does not admit, not a value the
+spike cannot place (decisions/0024). Only an input instant (`input_instant/1`) declines with
+them. As a right operand the literal is `reject("OperatorTypeMismatch", C)`, as a deadline
+`reject("InvalidTiming", Duty)`, and as a value a leaf reads it is a misfit, so the leaf is
+`u`.
 """
 
 from __future__ import annotations

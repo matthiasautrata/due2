@@ -125,7 +125,14 @@ sure_contender(X) :- surely_applies(X), atom_effect(X, forbid).
 
 %## Within the policy
 
-% By the policy's conflict strategy (due2-workflows.md §6.2 #1), one row per remover.
+% By the policy's conflict strategy (due2-workflows.md §6.2 #1), one row per remover. An atom
+% removed by two forbids has two rows (due2-workflows.md §3.5, #57), and each row is a complete
+% reason. In a conflict row, whenever `X` applies, `Y` applies too, because `Y` is `t`, and `Y`
+% removes it. In a `violated_precondition` row, `Y` is the duty atom, owed `t` and violated, so it
+% closes `X` wherever `X` applies. A reader can check each row against the policy alone. A single
+% row naming the first remover would hide the others, and which one is "first" would depend on the
+% order of the facts. A `u` remover gives no row, because it removes `X` only in some completions,
+% and that is not a reason that holds whatever the unknowns are.
 
 %*! elim_within(X, P, Y, Strat)
 
@@ -176,6 +183,13 @@ elim(X, P, Y, "prohibit-overrides") :- may_candidate(X), surely_applies(Y), atom
 #show elim/4.
 
 %## The listed frontier
+
+% The reply's `frontier` is read in world `k`, so it does not depend on the completion. An uncertain
+% candidate is not listed: it reaches the reply only through the verdict, which the completions
+% decide. So under a definite `Pending` the listed frontier can differ from the frontier of a
+% completion (resolve.lp, *The cautious basis*; decisions/0019). This is the listed frontier that
+% version 0.33 of due2-workflows.md gave. Version 0.34 lists the routes that suffice instead
+% (decisions/0026), and clingo-i follows it with #103.
 
 %*! open_k(Y, N)
 
@@ -288,6 +302,19 @@ obligation_row(Y, unknown) :- obligation(Y), holds(in_force(Y), u).
 #show obligation_row/2.
 
 %## Unknown parts
+
+% W1's atoms are the disjuncts of the DNF of each authored tree (due2-workflows.md §3.1, §4 stage
+% 2), so a `u` leaf that lies only in `f` disjuncts is read only by `f` atoms, and is not reported:
+% in `or(and(lf, y), z)`, with `lf` a leaf that is `f`, `y` is not. A leaf that lies in a disjunct
+% that is not `f` is live, and is reported though another member decides its node, in a `t` atom as
+% in a `u` one: in `or(lt, y)`, with `lt` a leaf that is `t`, `y` is. The reply then names
+% everything that was unknown in the disjuncts that can hold, whether or not it mattered, and a
+% renderer may show less. `live/4` finds the live leaves on the authored tree, without building the
+% DNF, which can be exponentially larger.
+%
+% Under a status the same for every rule, as an absent target is, every atom carries the row, so
+% interpret.py projects the rows to the rule or duty node, and the reply has one row per rule,
+% input, and status.
 
 %*! reported(I)
 

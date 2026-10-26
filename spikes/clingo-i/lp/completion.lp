@@ -30,6 +30,26 @@
 
 %## Findings
 
+% Each duty finding is completed according to where its `u` comes from:
+%
+% - **Guards.** A duty's `odrl:constraint` is a `top_constraint/2` of the duty node (duty.lp), so a
+%   guard is a tree in scope `rule` (`scope/2`, constraint.lp), completed node by node as an atom's
+%   constraint is. A guard leaf that makes a rule leaf's comparison reads the rule leaf's variable:
+%   where the rule's constraint holds, so does the guard
+%   (`test_guard_and_rule_leaf_share_a_variable`).
+% - **The policy match** of `in_force` is `u` only through a `u` target or party part of a rule
+%   (duty.lp), which is opaque, so a `u` match makes `in_force` opaque. The match is not re-derived
+%   in the world: it keeps rank 1, and `fin(in_force(Y))` decides the finding, a variable apart from
+%   each rule's own `fin`, as decisions/0016 #2 asks of opaque parts
+%   (`test_missing_target_leaves_rule_and_obligation_unknown`).
+% - **Fulfilment.** A `u` `fulfilled(Y)` is not re-derived either, because nothing that makes it `u`
+%   is paired. A witness leaf (`witness_leaf/1`, duty.lp) reads the evidence in `wit(E)`, through a
+%   `witness` operand or a context built-in such as `due2:actionTime`, and only a `state` read has
+%   status `unresolved` (`read_status/3`, operand.lp). The actor check is `u` only on an absent
+%   subject, which is opaque. So `fulfilled(Y)` shares no variable with any other finding, and
+%   `ful(Y)` completes it soundly: the completions remain a superset of the realisable ones
+%   (*Correlations the completion misses*).
+
 %*! duty_item(I)
 
 `I` is a duty finding: `owed(Y)`, `in_force(Y)`, or `fulfilled(Y)`. duty.lp derives each.
@@ -66,6 +86,11 @@ finding_atom(fulfilled(Y), Y) :- duty_item(fulfilled(Y)).
 
 %## Statuses
 
+% Only an `unresolved` leaf is paired. An unresolved value exists and fits its operator, so of a
+% leaf and its complement exactly one holds, and pairing them is sound. A missing, invalid,
+% conflicting, or misfit value gives no such guarantee: for `"abc"`, neither `lt 5` nor `gteq 5`
+% holds (decisions/0016, § Question).
+
 %*! leaf_status(C, S)
 
 Leaf `C` is `u` in world `k` with status `S`: its operand's read status there, or `misfit` when
@@ -84,6 +109,13 @@ Leaf `C` is `u` for a reason other than an `unresolved` value, so it is never pa
 opaque_leaf(C) :- leaf_status(C, S), S != unresolved.
 
 %## Open nodes
+
+% A connective above an opaque part is re-evaluated under strong Kleene logic, so the tree, and the
+% finding's conjunction, can stay `u` in the world. Then `fin(I)` decides the finding. When the
+% paired leaves settle the tree anyway, `fin(I)` is read but moves nothing: a `t` member of an `or`
+% makes it `t`, and an `f` conjunct makes the atom `f`. An opaque part therefore shares a variable
+% with no other part, its complement included, as decisions/0016 #2 asks. Two atoms on one absent
+% target are completed separately, and so are a leaf on a missing operand and its complement.
 
 %*! opened(I, C)
 
@@ -115,6 +147,22 @@ opaque_item(in_force(Y)) :- u_item(in_force(Y)), policy_match(Y, 1).
 opaque_item(I) :- opened(I, C), opaque_leaf(C).
 
 %## Paired variables
+
+% Two open paired leaves read one variable when they make the same comparison (due2-workflows.md
+% §6.4). The key has six components:
+%
+% | Component | Relation | Note |
+% |---|---|---|
+% | scope | `scope/2` (constraint.lp) | `rule` or `action` |
+% | binding | `src/2`, `prop/2` (operand.lp) | where the operand reads, not its IRI: two operands bound to one property read one value |
+% | positive operator | `op_literal(O, Base, Pol)` | a complement asserts its `Base`, `neg` |
+% | right operand values | `leaf_attr(C, right(Term))` | a set of terms |
+% | units | `leaf_attr(C, unit(Iri))` | a set |
+% | concept | `leaf_attr(C, concept)` | whether the operand has a concept scheme: with one, `eq` is ⊑, and without, identity |
+%
+% `leaf_key/5` holds the first three components, and `leaf_attr/2` the sets. A node reached from
+% both a rule's constraint and an action's refinement has two scopes, and so two keys for one value.
+% It declines as `constraint: node in two scopes`.
 
 %*! complement(Base, O)
 
@@ -285,3 +333,52 @@ constraint is in integrity.lp.
 *%
 completed_item(applies(X)) :- atom(X).
 completed_item(I) :- duty_item(I).
+
+%## Worked example
+
+% This is the first row of `test_completion_key`, copied from a run. Under `perm`, permission
+% `ex:r1` has the leaf `c1`, `ex:x eq 5`, and permission `ex:r2` the leaf `c2`, `ex:x neq 5`. `ex:x`
+% reads the state, which has no fact for it, so it is `unresolved`. Both leaves are `u` and paired,
+% so both findings are `u`, and both leaves are open. They share a key: scope `rule`, the state
+% property `ex:x`, base `eq`, right operand `{5}`, no unit. In the run, `c1` is the lesser label, so
+% `leaf_lit(c1, cons(c1), pos)` and `leaf_lit(c2, cons(c1), neg)` hold: one variable, two
+% completions.
+%
+% | `cons(c1)` | `c1` | `c2` | applies | verdict |
+% |---|---|---|---|---|
+% | `t` | 2 | 0 | `ex:r1` | `Permit` |
+% | `f` | 0 | 2 | `ex:r2` | `Permit` |
+%
+% The verdict is `Permit` in both, so the reply is a definite `Permit`, although both findings are
+% `u`. Its basis is empty, because neither permission applies in both completions (resolve.lp, *The
+% cautious basis*). With one variable per leaf, some completion would make both leaves rank 0 and
+% give `NotApplicable`, and the reply would be `Indeterminate`: the precision the key buys. With
+% `ex:x` missing instead, the leaves are opaque, each atom is decided by its own `fin` variable, and
+% the reply is that `Indeterminate`, `NotApplicable` to `Permit`. `test_opaque_is_not_paired` pins
+% the same contrast on `lt` and `gteq`.
+
+%## Correlations the completion misses
+
+% The completion is domain-unaware: it does not know which variables exclude or imply each other
+% (domain-aware completion is due2-workflows.md §9 open decision 6). It misses three kinds of
+% correlation:
+%
+% - values: `ex:x eq 5` and `ex:x eq 6` are separate variables (decisions/0012 #3), and the
+%   completion that makes both `t` is enumerated, though `ex:x` is single-valued and no state
+%   realises it;
+% - hierarchies: with `ex:a1 odrl:partOf ex:a`, a value `ex:a1` would make both `ex:x isPartOf
+%   ex:a1` and `ex:x isPartOf ex:a` `t`;
+% - comparisons on one value: `ex:x lt 3` implies `ex:x lt 5`, and `5` equals `5.0`, yet each is its
+%   own variable.
+%
+% Opaque findings miss correlations too: their `fin(I)` and `ful(Y)` are independent of every other
+% variable by construction. One absent subject, for example, would make a rule's party part and a
+% duty's actor check `t` together, and the completions also hold the corners where they differ. In
+% every case the variables stay independent, so the completions are a superset of the realisable
+% ones, and:
+%
+% - a definite verdict holds in every completion, so it holds in every realisable one, and it is
+%   sound;
+% - an `Indeterminate` may be reported where every realisable completion agrees, so precision, not
+%   soundness, is what is lost;
+% - a range covers every realisable verdict, and may be wider.

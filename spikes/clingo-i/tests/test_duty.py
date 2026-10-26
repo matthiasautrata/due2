@@ -560,7 +560,7 @@ def test_late_witness_is_not_timely(duty_interpreter: Interpreter) -> None:
         profile=True,
         sotw={"evidence": [late]},
     )
-    # The steps of DESIGN.md § duty.lp's worked example, each one pinned.
+    # The steps of the worked example in duty.lp (*Worked example*), each one pinned.
     assert pick(found, "policy_match") == {f"policy_match({O},2)"}
     assert value_of(found, f"in_force({O})") == "t"
     checks = {k: value_of(found, f'check({O},"ex:e1",{k})') for k in CHECKS}
