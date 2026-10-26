@@ -36,9 +36,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Indeterminate",
         "frontier": [],
@@ -84,9 +81,6 @@
         ],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Indeterminate",

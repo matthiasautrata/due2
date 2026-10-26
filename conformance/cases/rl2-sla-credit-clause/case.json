@@ -23,7 +23,6 @@
         "facts": { "ex:uptimeCommitmentViolated": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The policy has no permission or prohibition, so no candidate and nothing to deny. Neither obligation is in force: in force needs a Permit or Forbid atom of the policy that matches the request, and an obligation is not matched by its own action (§5.2), so ex:creditDuty_A1 is not reported even though its guard holds (RL2: Active, see notes)." },
       "rl2_expected": "NotApplicable"
     },
@@ -38,7 +37,6 @@
         "facts": { "ex:uptimeCommitmentViolated": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "As in scenario 1 no rule of the policy matches, so neither obligation is in force and the unresolved guard is never read for access. With no candidate and no prohibition the verdict is NotApplicable, with no U finding to complete." }
     }
   ]

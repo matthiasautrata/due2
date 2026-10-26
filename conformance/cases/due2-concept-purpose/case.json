@@ -32,9 +32,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -70,9 +67,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Permit",
@@ -110,9 +104,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],
@@ -143,9 +134,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Indeterminate",
@@ -204,9 +192,6 @@
           ]
         ]
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -248,9 +233,6 @@
             "dpv:DirectMarketing"
           ]
         ]
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Indeterminate",
@@ -298,9 +280,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Indeterminate",

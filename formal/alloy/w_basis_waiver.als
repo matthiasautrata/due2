@@ -15,8 +15,7 @@
  * *The cautious basis*.
  *
  * The basis roles are those of §6.4: under `Permit`, the ready alternative's permissions, here
- * every permission in the frontier; under `Deny`, the surviving prohibitions, and, under
- * `deny`, the obligations in force with a violated instance.
+ * every permission in the frontier; under `Deny`, the surviving prohibitions.
  *
  * W3 is resolve.als. The worlds are every completion (everyCompletion), so the scope on World
  * bounds the unknowns: 8 worlds hold every completion of three.
@@ -36,11 +35,7 @@ pred definite[v: Verdict] { all w: World | verdict[w] = v }
 
 fun permitBasis: set Permission { { p: Permission | all w: World | p in frontier[w] } }
 
-fun denyBasis: set Rule + Duty {
-  { f: Prohibition | all w: World | f in survivingProhibitions[w] }
-  + { d: Obligation |
-        Config.violations = DenyViolations and all w: World | d in w.inForce & violated[w] }
-}
+fun denyBasis: set Prohibition { { f: Prohibition | all w: World | f in survivingProhibitions[w] } }
 
 pred emptyBasis {
   definite[Permit] and no permitBasis
@@ -50,10 +45,9 @@ pred emptyBasis {
 // Two literals read x: two findings, or one finding both ways. Counted without arithmetic,
 // which would overflow Alloy's small integers.
 pred readTwice[x: Var] {
-  let ap = pos.x + neg.x, ow = opos.x + oneg.x, inf = ipos.x + ineg.x {
-    not lone ap or not lone ow or not lone inf
-    or (some ap and some ow + inf) or (some ow and some inf)
-    or some pos.x & neg.x or some opos.x & oneg.x or some ipos.x & ineg.x
+  let ap = pos.x + neg.x, ow = opos.x + oneg.x {
+    not lone ap or not lone ow or (some ap and some ow)
+    or some pos.x & neg.x or some opos.x & oneg.x
   }
 }
 
@@ -61,7 +55,6 @@ pred readTwice[x: Var] {
 pred readByU[x: Var] {
   (some r: Rule | uApplies[r] and x in readsApplies[r])
   or (some d: Duty | uOwed[d] and x in readsOwed[d])
-  or (some d: Duty | uInForce[d] and x in readsInForce[d])
 }
 
 assert Waiver {

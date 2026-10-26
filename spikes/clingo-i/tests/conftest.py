@@ -38,11 +38,12 @@ INIT: Obj = {
 
 DPROD = "https://ekgf.org/dprod/spec/develop/"
 DUE2 = "https://w3id.org/due2/profile#"
-# INIT with the bearer roles of profiles/due2-core.ttl and profiles/dprod.ttl, for duties.
+# INIT with the party roles of profiles/due2-core.ttl and profiles/dprod.ttl, for duties.
 DUTY_INIT: Obj = {
     "modules": {
         "core.ttl": CORE
-        + f"@prefix due2: <{DUE2}> .\nodrl:assignee due2:playsRole due2:bearer .\n",
+        + f"@prefix due2: <{DUE2}> .\nodrl:assignee due2:playsRole due2:bearer .\n"
+        + "due2:attestingParty due2:playsRole due2:attester .\n",
         "prof.ttl": PROFILE,
         "dprod.ttl": f"@prefix due2: <{DUE2}> .\n@prefix dprod: <{DPROD}> .\n"
         + "dprod:subjectOfDuty due2:playsRole due2:bearer .\n",
@@ -84,7 +85,6 @@ BASE: Obj = {
         "activation": {},
         "closure": [],
     },
-    "config": {"combination": "prohibit-overrides"},
 }
 
 

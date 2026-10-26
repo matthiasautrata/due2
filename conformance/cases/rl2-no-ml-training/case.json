@@ -13,7 +13,6 @@
         "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "ex:noTraining applies (action, target, assignee all T). ex:searchCorpus fails on action, so there is no candidate; the T Forbid gives Deny." },
       "rl2_expected": "Deny"
     },
@@ -24,7 +23,6 @@
         "parties": { "odrl:assignee": "ex:Licensee" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:searchCorpus is T with no duties, so it is a ready candidate; ex:noTraining fails on action." },
       "rl2_expected": "Permit"
     },
@@ -35,7 +33,6 @@
         "parties": { "odrl:assignee": "ex:Stranger" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:Stranger ⊑ ex:Licensee is F, so the prohibition does not apply; the agreement binds only its assignee. No permission applies either." }
     },
     {
@@ -45,7 +42,6 @@
         "parties": {}, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The request names no assignee, so the prohibition's party part is U (§5.2) and ex:noTraining is U. No candidate exists. The restrictive completion gives Deny, the permissive one NotApplicable." }
     }
   ]

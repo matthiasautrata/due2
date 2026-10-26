@@ -17,7 +17,6 @@
         "evidence": [ { "id": "ex:pay1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:TeamAdministrator", "action": "ex:pay", "object": "ex:TeamLicence" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:teamPaymentDuty", "status": "fulfilled" } ], "why": "ex:memberAccessPrivilege applies to Alice. ex:pay1 is a witness for ex:teamPaymentDuty: before effective_at, action pay, object TeamLicence, actor the duty's own assignee. The duty is T, the candidate ready. The permission matches, so the same duty is in force as a root obligation, fulfilled by the same witness." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "evidence": [ { "id": "ex:pay1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:TeamAdministrator", "action": "ex:pay", "object": "ex:TeamLicence" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The party part is F: Carol ⊑ Alice does not hold. The permission is F, so its duty is not evaluated and nothing applies. No rule of the policy matches Carol, so the obligation is not in force." },
       "rl2_expected": "NotApplicable"
     },
@@ -43,7 +41,6 @@
         "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:teamPaymentDuty" ] ], "obligations": [ { "duty": "ex:teamPaymentDuty", "status": "outstanding" } ], "why": "The permission applies; ex:teamPaymentDuty has no witness and no deadline, so it is outstanding. One pending alternative, waiting on ex:TeamAdministrator rather than the requester. As a root obligation the duty is in force and outstanding." }
     },
     {
@@ -57,7 +54,6 @@
         "evidence": [ { "id": "ex:pay2", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:Alice", "action": "ex:pay", "object": "ex:TeamLicence" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:teamPaymentDuty" ] ], "obligations": [ { "duty": "ex:teamPaymentDuty", "status": "outstanding" } ], "why": "ex:pay2's actor is Alice, not the duty's assignee ex:TeamAdministrator, so it is no witness. The duty is F: outstanding, as precondition and as in-force obligation." }
     }
   ]

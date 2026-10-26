@@ -1,0 +1,163 @@
+{
+  "case": "due2-violated-precondition-beside-permission",
+  "source": "due2-native: a violated precondition beside a second permission for the same action (decisions/0045)",
+  "classification": "odrl-profile",
+  "needs": [
+    "dprod:deadline"
+  ],
+  "notes": "Authored for due2; no origin result. ODRL IM §2.6.1 makes a duty a precondition of the permission that holds it, so a violated duty fails that permission alone, and another permission that matches the request can still permit. ex:attestTraining is a precondition only, not an obligation of the Agreement, so expected.obligations is empty in every scenario. Its deadline, 2026-03-01, is before every scenario's effective_at, so without a witness it is violated and closes ex:readAfterAttesting (due2-workflows.md §6.1, rule violated_precondition). Scenario 1 shows the other permission permitting; scenario 2 shows the closure alone, with nothing else applying; scenario 3 shows the duty met in time, so the first permission permits by itself.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "attestation missed, audit purpose",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T00:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": {
+          "ex:declaredPurpose": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "audit",
+                "@type": "xsd:string"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForAudit",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [
+          {
+            "ref": "ex:readAfterAttesting",
+            "by": "ex:attestTraining",
+            "rule": "violated_precondition"
+          }
+        ],
+        "why": "ex:attestTraining has no witness and effective_at is past its deadline, so it is violated and removes ex:readAfterAttesting (§6.1). ex:readForAudit is T, with no duties, so it is a ready candidate and no prohibition applies: Permit."
+      }
+    },
+    {
+      "name": "attestation missed, another purpose",
+      "request": {
+        "reference": "req-2",
+        "action": "odrl:read",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T00:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": {
+          "ex:declaredPurpose": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "marketing",
+                "@type": "xsd:string"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readAfterAttesting",
+            "role": "closed"
+          }
+        ],
+        "eliminated": [
+          {
+            "ref": "ex:readAfterAttesting",
+            "by": "ex:attestTraining",
+            "rule": "violated_precondition"
+          }
+        ],
+        "why": "The violated ex:attestTraining removes ex:readAfterAttesting, as in scenario 1. The declared purpose is not \"audit\", so ex:readForAudit is F and is no candidate. No candidate remains: NotApplicable."
+      }
+    },
+    {
+      "name": "attested in time, another purpose",
+      "request": {
+        "reference": "req-3",
+        "action": "odrl:read",
+        "target": "ex:Dataset",
+        "at": "2026-06-01T00:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T00:00:00Z",
+        "facts": {
+          "ex:declaredPurpose": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "marketing",
+                "@type": "xsd:string"
+              }
+            ]
+          }
+        },
+        "evidence": [
+          {
+            "id": "ex:ev-attest",
+            "occurred_at": "2026-02-10T00:00:00Z",
+            "actor": "ex:Analyst",
+            "action": "ex:attest",
+            "object": "ex:Dataset"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readAfterAttesting",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "ex:ev-attest is a witness for ex:attestTraining: actor ex:Analyst, action ex:attest, object ex:Dataset, before the deadline. So the duty is fulfilled and ex:readAfterAttesting is a ready candidate (§6.1). ex:readForAudit is F, as in scenario 2: Permit."
+      }
+    }
+  ]
+}

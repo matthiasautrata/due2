@@ -7,7 +7,7 @@
     "dprod:deadline (relative, per-instance PT30S and one P14D)",
     "profile conflict default (odrl:conflict odrl:prohibit on the DPROD profile)"
   ],
-  "notes": "Extracted unchanged except the five anonymous rules are named rule:risk-*. ex:conformTo is declared odrl:includedIn odrl:use, which the source omits and ODRL IM §2.4 requires (decisions/0034, EKGF/dprod#286); without it the vendored source is rejected with InvalidActionHierarchy. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. Three structural points. First, the delivery duty recurs every minute with a PT30S deadline, and unlike dprod-customer-api-v2 the anchor default matters in the other direction: activation defaults to effective_at, and every instant is a MINUTELY occurrence, so the first evaluation already owes the instance at effective_at itself (due2-workflows.md §5.3). Second, rule:risk-timeliness carries a constraint on a request-source operand — inside a duty that is a guard read against the request (§5.2), so the conformance obligation is in force only for requests whose timeliness is real-time; DPROD never evaluates it, because conformTo never matches the requested action and step 1 collects no duty (§7.2). Third, there is no prohibition, so a Deny can only come from violations = deny. DPROD's expand is clock-anchored with no DTSTART and performed has no lower bound (§8.2); where scenarios supply activation, dprod_expected assumes the same occurrences and Σ produced from the same evidence (exception 2). Intended §7.4 reading throughout.",
+  "notes": "Extracted unchanged except the five anonymous rules are named rule:risk-*. ex:conformTo is declared odrl:includedIn odrl:use, which the source omits and ODRL IM §2.4 requires (decisions/0034, EKGF/dprod#286); without it the vendored source is rejected with InvalidActionHierarchy. odrl:conflict is absent as in DPROD, so the profile default (odrl:prohibit) applies. Three structural points. First, the delivery duty recurs every minute with a PT30S deadline, and unlike dprod-customer-api-v2 the anchor default matters in the other direction: activation defaults to effective_at, and every instant is a MINUTELY occurrence, so the first evaluation already owes the instance at effective_at itself (due2-workflows.md §5.3). Second, rule:risk-timeliness carries a constraint on a request-source operand — inside a duty that is a guard read against the request (§5.2), so the conformance obligation is in force only for requests whose timeliness is real-time; DPROD never evaluates it, because conformTo never matches the requested action and step 1 collects no duty (§7.2). Third, there is no prohibition, so no scenario is denied: a violated obligation is reported and never gates access (due2-workflows.md §6.1). DPROD's expand is clock-anchored with no DTSTART and performed has no lower bound (§8.2); where scenarios supply activation, dprod_expected assumes the same occurrences and Σ produced from the same evidence (exception 2). Intended §7.4 reading throughout.",
   "prefixes": {
     "ex": "https://example.org/",
     "offer": "https://example.org/offers/",
@@ -27,7 +27,6 @@
         "params": { "ex:timeliness": { "@id": "ex:realtime" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:05:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -51,7 +50,6 @@
         "params": { "ex:timeliness": { "@id": "ex:batch" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:05:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -74,7 +72,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:05:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -83,12 +80,12 @@
           { "duty": "rule:risk-timeliness", "status": "unknown" },
           { "duty": "rule:risk-notify", "status": "outstanding" }
         ],
-        "why": "The permission is unconstrained: Permit, whatever the data's freshness. The timeliness operand is missing, so the conformance obligation's guard is U and it is in force with unknown status — reported, not silently dropped. A U guard on an obligation never touches the verdict under violations = ignore; here there is also no deny configuration at all."
+        "why": "The permission is unconstrained: Permit, whatever the data's freshness. The timeliness operand is missing, so the conformance obligation's guard is U and it is in force with unknown status — reported, not silently dropped. An obligation never touches the verdict, whatever its status (§6.1)."
       },
       "dprod_expected": "Permit (the duty is not collected, so the missing operand never surfaces — due2 reports the unknown, DPROD never looks)"
     },
     {
-      "name": "two minutes missed under DPROD-faithful deny",
+      "name": "two minutes missed",
       "request": {
         "reference": "req-4",
         "action": "odrl:display",
@@ -113,9 +110,8 @@
         "activation": { "rule:risk-delivery": "2026-06-01T09:00:00Z" },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides", "violations": "deny" },
       "expected": {
-        "verdict": "Deny",
+        "verdict": "Permit",
         "frontier": [],
         "obligations": [
           { "duty": "rule:risk-delivery", "status": "fulfilled", "instance": "2026-06-01T09:00:00Z" },
@@ -125,9 +121,9 @@
           { "duty": "rule:risk-timeliness", "status": "outstanding" },
           { "duty": "rule:risk-notify", "status": "outstanding" }
         ],
-        "why": "Anchored at 09:00, the per-minute rule yields 09:00, 09:01, 09:02, 09:03 by effective_at, each with a 30-second deadline. ex:ev-delivery-0900 at 09:00:20 witnesses the first: fulfilled. The 09:01 and 09:02 instances have no witness and their deadlines are past: violated. The 09:03 instance's window is open: outstanding. Under violations = deny, a violated instance of an obligation in force denies the display — the SLA has teeth in due2. The conformance and notification obligations are in force and outstanding as in scenario 1."
+        "why": "Anchored at 09:00, the per-minute rule yields 09:00, 09:01, 09:02, 09:03 by effective_at, each with a 30-second deadline. ex:ev-delivery-0900 at 09:00:20 witnesses the first: fulfilled. The 09:01 and 09:02 instances have no witness and their deadlines are past: violated. The 09:03 instance's window is open: outstanding. The violations are reported and do not gate the display (§6.1): Permit. The conformance and notification obligations are in force and outstanding as in scenario 1."
       },
-      "dprod_expected": "Permit (deliver never matches display, so no duty is collected and no violation denies — exception 6)"
+      "dprod_expected": "Permit (deliver never matches display, so no duty is collected and no violation denies)"
     }
   ]
 }

@@ -28,7 +28,6 @@
         }
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -53,7 +52,6 @@
         }
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -75,7 +73,6 @@
         }
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Indeterminate",
         "frontier": [],
@@ -100,7 +97,6 @@
         }
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -124,13 +120,12 @@
         }
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Deny",
         "frontier": [],
         "obligations": [{ "duty": "rule:audit-retention", "status": "unknown" }],
         "unknown_parts": [{ "ref": "rule:audit-retention", "input": "ex:retentionPeriod", "status": "missing" }],
-        "why": "rule:audit-no-export matches ex:export by equality; the read permission does not (export is not below read). A surviving, applying prohibition: Deny. That prohibition matches, so the retention obligation is in force if its guard holds (§5.2), and the request states no retention period: in_force is U, reported unknown (§6.1), and under violations ignore it does not touch the verdict."
+        "why": "rule:audit-no-export matches ex:export by equality; the read permission does not (export is not below read). A surviving, applying prohibition: Deny. That prohibition matches, so the retention obligation is in force if its guard holds (§5.2), and the request states no retention period: in_force is U, reported unknown (§6.1), and it does not touch the verdict."
       },
       "dprod_expected": "Deny (prohibition overrides)"
     }

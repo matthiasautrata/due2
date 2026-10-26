@@ -46,7 +46,6 @@
         "activation": { "duty:mkt-delivery-2026-001": "2026-06-01T09:00:00Z" },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -56,7 +55,7 @@
           { "duty": "duty:mkt-delivery-2026-001", "status": "violated", "instance": "2026-06-01T09:30:00Z" },
           { "duty": "duty:mkt-schema-2026-001", "status": "outstanding" }
         ],
-        "why": "rule:tm-display applies (assignee analytics, display) and the distribute prohibition does not match display: Permit. The delivery instances are as in dprod-market-data-feed scenario 5 — the 09:00 delivery at 09:02 fulfils the first, the 09:15 and 09:30 intervals are violated — but here the default violations = ignore applies, so the missed intervals are reported and cost nothing. The schema obligation is in force and outstanding."
+        "why": "rule:tm-display applies (assignee analytics, display) and the distribute prohibition does not match display: Permit. The delivery instances are as in dprod-market-data-feed scenario 5 — the 09:00 delivery at 09:02 fulfils the first, the 09:15 and 09:30 intervals are violated — and the missed intervals are reported and cost nothing (§6.1). The schema obligation is in force and outstanding."
       },
       "dprod_expected": "Permit (no duty collected for a display; the permission is active for the grantee)"
     },
@@ -71,7 +70,6 @@
         "params": { "ex:recipientType": { "@id": "ex:internal" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:40:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -94,7 +92,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:40:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Deny",
         "frontier": [],
@@ -116,7 +113,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:40:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],

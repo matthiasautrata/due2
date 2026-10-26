@@ -49,9 +49,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -92,9 +89,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Indeterminate",
@@ -142,9 +136,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -190,9 +181,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Pending",
@@ -244,9 +232,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],
@@ -290,9 +275,6 @@
         ],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Indeterminate",

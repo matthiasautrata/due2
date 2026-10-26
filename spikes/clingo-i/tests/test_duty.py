@@ -423,47 +423,61 @@ def test_matching_evidence_fulfils(duty_interpreter: Interpreter) -> None:
     assert pick(found, "status") == {f"status(k,{D},fulfilled)"}
 
 
+ATTESTED = " ; due2:attestingParty ex:bank"
+
+
 @pytest.mark.parametrize(
-    ("change", "kind", "extra", "config"),
-    [({"actor": "ex:bob"}, "actor", "", {}),
-     ({"action": "odrl:delete"}, "action", "", {}),
-     ({"occurred_at": "2026-07-01T00:00:00Z"}, "effective", "", {}),
-     ({}, "signer", "", {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}),
-     ({}, "discharges", " ; due2:instanceScope due2:grant", {}),
-     ({}, "object", " ; odrl:output ex:receipt", {})],
+    ("change", "kind", "extra"),
+    [({"actor": "ex:bob"}, "actor", ""),
+     ({"action": "odrl:delete"}, "action", ""),
+     ({"occurred_at": "2026-07-01T00:00:00Z"}, "effective", ""),
+     ({}, "attester", ATTESTED),
+     ({"issuer": "ex:mallory"}, "attester", ATTESTED),
+     ({}, "discharges", " ; due2:instanceScope due2:grant"),
+     ({}, "object", " ; odrl:output ex:receipt")],
 )  # fmt: skip
 def test_each_failing_check_fails_the_witness(
-    duty_interpreter: Interpreter, change: Obj, kind: str, extra: str, config: Obj
+    duty_interpreter: Interpreter, change: Obj, kind: str, extra: str
 ) -> None:
     # Each check of the witness test (due2-workflows.md §5.3) on its own: one f check makes the
     # witness f, and the duty, with no other witness, stays outstanding. Without the check's
-    # rule its item would have no value and the integrity constraint would fail.
+    # rule its item would have no value and the integrity constraint would fail. A duty with an
+    # attester fails evidence with no issuer as well as evidence from another issuer.
     body = PRE.replace("odrl:compensate .", f"odrl:compensate{extra} .")
     duty = D.replace("none,none", '"ex:receipt",none') if kind == "object" else D
-    found = findings(
-        duty_interpreter, body, profile=True, sotw={"evidence": [PAID | change]}, config=config
-    )
+    found = findings(duty_interpreter, body, profile=True, sotw={"evidence": [PAID | change]})
     assert value_of(found, f'check({duty},"ex:e1",{kind})') == "f"
     assert value_of(found, f'witness({duty},"ex:e1")') == "f"
     assert pick(found, "status") == {f"status(k,{duty},outstanding)"}
 
 
-def test_admitted_issuer_and_discharged_reference_pass(duty_interpreter: Interpreter) -> None:
-    # The counterparts of the signer and discharges failures: the issuer the config admits and a
-    # discharge naming the request's reference make both checks t.
+@pytest.mark.parametrize(
+    ("issuer", "closure"),
+    [("ex:bank", []), ("ex:branch", [["odrl:partOf", "ex:branch", "ex:bank"]])],
+)
+def test_attested_issuer_and_discharged_reference_pass(
+    duty_interpreter: Interpreter, issuer: str, closure: list[Json]
+) -> None:
+    # The counterparts of the attester and discharges failures: an issuer at or below the
+    # attester, the attester itself or a member of it under the party closure, and a discharge
+    # naming the request's reference make both checks t. Without the le_k rule of attested/2,
+    # the branch's evidence would not count.
     evidence: Obj = {
         **PAID,
-        "issuer": "ex:bank",
+        "issuer": issuer,
         "discharges": {"duty": "ex:d", "reference": "req-1"},
     }
     found = findings(
         duty_interpreter,
-        PRE.replace("odrl:compensate .", "odrl:compensate ; due2:instanceScope due2:grant ."),
+        PRE.replace(
+            "odrl:compensate .",
+            f"odrl:compensate{ATTESTED} ; due2:instanceScope due2:grant .\n"
+            "ex:bank a odrl:PartyCollection .",
+        ),
         profile=True,
-        sotw={"evidence": [evidence]},
-        config={"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]},
+        sotw={"evidence": [evidence], "closure": closure},
     )
-    assert value_of(found, f'check({D},"ex:e1",signer)') == "t"
+    assert value_of(found, f'check({D},"ex:e1",attester)') == "t"
     assert value_of(found, f'check({D},"ex:e1",discharges)') == "t"
     assert pick(found, "status") == {f"status(k,{D},fulfilled)"}
 
@@ -546,7 +560,7 @@ def test_deadline_decides_outstanding_or_violated(
     assert pick(found, "status") == {f"status(k,{O},{status})"}
 
 
-CHECKS = ("effective", "deadline", "action", "object", "actor", "signer", "discharges")
+CHECKS = ("effective", "deadline", "action", "object", "actor", "attester", "discharges")
 
 
 def test_late_witness_is_not_timely(duty_interpreter: Interpreter) -> None:
@@ -784,15 +798,12 @@ def test_pending_basis_beyond_the_listed_frontier(duty_interpreter: Interpreter)
 OBLIGED = root_obligation(PAST)  # ex:o, in force, its deadline passed with no witness
 
 
-@pytest.mark.parametrize(("violations", "verdict"), [("ignore", "Permit"), ("deny", "Deny")])
-def test_violated_obligation_denies_only_under_violations_deny(
-    duty_interpreter: Interpreter, violations: str, verdict: str
-) -> None:
-    # A violated obligation in force is reported under every verdict, with role obligation,
-    # and turns the verdict to Deny only when config.violations is deny (due2-workflows.md
-    # §6.4). Without the second deny/1 rule, DPROD-aligned evaluation would permit.
-    out = output(duty_interpreter, OBLIGED, profile=True, config={"violations": violations})
-    assert out["verdict"] == verdict
+def test_violated_obligation_is_reported_and_never_denies(duty_interpreter: Interpreter) -> None:
+    # A violated obligation in force is reported beside the verdict, with role obligation, and
+    # never denies (due2-workflows.md §6.4, decisions/0045). Had an obligation rule of deny/1
+    # survived, the verdict would be Deny.
+    out = output(duty_interpreter, OBLIGED, profile=True)
+    assert out["verdict"] == "Permit"
     assert refs(out, "obligations") == {("ex:o", "violated")}
     assert ("ex:o", "obligation") in refs(out, "verdict_basis")
 
@@ -898,45 +909,24 @@ def guarded_obligation() -> str:
     )
 
 
-@pytest.mark.parametrize(
-    ("violations", "verdict"), [("ignore", "Permit"), ("deny", "Indeterminate")]
-)
-def test_unknown_in_force_is_reported_and_completed(
-    duty_interpreter: Interpreter, violations: str, verdict: str
-) -> None:
+def test_unknown_in_force_is_reported_and_completed(duty_interpreter: Interpreter) -> None:
     # A missing guard fact makes in_force u: the row is unknown, whatever the instance status
-    # (due2-workflows.md §6.1). Under deny the completion in force and violated denies, so the
-    # verdict ranges from Deny; under ignore the obligation cannot touch the verdict, so it is
-    # Permit and ex:o is not in role unknown, though its part is still reported. Without the
-    # completion of in_force, the deny case would be Permit, as if the guard were f.
-    out = output(
-        duty_interpreter,
-        guarded_obligation(),
-        profile=True,
-        sotw=MISSING_G,
-        config={"violations": violations},
-    )
+    # (due2-workflows.md §6.1), and its part is reported. An obligation never touches the
+    # verdict (decisions/0045), so it is Permit, and ex:o is not in role unknown. Without the
+    # completion of in_force, integrity.lp's one value per world would fail the solve.
+    out = output(duty_interpreter, guarded_obligation(), profile=True, sotw=MISSING_G)
     assert refs(out, "obligations") == {("ex:o", "unknown")}
     assert refs(out, "unknown_parts") == {("ex:o", "ex:g", "missing")}
-    assert out["verdict"] == verdict
-    assert (("ex:o", "unknown") in refs(out, "verdict_basis")) == (violations == "deny")
-    if violations == "deny":
-        assert out["verdict_range"] == {"low": "Deny", "high": "Permit"}
+    assert out["verdict"] == "Permit"
+    assert ("ex:o", "unknown") not in refs(out, "verdict_basis")
 
 
 def test_missing_target_leaves_rule_and_obligation_unknown(duty_interpreter: Interpreter) -> None:
     # With no request target, ex:perm's target part is u, and so is the policy match that puts
-    # ex:o in force (due2-workflows.md §5.2). Each finding reports the part under its own ref,
-    # and each reads its own variable (decisions/0016 #2): the completion where ex:perm applies
-    # and ex:o is not in force permits, the one where ex:o is in force and violated denies.
-    out = output(
-        duty_interpreter,
-        root_obligation(PAST),
-        profile=True,
-        request={"target": None},
-        config={"violations": "deny"},
-    )
-    assert out["verdict_range"] == {"low": "Deny", "high": "Permit"}
+    # ex:o in force (due2-workflows.md §5.2). Each finding reports the part under its own ref:
+    # the completions where ex:perm applies permit, and the others are NotApplicable.
+    out = output(duty_interpreter, root_obligation(PAST), profile=True, request={"target": None})
+    assert out["verdict_range"] == {"low": "NotApplicable", "high": "Permit"}
     assert refs(out, "obligations") == {("ex:o", "unknown")}
     assert refs(out, "unknown_parts") == {
         ("ex:perm", ODRL + "target", "missing"),

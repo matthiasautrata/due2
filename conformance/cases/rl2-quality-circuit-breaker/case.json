@@ -17,7 +17,6 @@
         "facts": { "ex:feedErrorRate": { "status": "resolved", "values": [ { "@value": "0.02", "@type": "xsd:decimal" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "0.02 ≤ 0.05 makes ex:readFeedPrivilege T, a ready candidate; 0.02 > 0.05 is F, so the prohibition does not apply. Both rules match the request, but the obligation's guard 0.02 > 0.05 is F, so it is not in force." },
       "rl2_expected": "Permit"
     },
@@ -32,8 +31,7 @@
         "facts": { "ex:feedErrorRate": { "status": "resolved", "values": [ { "@value": "0.08", "@type": "xsd:decimal" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "ex:reportIncidentDuty", "status": "outstanding" } ], "why": "0.08 > 0.05 makes ex:poorQualityProhibition T and it survives; the permission is F. The prohibition matches the request and the obligation's guard 0.08 > 0.05 is T, so ex:reportIncidentDuty is in force; no ex:report by ex:DataTeam on ex:QualityIncident is in evidence, so it is outstanding (RL2: Active), with bearer ex:DataTeam. Under violations = ignore it does not affect the verdict." },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [ { "duty": "ex:reportIncidentDuty", "status": "outstanding" } ], "why": "0.08 > 0.05 makes ex:poorQualityProhibition T and it survives; the permission is F. The prohibition matches the request and the obligation's guard 0.08 > 0.05 is T, so ex:reportIncidentDuty is in force; no ex:report by ex:DataTeam on ex:QualityIncident is in evidence, so it is outstanding (RL2: Active), with bearer ex:DataTeam. It does not affect the verdict (§6.1)." },
       "rl2_expected": "Deny"
     },
     {
@@ -47,7 +45,6 @@
         "facts": { "ex:feedErrorRate": { "status": "resolved", "values": [ { "@value": "0.050", "@type": "xsd:decimal" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "0.050 and 0.05 are the same decimal value, so lteq is T and gt is F: the permission is ready and the prohibition does not apply. The obligation's guard is F, so it is not in force." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:feedErrorRate": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:reportIncidentDuty", "status": "unknown" } ], "why": "Both the permission and the prohibition are U. The restrictive completion (permission F, prohibition T) gives Deny; the permissive one (permission T, prohibition F) gives Permit. Both rules match, and the obligation's guard is U, so it is in force with finding U and reported unknown." }
     }
   ]

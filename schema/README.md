@@ -4,8 +4,8 @@ These files state, in JSON Schema 2020-12, what the evaluator port of `due2-plat
 
 | File | Defines |
 |---|---|
-| `collections.schema.json` | One definition per collection (`Corpus`, `Request`, `Sotw`, `Config`, `Trace`, `Lineage`), one per value type of `due2-workflows.md` §2, and `Literal`, the object form a `Term` or `Instant` takes |
-| `evaluator.schema.json` | The two calls: `PlanInput` and `PlanOutput` for `plan(corpus, request)`, `DecideInput` and `DecideOutput` for `decide(corpus, request, sotw, config)` |
+| `collections.schema.json` | One definition per collection (`Corpus`, `Request`, `Sotw`, `Trace`, `Lineage`), one per value type of `due2-workflows.md` §2, and `Literal`, the object form a `Term` or `Instant` takes |
+| `evaluator.schema.json` | The two calls: `PlanInput` and `PlanOutput` for `plan(corpus, request)`, `DecideInput` and `DecideOutput` for `decide(corpus, request, sotw)` |
 
 **Generated, never edited.** `tools/gen_schema.py` reads the relation blocks of `due2-workflows.md` §3.1 to §3.6 and writes both files. To change the schema, edit the spec and run `uv run python tools/gen_schema.py`. `tests/test_schema.py` fails when a committed file differs from what the script generates, and when either file is not valid JSON Schema. The schema decides nothing the spec does not, except the lexical patterns that make its types checkable: an IRI, a language tag, an `xsd:dateTime` with a timezone.
 
@@ -13,7 +13,7 @@ These files state, in JSON Schema 2020-12, what the evaluator port of `due2-plat
 
 ## How a collection is described
 
-- **Collection.** An object with one optional property per relation. Any other property is invalid. The singletons `request`, `sotw`, `config`, and `lineage` are required in their collections. `DecideOutput` is a `Trace` that must contain `verdict`.
+- **Collection.** An object with one optional property per relation. Any other property is invalid. The singletons `request`, `sotw`, and `lineage` are required in their collections. `DecideOutput` is a `Trace` that must contain `verdict`.
 - **Relation.** An array of tuples with at least one item, because an empty relation is omitted, and with no item repeated. A relation with an empty key, such as `verdict`, holds exactly one tuple when it is present.
 - **Tuple.** An object with one property per field. A field marked `?` in `due2-workflows.md` §3 is optional; every other field is required. Any other property is invalid.
 - **`x-key`.** Each relation carries its key fields as the annotation `x-key`. JSON Schema cannot state that no two tuples share a key, so validators ignore `x-key`, and the harness checks it (`check_collection` in `tools/harness/vectors.py`).

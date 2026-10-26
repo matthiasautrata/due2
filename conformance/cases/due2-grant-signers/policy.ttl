@@ -4,7 +4,7 @@
 
 # due2-native: pay per download, payment attested by the bank.
 # Exercises grant-scoped duty instances and `discharges` (workflows §5.3) and
-# the evidence admissibility record `signer` (workflows §3.4).
+# the duty's attester, `due2:attestingParty` (workflows §5.3, due2-profiles §6).
 
 ex:reportPolicy a odrl:Set ;
     odrl:profile <https://w3id.org/due2/profile#> ;
@@ -21,7 +21,13 @@ ex:download a odrl:Permission ;
 ex:payPerUse a odrl:Duty ;
     odrl:action ex:pay ;
     odrl:target ex:ReportFee ;
+    # A duty that declares a function inherits no party (IM 2.6.5), so it states its assignee.
+    odrl:assignee ex:Alice ;
+    due2:attestingParty ex:Bank ;
     due2:instanceScope due2:grant .
+
+# A collection, so that a branch of the bank (odrl:partOf in the SOTW closure) attests for it.
+ex:Bank a odrl:PartyCollection .
 
 # IM 2.4: an action other than use and transfer is included in exactly one other;
 # the source names none for these, so odrl:use, the broadest.

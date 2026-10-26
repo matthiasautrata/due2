@@ -25,8 +25,8 @@
 %
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
-%   `function/1`, `match_key/1`, `bearer_fn/1`, `timing_predicate/1`, `term_kind/2`, `voc/2`,
-%   `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2` (driver).
+%   `function/1`, `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `timing_predicate/1`,
+%   `term_kind/2`, `voc/2`, `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
 %   `structure_node/1`, `states_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
 %   `family/1`, `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
@@ -36,8 +36,8 @@
 %   `duty_stated/3`, `duty_states/2`, `duty_value/3`, `has_duty_value/2`, `duty_rel/2`,
 %   `inherits/1`, `duty_states_party/1`, `states_bearer/1`, `bearer_value/3`, `own_bearer/2`,
 %   `has_own_bearer/1`, `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`,
-%   `duty_atom/1`, `duty_of/2`, `pre/2`, `obligation/1`, `bearer/2`, `duty_action/2`,
-%   `duty_relation/2`); their timing and scope (`node_deadline/2`, `deadline_kind/2`,
+%   `attester/2`, `has_attester/1`, `duty_atom/1`, `duty_of/2`, `pre/2`, `obligation/1`,
+%   `bearer/2`, `duty_action/2`, `duty_relation/2`); their timing and scope (`node_deadline/2`, `deadline_kind/2`,
 %   `duty_deadline/2`, `duty_scope/2`, `scope_value/1`, `states_scope/1`); extends
 %   `unsupported/1` (lift.lp).
 
@@ -338,6 +338,10 @@ atom_party(a(R, A, T, Party), F, Party) :- atom(a(R, A, T, Party)), rule_value(R
 % bearer of its parent atom (`inh_bearer/3`). With none, the bearer is `none`: the request
 % subject.
 %
+% The attester is the party of a function that plays the attester role (`attester_fn/1`):
+% `due2:attestingParty`. It is one of the duty's own values (`attester/2`), and the spike declines
+% an attester the duty would inherit.
+%
 % The bearer is in the id, and the other inherited parties are not. A duty shared by two parents
 % with one bearer is therefore one atom, with one instance, and shared under two bearers it is
 % two. The corpus's atom id also holds the other inherited parties (`duty.atom_id`,
@@ -482,6 +486,27 @@ bearer `none` is the request subject (due2-profiles.md §6).
 duty_bearer(Duty, Party) :- own_bearer(Duty, Party).
 duty_bearer(Duty, none) :- duty_node(Duty), not inherits(Duty), not has_own_bearer(Duty).
 duty_bearer(Duty, Party) :- inh_bearer(_, Duty, Party).
+
+%*! attester(Duty, Party)
+
+`Party` is an attester of `Duty`: a value of its own for a function that plays the attester role
+(`attester_fn/1`), such as `due2:attestingParty`. Only evidence whose issuer is at or below an
+attester counts for the duty (due2-workflows.md §5.3). The attester is not in the duty atom's id:
+it filters the evidence and names no performer.
+*%
+attester(Duty, Party) :- duty_value(Duty, F, Party), attester_fn(F).
+% due2-profiles.md §6 has an inheriting duty take its parent's attester as it takes any other
+% party. A duty with two parents could then take two attesters for one atom, so the spike
+% declines an attester it would have to inherit rather than pick a reading.
+unsupported("duty: inherited attester") :- inherits(Duty), pre_rule(R, Duty), rule_value(R, F, _),
+    attester_fn(F).
+
+%*! has_attester(Duty)
+
+`Duty` names an attester, so evidence with no issuer, or an issuer not at or below an attester,
+does not count for it.
+*%
+has_attester(Duty) :- attester(Duty, _).
 
 %*! duty_atom(Y)
 

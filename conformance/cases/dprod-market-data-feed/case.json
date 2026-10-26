@@ -27,7 +27,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -50,7 +49,6 @@
         "params": { "ex:recipientType": { "@id": "ex:internal" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -73,7 +71,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Indeterminate",
         "frontier": [],
@@ -96,7 +93,6 @@
         "params": { "ex:recipientType": { "@id": "ex:externalRecipient" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:02:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],
@@ -109,7 +105,7 @@
       "dprod_expected": "NotApplicable (the permission is inactive; no prohibition matches)"
     },
     {
-      "name": "two intervals missed, the third still open, under deny",
+      "name": "two intervals missed, the third still open",
       "request": {
         "reference": "req-5",
         "action": "odrl:display",
@@ -134,9 +130,8 @@
         "activation": { "rule:feed-delivery": "2026-06-01T09:00:00Z" },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides", "violations": "deny" },
       "expected": {
-        "verdict": "Deny",
+        "verdict": "Permit",
         "frontier": [],
         "obligations": [
           { "duty": "rule:feed-delivery", "status": "fulfilled", "instance": "2026-06-01T09:00:00Z" },
@@ -144,9 +139,9 @@
           { "duty": "rule:feed-delivery", "status": "violated", "instance": "2026-06-01T09:30:00Z" },
           { "duty": "rule:feed-schema", "status": "outstanding" }
         ],
-        "why": "Anchored at 09:00 on the 15-minute grid, occurrences ≤ 09:40 are 09:00, 09:15, 09:30, each with deadline t + PT5M. ex:ev-delivery-0900, delivered at 09:02, witnesses the 09:00 instance: fulfilled. The 09:15 and 09:30 instances have no witness and their deadlines (09:20, 09:35) are past: violated. Under violations = deny a violated instance of an obligation in force denies the request. The next occurrence (09:45) is after effective_at, so it is not owed."
+        "why": "Anchored at 09:00 on the 15-minute grid, occurrences ≤ 09:40 are 09:00, 09:15, 09:30, each with deadline t + PT5M. ex:ev-delivery-0900, delivered at 09:02, witnesses the 09:00 instance: fulfilled. The 09:15 and 09:30 instances have no witness and their deadlines (09:20, 09:35) are past: violated. The violations are reported and do not gate display (§6.1), and rule:feed-display is ready: Permit. The next occurrence (09:45) is after effective_at, so it is not owed."
       },
-      "dprod_expected": "Permit (deliver never matches display, so no duty is collected and no violation denies; exception 6)"
+      "dprod_expected": "Permit (deliver never matches display, so no duty is collected and no violation denies)"
     }
   ]
 }

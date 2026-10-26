@@ -29,7 +29,8 @@ the generator plants, in a quarter of the cases, a branch that is `f` whatever i
 
 The duty differential extends the generated policies with duties (due2-workflows.md §5.3, §6;
 decisions/0018, decisions/0019). Each permission may require some of three duties, and the
-policy may carry a root obligation, with `violations` set to `ignore` or `deny`. A duty may
+policy may carry a root obligation, which is reported and never moves the verdict
+(decisions/0045). A duty may
 have a guard tree, a passed deadline, and one evidence row whose actor is alice or bob. With
 no request subject, the actor check of a duty borne by the subject is `u`. A guard tree is
 completed as a rule's tree is, so a guard leaf with a rule leaf's key reads its variable; an
@@ -37,8 +38,8 @@ completed as a rule's tree is, so a guard leaf with a rule leaf's key reads its 
 The oracle then derives closure, the candidates, the frontier
 (listed only when every completion agrees, due2-workflows.md §6.3), the verdict, its range, the
 basis, and the duties named `unknown`. Half the generated cases make every finding known, so
-that a definite Pending, a frontier of two alternatives, and a Deny by the obligation occur
-often enough to be tested.
+that a definite Pending and a frontier of two alternatives occur often enough to be
+tested.
 
 Each differential runs as `COPIES` parametrized copies, each with its own random seed, so
 that pytest-xdist runs them on separate workers (#82); a run makes `COPIES` times each draw
@@ -764,36 +765,26 @@ EXAMPLES = [
 ]
 
 
-def holds_by_cases(got: Obj, violations: str = "ignore") -> bool:
+def holds_by_cases(got: Obj) -> bool:
     """The reply is a definite `Permit` or `Deny` whose basis lacks the atoms that determine
-    it, as `tools/check_corpus.py` reads a basis: no permission for a `Permit`; no prohibition,
-    and under `violations` `deny` no obligation listed `violated`, for a `Deny`
-    (due2-workflows.md §6.4, decisions/0016 #4)."""
+    it, as `tools/check_corpus.py` reads a basis: no permission for a `Permit`, no prohibition
+    for a `Deny` (due2-workflows.md §6.4, decisions/0016 #4)."""
     basis = got.get("verdict_basis", [])
     assert isinstance(basis, list)
-    by_role: dict[str, set[str]] = {}
-    for b in basis:
-        assert isinstance(b, dict)
-        by_role.setdefault(str(b["role"]), set()).add(str(b["ref"]))
-    obligations = got.get("obligations", [])
-    assert isinstance(obligations, list)
-    violated = {
-        str(o["duty"]) for o in obligations if isinstance(o, dict) and o["status"] == "violated"
-    }
+    roles = {str(b["role"]) for b in basis if isinstance(b, dict)}
     if got["verdict"] == "Permit":
-        return "permission" not in by_role
+        return "permission" not in roles
     if got["verdict"] == "Deny":
-        obliged = violations == "deny" and bool(by_role.get("obligation", set()) & violated)
-        return "prohibition" not in by_role and not obliged
+        return "prohibition" not in roles
     return False
 
 
-def check_waiver(got: Obj, violations: str = "ignore") -> None:
+def check_waiver(got: Obj) -> None:
     """Claim W (correctness-strategy.md §4.8, #77): a verdict that holds by cases lists an
     `unresolved` unknown part, the premise of the basis waiver in `tools/check_corpus.py`.
     resolve.lp argues it (*The cautious basis*); this checks it on every reply the differentials
     see."""
-    if holds_by_cases(got, violations):
+    if holds_by_cases(got):
         parts = got["unknown_parts"]
         assert isinstance(parts, list)
         assert any(isinstance(u, dict) and u["status"] == "unresolved" for u in parts), got
@@ -1181,7 +1172,6 @@ class Duties:
     duties: tuple[Duty, ...]  # ex:d0, ex:d1, ...
     edges: tuple[tuple[str, int], ...]  # (permission, duty index): the permission requires it
     obligation: Duty | None = None  # ex:ob, on the policy
-    violations: str = "ignore"
 
 
 @st.composite
@@ -1196,7 +1186,7 @@ def duty_cases(draw: st.DrawFn) -> Duties:
     if draw(st.booleans()):
         # Every finding known in half the cases, and each permission with an open duty more
         # often: with unknowns, nearly every case is Indeterminate, and a definite Pending with
-        # two alternatives, or a Deny by the obligation, is a few cases in a thousand.
+        # two alternatives is a few cases in a thousand.
         rules = tuple(replace(r, constraints=()) for r in case.rules)
         subject = case.assignee or draw(st.sampled_from(PARTIES))
         case = replace(case, rules=rules, target=case.target or "a", assignee=subject)
@@ -1216,13 +1206,7 @@ def duty_cases(draw: st.DrawFn) -> Duties:
     # duty atom, and the reply's IRIs say which atoms the program compared.
     first = {k: r.assignee for r, k in sorted(wanted, key=lambda e: e[0].name)}
     edges = {(r.name, k) for r, k in wanted if r.assignee == first[k]}
-    return Duties(
-        case,
-        duties,
-        tuple(sorted(edges)),
-        draw(st.none() | duty),
-        draw(st.sampled_from(("ignore", "deny"))),
-    )
+    return Duties(case, duties, tuple(sorted(edges)), draw(st.none() | duty))
 
 
 def render_duties(dc: Duties) -> Obj:
@@ -1252,10 +1236,9 @@ def render_duties(dc: Duties) -> Obj:
         lines.append("ex:p odrl:obligation ex:ob .")
         duty("ob", "delete", dc.obligation, "ex:a")
     v["policy"] = "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n" + "\n".join(lines) + "\n"
-    sotw, config = v["sotw"], v["config"]
-    assert isinstance(sotw, dict) and isinstance(config, dict)
+    sotw = v["sotw"]
+    assert isinstance(sotw, dict)
     sotw["evidence"] = evidence
-    config["violations"] = dc.violations
     return v
 
 
@@ -1368,8 +1351,7 @@ def resolve_duties(dc: Duties, world: dict[Literal, bool]) -> tuple[str, Basis]:
         cands = set[str]()
     if void or (conflict == "perm" and cands):
         forbids = set[str]()
-    obliged = dc.obligation is not None and on["in_force ob"] and violated("ob")
-    if forbids or (dc.violations == "deny" and obliged):
+    if forbids:
         return "Deny", {(f, "prohibition") for f in forbids}
     front = {x for x in cands if not any(outstanding[y] < outstanding[x] for y in cands)}
     if any(not outstanding[x] for x in front):
@@ -1462,7 +1444,7 @@ def check_duties(interp: Interpreter, dc: Duties) -> None:
     reply = interp.reply(render_duties(dc))
     got = reply.get("output")
     assert isinstance(got, dict), reply
-    check_waiver(got, dc.violations)
+    check_waiver(got)
     keys = ("verdict", "frontier", "verdict_range", "verdict_basis")
     assert {k: got[k] for k in keys if k in got} == duty_oracle(dc)
 
@@ -1483,11 +1465,8 @@ def duties(
     edges: tuple[tuple[str, int], ...],
     *ds: Duty,
     obligation: Duty | None = None,
-    violations: str = "ignore",
 ) -> Duties:
-    return Duties(
-        case, (*ds, *(OPEN,) * (len(DUTY_ACTIONS) - len(ds))), edges, obligation, violations
-    )
+    return Duties(case, (*ds, *(OPEN,) * (len(DUTY_ACTIONS) - len(ds))), edges, obligation)
 
 
 DUTY_EXAMPLES = [
@@ -1536,13 +1515,8 @@ DUTY_EXAMPLES = [
         Duty((Leaf(2, "neq"),), past=True),
     ),
     # An absent target leaves r0 and the policy match u, each with a variable of its own: the
-    # violated root obligation denies only where it is in force (due2-workflows.md §6.4).
-    duties(
-        Case("perm", (PLAIN,), "use", None, None),
-        (),
-        obligation=LAPSED,
-        violations="deny",
-    ),
+    # violated root obligation is reported, and r0 alone decides the range (decisions/0045).
+    duties(Case("perm", (PLAIN,), "use", None, None), (), obligation=LAPSED),
     # A request with no subject: the actor check is u, so `fulfilled` is u, with its own
     # variable, and the lapsed precondition closes r0 only where it is unfulfilled.
     duties(Case("perm", (PLAIN,), "use", "a", None), (("r0", 0),), Duty((), "alice", True)),
@@ -1555,14 +1529,6 @@ DUTY_EXAMPLES = [
         (("r0", 0), ("r1", 1)),
         Duty((), "alice", True),
         Duty((), "alice", True),
-    ),
-    # A guarded obligation: in force where its guard is, so the lapse denies only there. Read
-    # from the policy match alone, it would deny in every completion.
-    duties(
-        Case("perm", (PLAIN,), "use", "a", None, (None,) * OPERANDS, PAIRED),
-        (),
-        obligation=Duty((eq(2),), past=True),
-        violations="deny",
     ),
     # A definite Permit with an empty basis (resolve.lp, *The cautious basis*): ex:d0's guard
     # repeats r1's constraint on an unresolved operand. Where it holds, ex:d0 is owed and
@@ -1636,11 +1602,6 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
             ("reads(fulfilled(Y), ful(Y))", "reads(fulfilled(Y), ful(0))"),
             ("assigned(W, ful(Y), V).", "assigned(W, ful(0), V)."),
         ],
-    ),
-    # A u `in_force` completed from its policy match alone, its guards dropped.
-    "in-force-guards-ignored": (
-        "completion.lp",
-        [("policy_match(Y, Np); M, C : root_in(W, in_force(Y), C, M) }", "policy_match(Y, Np) }")],
     ),
     # A u `fulfilled` read as f in each world: unknown as false.
     "fulfilled-u-as-f": (
@@ -1721,8 +1682,6 @@ def duty_shapes(dc: Duties) -> Iterator[str]:
         yield "two listed alternatives"
     if any(role == "closed" for _, role in roles):
         yield "a closed route"
-    if verdict == "Deny" and not any(role == "prohibition" for _, role in roles):
-        yield "Deny by an obligation"
     if any(role == "unknown" and ref not in rules for ref, role in roles):
         yield "Indeterminate naming a duty"
 
@@ -1736,7 +1695,6 @@ DUTY_WANTED = {
     "Pending",
     "two listed alternatives",
     "a closed route",
-    "Deny by an obligation",
     "Indeterminate naming a duty",
 }
 
@@ -1887,8 +1845,8 @@ def directions(
 
     `raises[n]` says which way item `n` moves the verdict when it becomes truer: up for a
     permission, down for a prohibition or a precondition's `owed`, and `None` for an item that
-    does not move it, the obligation's `in_force` under `violations` `ignore`. A variable read
-    only by such items has no direction; either extreme gives the same verdict.
+    does not move it, the obligation's `in_force` (decisions/0045). A variable read only by such
+    items has no direction; either extreme gives the same verdict.
     """
     out: dict[Literal, set[bool]] = {}
     for n, ps in items.items():
@@ -1950,7 +1908,8 @@ def monotone_input(
     items, fulfilled = duty_items(x)
     raises = {r.name: r.permit for r in x.case.rules}
     raises |= {n: False for n in items if n.startswith("owed ")}
-    raises["in_force ob"] = False if x.violations == "deny" else None
+    raises["in_force ob"] = None
     dirs = directions(items, raises)
-    dirs |= {ful(k): {True} for k, v in fulfilled.items() if v is None}
+    # A precondition's `fulfilled` moves the verdict up; the obligation's moves nothing.
+    dirs |= {ful(k): {True} if k != "ob" else set() for k, v in fulfilled.items() if v is None}
     return dirs, lambda w: resolve_duties(x, w)[0]

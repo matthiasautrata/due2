@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.16
+**Status:** Draft v0.17
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.16** (2026-10-26, `decisions/0040`, `decisions/0042`, #137, #139): §7 says that a case and its evaluations together pin their inputs (`decisions/0042`), and §8 harvests RL2's admissibility by source but not its freshness filter, which is the SOTW service's job (`decisions/0040`). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.17** (2026-10-26, `decisions/0045`): there is no config, so `decide` takes the corpus, the request, and the SOTW (§2, §7). §6.2 fixes prohibit-overrides across policies, and a void policy's violated obligation is reported, not denied. A duty's attester names whose evidence counts (§3). §0's worked example is the case's `Permit` scenario, with the violated delivery reported. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -41,14 +41,14 @@ Markers as in the companion: **[D]** decided · **[O]** open, alternatives liste
 | in force | An obligation travels with its policies: in force when one of the policies that state it matches | `due2-workflows.md` §5.2 |
 | profile | An ODRL extension, declared as data and compiled mechanically | `due2-profiles.md` §1 |
 
-**A request through the pipeline** (from `conformance/cases/dprod-customer-api-v2`, scenario 3; the expected answer is the case's hand-derived one, and its `why` gives the derivation):
+**A request through the pipeline** (from `conformance/cases/dprod-customer-api-v2`, scenario 2; the expected answer is the case's hand-derived one, and its `why` gives the derivation):
 
 1. *Authored.* An offer on the customer-data asset, taken from DPROD Contracts' examples, has six rules: permissions to `read` and to `derive`, a prohibition on `distribute`, and three obligations. One obligation is *deliver the data every day by 07:30*: `dprod:recurrence` daily at 07:00, with a `dprod:deadline` of 30 minutes. The other two are schema conformance and usage reporting within 30 days.
 2. *W1.* Each rule already has one action and at most one target, so the offer normalises into six atoms, once the offer's target and assigner fill the rules that state none (`odrl-compound-to-atomic-normalization.md` §6.2). The three obligations are root duty atoms, and the delivery and reporting atoms carry their timing.
-3. *The request.* Analytics asks to `read` customer data on 2026-06-03 at 07:10. The SOTW holds one evidence record, the delivery performed at 07:10 on 06-01, and the delivery's activation at 07:00 on 06-01. The deployment answers under `violations = deny`.
+3. *The request.* Analytics asks to `read` customer data on 2026-06-03 at 07:10. The SOTW holds one evidence record, the delivery performed at 07:10 on 06-01, and the delivery's activation at 07:00 on 06-01.
 4. *W2.* The read permission *applies*: its action and target match, and it names no assignee. The derive permission and the prohibition do not apply, since their actions differ from `read`. All three obligations are *in force*, because their policy matches the request. The delivery resolves to three instances. The 06-01 instance is fulfilled by the evidence. The 06-02 instance is **violated**: no evidence answers it, and its deadline, 07:30 on 06-02, has passed. The 06-03 instance is outstanding, since its deadline is still ahead. The schema and reporting obligations are outstanding.
-5. *W3.* The read permission has no precondition duties, so nothing gates it, and no prohibition applies. Under `violations = deny`, though, a violated instance of an obligation in force acts as a surviving prohibition (`due2-workflows.md` §6.4).
-6. ***Deny***. The obligations the answer reports list the violated 06-02 instance beside the outstanding 06-03 one, so the answer says both what went wrong and what is still owed. DPROD itself permits this request, because it never collects a duty whose action differs from the request's (`due2-profiles.md` §8.2, exception 6).
+5. *W3.* The read permission has no precondition duties, so nothing gates it, and no prohibition applies, so the read permission is a ready candidate. The obligations are independent of the permission: a violated obligation is reported and does not move the verdict (`due2-workflows.md` §6.1, `decisions/0045`).
+6. ***Permit***. The obligations the answer reports list the fulfilled 06-01 instance, the violated 06-02 instance, and the outstanding 06-03 one, so the answer says what went wrong and what is still owed beside the permission. DPROD also permits this request, but for another reason: it never collects a duty whose action differs from the request's (`due2-profiles.md` §8.2, exception 6).
 
 ---
 
@@ -71,7 +71,7 @@ Three pure functions. The shell around them fetches facts, records them in the c
 ```text
 normalise : Policy                          -> Corpus   (offline, per policy version)   W1
 plan      : Corpus x Request                -> Reads    (per request, before decide)
-decide    : Corpus x Request x SOTW x Config -> Trace    (hot, per evaluation)           W3 ∘ W2
+decide    : Corpus x Request x SOTW         -> Trace    (hot, per evaluation)           W3 ∘ W2
 ```
 
 `plan` is the sweep the operand bindings exist for (`due2-profiles.md` §3): every value an evaluation can consult is named by a binding, so the reads are known from the corpus and the request before anything is fetched. The shell fetches what the case lacks, records it, and calls `decide` only when every planned read is in the case (`due2-workflows.md` §3.3). `decide` returns the trace, and the verdict is one relation in it. Re-evaluation is `decide` over the case's current SOTW: a distinct operational trigger (§7), not a distinct function.
@@ -104,7 +104,7 @@ Duties are shared in practice. "Complete annual training" attaches to many permi
 Giving every attachment its own atom would conflict with ODRL, where a duty shared by UID across permissions is fulfilled once, and with §8, where fulfilment is derived from evidence rather than discharged against a stored atom. Duty instances handle both cases, following RL2 (§8.2):
 
 - **A duty instance is the authored duty plus its scope.** Scope `member`: the duty atom, whose id holds the authored duty UID and its ground binding (§5), plus the performer when the request supplies it (`due2-workflows.md` §5.3). Attachments that bind the duty identically share one instance, and one fulfilment serves all of them. Scope `grant`: the duty atom and the request's reference — one instance per request, for "pay per use".
-- **Fulfilment is derived from evidence.** A duty is fulfilled by a record that its obligated party performed its action on its object, admitted by the duty's signer configuration (`due2-workflows.md` §5.3). A grant-scoped instance accepts only evidence submitted against it.
+- **Fulfilment is derived from evidence.** A duty is fulfilled by a record that its obligated party performed its action on its object, made by the duty's attester or by an issuer below it in the party closure, when the duty names one with `due2:attestingParty` (`due2-workflows.md` §5.3). A grant-scoped instance accepts only evidence submitted against it.
 - **"About this dataset" is a binding, not an identity.** The petition duty binds its target to its parent's. X and Y bind differently, so their instances need evidence about different objects and cannot cross-discharge. An authored duty that names no target asks for one petition, and one petition satisfies it everywhere — which is what it says.
 
 Normalisation stage 1 keeps authored sharing exactly (`odrl-compound-to-atomic-normalization.md`, invariant 4). Stage 2 instantiates per binding after parameter substitution (§4). Sharing survives in lineage, which is what lets the canonical duty be edited in one place.
@@ -175,13 +175,13 @@ Permit | Deny | Pending(frontier) | NotApplicable | Indeterminate
 
 `Pending` is derivable rather than special: a permission applies, and some of its duties have no admissible evidence of performance yet. Absence of evidence means *not yet fulfilled*, not unknown; evidence arrives through the case (§7), and fulfilment is derived from it, never stored.
 
-### 6.2 Combination **[O]**
+### 6.2 Combination **[D]**
 
-Prohibit-wins is a **default, not a law**. ODRL's `conflict` term takes `perm`, `prohibit`, or `invalid`, and it is a property of the source policy. Once atoms from several source policies are in one corpus they cannot be folded uniformly: the fold is per originating policy, then a combination across policies (`due2-workflows.md` §6.2). This is one of the reasons provenance is a required field rather than a nicety.
+Prohibit-wins is a **default, not a law**. ODRL's `conflict` term takes `perm`, `prohibit`, or `invalid`, and it is a property of the source policy. Once atoms from several source policies are in one corpus they cannot be folded uniformly: the fold is per originating policy, then prohibit-overrides across policies, fixed for every evaluation (`due2-workflows.md` §6.2, `decisions/0045`). Other cross-policy strategies are open (`due2-workflows.md` §9 #2). This is one of the reasons provenance is a required field rather than a nicety.
 
 **[D]** — all three are admitted. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids a source policy when one of its permissions and one of its prohibitions both apply; W3 can do that because every atom carries its source policy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); the normaliser writes the result explicitly.
 
-**[D]** A void policy gives *no access answer*: its permissions and prohibitions are eliminated. Its root obligations stay in force, and under `violations = deny` a violated one still denies (`decisions/0029`). ODRL reads a void policy as governing nothing, so this is a departure, made for two reasons. Whether an obligation was met does not depend on the request whose conflict voids the policy, and removing it would let a request escape a violated obligation by asking for a use the policy forbids. And the reading keeps the verdict monotone, so `Indeterminate` stays a two-completion computation (`due2-workflows.md` §6.4). Validity and evaluation are separate concerns: a malformed policy is rejected at W1 or by the checkers, while a well-formed policy that voids itself for one request is an evaluation outcome, visible in the trace (`eliminated`, rule `invalid`). OVAL reports such a policy as not evaluable (`oval-conflict-invalid`), which conflates the two. *`Indeterminate` with a cause* — the fail-safe alternative, a value outside the chain needing its own computation — stays parked; revisit if a real policy needs a void policy to block rather than abstain.
+**[D]** A void policy gives *no access answer*: its permissions and prohibitions are eliminated. Its root obligations stay in force and are still reported, a violated one included (`decisions/0029`). ODRL reads a void policy as governing nothing, so this is a departure. Whether an obligation was met does not depend on the request whose conflict voids the policy, and dropping it would let a request hide a violated obligation by asking for a use the policy forbids. Validity and evaluation are separate concerns: a malformed policy is rejected at W1 or by the checkers, while a well-formed policy that voids itself for one request is an evaluation outcome, visible in the trace (`eliminated`, rule `invalid`). OVAL reports such a policy as not evaluable (`oval-conflict-invalid`), which conflates the two. *`Indeterminate` with a cause* — the fail-safe alternative, a value outside the chain needing its own computation — stays parked; revisit if a real policy needs a void policy to block rather than abstain.
 
 ### 6.3 Two kinds of question **[D]**
 
@@ -198,7 +198,7 @@ In workflow terms, both share W1 and W2's matching, constraint, and fulfilment m
 
 ## 7. Ledger **[D]**
 
-Every decision is recorded. Because `decide` is pure over `(corpus, request, SOTW, config)`, the ledger records every case and its evolution, each evaluation replayable, and every production decision can become a conformance case — the conformance suite fills itself. A case is created when a request is made; an evaluation is one run over it (`due2-workflows.md` §7).
+Every decision is recorded. Because `decide` is pure over `(corpus, request, SOTW)`, the ledger records every case and its evolution, each evaluation replayable, and every production decision can become a conformance case — the conformance suite fills itself. A case is created when a request is made; an evaluation is one run over it (`due2-workflows.md` §7).
 
 **Re-evaluate, never patch.** The temptation is to find `Pending` cases whose petition has been approved and flip them. A `Pending` record is not a promise; it is a decision made under facts that have since changed, and the only sound way to learn the new answer is to ask again.
 
@@ -311,7 +311,7 @@ Contents:
 
 ## 11. Open decisions register
 
-Workflow-level decisions — canonical encoding, cross-policy combination, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
+Workflow-level decisions — canonical encoding, cross-policy strategies other than prohibit-overrides, preference among alternatives, the monitoring question, request match keys — are registered in `due2-workflows.md` §9. Duty timing is decided (`due2-workflows.md` §5.3, `due2-profiles.md` §7).
 
 **Tracking.** Open items are recorded as GitHub issues (labels `open-decision`, `corpus`, `verification`, `work-item`, `parked`); each issue names its source-of-truth section. This convention is stated here once and covers every open-decision register — this one, `due2-workflows.md` §9, `due2-profiles.md` §9, `ways-of-working.md` §13, `correctness-strategy.md` §9: a register remains the specification record, a resolution lands in it, and the issue closes. Sub-issues, milestones, and the development cycle are `ways-of-working.md` §14. The execution-target issue (#16) also covers `ways-of-working.md` §13 #10, #11, and #13.
 

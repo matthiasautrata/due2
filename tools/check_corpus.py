@@ -1359,6 +1359,8 @@ def check_case(case_dir: Path) -> list[Report]:
         r.err("case.json: no scenarios")
     for i, sc in enumerate(scenarios):
         tag = f"scenario {i + 1} ({sc.get('name', '?')})"
+        if "config" in sc:
+            r.err(f"{tag}: an evaluation has no config (decisions/0045)")
         req = sc.get("request", {})
         for k in ("action", "at"):  # target may be absent (workflows 3.2)
             if k not in req:
@@ -1426,7 +1428,7 @@ def check_case(case_dir: Path) -> list[Report]:
                 )
         if exp.get("verdict") == "Pending" and not exp.get("frontier"):
             r.err(f"{tag}: Pending needs a frontier")
-        check_explanation(tag, exp, sc.get("config", {}), g, prefixes, r)
+        check_explanation(tag, exp, g, prefixes, r)
         check_range(tag, exp, r)
         check_unknown_parts(tag, exp, g, prefixes, {str(p) for _, p, _ in used.values()}, r)
     return reports
@@ -1499,7 +1501,7 @@ def entry(x: object, keys: set[str]) -> dict[str, Any] | None:
 
 
 def check_explanation(
-    tag: str, exp: dict[str, Any], config: dict[str, Any], g: Graph, pfx: dict[str, str], r: Report
+    tag: str, exp: dict[str, Any], g: Graph, pfx: dict[str, str], r: Report
 ) -> None:
     """expected.verdict_basis and expected.eliminated (conformance/README.md, workflows 3.7):
     shape, that each IRI is a rule or duty of the right kind, and that roles fit the verdict."""
@@ -1533,20 +1535,11 @@ def check_explanation(
             if verdict in BASIS_ROLES and role not in BASIS_ROLES[verdict]:
                 r.err(f"{tag}: role {role} does not fit {verdict} (workflows 6.4)")
             by_role.setdefault(role, set()).add(ref)
-        violated = {
-            expand(o.get("duty", ""), pfx)
-            for o in exp.get("obligations", [])
-            if o.get("status") == "violated"
-        }
         need = {
             "Permit": "permission" in by_role,
             "Pending": "permission" in by_role and "duty" in by_role,
             "Indeterminate": "unknown" in by_role,
-            "Deny": "prohibition" in by_role
-            or (
-                config.get("violations") == "deny"
-                and bool(by_role.get("obligation", set()) & violated)
-            ),
+            "Deny": "prohibition" in by_role,
         }
         # A definite verdict that holds by cases has no atom in every completion, so its basis
         # can lack the role (workflows 6.4, decisions/0016 #4). Holding by cases needs two
@@ -1571,13 +1564,12 @@ def check_explanation(
         if by_role.get("obligation", set()) != in_force:
             r.err(f"{tag}: the basis's obligations must be expected.obligations' duties")
     if "eliminated" in exp:
-        combination = config.get("combination", "prohibit-overrides")
         removers = {
             "prohibit": (perms, prohibs),
             "perm": (prohibs, perms),
             "invalid": (perms | prohibs, perms | prohibs),
             "violated_precondition": (perms, preconds),
-            combination: (perms, prohibs),
+            "prohibit-overrides": (perms, prohibs),
         }
         closed_by: set[str] = set()
         for raw in exp["eliminated"]:

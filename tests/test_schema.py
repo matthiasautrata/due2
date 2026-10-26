@@ -175,9 +175,9 @@ def _constraint_on_no_atom(doc: Obj) -> None:
     ]
 
 
-def _config_without_bound(doc: Obj) -> None:
-    config = cast(list[Obj], cast(Obj, _scenario(doc)["config"])["config"])
-    del config[0]["max_mixed"]
+def _sotw_without_effective_at(doc: Obj) -> None:
+    sotw = cast(list[Obj], cast(Obj, _scenario(doc)["sotw"])["sotw"])
+    del sotw[0]["effective_at"]
 
 
 def _party_as_prefix(doc: Obj) -> None:
@@ -204,7 +204,7 @@ MUTATIONS: dict[str, Callable[[Obj], None]] = {
     "invariant: a root that names no policy": _root_naming_no_policy,
     "invariant: an edge whose parent names no atom": _edge_from_no_atom,
     "invariant: a constraint on no atom": _constraint_on_no_atom,
-    "schema: config without max_mixed": _config_without_bound,
+    "schema: a SOTW without effective_at": _sotw_without_effective_at,
     "prefixes: `party` as a prefix name": _party_as_prefix,
 }
 

@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.23
+**Status:** Draft v0.24
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.23** (2026-10-26, `decisions/0040`, #137): §3 *Admissibility* keeps `admit_source`, which W2 applies when it combines the answers of several sources, and drops `admit_age`, because keeping values current is the SOTW service's job. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.24** (2026-10-26, `decisions/0045`): there is no config. §3 *Admissibility*: the orchestrator records answers only from the sources registered for a property, so W2 combines every recorded answer. §6 adds the role `due2:attester`, played by `due2:attestingParty`, which names whose evidence counts for a duty. §7 *Violations and access*: a violated obligation never denies. §8.2 exception 6 covers every case where DPROD denies for a violation. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -32,7 +32,7 @@ A profile may extend ODRL at exactly these points. Anything else a profile defin
 | 2 | Operator | closed core registry; profile operators by reduction | W2 (`due2-workflows.md` §5.4) |
 | 3 | Logical connective | `odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not` | W1 stage 2 |
 | 4 | Policy class | `rdfs:subClassOf` an ODRL policy class | W1 stage 1 |
-| 5 | Party role | `due2:playsRole` on a function property | W1 stage 2, W2 (`due2-workflows.md` §5.3) |
+| 5 | Party role | `due2:playsRole` on a function property: bearer, beneficiary, attester (§6) | W1 stage 2, W2 (`due2-workflows.md` §5.3) |
 | 6 | Duty timing | `dprod:deadline`, `dprod:recurrence` | W1 stage 2 (corpus `duty`), W2 (`due2-workflows.md` §5.3) |
 | 7 | Hierarchy | `odrl:includedIn` (actions), typed `odrl:partOf` (assets, parties), `skos:broader` (concepts, §4) | corpus and SOTW closure |
 | 8 | Conflict default | `odrl:conflict` on the profile resource | W1 stage 1 |
@@ -108,7 +108,7 @@ These checks are coarse on purpose. They leave out class subsumption and disjoin
 
 **Baseline bindings.** `profiles/due2-core.ttl` binds the ODRL Common Vocabulary operands that need no profile: `odrl:dateTime` to `due2:actionTime`, `odrl:purpose` and `odrl:recipient` to the request, and `odrl:payAmount` to the witness source (§9 #6). The last makes the idiom of the W3C CG examples and OVAL — "pay at least x" as an `odrl:payAmount` refinement of the duty's `odrl:compensate` — an ordinary witness condition with no per-policy binding. It is still an explicit binding, not a position-dependent reading: outside a duty `odrl:payAmount` is rejected (`WitnessOutsideDuty`), and a policy that means a requested amount rebinds its source to `dprod:requestSource` (§2), keeping the baseline's range `xsd:decimal`. Every other common-vocabulary operand needs a profile binding before use. A selected profile may rebind an operand's source and property, never its type (§2): under DPROD, `odrl:dateTime` reads `dprod:clock`, decision time, and is still an `xsd:dateTime`. Selecting a profile adopts all of its declarations, not just the terms a policy happens to use: a policy that wants `dprod:deadline` but action-time semantics for its time constraints rebinds `odrl:dateTime` to `due2:actionTime` in its own graph, the highest layer, or binds an operand of its own.
 
-**Admissibility [D].** Configuration may restrict, per state property, the sources whose answers count (`admit_source`, `due2-workflows.md` §3.4), as RL2's `spec/RL2_Model.md` §4.4 does. W2 combines the admitted answers of a property into one status (`due2-workflows.md` §3.3, *Several sources*). A property whose answers all come from sources that are not admitted is `missing`, never a separate outcome. RL2 also drops a value whose validity interval has ended; due2 has no such filter, because keeping a value current is the SOTW service's job, and a changed value reaches the case as a new event (`decisions/0040`).
+**Admissibility [D].** Which sources may answer a state property is fixed by the connector registry, which lists the sources registered for each property (`due2-platform.md` §2.4), as RL2's admissibility record does (RL2's `spec/RL2_Model.md` §4.4). The orchestrator records an answer only from a registered source, so every answer a case holds is admitted, and W2 combines the answers of a property into one status (`due2-workflows.md` §3.3, *Several sources*; `decisions/0045`). A property no registered source has answered has no `fact`, and is `unresolved` (`due2-workflows.md` §3.3, *Several sources*). RL2 also drops a value whose validity interval has ended; due2 has no such filter, because keeping a value current is the SOTW service's job, and a changed value reaches the case as a new event (`decisions/0040`).
 
 ---
 
@@ -178,14 +178,27 @@ Stage 2 of W1 pushes negation inward before DNF: De Morgan for `and` and `or`, a
 
 **Policy classes.** A profile may declare `X rdfs:subClassOf odrl:Set | odrl:Offer | odrl:Agreement | odrl:Policy`. Normalisation treats an `X` as that ODRL class, using only declared edges and no further inference. DPROD's `DataOffer` and `DataContract` arrive this way.
 
-**Party roles.** due2 needs two roles that ODRL leaves implicit:
+**Party roles.** due2 needs three roles that ODRL leaves implicit:
 
 | Role | Meaning | ODRL default | DPROD |
 |---|---|---|---|
 | `due2:bearer` | who must perform a duty | `odrl:assignee`, after role inheritance (`due2-workflows.md` §4) | `dprod:subjectOfDuty` |
 | `due2:beneficiary` | who the duty is performed for | `odrl:assigner` | `dprod:objectOfDuty` |
+| `due2:attester` | whose evidence counts for a duty | none: `due2:attestingParty` (`profiles/due2-core.ttl`) | none |
 
-A function property takes a role through `due2:playsRole` in a profile or binding module. A bearer still absent after inheritance is the request subject.
+A function property takes a role through `due2:playsRole` in a profile or binding module. A bearer still absent after inheritance is the request subject. A duty with an attester counts only evidence whose `issuer` is the attester or below it under the party closure, and a duty with none counts evidence from any issuer (`due2-workflows.md` §5.3, `decisions/0045`). `due2:attestingParty` is a function property, so a duty that states it declares a function and inherits no party from its permission (`due2-workflows.md` §4): such a duty states its bearer too.
+
+**Example.** A bank attests a payment duty, and Alice bears it:
+
+```turtle
+ex:payPerUse a odrl:Duty ;
+    odrl:action ex:pay ;
+    odrl:target ex:ReportFee ;
+    odrl:assignee ex:Alice ;
+    due2:attestingParty ex:Bank .
+```
+
+Evidence of Alice's payment counts only if its issuer is `ex:Bank`, or a party below it, such as one of the bank's branches (`conformance/cases/due2-grant-signers`).
 
 A duty with both roles is one atom with one set of parties. As a root obligation it receives the policy-level values (`odrl-compound-to-atomic-normalization.md` §6.2), and those count as its own: it then declares function properties and inherits nothing from the permissions that reference it. Parties stated on the duty itself are the clearest form.
 
@@ -213,7 +226,7 @@ A duty's timing lands in the corpus (`due2-workflows.md` §3.1, `duty`), project
 - **A violated precondition removes its candidate** (`due2-workflows.md` §6.1): W3 does not offer a route that can no longer be taken. Without a deadline, a duty is never violated.
 - **Occurrences are bounded by `effective_at`.** DPROD's `expand` is unbounded as written, and its `performed` check has no lower bound, so one performance fulfils every later instance there (§8.2). due2 generates only instances already owed; reporting future ones is the not-yet-owed question (§9).
 
-**Violations and access [D].** DPROD denies a request when a duty matched to it is violated (`formal-semantics.md` §7.2, step 6). due2 makes this configuration, not profile semantics: `config.violations ∈ {ignore, deny}`, default `ignore`. Under `ignore`, duties gate access only as preconditions, and obligations in force are reported. Under `deny`, an obligation in force that is violated denies the request (`due2-workflows.md` §6.4). Selecting the DPROD profile does not switch it on. A DPROD-aligned deployment sets `violations = deny`, and still differs where DPROD never collects the duty, such as `dprod-hr-data-access` scenario 6 (exception 6, §8.2).
+**Violations and access [D].** DPROD denies a request when a duty matched to it is violated (`formal-semantics.md` §7.2, step 6). due2 does not. A duty gates access only as a precondition of its own permission: a violated one removes that permission's candidate, and another permission can still permit. An obligation is reported with its status, `violated` included, and never affects the verdict (`due2-workflows.md` §6.1, `decisions/0045`). This is ODRL's reading: IM §2.6.1 makes a permission's duty a precondition of that permission, and IM §2.6.4 ties a policy's obligation to none of its permissions. Where DPROD's denial changes a verdict is exception 6 (§8.2).
 
 **Not adopted.** RL2's Maintain duties (invariants that must hold over a window) and Promises. Neither has an ODRL encoding, and no policy in the corpus needs them (§9 #4).
 
@@ -267,7 +280,7 @@ DPROD succeeds only when the outcome follows from resolved values along its eval
 3. **`Pending`.** due2 offers routes for preconditions. DPROD's semantics attaches no duties to permissions, so its examples never yield `Pending` in due2. A DPROD-profile policy that does use `odrl:duty` on a permission gets `Pending` in due2 where DPROD ignores the duty; no corpus case exercises this.
 4. **Agreement parties.** DPROD lets either party of an Agreement match a rule that names no assignee (`formal-semantics.md` §7.3). due2 reads the policy-level assignee as that rule's assignee. A grantor's request is therefore permitted, or denied by a prohibition, in DPROD where due2 returns `NotApplicable`.
 5. **Policy-level target.** DPROD treats the policy target as an applicability gate *and* lets a rule's own target override it (`formal-semantics.md` §7.3, §7.4). due2 reads it only as a default. A rule whose target differs from the policy's is unreachable in DPROD and applies in due2 (`dprod-multi-asset-offer`).
-6. **Violated duties.** DPROD collects a duty only when the duty's own action matches the request, and denies for a violation only after a permission is active (`formal-semantics.md` §7.2, steps 1 and 6). due2 reports obligations *in force* — their policy matches the request — and, under `violations = deny`, treats a violated one as a prohibition, which keeps the verdict monotone (`due2-workflows.md` §6.4). Under `ignore`, due2 never denies for a violation, where DPROD does. The two agree whenever no duty is violated (`dprod-hr-data-access` scenario 7).
+6. **Violated duties.** DPROD collects a duty only when the duty's own action matches the request, and denies when a collected duty is violated, once a permission is active (`formal-semantics.md` §7.2, steps 1, 5, and 6). due2 reports obligations *in force*, those whose policy matches the request, and never denies for a violated one (§7). So where DPROD collects a violated duty, it denies and due2 permits. The two agree whenever DPROD collects no violated duty. In every `dprod-*` scenario with a violated duty, such as `dprod-hr-data-access` scenario 7, the duty's action does not match the request, so DPROD collects nothing and both permit.
 
 **Gaps found in DPROD, worth reporting upstream.** Determinism, order sensitivity, and incomparable operands are reported as EKGF/dprod#285. Bare section numbers below refer to `dprod-contracts/docs/formal-semantics.md`.
 

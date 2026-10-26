@@ -1,13 +1,14 @@
 /*
  * Claim M of correctness-strategy.md §4.8: monotonicity.
  *
- * Under all three strategies and the default combination, "the verdict is monotone in every
- * finding", so the two extreme completions bound every completion's verdict (due2-workflows.md
- * v0.34 §6.4, Computing it). The model checks two claims:
+ * Under all three strategies, and prohibit-overrides across policies, "the verdict is monotone
+ * in every finding", so the two extreme completions bound every completion's verdict
+ * (due2-workflows.md v0.34 §6.4, Computing it, with decisions/0045). The model checks two
+ * claims:
  *
  *   Monotone       Of two completions, the one with every permission and `fulfilled` finding
- *                  at least as true, and every prohibition, `owed`, and, under `deny`,
- *                  `in_force` finding at most as true, has a verdict at least as high.
+ *                  at least as true, and every prohibition and `owed` finding at most
+ *                  as true, has a verdict at least as high.
  *   UniformBound   Fix the mixed variables of a completion and set the uniform ones to one
  *                  extreme: the verdict moves only towards that extreme. This is the
  *                  computation of §6.4, which enumerates the mixed variables and completes the
@@ -32,7 +33,6 @@ pred morePermissive[lo, hi: World] {
   Permission & lo.applies in hi.applies
   Prohibition & hi.applies in lo.applies
   hi.owed in lo.owed
-  hi.inForce in lo.inForce
   lo.fulfilled in hi.fulfilled
 }
 
@@ -49,17 +49,10 @@ run MonotoneStrict {
 } for 3 expect 1
 
 // The direction of each occurrence of a variable (§6.4, Computing it): upward when making it
-// true can only raise the verdict, downward when it can only lower it. An `in_force` finding
-// moves the verdict only under `deny`.
-fun up: set Var {
-  Permission.pos + Prohibition.neg + Duty.oneg
-  + (Config.violations = DenyViolations => Obligation.ineg else none)
-}
+// true can only raise the verdict, downward when it can only lower it.
+fun up: set Var { Permission.pos + Prohibition.neg + Duty.oneg }
 
-fun down: set Var {
-  Permission.neg + Prohibition.pos + Duty.opos
-  + (Config.violations = DenyViolations => Obligation.ipos else none)
-}
+fun down: set Var { Permission.neg + Prohibition.pos + Duty.opos }
 
 fun mixed: set Var { up & down }
 

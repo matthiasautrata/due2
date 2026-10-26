@@ -17,7 +17,6 @@
         "facts": { "ex:licenceActiveSeatCount": { "status": "resolved", "values": [ { "@value": "49", "@type": "xsd:integer" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "49 < 50 is T, so ex:seatAvailablePrivilege applies; 49 ≥ 50 is F, so the prohibition does not. The ready candidate gives Permit." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:licenceActiveSeatCount": { "status": "resolved", "values": [ { "@value": "50", "@type": "xsd:integer" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "50 ≥ 50 is T, so ex:capacityProhibition applies and survives; 50 < 50 is F. Deny." },
       "rl2_expected": "Deny"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:licenceActiveSeatCount": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Both rules are U. Most permissive completion (permission T, prohibition F): Permit. Most restrictive (permission F, prohibition T): Deny. They differ." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:licenceActiveSeatCount": { "status": "invalid", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The source supplied a value not conforming to xsd:integer, so the property is invalid and both constraints are U, never F. Completions give Permit and Deny." }
     }
   ]

@@ -1,11 +1,12 @@
 {
   "case": "due2-grant-signers",
-  "source": "due2-native (closes corpus coverage gaps: grant scope, discharges, signers)",
+  "source": "due2-native (closes corpus coverage gaps: grant scope, discharges, the duty's attester)",
   "classification": "odrl-profile",
   "needs": [
-    "due2:instanceScope"
+    "due2:instanceScope",
+    "due2:attestingParty"
   ],
-  "notes": "Authored for due2; no origin result. The case format spells the grant that evidence.discharges names as {\"duty\": <source duty>, \"reference\": <request reference>} — the inputs of the digest workflows §5.3 defines — so cases stay hand-writable; the evaluator computes the digest. config.signers lists the admissibility record as {duty, issuer} pairs (workflows §3.4).",
+  "notes": "Authored for due2; no origin result. The case format spells the grant that evidence.discharges names as {\"duty\": <source duty>, \"reference\": <request reference>} — the inputs of the digest workflows §5.3 defines — so cases stay hand-writable; the evaluator computes the digest. ex:Bank attests ex:payPerUse through due2:attestingParty, a party function (due2-profiles.md §6), so evidence counts for the duty only if its issuer is ex:Bank or a party below it. Since the duty declares a function, it inherits no party from ex:download (ODRL IM §2.6.5) and states its assignee, ex:Alice. The case keeps the name it had when the attesting parties were a configuration record, the signers.",
   "prefixes": {
     "ex": "https://example.org/"
   },
@@ -42,20 +43,11 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides",
-        "signers": [
-          {
-            "duty": "ex:payPerUse",
-            "issuer": "ex:Bank"
-          }
-        ]
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
         "obligations": [],
-        "why": "ex:payPerUse is grant-scoped, so its instance is req-7's, and only evidence that discharges (payPerUse, req-7) can witness it. ev-pay is a pay on ex:ReportFee by the bearer (Alice, inherited from the permission), before effective_at, issued by ex:Bank which signers admits, and it discharges exactly that grant: a witness. The candidate is ready."
+        "why": "ex:payPerUse is grant-scoped, so its instance is req-7's, and only evidence that discharges (payPerUse, req-7) can witness it. ev-pay is a pay on ex:ReportFee by the bearer (Alice, the duty's assignee), before effective_at, issued by ex:Bank, the duty's attester, and it discharges exactly that grant: a witness. The candidate is ready."
       }
     },
     {
@@ -89,15 +81,6 @@
         ],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides",
-        "signers": [
-          {
-            "duty": "ex:payPerUse",
-            "issuer": "ex:Bank"
-          }
-        ]
       },
       "expected": {
         "verdict": "Pending",
@@ -142,15 +125,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides",
-        "signers": [
-          {
-            "duty": "ex:payPerUse",
-            "issuer": "ex:Bank"
-          }
-        ]
-      },
       "expected": {
         "verdict": "Pending",
         "frontier": [
@@ -159,7 +133,52 @@
           ]
         ],
         "obligations": [],
-        "why": "Everything matches except the issuer: signers lists only ex:Bank for ex:payPerUse, so ev-pay does not count (§3.4). No witness: outstanding."
+        "why": "Everything matches except the issuer: the duty's attester is ex:Bank, and ex:Alice is not below it, so ev-pay does not count (§5.3). No witness: outstanding."
+      }
+    },
+    {
+      "name": "payment attested by a branch of the bank",
+      "request": {
+        "reference": "req-7",
+        "action": "ex:downloadReport",
+        "target": "ex:MarketReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ev-pay",
+            "occurred_at": "2026-06-01T11:58:00Z",
+            "actor": "ex:Alice",
+            "action": "ex:pay",
+            "object": "ex:ReportFee",
+            "issuer": "ex:BankBranch",
+            "discharges": {
+              "duty": "ex:payPerUse",
+              "reference": "req-7"
+            }
+          }
+        ],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:BankBranch",
+            "ex:Bank"
+          ]
+        ]
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "why": "As in scenario 1, except that ev-pay is issued by ex:BankBranch. The closure puts ex:BankBranch below ex:Bank, the duty's attester, so the evidence counts (§5.3) and witnesses req-7's instance. The candidate is ready."
       }
     },
     {
@@ -193,15 +212,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides",
-        "signers": [
-          {
-            "duty": "ex:payPerUse",
-            "issuer": "ex:Bank"
-          }
-        ]
-      },
       "expected": {
         "verdict": "Pending",
         "frontier": [
@@ -210,7 +220,7 @@
           ]
         ],
         "obligations": [],
-        "why": "The duty has signer entries, so evidence without an issuer counts for nothing (§3.4). Outstanding."
+        "why": "The duty has an attester, so evidence with no issuer counts for nothing (§5.3). Outstanding."
       }
     },
     {
@@ -239,15 +249,6 @@
         ],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides",
-        "signers": [
-          {
-            "duty": "ex:payPerUse",
-            "issuer": "ex:Bank"
-          }
-        ]
       },
       "expected": {
         "verdict": "Permit",

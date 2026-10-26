@@ -279,7 +279,6 @@ def main() -> None:
                         "activation": {},
                         "closure": [["odrl:partOf", curie(s), curie(o)] for s, o in sorted(partof)],
                     },
-                    "config": {"combination": "prohibit-overrides"},
                     "expected": {
                         "verdict": verdict,
                         "frontier": frontier,

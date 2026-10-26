@@ -21,8 +21,7 @@
         "evidence": [], "activation": {},
         "closure": [ [ "odrl:partOf", "ex:LoanBook2026", "ex:AnyAsset" ] ]
       },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "outstanding" } ], "why": "ex:homeLoanReadPrivilege has no assignee to match; ex:LoanBook2026 ⊑ ex:AnyAsset by the closure; the classification is ex:HomeLoan. It applies with no duties and is ready. The obligation is in force — the permission matches and its guard holds — and outstanding, since no ex:logAccess by ex:Analyst42 is in evidence; under violations = ignore it does not affect the verdict." },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "outstanding" } ], "why": "ex:homeLoanReadPrivilege has no assignee to match; ex:LoanBook2026 ⊑ ex:AnyAsset by the closure; the classification is ex:HomeLoan. It applies with no duties and is ready. The obligation is in force — the permission matches and its guard holds — and outstanding, since no ex:logAccess by ex:Analyst42 is in evidence; it does not affect the verdict (§6.1)." },
       "rl2_expected": "Permit"
     },
     {
@@ -37,7 +36,6 @@
         "evidence": [], "activation": {},
         "closure": [ [ "odrl:partOf", "ex:CardLedger", "ex:AnyAsset" ] ]
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:CreditCard eq ex:HomeLoan is F (IRIs by identity), so the permission is F. The permission still matches the request, but the obligation's guard is F, so it is not in force. Nothing applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -53,7 +51,6 @@
         "evidence": [], "activation": {},
         "closure": [ [ "odrl:partOf", "ex:LoanBook2026", "ex:AnyAsset" ] ]
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "unknown" } ], "why": "The classification constraint is U, so the permission is U. Completions give Permit and NotApplicable. The obligation's guard is U, so its in-force finding is U and it is reported with status unknown (it has no witness, so it would be outstanding if in force). RL2 emits no obligation here." },
       "rl2_expected": "Indeterminate"
     },
@@ -68,7 +65,6 @@
         "facts": { "ex:targetClassification": { "status": "resolved", "values": [ { "@id": "ex:HomeLoan" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Without the closure edge, ex:LoanBook2026 ⊑ ex:AnyAsset is F — a closure is data, not a fact, so its absence is F rather than U — and the permission does not apply despite the classification. No rule of the policy matches, so the obligation is not in force." }
     },
     {
@@ -84,7 +80,6 @@
         "activation": {},
         "closure": [ [ "odrl:partOf", "ex:LoanBook2026", "ex:AnyAsset" ] ]
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:homeLoanAccessLogDuty", "status": "fulfilled" } ], "why": "As in scenario 1 the permission applies and is ready. The obligation is in force; ex:ev1 is a witness — actor is the request subject (the duty names no assignee), action matches, and with no target the object is not compared — and its guard holds, so it is fulfilled." },
       "rl2_expected": "Permit"
     }

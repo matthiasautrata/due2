@@ -18,7 +18,6 @@
         "facts": { "ex:quotaAdmitsRequest": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The quota fact is true, so ex:meteredQuery applies; no duties, no prohibition." },
       "rl2_expected": "Permit"
     },
@@ -33,7 +32,6 @@
         "facts": { "ex:quotaAdmitsRequest": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission does not apply; nothing else does." }
     },
     {
@@ -47,7 +45,6 @@
         "facts": { "ex:quotaAdmitsRequest": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The quota constraint is U, so the permission is U. Permissive completion: Permit; restrictive: NotApplicable." }
     }
   ]

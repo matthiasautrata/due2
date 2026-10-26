@@ -20,7 +20,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-08-15T00:00:00Z", "actor": "ex:Provider", "action": "ex:deliver", "object": "ex:MonthlyReport", "issuer": "ex:Provider" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The request matches no permission or prohibition, because the policy has none, so ex:deliverReport is not in force and ex:ev1 is never read. NotApplicable; RL2's Fulfilled status has no counterpart." },
       "rl2_expected": "NotApplicable; dutyStatuses[ex:deliverReport] = Known(Fulfilled)"
     },
@@ -31,7 +30,6 @@
         "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
       },
       "sotw": { "effective_at": "2026-08-20T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "As in scenario 1: nothing matches the request, so the obligation is not in force and its missing witness is not consulted. RL2's Active status has no counterpart." },
       "rl2_expected": "NotApplicable; dutyStatuses[ex:deliverReport] = Known(Active)"
     },
@@ -42,8 +40,7 @@
         "parties": { "odrl:assignee": "ex:Customer" }, "params": {}
       },
       "sotw": { "effective_at": "2026-09-15T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Nothing matches the request, so the obligation is not in force. Its deadline has passed without a witness, but a violation is reported only for an obligation in force, and none affects the verdict under the default violations = ignore. RL2's Violated status has no counterpart." },
+      "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Nothing matches the request, so the obligation is not in force. Its deadline has passed without a witness, but a violation is reported only for an obligation in force, and no obligation affects the verdict (§6.1). RL2's Violated status has no counterpart." },
       "rl2_expected": "NotApplicable; dutyStatuses[ex:deliverReport] = Known(Violated)"
     },
     {
@@ -57,7 +54,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-08-15T00:00:00Z", "actor": "ex:Provider", "action": "ex:deliver", "object": "ex:MonthlyReport", "issuer": "ex:Provider" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The request is for the obligation's own action and actor, but an obligation is not matched by its own action (§5.2) and the policy has no Permit or Forbid, so ex:deliverReport is not in force and is not reported, although ex:ev1 would fulfil it. No permission exists: NotApplicable." }
     },
     {
@@ -67,7 +63,6 @@
         "parties": { "odrl:assignee": "ex:Provider" }, "params": {}
       },
       "sotw": { "effective_at": "2026-07-15T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "As in scenario 4, the obligation is not in force. Its window-start constraint is a witness condition on a delivery's occurred_at (§5.2), not a condition on request.at, so the request time 2026-07-15 plays no part in any finding. NotApplicable." }
     }
   ]

@@ -13,7 +13,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-15T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "2026-06-15T10:00 ≥ 2026-01-01 and < 2027-01-01, so ex:studyAccess applies; no duties, no prohibition." },
       "rl2_expected": "Permit"
     },
@@ -24,7 +23,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2027-01-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "2027-01-01T00:00 < 2027-01-01T00:00 is F, so the permission does not apply; nothing else does." },
       "rl2_expected": "NotApplicable"
     },
@@ -35,7 +33,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-01-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "2026-01-01T00:00 ≥ 2026-01-01T00:00 holds and the end bound holds, so the permission applies." }
     },
     {
@@ -45,7 +42,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2027-01-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:currentDateTime reads dprod:clock, i.e. effective_at 2027-01-01T00:00, so the end bound is F; request.at is not consulted." }
     }
   ]

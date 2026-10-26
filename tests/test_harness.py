@@ -164,7 +164,6 @@ def test_vector_inputs_are_self_contained(vectors: list[Vector], init: Obj) -> N
             "prefixes",
             "request",
             "sotw",
-            "config",
         }
         assert set(v.expected) >= {"verdict", "frontier", "obligations"}
     for files in as_obj(init["profiles"], "profiles").values():

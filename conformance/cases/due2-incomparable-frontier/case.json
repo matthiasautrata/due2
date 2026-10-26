@@ -3,7 +3,7 @@
   "source": "due2-native (closes corpus coverage gap: incomparable frontier)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Authored for due2; no origin result. The first corpus frontier with incomparable alternatives, which workflows §9 #3 (declared preference) waits for. No config.preference is set: its format is still open, so the frontier is listed without preference, in the deterministic order of §6.3 (outstanding-set size, then alt_id). alt_id is a digest, so for equal sizes the expected frontier is compared as a set. Duty bearers are the Manager and Counsel, not the requester: the evidence actor must be the bearer (§5.3), and Pending reports each route with who must act.",
+  "notes": "Authored for due2; no origin result. The first corpus frontier with incomparable alternatives, which workflows §9 #3 (declared preference) waits for. The policy states no preference: its form is open (#5), so the frontier is listed without preference, in the deterministic order of §6.3 (outstanding-set size, then alt_id). alt_id is a digest, so for equal sizes the expected frontier is compared as a set. Duty bearers are the Manager and Counsel, not the requester: the evidence actor must be the bearer (§5.3), and Pending reports each route with who must act.",
   "prefixes": {
     "ex": "https://example.org/"
   },
@@ -26,9 +26,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Pending",
@@ -71,9 +68,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -107,9 +101,6 @@
         ],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "Pending",

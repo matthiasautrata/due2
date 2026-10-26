@@ -19,7 +19,6 @@
         "request_party": [ { "function": "odrl:assignee", "party": "ex:Subscriber" } ]
       },
       "sotw": { "sotw": [ { "effective_at": { "v": "2026-06-01T00:00:00Z", "t": "xsd:dateTime" } } ] },
-      "config": { "config": [ { "combination": "prohibit-overrides", "violations": "ignore", "max_mixed": 8, "max_frontier_vars": 8 } ] },
       "expected": {
         "trace": { "verdict": [ { "value": "Permit", "frontier_complete": true, "exact": true } ], "eliminated": [] },
         "why": "The permission's action, target, and assignee match the request, and it has no constraints or duties, so it applies; nothing forbids it."

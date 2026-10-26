@@ -17,7 +17,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:prepare", "object": "ex:Check123" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:preparationDuty", "status": "fulfilled" } ], "why": "ex:signPrivilege applies to Bob. ex:ev1 is a witness for ex:preparationDuty: actor ex:Alice is its declared assignee, action and object match, before effective_at. The duty is T and the candidate ready. As an obligation it is in force (the permission matches) and fulfilled." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:prepare", "object": "ex:Check123" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:preparationDuty" ] ], "obligations": [ { "duty": "ex:preparationDuty", "status": "outstanding" } ], "why": "The permission applies. ex:ev2's actor ex:Bob is not the duty's assignee ex:Alice, so there is no witness and the duty is F; the only alternative is pending, waiting on bearer ex:Alice. The obligation is in force and outstanding." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:prepare", "object": "ex:Check123" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The permission's assignee is ex:Bob; ex:Alice ⊑ ex:Bob is F, so the permission is F and is no candidate. No rule of the policy matches, so the obligation is not in force." },
       "rl2_expected": "NotApplicable"
     },
@@ -62,7 +59,6 @@
         "evidence": [ { "id": "ex:ev3", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:prepare", "object": "ex:Check456" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:preparationDuty" ] ], "obligations": [ { "duty": "ex:preparationDuty", "status": "outstanding" } ], "why": "ex:ev3's object ex:Check456 differs from the duty's target ex:Check123, so it is not a witness; the duty is F and the candidate pending. The obligation is in force and outstanding." }
     }
   ]

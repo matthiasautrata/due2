@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/anonymization-required.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Direct translation. rl2:Agreement with grantor/grantee → odrl:Agreement with policy-level assigner/assignee (compact policy); rl2:Privilege → odrl:Permission. The asset-scoped path asset.anonymization.approved becomes the state property ex:targetAnonymizationApproved, which the assembler flattens for the requested asset; RL2's attribution to the designated assessment becomes the admissibility record admit_source, and a property whose answers all come from sources that are not admitted is missing (due2-profiles.md §3). Scenarios 2 and 3 are added for the text's 'missing or disputed assessment'. RL2 states only that such an assessment is not treated as anonymization; RL2 Semantics resolves both to Unknown and Indeterminate, which agrees with due2, but no decision is stated, so no rl2_expected is recorded for them.",
+  "notes": "Direct translation. rl2:Agreement with grantor/grantee → odrl:Agreement with policy-level assigner/assignee (compact policy); rl2:Privilege → odrl:Permission. The asset-scoped path asset.anonymization.approved becomes the state property ex:targetAnonymizationApproved, which the assembler flattens for the requested asset; RL2's attribution to the designated assessment becomes the sources registered for the property (due2-platform.md §2.4), and a property whose answers all come from sources that are not admitted is missing (due2-profiles.md §3). Scenarios 2 and 3 are added for the text's 'missing or disputed assessment'. RL2 states only that such an assessment is not treated as anonymization; RL2 Semantics resolves both to Unknown and Indeterminate, which agrees with due2, but no decision is stated, so no rl2_expected is recorded for them.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {
@@ -17,7 +17,6 @@
         "facts": { "ex:targetAnonymizationApproved": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Action, target, and assignee match and the anonymization fact is true, so ex:processAnonymizedData applies with no duties; nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:targetAnonymizationApproved": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the constraint is U and the permission is U. The permissive completion gives Permit and the restrictive one NotApplicable." }
     },
     {
@@ -46,7 +44,6 @@
         "facts": { "ex:targetAnonymizationApproved": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one property are a conflict, so the constraint is U, never F. Completions give Permit and NotApplicable." }
     }
   ]

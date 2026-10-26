@@ -13,7 +13,6 @@
         "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
       },
       "sotw": { "effective_at": "2026-08-14T23:59:59Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "clock < 2026-08-15, so ex:trialExecutePrivilege applies and ex:expiredTrialProhibition is F. Ready candidate, no prohibition: Permit." },
       "rl2_expected": "Permit"
     },
@@ -24,8 +23,7 @@
         "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
       },
       "sotw": { "effective_at": "2026-08-15T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "clock = 2026-08-15T00:00: the permission's lt is F, the prohibition's gteq is T. The T Forbid survives (policy conflict prohibit, combination prohibit-overrides): Deny." },
+      "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "clock = 2026-08-15T00:00: the permission's lt is F, the prohibition's gteq is T. The T Forbid survives (policy conflict prohibit): Deny." },
       "rl2_expected": "Deny"
     },
     {
@@ -35,7 +33,6 @@
         "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
       },
       "sotw": { "effective_at": "2026-09-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "The prohibition applies (clock ≥ expiry) and the execute permission does not: Deny." },
       "rl2_expected": "Deny"
     },
@@ -46,7 +43,6 @@
         "parties": { "odrl:assignee": "ex:TrialUser" }, "params": {}
       },
       "sotw": { "effective_at": "2026-09-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:readPrivilege applies unconditionally. The prohibition is on ex:execute; no odrl:includedIn edge leads from ex:read to ex:execute, and closure is closed-world (§3.3), so it is F." },
       "rl2_expected": "Permit"
     },
@@ -57,7 +53,6 @@
         "parties": { "odrl:assignee": "ex:OtherUser" }, "params": {}
       },
       "sotw": { "effective_at": "2026-09-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Every rule is assigned to ex:TrialUser; the party part is F for ex:OtherUser, so neither the permission nor the prohibition applies." }
     }
   ]

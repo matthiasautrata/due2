@@ -1,7 +1,7 @@
 """The driver's flatten: Turtle and JSON to facts, and no semantics.
 
 The flatten is syntactic: one fact per triple, and one fact or a few per input field, named
-after the relations of due2-workflows.md §3.2 to §3.4. It drops nothing and decides nothing,
+after the relations of due2-workflows.md §3.2 and §3.3. It drops nothing and decides nothing,
 and it adds only the value table (`values.py`). A field the program does not read is still
 flattened, so that a later reader finds it and the round-trip tests cover it; the program
 declines a field it cannot answer for. These facts are the program's input: every relation a
@@ -59,15 +59,6 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
   by lift.lp: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`, and
   any other relation declines.
 
-**Config** (due2-workflows.md §3.4).
-
-- `config_combination/1`: `combination`, a string. Read by lift.lp.
-- `config_violations/1`: `violations`, `ignore` or `deny`. Read by resolve.lp.
-- `signer/2`, `signer(Duty, Issuer)`: each `signers` element. Read by duty.lp.
-- `unread/1`, `unread(Field)`: `preference`, `admit_source`. The case format
-  defines no shape for them (`conformance/README.md`), so their presence is recorded, and
-  lift.lp declines it.
-
 **Values** (`values.py`): `value/3`, read by operand.lp, compare.lp, and duty.lp;
 `unplaceable/2`, read by lift.lp and constraint.lp; and `plus/3`, read by duty.lp for a
 relative deadline.
@@ -115,10 +106,6 @@ from clingo_i.json_types import Json, Obj, as_list, as_obj, as_str
 
 ODRL_PROFILE = URIRef("http://www.w3.org/ns/odrl/2/profile")
 STATUSES = ("resolved", "missing", "invalid", "conflict", "unresolved")
-VIOLATIONS = ("ignore", "deny")
-# Config fields the case format names but gives no shape (conformance/README.md): their
-# presence is recorded as `unread`, and the program declines it.
-UNREAD_CONFIG = ("preference", "admit_source")
 
 
 @contextmanager
@@ -406,39 +393,8 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
     return out
 
 
-def config_facts(config: Obj, prefixes: dict[str, str]) -> list[Symbol]:
-    """The config's facts (due2-workflows.md §3.4); each `UNREAD_CONFIG` field is `unread`."""
-    fields(config, "config", ("combination",), ("violations", "signers", *UNREAD_CONFIG))
-    out = [
-        Function(
-            "config_combination", [String(as_str(config["combination"], "config.combination"))]
-        )
-    ]
-    if "violations" in config:
-        violations = as_str(config["violations"], "config.violations")
-        if violations not in VIOLATIONS:
-            raise ValueError(f"config.violations: unknown value {violations!r}")
-        out.append(Function("config_violations", [Function(violations)]))
-    for i, raw in enumerate(as_list(config.get("signers") or [], "config.signers")):
-        what = f"config.signers[{i}]"
-        s = fields(raw, what, ("duty", "issuer"), ())
-        out.append(
-            Function(
-                "signer",
-                [
-                    name(s["duty"], prefixes, f"{what}.duty"),
-                    name(s["issuer"], prefixes, f"{what}.issuer"),
-                ],
-            )
-        )
-    out.extend(Function("unread", [String(f"config.{k}")]) for k in UNREAD_CONFIG if k in config)
-    return out
-
-
 def input_facts(vector: Obj, prefixes: dict[str, str]) -> list[Symbol]:
-    """The facts of the vector's request, SOTW, and config, names expanded with `prefixes`."""
-    return (
-        request_facts(as_obj(vector["request"], "request"), prefixes)
-        + sotw_facts(as_obj(vector["sotw"], "sotw"), prefixes)
-        + config_facts(as_obj(vector["config"], "config"), prefixes)
+    """The facts of the vector's request and SOTW, names expanded with `prefixes`."""
+    return request_facts(as_obj(vector["request"], "request"), prefixes) + sotw_facts(
+        as_obj(vector["sotw"], "sotw"), prefixes
     )

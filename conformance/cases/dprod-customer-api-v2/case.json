@@ -33,7 +33,6 @@
         "activation": {},
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -71,7 +70,6 @@
         "activation": { "rule:cust-delivery": "2026-06-01T07:00:00Z" },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -82,50 +80,9 @@
           { "duty": "rule:cust-schema", "status": "outstanding" },
           { "duty": "rule:cust-report", "status": "outstanding" }
         ],
-        "why": "Anchored at 2026-06-01T07:00, the daily rule yields three occurrences ≤ effective_at: 06-01, 06-02, 06-03, each with deadline t + PT30M. ex:ev-delivery-0601 witnesses the 06-01 instance (actor, action, object, occurred_at 07:10 within [07:00, 07:30]): fulfilled. The 06-02 instance has no witness and effective_at 07:10 on 06-03 is past its 07:30 deadline: violated. The 06-03 instance's window (07:00–07:30) is still open: outstanding. Under the default violations = ignore the violated instance is reported and does not affect the verdict, and rule:cust-read remains ready: Permit."
+        "why": "Anchored at 2026-06-01T07:00, the daily rule yields three occurrences ≤ effective_at: 06-01, 06-02, 06-03, each with deadline t + PT30M. ex:ev-delivery-0601 witnesses the 06-01 instance (actor, action, object, occurred_at 07:10 within [07:00, 07:30]): fulfilled. The 06-02 instance has no witness and effective_at 07:10 on 06-03 is past its 07:30 deadline: violated. The 06-03 instance's window (07:00–07:30) is still open: outstanding. The violated instance is reported and does not affect the verdict (§6.1), and rule:cust-read remains ready: Permit."
       },
       "dprod_expected": "Permit (deliver never matches read, so step 1 collects no duty and step 6 never fires, whatever the missed window)"
-    },
-    {
-      "name": "the same read under DPROD-faithful violations = deny",
-      "request": {
-        "reference": "req-3",
-        "action": "odrl:read",
-        "target": "asset:customer-data",
-        "at": "2026-06-03T07:10:00Z",
-        "parties": { "odrl:assignee": "agent:analytics" },
-        "params": {}
-      },
-      "sotw": {
-        "effective_at": "2026-06-03T07:10:00Z",
-        "facts": {},
-        "evidence": [
-          {
-            "id": "ex:ev-delivery-0601",
-            "occurred_at": "2026-06-01T07:10:00Z",
-            "actor": "agent:data-platform",
-            "action": "ex:deliver",
-            "object": "asset:customer-data",
-            "issuer": "agent:analytics"
-          }
-        ],
-        "activation": { "rule:cust-delivery": "2026-06-01T07:00:00Z" },
-        "closure": []
-      },
-      "config": { "combination": "prohibit-overrides", "violations": "deny" },
-      "expected": {
-        "verdict": "Deny",
-        "frontier": [],
-        "obligations": [
-          { "duty": "rule:cust-delivery", "status": "fulfilled", "instance": "2026-06-01T07:00:00Z" },
-          { "duty": "rule:cust-delivery", "status": "violated", "instance": "2026-06-02T07:00:00Z" },
-          { "duty": "rule:cust-delivery", "status": "outstanding", "instance": "2026-06-03T07:00:00Z" },
-          { "duty": "rule:cust-schema", "status": "outstanding" },
-          { "duty": "rule:cust-report", "status": "outstanding" }
-        ],
-        "why": "The same findings as scenario 2, but config.violations = deny: the violated 06-02 instance of an obligation in force acts as a surviving prohibition (due2-workflows.md §6.4), so the read is denied while the window of today's instance is still open. The status is computed by W2 from the deadline, so the Deny reads a finding-adjacent fact, not the SOTW."
-      },
-      "dprod_expected": "Permit (the violated delivery instance is never collected — duty-collection gap, due2-profiles.md §8.2 — so DPROD denies nothing; exception 6)"
     },
     {
       "name": "derivation without stating the type",
@@ -138,7 +95,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Indeterminate",
         "frontier": [],
@@ -161,7 +117,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Deny",
         "frontier": [],

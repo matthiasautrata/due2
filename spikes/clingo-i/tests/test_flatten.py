@@ -141,7 +141,7 @@ def put(target: Obj, fields: Obj) -> None:
 def normalise(vector: Obj) -> Obj:
     """The vector as the facts must say it: names expanded, empty fields absent, sets sorted."""
     pfx = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
-    req, sotw, cfg = (as_obj(vector[k], k) for k in ("request", "sotw", "config"))
+    req, sotw = (as_obj(vector[k], k) for k in ("request", "sotw"))
     r: Obj = {"action": norm_name(req["action"], pfx)}
     for k in ("reference", "at"):
         if k in req:
@@ -196,19 +196,7 @@ def normalise(vector: Obj) -> Obj:
         ]
     )
     put(s, {"facts": facts, "evidence": evidence, "activation": activation, "closure": closure})
-    c: Obj = {"combination": cfg["combination"]}
-    if "violations" in cfg:
-        c["violations"] = cfg["violations"]
-    signers = canon(
-        [
-            [norm_name(as_obj(x, "")["duty"], pfx), norm_name(as_obj(x, "")["issuer"], pfx)]
-            for x in as_list(cfg.get("signers") or [], "")
-        ]
-    )
-    if signers:
-        c["signers"] = signers
-    c |= {k: True for k in flatten.UNREAD_CONFIG if k in cfg}
-    return {"request": r, "sotw": s, "config": c}
+    return {"request": r, "sotw": s}
 
 
 def text(s: Symbol) -> str:
@@ -235,14 +223,12 @@ def decode(facts: list[Symbol]) -> Obj:
     """The facts read back as normalise() writes the vector."""
     r: Obj = {}
     s: Obj = {}
-    c: Obj = {}
     sets: set[str] = set()
     parties: dict[str, list[Json]] = {}
     params: dict[str, list[Json]] = {}
     facts_o: dict[str, Obj] = {}
     evidence: dict[str, Obj] = {}
     closure: list[Json] = []
-    signers: list[Json] = []
     activation: Obj = {}
     for f in facts:
         a = f.arguments
@@ -287,14 +273,6 @@ def decode(facts: list[Symbol]) -> Obj:
                 activation[a[0].string] = lex(a[1])
             case "sotw_closure":
                 closure.append([x.string for x in a])
-            case "config_combination":
-                c["combination"] = a[0].string
-            case "config_violations":
-                c["violations"] = str(a[0])
-            case "signer":
-                signers.append([a[0].string, a[1].string])
-            case "unread":
-                c[a[0].string.removeprefix("config.")] = True
             case _:
                 raise AssertionError(f"unknown fact {f}")
     if parties:
@@ -315,9 +293,7 @@ def decode(facts: list[Symbol]) -> Obj:
             "closure": canon(closure),
         },
     )
-    if signers:
-        c["signers"] = canon(signers)
-    return {"request": r, "sotw": s, "config": c}
+    return {"request": r, "sotw": s}
 
 
 def prefixes(v: Obj) -> dict[str, str]:
@@ -449,8 +425,6 @@ def sections(**changes: Obj) -> Obj:
         ({"request": {"colour": "red"}}, "request: unknown field 'colour'"),
         ({"request": {"action": None}}, "request: missing field 'action'"),
         ({"sotw": {"weather": {}}}, "sotw: unknown field 'weather'"),
-        ({"config": {"combination": None}}, "config: missing field 'combination'"),
-        ({"config": {"violations": "maybe"}}, "config.violations: unknown value 'maybe'"),
         ({"sotw": {"facts": {"ex:x": {"status": "known"}}}}, "unknown status 'known'"),
         ({"sotw": {"facts": {"ex:x": {"values": []}}}}, "missing field 'status'"),
         ({"request": {"params": {"ex:purpose": "ex:research"}}}, "expected an object, got str"),
@@ -493,7 +467,6 @@ def sections(**changes: Obj) -> Obj:
             {"sotw": {"closure": [["odrl:partOf", "ex:a"]]}},
             "expected [relation, narrower, broader]",
         ),
-        ({"config": {"signers": [{"duty": "ex:d"}]}}, "missing field 'issuer'"),
     ],
 )
 def test_malformed_input(changes: dict[str, Obj], message: str) -> None:

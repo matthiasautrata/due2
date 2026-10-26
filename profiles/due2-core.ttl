@@ -39,8 +39,13 @@ due2:playsRole a owl:ObjectProperty ; rdfs:range due2:Role .
 due2:Role a owl:Class .
 due2:bearer a due2:Role ; rdfs:comment "Who must perform a duty." .
 due2:beneficiary a due2:Role ; rdfs:comment "Who a duty is performed for." .
+due2:attester a due2:Role ; rdfs:comment "Whose evidence counts for a duty: an issuer at or below the attester under the party closure. A duty with no attester counts evidence from any issuer (due2-workflows.md §5.3, decisions/0045)." .
 odrl:assignee due2:playsRole due2:bearer .
 odrl:assigner due2:playsRole due2:beneficiary .
+due2:attestingParty a owl:ObjectProperty ;
+    rdfs:subPropertyOf odrl:function ;
+    due2:playsRole due2:attester ;
+    rdfs:comment "The party whose evidence counts for the duty." .
 
 # --- Duty instance scope (due2-workflows.md §5.3) ---
 due2:instanceScope a owl:ObjectProperty ;
@@ -58,8 +63,9 @@ due2:witnessSource a due2:Source, owl:NamedIndividual ;
     rdfs:comment "A parameter of the witness, read inside a duty's constraints only (due2-workflows.md §5.3); a policy that must also validate against DPROD's shapes cannot use it, and then its duty constraints are all guards." .
 
 # --- Violations and access (§7) ---
-# No terms: violations = ignore | deny is configuration (config.violations,
-# due2-workflows.md §3.4), not profile semantics, and no profile declares it.
+# No terms: a violated obligation is reported and never denies
+# (due2-workflows.md §6.1, decisions/0045). A profile that wants a violation
+# to deny would have to state that semantics itself.
 
 # --- Baseline bindings for ODRL Common Vocabulary operands (§3) ---
 odrl:dateTime

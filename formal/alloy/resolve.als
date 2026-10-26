@@ -1,6 +1,7 @@
 /*
  * W3 over one completion: candidates, conflict, frontier, and verdict (due2-workflows.md v0.34
- * §6.1–§6.4). A module, opened by the models of claims M, F, W, and P; it has no commands.
+ * §6.1–§6.4, with decisions/0045). A module, opened by the models of claims M, F, W, and P; it
+ * has no commands.
  *
  * A world is a completion: every finding is `T` or `F`. A world states its findings as the
  * atoms and duties for which they are `T`. fromVars below derives them from an assignment to
@@ -12,8 +13,10 @@
  *   instances, each a duty here.
  * - Timing. Whether an instance's deadline has passed is fixed by the evaluation, not a finding
  *   (§5.3), so it is a set of duties, `Lapsed`, the same in every world.
- * - The combination. Only the default, prohibit-overrides (§6.2 #2), which is what claim M
- *   states.
+ * - Root obligations. A violated obligation is reported and never moves the verdict
+ *   (decisions/0045), so no finding of an obligation reaches W3's verdict or its basis.
+ * - Other cross-policy strategies. Across policies the rule is prohibit-overrides (§6.2 #2,
+ *   decisions/0045), the only one claim M states.
  * - Grounds. The frontier is a set of candidates, not of alternatives; two candidates with one
  *   outstanding set are one alternative with two grounds (§6.3 #1).
  *
@@ -49,32 +52,24 @@ sig Permission extends Rule { pre: set Duty }
 sig Prohibition extends Rule {}
 
 sig Duty {
-  // The literals of its `owed` and its `in_force` findings.
-  opos, oneg, ipos, ineg: set Var
+  // The literals of its `owed` finding.
+  opos, oneg: set Var
 }
-// Root obligations: a duty may be one and a precondition too (§5.3).
-sig Obligation in Duty {}
 // Instances whose deadline has passed: effective_at > D (§5.3).
 sig Lapsed in Duty {}
 
-abstract sig Violations {}
-one sig Ignore, DenyViolations extends Violations {}
-one sig Config { violations: one Violations }
-
 // A completion. `applies` holds the rules whose finding is `T`, `owed` the preconditions whose
-// `owed` is `T`, `inForce` the obligations whose `in_force` is `T`, and `fulfilled` the duties
-// whose `fulfilled` is `T` (§5.1).
+// `owed` is `T`, and `fulfilled` the duties whose `fulfilled` is `T` (§5.1).
 sig World {
   applies: set Rule,
   owed: set Duty,
-  inForce: set Obligation,
   fulfilled: set Duty,
   // The completion variables that are `T`, for fromVars.
   val: set Var
 }
 
 // §5.3: within a completion, the violated instances are the unfulfilled duties whose deadline
-// has passed (§6.4, the proof's last case).
+// has passed.
 fun violated[w: World]: set Duty { Lapsed - w.fulfilled }
 
 // §6.1: a permission that applies is closed when a precondition is owed and violated, and is a
@@ -90,7 +85,7 @@ fun outstanding[w: World, p: Permission]: set Duty { p.pre & w.owed - w.fulfille
 
 // §6.2 #1, within a policy. Under `prohibit` a prohibition that applies eliminates the policy's
 // candidates. Under `perm` a candidate eliminates its prohibitions. Under `invalid` the two
-// together void the policy, whose obligations stay in force (decisions/0029).
+// together void the policy.
 fun survivingProhibitions[w: World]: set Prohibition {
   { f: Prohibition & w.applies |
       not (f.policy.conflict in Perm + Invalid and some candidates[w] & policy.(f.policy)) }
@@ -102,13 +97,11 @@ fun keptCandidates[w: World]: set Permission {
            and some Prohibition & w.applies & policy.(p.policy)) }
 }
 
-// §6.4: under `deny`, a violated obligation in force acts as a surviving prohibition.
-pred denies[w: World] {
-  some survivingProhibitions[w]
-  or (Config.violations = DenyViolations and some w.inForce & violated[w])
-}
+// §6.4: only a surviving prohibition denies.
+pred denies[w: World] { some survivingProhibitions[w] }
 
-// §6.2 #2, prohibit-overrides: anything that denies eliminates every candidate.
+// §6.2 #2, prohibit-overrides across policies: a surviving prohibition eliminates every
+// candidate.
 fun survivors[w: World]: set Permission { denies[w] => none else keptCandidates[w] }
 
 // §6.3: the frontier is the surviving candidates whose outstanding set no other's strictly
@@ -133,21 +126,19 @@ fun verdict[w: World]: one Verdict {
 sig Var {}
 
 // Each finding is a conjunction of literals, as a finding is the Kleene conjunction of its
-// parts (§5.2): `applies` reads `pos` true and `neg` false, and so do `owed` (opos, oneg) and
-// `in_force` (ipos, ineg). A finding in a `Refuted` set has a part that is `F`, and a finding
+// parts (§5.2): `applies` reads `pos` true and `neg` false, and so does `owed` (opos, oneg).
+// A finding in a `Refuted` set has a part that is `F`, and a finding
 // with no literal and none `F` is `T`. A duty's `fulfilled` is one variable of its own (§6.4):
 // `T` for a duty in `Met`, `F` for one in neither, and free in each world for one in `Unknown`.
 sig Refuted in Rule {}
 sig OwedRefuted in Duty {}
-sig InForceRefuted in Duty {}
 sig Met in Duty {}
 sig Unknown in Duty {}
 
 fact findings {
   no Met & Unknown
-  // Only a precondition has an `owed` finding, and only an obligation an `in_force` one.
+  // Only a precondition has an `owed` finding.
   (opos + oneg).Var in Permission.pre
-  (ipos + ineg).Var in Obligation
 }
 
 pred holds[w: World, ps, ns: set Var] { ps in w.val and no ns & w.val }
@@ -156,14 +147,12 @@ pred holds[w: World, ps, ns: set Var] { ps in w.val and no ns & w.val }
 pred fromVars[w: World] {
   w.applies = { r: Rule - Refuted | holds[w, r.pos, r.neg] }
   w.owed = { d: Duty - OwedRefuted | holds[w, d.opos, d.oneg] }
-  w.inForce = { d: Obligation - InForceRefuted | holds[w, d.ipos, d.ineg] }
   w.fulfilled = Met + (w.fulfilled & Unknown)
 }
 
 // The variables a finding reads.
 fun readsApplies[r: Rule]: set Var { r.pos + r.neg }
 fun readsOwed[d: Duty]: set Var { d.opos + d.oneg }
-fun readsInForce[d: Duty]: set Var { d.ipos + d.ineg }
 
 // Before completion, every variable is `U`. A finding is then `F` when refuted, `T` when it
 // reads no variable, and `U` otherwise (§5.1).
@@ -171,8 +160,6 @@ pred uApplies[r: Rule] { r not in Refuted and some readsApplies[r] }
 pred tApplies[r: Rule] { r not in Refuted and no readsApplies[r] }
 pred uOwed[d: Duty] { d not in OwedRefuted and some readsOwed[d] }
 pred tOwed[d: Duty] { d not in OwedRefuted and no readsOwed[d] }
-pred uInForce[d: Duty] { d in Obligation - InForceRefuted and some readsInForce[d] }
-pred tInForce[d: Duty] { d in Obligation - InForceRefuted and no readsInForce[d] }
 
 // Before completion (§5.1). `owed` is `F` when refuted, `T` with no literal, `U` otherwise;
 // `fulfilled` is `T` in Met, `U` in Unknown, and `F` otherwise.

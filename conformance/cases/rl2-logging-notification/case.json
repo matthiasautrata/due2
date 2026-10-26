@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/logging-notification.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Both RL2 Duties are independent clauses, not prerequisites, so they become root odrl:obligation rules; making them odrl:duty on the permission would turn them into preconditions and change the decision to Pending. Grantor/grantee equal the duties' counterparty/subject, so the parties and the shared target are stated once at policy level and interiorised into all three rules. Both obligations are in force for every request ex:accessSharedData matches (due2-workflows.md §5.2); the incident duty's applicability condition reads a state operand, so it is a guard, and that obligation is in force only while an incident is confirmed. Their statuses follow from evidence (§5.3) and are reported with the access decision (§6.1), which is RL2's 'status reported separately'; under violations = ignore they do not affect it, so RL2's decision Permit is reproduced. The per-duty status need is dropped and the case is odrl-core: in-force reporting covers RL2's scenario. Only request-independent status (monitoring, §9 #4) remains open, which scenario 3 shows and RL2's text does not require: a request for the notification itself matches no Permit or Forbid, so neither obligation is in force for it. Scenarios 2–4 are added: an unknown incident state, a request for the obligation's own action, and both duties fulfilled.",
+  "notes": "Both RL2 Duties are independent clauses, not prerequisites, so they become root odrl:obligation rules; making them odrl:duty on the permission would turn them into preconditions and change the decision to Pending. Grantor/grantee equal the duties' counterparty/subject, so the parties and the shared target are stated once at policy level and interiorised into all three rules. Both obligations are in force for every request ex:accessSharedData matches (due2-workflows.md §5.2); the incident duty's applicability condition reads a state operand, so it is a guard, and that obligation is in force only while an incident is confirmed. Their statuses follow from evidence (§5.3) and are reported with the access decision (§6.1), which is RL2's 'status reported separately'; they do not affect it, so RL2's decision Permit is reproduced. The per-duty status need is dropped and the case is odrl-core: in-force reporting covers RL2's scenario. Only request-independent status (monitoring, §9 #4) remains open, which scenario 3 shows and RL2's text does not require: a request for the notification itself matches no Permit or Forbid, so neither obligation is in force for it. Scenarios 2–4 are added: an unknown incident state, a request for the obligation's own action, and both duties fulfilled.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {
@@ -18,8 +18,7 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-31T12:00:00Z", "actor": "ex:Consumer", "action": "ex:recordUsage", "object": "ex:SharedData" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:recordUsageDuty", "status": "fulfilled" }, { "duty": "ex:notifyIncidentDuty", "status": "outstanding" } ], "why": "ex:accessSharedData applies and has no precondition duties, so it is ready. It matches the request, so both obligations are in force — the incident guard is T. ex:ev1 (actor ex:Consumer, ex:recordUsage on ex:SharedData, before effective_at) witnesses ex:recordUsageDuty; ex:notifyIncidentDuty has no witness and is outstanding (RL2: applicable, status reported separately). Under violations = ignore neither affects the verdict." },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:recordUsageDuty", "status": "fulfilled" }, { "duty": "ex:notifyIncidentDuty", "status": "outstanding" } ], "why": "ex:accessSharedData applies and has no precondition duties, so it is ready. It matches the request, so both obligations are in force — the incident guard is T. ex:ev1 (actor ex:Consumer, ex:recordUsage on ex:SharedData, before effective_at) witnesses ex:recordUsageDuty; ex:notifyIncidentDuty has no witness and is outstanding (RL2: applicable, status reported separately). Neither affects the verdict (§6.1)." },
       "rl2_expected": "Permit"
     },
     {
@@ -33,8 +32,7 @@
         "facts": { "ex:securityIncidentConfirmed": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:recordUsageDuty", "status": "outstanding" }, { "duty": "ex:notifyIncidentDuty", "status": "unknown" } ], "why": "The permission does not read the incident fact and is ready. ex:recordUsageDuty is in force with no witness, so outstanding. ex:notifyIncidentDuty's guard is U, so its in-force finding is U and it is reported unknown. Obligations do not affect the verdict under violations = ignore, so every completion gives Permit." }
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:recordUsageDuty", "status": "outstanding" }, { "duty": "ex:notifyIncidentDuty", "status": "unknown" } ], "why": "The permission does not read the incident fact and is ready. ex:recordUsageDuty is in force with no witness, so outstanding. ex:notifyIncidentDuty's guard is U, so its in-force finding is U and it is reported unknown. Obligations do not affect the verdict (§6.1), so every completion gives Permit." }
     },
     {
       "name": "incident notification requested",
@@ -47,7 +45,6 @@
         "facts": { "ex:securityIncidentConfirmed": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:notifyIncident is not ⊑ ex:access, so no Permit or Forbid of the policy matches and neither obligation is in force: an obligation is not matched by its own action (§5.2). No permission matches either, so NotApplicable." }
     },
     {
@@ -65,7 +62,6 @@
         ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:recordUsageDuty", "status": "fulfilled" }, { "duty": "ex:notifyIncidentDuty", "status": "fulfilled" } ], "why": "As in scenario 1, but ex:ev2 (actor, action, and object match, before effective_at) witnesses ex:notifyIncidentDuty, so both obligations in force are fulfilled. The permission is ready: Permit." }
     }
   ]

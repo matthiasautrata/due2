@@ -17,7 +17,6 @@
         "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [ { "@id": "certification:Clearance" }, { "@id": "certification:ProjectAccess" }, { "@id": "certification:EthicsTraining" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The held set contains all three required members, so isAllOf is T and ex:certifiedAccess is T; it has no duties and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [ { "@id": "certification:Clearance" }, { "@id": "certification:ProjectAccess" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The held set lacks certification:EthicsTraining, so left ⊇ right is F and the permission is F; nothing else applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [ { "@id": "certification:Clearance" }, { "@id": "certification:ProjectAccess" }, { "@id": "certification:EthicsTraining" }, { "@id": "certification:ExportControl" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "isAllOf tests left ⊇ right, so an extra held certification does not matter; the permission is T." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:requesterCertifications": { "status": "resolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The set-valued fact resolves to no members (§3.3). {} ⊇ {Clearance, ProjectAccess, EthicsTraining} is F, so the permission is F and nothing else applies." }
     },
     {
@@ -75,7 +71,6 @@
         "facts": { "ex:requesterCertifications": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The certification source did not answer, so the constraint is U and the permission is U; the completions give Permit and NotApplicable." }
     }
   ]

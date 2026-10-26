@@ -17,7 +17,6 @@
         "facts": { "ex:requesterBreakGlassActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Assignee, action, and target match and the requester's break-glass fact is true, so ex:emergencyAccessPrivilege applies with no duties." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterBreakGlassActive": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The assembler flattens only the subject's record; another agent's activation leaves the property missing, so the constraint and the permission are U. Completions give Permit and NotApplicable." }
     },
     {
@@ -46,7 +44,6 @@
         "facts": { "ex:requesterBreakGlassActive": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false eq true is F, so the permission does not apply; no other rule exists." }
     }
   ]

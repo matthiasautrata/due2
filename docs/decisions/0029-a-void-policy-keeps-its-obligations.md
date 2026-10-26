@@ -37,3 +37,5 @@ An example shows what is at stake. Policy P, under `invalid` and `violations = d
 ## Revisit when
 
 - A real policy needs a void to remove its obligations, for example an obligation that exists only to accompany the access the conflict voids. Such a duty may belong on the permission as a precondition, where the void already removes it with its parent.
+
+**Note (2026-10-26, `decisions/0045`):** `violations` is removed, and a violated obligation is reported and never denies. Item 1 stands: a void policy keeps its root obligations, and they are reported with their status. Item 3, and the example's `Deny` for the research request, no longer apply: that request is now permitted, with the violated obligation reported beside the verdict (`conformance/cases/due2-void-keeps-obligation`).

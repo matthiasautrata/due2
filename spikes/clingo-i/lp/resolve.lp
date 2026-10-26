@@ -8,8 +8,7 @@
 % "unknown". Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `completed/3`, `world/1` (completion.lp); `atom_effect/2`, `atom_policy/2`,
-%   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `passed/1` (duty.lp);
-%   `config_violations/1` (driver).
+%   `conflict/2`, `pre/2` (structure.lp); `passed/1` (duty.lp).
 % - **Provides:** `applying/2`, `permitting/2`, `violated/2`, `closed/2`, `candidate/2`,
 %   `outstanding/3`, `forbidding/2`, `has_candidate/2`, `has_forbidding/2`,
 %   `entry_eliminated/3`, `entry_kept/2`, `eliminated/2`, `deny/1`, `survives/2`,
@@ -43,7 +42,8 @@ violated(W, Y) :- completed(W, fulfilled(Y), f), passed(Y).
 In world `W`, the permission `X` applies, but a precondition of it is owed and violated, so the
 route can no longer be taken and `X` is no candidate. This is the closure of due2-workflows.md
 §6.1. It comes before conflict, so a closed permission removes no prohibition. A violated
-precondition removes its candidate under either value of `config.violations`.
+precondition removes only its own permission: another permission that matches the request is
+still a candidate.
 *%
 closed(W, X) :- permitting(W, X), pre(X, Y), completed(W, owed(Y), t), violated(W, Y).
 
@@ -124,15 +124,12 @@ eliminated(W, X) :- entry_eliminated(W, X, _), not entry_kept(W, X).
 
 %*! deny(W)
 
-Something denies in world `W`: a prohibition survives, or a violated obligation in force denies
-under the configuration. These are the conditions of due2-workflows.md §6.4. The second needs
-`config.violations` to be `deny`. Across policies the combination is prohibit-overrides
-(due2-workflows.md §6.2 #2): a surviving forbid eliminates every candidate. Under `deny`, a
-violated obligation acts as a surviving forbid. Under `ignore`, the default, whether stated or
-absent, obligations never affect the verdict.
+A prohibition survives in world `W`, so the world denies. Only a prohibition denies
+(due2-workflows.md §6.4), and across policies the combination is prohibit-overrides (due2-workflows.md §6.2 #2): a surviving forbid eliminates
+every candidate. An obligation never denies: a violated one is reported beside the verdict
+(`decisions/0045`).
 *%
 deny(W) :- forbidding(W, X), not eliminated(W, X).
-deny(W) :- config_violations(deny), obligation(Y), completed(W, in_force(Y), t), violated(W, Y).
 
 %*! survives(W, X)
 
@@ -206,9 +203,9 @@ verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W), not pending(
 Atom `X` determines world `W`'s verdict in role `Role`. The roles follow due2-workflows.md §6.4:
 `prohibition` for each surviving forbid, `permission` for each candidate of the frontier, under
 `Permit` the ready ones; `duty` for each outstanding duty of the frontier under `Pending`; and
-`closed` for each closed permission under `NotApplicable`. A violated obligation that denies has
-no role here: role `obligation` names every obligation in force under any verdict, and
-explain.lp reads it from the findings.
+`closed` for each closed permission under `NotApplicable`. Role `obligation` is not derived
+here: it names every obligation in force under any verdict, and explain.lp reads it from the
+findings.
 *%
 basis(W, X, prohibition) :- forbidding(W, X), not eliminated(W, X).
 basis(W, X, permission) :- frontier(W, X).
@@ -248,8 +245,9 @@ basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X).
 % value in every completion: an opaque part keeps rank 1, and with no paired leaf nothing an open
 % node reads differs from world `k`, so every open node keeps rank 1, and the finding's conjunction
 % stays `u`. Call a variable's value *lenient* when it makes its finding the one that permits more:
-% `applies` `t` for a permission and `f` for a prohibition, `owed` and `in_force` `f`, `fulfilled`
-% `t`; and *strict* when it is the other value. Let `L` be the completion with every variable
+% `applies` `t` for a permission and `f` for a prohibition, `owed` `f`, `fulfilled` `t`; and
+% *strict* when it is the other value. An obligation's `in_force` moves no verdict
+% (decisions/0045), so either value of it will do. Let `L` be the completion with every variable
 % lenient, and `S` the one with every variable strict. Every completion `C` lies between them,
 % finding by finding: a permission applies in `C` if it does in `S`, and a prohibition applies in
 % `C` only if it does in `S`; a precondition is owed in `C` only if it is in `S`, and fulfilled in
@@ -267,13 +265,11 @@ basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X).
 %   `C` permits too, and nothing denies in `C`. So `X` survives in `C` with an empty outstanding
 %   set, which no other set is a strict subset of, and `X` is a ready candidate of `C`'s frontier.
 %   `X` is in role `permission` in every completion, so the basis holds it.
-% - **A definite `Deny`.** `L` denies. If a prohibition `X` survives in `L`, its finding is `t`,
-%   since lenient makes a `u` prohibition `f`, so it applies in every `C`; and a strategy that
-%   removes it in `C` needs a candidate of its policy in `C`, which would be one in `L`, where none
-%   removed `X`. If instead a violated obligation in force denies in `L`, its `in_force` is `t` and
-%   its `fulfilled` `f` there; lenient would make a `u` `in_force` `f` and a `u` `fulfilled` `t`, so
-%   these are its findings, the same in every `C`, and it denies in every `C`; `interpret.py` gives
-%   it role `obligation`.
+% - **A definite `Deny`.** `L` denies, and only a surviving prohibition denies, so some
+%   prohibition `X` survives in `L`. Its finding is `t`, since lenient makes a `u` prohibition `f`,
+%   so it applies in every `C`; and a strategy that removes it in `C` needs a candidate of its
+%   policy in `C`, which would be one in `L`, where none removed `X`. So `X` survives in every `C`,
+%   and is in role `prohibition` in every completion.
 %
 % So an empty basis under a definite `Deny` or `Permit` needs a `u` finding that reads a paired
 % leaf, whose operand is `unresolved` and is listed as an unknown part: claim W of

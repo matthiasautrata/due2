@@ -36,7 +36,6 @@
         },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -45,42 +44,9 @@
           { "duty": "rule:tx-delivery", "status": "outstanding", "instance": "2026-06-01T00:00:00Z" },
           { "duty": "rule:tx-report", "status": "violated", "instance": "2026-05-15T00:00:00Z" }
         ],
-        "why": "rule:tx-read is ready and the export prohibition does not match read: Permit. Both obligations are in force. From anchor 2026-05-01, BYMONTHDAY=1 yields 05-01 and 06-01 by effective_at, each with a three-day deadline: the first is past with no witness (violated), the second's window runs to 06-04 (outstanding). From anchor 2026-05-15, BYMONTHDAY=15 yields 05-15 by effective_at, deadline 05-20 passed, no witness: violated; the 06-15 occurrence is not yet owed. Under the default violations = ignore the two violations are reported and cost nothing."
+        "why": "rule:tx-read is ready and the export prohibition does not match read: Permit. Both obligations are in force. From anchor 2026-05-01, BYMONTHDAY=1 yields 05-01 and 06-01 by effective_at, each with a three-day deadline: the first is past with no witness (violated), the second's window runs to 06-04 (outstanding). From anchor 2026-05-15, BYMONTHDAY=15 yields 05-15 by effective_at, deadline 05-20 passed, no witness: violated; the 06-15 occurrence is not yet owed. The two violations are reported and cost nothing (§6.1)."
       },
       "dprod_expected": "Permit (neither deliver nor report matches read, so no duty is collected; the permission is active)"
-    },
-    {
-      "name": "the same read under DPROD-faithful deny",
-      "request": {
-        "reference": "req-2",
-        "action": "odrl:read",
-        "target": "asset:transaction-files",
-        "at": "2026-06-02T10:00:00Z",
-        "parties": { "odrl:assignee": "agent:analytics" },
-        "params": {}
-      },
-      "sotw": {
-        "effective_at": "2026-06-02T10:00:00Z",
-        "facts": {},
-        "evidence": [],
-        "activation": {
-          "rule:tx-delivery": "2026-05-01T00:00:00Z",
-          "rule:tx-report": "2026-05-15T00:00:00Z"
-        },
-        "closure": []
-      },
-      "config": { "combination": "prohibit-overrides", "violations": "deny" },
-      "expected": {
-        "verdict": "Deny",
-        "frontier": [],
-        "obligations": [
-          { "duty": "rule:tx-delivery", "status": "violated", "instance": "2026-05-01T00:00:00Z" },
-          { "duty": "rule:tx-delivery", "status": "outstanding", "instance": "2026-06-01T00:00:00Z" },
-          { "duty": "rule:tx-report", "status": "violated", "instance": "2026-05-15T00:00:00Z" }
-        ],
-        "why": "Same findings as scenario 1; under violations = deny the violated May instances — one provider, one consumer-side — act as surviving prohibitions (due2-workflows.md §6.4). The report duty's bearer is the request subject, so the consumer is denied for its own missed report as much as for the provider's missed delivery."
-      },
-      "dprod_expected": "Permit (no duty is collected, so no violation denies — exception 6)"
     },
     {
       "name": "export transaction files",
@@ -93,7 +59,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-02T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Deny",
         "frontier": [],
@@ -113,7 +78,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-06-02T10:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],

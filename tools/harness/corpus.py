@@ -77,7 +77,6 @@ def interpret_vectors(cases: Path = CASES) -> list[Vector]:
                         "prefixes": prefix_json,
                         "request": s["request"],
                         "sotw": s["sotw"],
-                        "config": s["config"],
                     },
                     expected=as_obj(s["expected"], vid),
                     prefixes=prefixes,

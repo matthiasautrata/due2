@@ -1350,16 +1350,6 @@ EVIDENCE: Obj = {
     ("changes", "reason"),
     [
         ({"sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]}}, "sotw.closure"),  # not a hierarchy
-        ({"config": {"combination": "permit-overrides"}}, "config.combination"),
-        ({"config": {"preference": "ex:p"}}, "config.preference"),
-        # The smallest field wins, whatever the section order.
-        (
-            {
-                "sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]},
-                "config": {"combination": "permit-overrides"},
-            },
-            "config.combination",
-        ),
         # A value the program compares, and cannot place (values.py).
         ({"request": {"at": "2026-06-01T00:00:00"}}, "value: dateTime without timezone"),
         ({"sotw": {"effective_at": "2026-13-01T00:00:00Z"}}, "value: ill-typed xsd:dateTime"),
@@ -1367,9 +1357,9 @@ EVIDENCE: Obj = {
         (
             {
                 "request": {"at": "2026-06-01T00:00:00"},
-                "config": {"combination": "permit-overrides"},
+                "sotw": {"closure": [["ex:knows", "ex:a", "ex:b"]]},
             },
-            "config.combination",
+            "sotw.closure",
         ),
     ],
 )
@@ -1387,13 +1377,11 @@ def test_empty_fields_are_not_declined(interpreter: Interpreter) -> None:
     [
         {"sotw": {"evidence": [EVIDENCE]}},
         {"sotw": {"activation": {"ex:d": "2026-01-01T00:00:00Z"}}},
-        {"config": {"signers": [{"duty": "ex:d", "issuer": "ex:bank"}]}},
-        {"config": {"violations": "deny"}},
+        {"sotw": {"evidence": [EVIDENCE | {"issuer": "ex:bank"}]}},
     ],
 )
 def test_duty_inputs_are_read(interpreter: Interpreter, changes: dict[str, Obj]) -> None:
-    # The fields duty.lp and resolve.lp read are not declined, and without a duty they change
-    # nothing. Had lift.lp kept their declines, each would reply `unsupported`.
+    # The fields duty.lp reads are not declined, and without a duty they change nothing. Had lift.lp kept their declines, each would reply `unsupported`.
     assert verdict(interpreter.reply(vector(**changes))) == "Permit"
 
 

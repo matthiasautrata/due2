@@ -35,3 +35,5 @@ Config changes the trace (`due2-workflows.md` §3.4), so a case's later verdicts
 ## Revisit when
 
 - A config field turns out to be operational rather than part of the terms, such as a bound that only limits cost. `max_mixed` and `max_frontier_vars` change the trace (`due2-workflows.md` §3.4), so they are terms today.
+
+**Note (2026-10-26, `decisions/0045`):** there is no config, so a case fixes its request, corpus, and pins: `case (case_id | request, corpus, pins)`. Items 1 and 2 stand without the config; item 3's config change has nothing left to change. `max_mixed` and `max_frontier_vars` are constants of the spec, as § Revisit when anticipated.

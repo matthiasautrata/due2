@@ -17,7 +17,6 @@
         "facts": { "ex:requiredApprovalSetValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The approval-set fact is true, so ex:approvedAccess is T; it has no duties and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requiredApprovalSetValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The assembler found an expired approval and resolved the fact to false; false = true is F, so the permission is F and nothing else applies." }
     },
     {
@@ -46,7 +44,6 @@
         "facts": { "ex:requiredApprovalSetValid": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the permission is U; the completions give Permit and NotApplicable." }
     },
     {
@@ -60,7 +57,6 @@
         "facts": { "ex:requiredApprovalSetValid": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two disagreeing values give status conflict, so the constraint is U; the completions give Permit and NotApplicable." }
     }
   ]

@@ -34,3 +34,5 @@ A draft of the same day added a log-position fold, an as-of query over record ti
 **Note (2026-10-26, `decisions/0038`, #107):** a case fixes its corpus. `case` gains `corpus`, so one case per request reads one case per request and corpus. An amended policy or a new normaliser version is applied to an earlier request by opening a new case over the new corpus, not by re-evaluating the request's case, and the new case's activations start afresh (`due2-workflows.md` §7.1). Facts that change are still re-evaluated within the case.
 
 **Note (2026-10-26, `decisions/0042`, #139):** a case fixes its config and pins as well as its corpus: `case (case_id | request, corpus, config, pins)`, and an `evaluation` holds only its SOTW and outcome. One case per request reads one case per request and terms, and a config change opens a new case, as an amended policy does.
+
+**Note (2026-10-26, `decisions/0045`):** there is no config, so a case fixes its request, corpus, and pins: `case (case_id | request, corpus, pins)`.

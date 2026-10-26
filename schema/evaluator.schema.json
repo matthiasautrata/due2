@@ -34,16 +34,12 @@
         },
         "sotw": {
           "$ref": "collections.schema.json#/$defs/Sotw"
-        },
-        "config": {
-          "$ref": "collections.schema.json#/$defs/Config"
         }
       },
       "required": [
         "corpus",
         "request",
-        "sotw",
-        "config"
+        "sotw"
       ],
       "additionalProperties": false
     },

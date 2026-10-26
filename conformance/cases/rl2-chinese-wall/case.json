@@ -17,7 +17,6 @@
         "facts": { "ex:targetPublished": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "ex:unpublishedReportProhibition applies (false eq false). ex:publishedReportPrivilege is F (false eq true) and ex:analystReadPrivilege is F on assignee. A T Forbid survives, so Deny." },
       "rl2_expected": "Deny"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:targetPublished": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The prohibition is F (true eq false); ex:publishedReportPrivilege applies with no duties, so it is a ready candidate." },
       "rl2_expected": "Permit"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:targetPublished": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The prohibition and ex:publishedReportPrivilege name ex:InvestmentBanker, so both are F on assignee. ex:analystReadPrivilege applies unconditionally and is ready." },
       "rl2_expected": "Permit"
     },
@@ -62,7 +59,6 @@
         "facts": { "ex:targetPublished": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Both the prohibition and ex:publishedReportPrivilege are U. Most permissive completion (permission T, prohibition F): Permit. Most restrictive (permission F, prohibition T): Deny. They differ." }
     }
   ]

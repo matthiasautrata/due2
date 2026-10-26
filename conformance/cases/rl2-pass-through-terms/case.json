@@ -17,8 +17,7 @@
         "facts": { "ex:downstreamTermsBound": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:maintainPassThroughTerms", "status": "outstanding" } ], "why": "ex:redistributeUnderTerms is T (action, target, assignee, and the bound constraint) with no precondition duties, so it is ready. It matches the request, so ex:maintainPassThroughTerms (no guards) is in force; no ex:maintainTerms witness by ex:Aggregator on ex:Customer, so it is outstanding. Under violations = ignore it does not affect the verdict." },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:maintainPassThroughTerms", "status": "outstanding" } ], "why": "ex:redistributeUnderTerms is T (action, target, assignee, and the bound constraint) with no precondition duties, so it is ready. It matches the request, so ex:maintainPassThroughTerms (no guards) is in force; no ex:maintainTerms witness by ex:Aggregator on ex:Customer, so it is outstanding. It does not affect the verdict (§6.1)." },
       "rl2_expected": "Permit"
     },
     {
@@ -32,7 +31,6 @@
         "facts": { "ex:downstreamTermsBound": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:maintainPassThroughTerms", "status": "outstanding" } ], "why": "false eq true is F, so the permission does not apply; nothing else applies. The permission still matches the request (constraints aside), so the obligation is in force and, with no witness, outstanding." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:downstreamTermsBound": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:maintainPassThroughTerms", "status": "outstanding" } ], "why": "The constraint is U, so the permission is U; the permissive completion gives Permit, the restrictive one NotApplicable. In force does not read the permission's constraints, so the obligation is in force (T, not U) and outstanding." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:downstreamTermsBound": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:maintainTerms ⊑ ex:redistribute is F, so the permission does not match and no rule of the policy matches the request. An obligation is not matched by its own action (§5.2), so ex:maintainPassThroughTerms is not in force. Nothing applies." }
     },
     {
@@ -76,7 +72,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-15T00:00:00Z", "actor": "ex:Aggregator", "action": "ex:maintainTerms", "object": "ex:Customer" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:maintainPassThroughTerms", "status": "fulfilled" } ], "why": "As in scenario 1 the permission is ready. ex:ev1 is a witness for the obligation — actor ex:Aggregator (the inherited assignee), action ex:maintainTerms, object ex:Customer, before effective_at — so it is fulfilled." }
     }
   ]

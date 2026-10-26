@@ -17,7 +17,6 @@
         "facts": { "ex:requesterRole": { "status": "resolved", "values": [ { "@id": "role:SeniorAnalystInstance" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "role:SeniorAnalystInstance is typed role:SeniorAnalyst, a subclass of role:Analyst, so isA is T. ex:analystRead has no party to match; action and target match, so it is a ready candidate." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterRole": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "A missing role makes the isA constraint U, so the permission is U; completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requesterRole": { "status": "resolved", "values": [ { "@id": "role:ViewerInstance" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "role:ViewerInstance is typed role:Viewer, which is under role:Role but not role:Analyst, so isA is F and the permission does not apply." }
     }
   ]

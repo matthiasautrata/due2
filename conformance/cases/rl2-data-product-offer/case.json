@@ -21,7 +21,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:Provider", "action": "ex:attest", "object": "ex:DataProduct", "issuer": "ex:Provider" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:historyPortDuty", "status": "outstanding" } ], "why": "ex:readDailyPortPrivilege_A1 applies; ex:ev1 is a witness for ex:attestConformance_A1 (actor ex:Provider, action, object, before effective_at), so the candidate is ready. The permission matches, so the obligations are in force subject to their guards: ex:historyPortDuty has none and no witness (outstanding, RL2 Pending); ex:dailyPortDuty's guard PT4H > PT18H is F, so it is not in force (RL2 Active)." },
       "rl2_expected": "Permit"
     },
@@ -36,7 +35,6 @@
         "facts": { "ex:portDailyAge": { "status": "resolved", "values": [ { "@value": "PT4H", "@type": "xsd:dayTimeDuration" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance_A1" ] ], "obligations": [ { "duty": "ex:historyPortDuty", "status": "outstanding" } ], "why": "ex:readDailyPortPrivilege_A1 applies; its duty has no witness, so it is outstanding and the candidate is pending (no deadline, never violated). ex:historyPortDuty is in force and outstanding; ex:dailyPortDuty's guard is F." }
     },
     {
@@ -51,7 +49,6 @@
         "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:Consumer", "action": "ex:attest", "object": "ex:DataProduct" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:attestConformance_A1" ] ], "obligations": [ { "duty": "ex:dailyPortDuty", "status": "outstanding" }, { "duty": "ex:historyPortDuty", "status": "outstanding" } ], "why": "ex:readHistoryPortPrivilege_A1 applies. ex:ev2's actor is ex:Consumer, not the duty's assignee ex:Provider, so it is no witness; the shared duty is outstanding and the candidate pending. The history-port permission matching suffices to put the policy's obligations in force: ex:dailyPortDuty's guard PT20H > PT18H holds and it has no witness (RL2 would call the Maintain duty Violated), and ex:historyPortDuty is outstanding." }
     }
   ]

@@ -146,8 +146,7 @@ class Interpreter:
         """The output for one vector (DESIGN.md § Output).
 
         Args:
-            vector: A corpus vector: `prefixes`, `policy` (Turtle), `request`, `sotw`, and
-                `config`.
+            vector: A corpus vector: `prefixes`, `policy` (Turtle), `request`, and `sotw`.
 
         Returns:
             `verdict`, `frontier`, `obligations`, `exact`, `verdict_basis`, `eliminated`,

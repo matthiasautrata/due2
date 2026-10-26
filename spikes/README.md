@@ -62,10 +62,10 @@ One vector per positive scenario in `conformance/cases/` (negative cases wait fo
 
 ```json
 {"case": "...", "scenario": "...", "policy": "<policy.ttl text>", "prefixes": {"odrl": "..."},
- "request": {...}, "sotw": {...}, "config": {...}}
+ "request": {...}, "sotw": {...}}
 ```
 
-`request`, `sotw`, and `config` are exactly as in `case.json` (`conformance/README.md`). Output:
+`request` and `sotw` are exactly as in `case.json` (`conformance/README.md`). Output:
 
 ```json
 {"verdict": "Pending",
@@ -85,13 +85,13 @@ The verdict is one of the five. The frontier is a set of alternatives, each a se
 The task of the W2/W3 evaluator, `decide` of `due2-platform.md` §2.1. Its vectors are the scenarios of the relation-level vector files in `conformance/vectors/` (none until #37), which gate the evaluator (`decisions/0027` #5). Input:
 
 ```json
-{"file": "...", "scenario": "...", "corpus": {...}, "request": {...}, "sotw": {...}, "config": {...}}
+{"file": "...", "scenario": "...", "corpus": {...}, "request": {...}, "sotw": {...}}
 ```
 
-The four collections are in the canonical form of `due2-workflows.md` §2: full IRIs, tuples sorted, and relations with no tuples omitted. The harness has canonicalised them from the vector file's authoring form (`conformance/README.md`, section Relation-level vectors). The output is the trace, `due2-workflows.md` §3.5, in the same form:
+The three collections are in the canonical form of `due2-workflows.md` §2: full IRIs, tuples sorted, and relations with no tuples omitted. The harness has canonicalised them from the vector file's authoring form (`conformance/README.md`, section Relation-level vectors). The output is the trace, `due2-workflows.md` §3.5, in the same form:
 
 ```json
-{"evaluation": [{"corpus_id": "sha256:...", "request_id": "sha256:...", "sotw_id": "sha256:...", "config_id": "sha256:..."}],
+{"evaluation": [{"corpus_id": "sha256:...", "request_id": "sha256:...", "sotw_id": "sha256:..."}],
  "verdict": [{"value": "Pending", "frontier_complete": true, "exact": true}],
  "alternative": [...], "alt_duty": [...], "finding": [...], ...}
 ```

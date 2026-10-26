@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/schema-evolution.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Direct translation. The two rl2:Privilege clauses become permissions with rule-level assignees (an RL2 Set has no grantee); the rl2:and becomes two conjunctive constraints. The independent ex:notifyDuty becomes a root odrl:obligation whose constraint is its applicability guard. The state paths state.schemaChange.breaking and state.schemaChange.noticePeriodElapsed are flattened to two stateSource properties. RL2 has no stated conflict strategy (it is configuration); odrl:prohibit is chosen and no prohibition exists. The obligation's constraint reads a state operand, so it is a guard (due2-workflows.md §5.2): ex:notifyDuty is in force for a request that one of the policy's permissions matches, constraints aside, when the change is breaking. Its status is then reported (§6.1), which reproduces RL2's status-map entry — Active for a breaking change (scenarios 2 and 3: outstanding) — while it still plays no part in the deployChange decision under violations = ignore. A request for ex:notifyConsumers itself matches no rule of the policy, so the obligation is not in force there: an obligation is not matched by its own action (§5.2), in line with RL2's statement that no obligate atom arises from the action. Monitoring outside any request remains open (§9 #4) but no scenario needs it. Scenarios 4 and 5 are added. Scenario 4 shows a deliberate imprecision: the two permissions test the same fact with complementary values, so every actual value of ex:changeIsBreaking permits, yet due2 completes findings per atom and reports Indeterminate.",
+  "notes": "Direct translation. The two rl2:Privilege clauses become permissions with rule-level assignees (an RL2 Set has no grantee); the rl2:and becomes two conjunctive constraints. The independent ex:notifyDuty becomes a root odrl:obligation whose constraint is its applicability guard. The state paths state.schemaChange.breaking and state.schemaChange.noticePeriodElapsed are flattened to two stateSource properties. RL2 has no stated conflict strategy (it is configuration); odrl:prohibit is chosen and no prohibition exists. The obligation's constraint reads a state operand, so it is a guard (due2-workflows.md §5.2): ex:notifyDuty is in force for a request that one of the policy's permissions matches, constraints aside, when the change is breaking. Its status is then reported (§6.1), which reproduces RL2's status-map entry — Active for a breaking change (scenarios 2 and 3: outstanding) — while it still plays no part in the deployChange decision. A request for ex:notifyConsumers itself matches no rule of the policy, so the obligation is not in force there: an obligation is not matched by its own action (§5.2), in line with RL2's statement that no obligate atom arises from the action. Monitoring outside any request remains open (§9 #4) but no scenario needs it. Scenarios 4 and 5 are added. Scenario 4 shows a deliberate imprecision: the two permissions test the same fact with complementary values, so every actual value of ex:changeIsBreaking permits, yet due2 completes findings per atom and reports Indeterminate.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {
@@ -17,7 +17,6 @@
         "facts": { "ex:changeIsBreaking": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:compatibleChangePrivilege applies (breaking = false). ex:breakingChangePrivilege is F: its breaking test is F, and F ∧ U = F masks the absent notice fact. The ready candidate gives Permit. Both permissions match the request, but the obligation's guard (breaking = true) is F, so ex:notifyDuty is not in force." },
       "rl2_expected": "Permit"
     },
@@ -35,7 +34,6 @@
         },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:notifyDuty", "status": "outstanding" } ], "why": "ex:breakingChangePrivilege applies (both constraints T) and has no duties; ex:compatibleChangePrivilege is F. Ready candidate, no prohibition: Permit. The permissions match and the guard is T, so ex:notifyDuty is in force; no ex:notifyConsumers witness by ex:Provider, so it is outstanding (RL2: Active)." },
       "rl2_expected": "Permit"
     },
@@ -53,7 +51,6 @@
         },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:notifyDuty", "status": "outstanding" } ], "why": "ex:compatibleChangePrivilege is F (breaking = true) and ex:breakingChangePrivilege is F (notice not elapsed). No candidate, no prohibition. The permissions still match (constraints aside) and the guard is T, so ex:notifyDuty is in force and outstanding (RL2: Active)." },
       "rl2_expected": "NotApplicable"
     },
@@ -71,7 +68,6 @@
         },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:notifyDuty", "status": "unknown" } ], "why": "Both permissions are U (their breaking test is U; the notice test is T). Completions are per finding: both T gives Permit, both F gives NotApplicable, so the verdict is not invariant — even though either value of the shared fact would permit. The obligation's guard is U, so it is in force with finding U and reported unknown." }
     },
     {
@@ -85,7 +81,6 @@
         "facts": { "ex:changeIsBreaking": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No permission or prohibition covers ex:notifyConsumers (ex:notifyConsumers ⊑ ex:deployChange is F). An obligation is in force only when a rule of its policy matches the request, never through its own action (§5.2), so ex:notifyDuty is not in force despite breaking = true. Nothing applies." }
     }
   ]

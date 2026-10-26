@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/ethics-approval.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "rl2:anyAgent as subject → no assignee on the permission, so the party part is absent from the applies predicate and any requester matches. The agent-scoped fact agent.ethicsApprovalValid becomes one state property, ex:requesterEthicsApprovalValid; the SOTW is assembled for one request and its flattened properties describe that request's subject (due2-workflows.md §3.3). RL2's board attribution is an admissibility filter (config admit_source), and a property whose only answers fail it is missing. RL2's validity interval has no due2 counterpart, because keeping a value current is the SOTW service's job (decisions/0040). RL2's 'absent-but-defaulted' value has no due2 counterpart (due2 has no operand defaults); the assembler must supply the false value, so scenario 2 uses a resolved false. Scenario 4 is added: a request that names no subject gives the assembler no one to resolve a subject-scoped fact for, so the fact is missing and the verdict Indeterminate.",
+  "notes": "rl2:anyAgent as subject → no assignee on the permission, so the party part is absent from the applies predicate and any requester matches. The agent-scoped fact agent.ethicsApprovalValid becomes one state property, ex:requesterEthicsApprovalValid; the SOTW is assembled for one request and its flattened properties describe that request's subject (due2-workflows.md §3.3). RL2's board attribution is an admissibility filter (the sources registered for the property, due2-platform.md §2.4), and a property whose only answers fail it is missing. RL2's validity interval has no due2 counterpart, because keeping a value current is the SOTW service's job (decisions/0040). RL2's 'absent-but-defaulted' value has no due2 counterpart (due2 has no operand defaults); the assembler must supply the false value, so scenario 2 uses a resolved false. Scenario 4 is added: a request that names no subject gives the assembler no one to resolve a subject-scoped fact for, so the fact is missing and the verdict Indeterminate.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {
@@ -17,7 +17,6 @@
         "facts": { "ex:requesterEthicsApprovalValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The permission has no assignee, action and target match, and the approval fact is true, so it applies; it has no duties." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterEthicsApprovalValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission does not apply; nothing else applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requesterEthicsApprovalValid": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Missing gives U for the constraint and the permission: Permit in the permissive completion, NotApplicable in the restrictive one." },
       "rl2_expected": "Indeterminate"
     },
@@ -62,7 +59,6 @@
         "facts": { "ex:requesterEthicsApprovalValid": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The permission has no atom_party, so the missing subject is not itself a U part; but the subject-scoped approval fact has no subject to describe (§3.3) and is missing, so the constraint and the permission are U and the completions disagree." }
     }
   ]

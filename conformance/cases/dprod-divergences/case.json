@@ -3,7 +3,7 @@
   "source": "Constructed from DPROD Contracts (EKGF dprod, develop, 50db943) examples/data-contract.ttl: DataContract quant-market-data-2026 with the rules of offer market-prices-v2 copied verbatim, plus one constructed prohibition",
   "classification": "odrl-profile",
   "needs": ["dprod:DataContract (policy class)"],
-  "notes": "Exercises the semantic exceptions of due2-profiles.md §8.2. The operand-binding properties are not profile terms (conformance README); dprod:acceptsOffer, dprod:effectiveDate and dprod:expirationDate are metadata, never evaluated. DPROD Σ: Σ₀ with clock = request.at; there are no duties, so exceptions 2 (Σ) and 3 (Pending) cannot arise, no obligation is ever in force, and config.violations has nothing to act on: every scenario uses the default ignore, and the DPROD-faithful deny gives the same verdicts. Copying an offer's rules into a contract is what dprod:acceptsOffer suggests, and it leaves every rule without an assignee. Exception 4 (policy-level parties): DPROD's §7.3 admits the grantor as a party and §7.4 lets a rule with no subject match any agent; due2 interiorises the policy-level assignee into every rule that states no assignee — here all of them (normalisation spec 0.12 §6.2). So the grantor is permitted to display (scenario 1) and is denied redistribution (scenario 2) by DPROD, and both are NotApplicable in due2. §8.2 exception 4 names both directions — permitted, or denied by a prohibition — and scenarios 1 and 2 show one each. Exception 1 (incomparable operands): scenarios 4 and 5. Because the incomparable atom sits in a prohibition, DPROD's 'false' lets the request through: Permit against due2's Indeterminate. Scenario 5: due2-profiles.md v0.3 §4 orders durations only within one kind (day-time or year-month), so P365D against P1Y is invalid, hence U, as the scenario assumed. A resolution error in a policy that does not apply: the case format holds one policy, so this is exercised by its single-policy analogue, scenario 7. The grantor's derive request makes DPROD evaluate rule:div-no-long-retention, whose operand is missing, so DPROD fails; in due2 that rule, like every rule of this policy, does not apply to the grantor (interiorised assignee), so the U is masked and due2 decides NotApplicable. This is consistent with refinement (Failure becomes a decision), but here it rests on exception 4. A cross-policy version, with a second policy whose condition errors, needs a multi-policy case format (due2-workflows.md §9 #8).",
+  "notes": "Exercises the semantic exceptions of due2-profiles.md §8.2. The operand-binding properties are not profile terms (conformance README); dprod:acceptsOffer, dprod:effectiveDate and dprod:expirationDate are metadata, never evaluated. DPROD Σ: Σ₀ with clock = request.at; there are no duties, so exceptions 2 (Σ) and 3 (Pending) cannot arise, no obligation is ever in force. Copying an offer's rules into a contract is what dprod:acceptsOffer suggests, and it leaves every rule without an assignee. Exception 4 (policy-level parties): DPROD's §7.3 admits the grantor as a party and §7.4 lets a rule with no subject match any agent; due2 interiorises the policy-level assignee into every rule that states no assignee — here all of them (normalisation spec 0.12 §6.2). So the grantor is permitted to display (scenario 1) and is denied redistribution (scenario 2) by DPROD, and both are NotApplicable in due2. §8.2 exception 4 names both directions — permitted, or denied by a prohibition — and scenarios 1 and 2 show one each. Exception 1 (incomparable operands): scenarios 4 and 5. Because the incomparable atom sits in a prohibition, DPROD's 'false' lets the request through: Permit against due2's Indeterminate. Scenario 5: due2-profiles.md v0.3 §4 orders durations only within one kind (day-time or year-month), so P365D against P1Y is invalid, hence U, as the scenario assumed. A resolution error in a policy that does not apply: the case format holds one policy, so this is exercised by its single-policy analogue, scenario 7. The grantor's derive request makes DPROD evaluate rule:div-no-long-retention, whose operand is missing, so DPROD fails; in due2 that rule, like every rule of this policy, does not apply to the grantor (interiorised assignee), so the U is masked and due2 decides NotApplicable. This is consistent with refinement (Failure becomes a decision), but here it rests on exception 4. A cross-policy version, with a second policy whose condition errors, needs a multi-policy case format (due2-workflows.md §9 #8).",
   "prefixes": {
     "ex": "https://example.org/",
     "agent": "https://example.org/agents/",
@@ -18,7 +18,6 @@
         "parties": { "odrl:assignee": "agent:data-platform-team" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "Interiorisation makes quant-research the assignee of rule:div-display; data-platform-team ⊑ quant-research is F, so the permission is F. NotApplicable." },
       "dprod_expected": "Permit (the agent matches the grantor, §7.3; rule:div-display has no subject, so NormActive holds, §7.4)"
     },
@@ -29,7 +28,6 @@
         "parties": { "odrl:assignee": "agent:data-platform-team" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "rule:div-no-redistribution has the interiorised assignee quant-research, so it is F for the grantor; no permission covers distribute. NotApplicable." },
       "dprod_expected": "Deny (subject-less prohibition is active for any party of the agreement)"
     },
@@ -40,7 +38,6 @@
         "parties": { "odrl:assignee": "agent:quant-research" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "rule:div-display applies to its interiorised assignee; nothing prohibits display. Permit." },
       "dprod_expected": "Permit"
     },
@@ -52,7 +49,6 @@
         "params": { "ex:retentionPeriod": { "@value": "730", "@type": "xsd:integer" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "gt between xsd:integer and xsd:duration is outside the operator's signature, so the atom is invalid and rule:div-no-long-retention is U; rule:div-derive is T. Completing the prohibition T gives Deny, F gives Permit." },
       "dprod_expected": "Permit (apply(gt, 730, P1Y) returns false for incomparable operands, §6.2, so the prohibition is inactive)"
     },
@@ -64,7 +60,6 @@
         "params": { "ex:retentionPeriod": { "@value": "P365D", "@type": "xsd:duration" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "P365D (day-time) and P1Y (year-month) are durations of different kinds, so the gt atom is invalid and U (§4); rule:div-derive is T. Not invariant: Deny or Permit." },
       "dprod_expected": "Permit (incomparable durations: apply returns false, §6.2)"
     },
@@ -76,7 +71,6 @@
         "params": { "ex:retentionPeriod": { "@value": "P2Y", "@type": "xsd:duration" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "P2Y gt P1Y is T, so rule:div-no-long-retention applies and, under odrl:prohibit, eliminates rule:div-derive. Deny." },
       "dprod_expected": "Deny"
     },
@@ -87,7 +81,6 @@
         "parties": { "odrl:assignee": "agent:data-platform-team" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The prohibition's assignee part is F for the grantor, so F ∧ U = F; rule:div-derive is F for the same reason. No atom is T or U. NotApplicable." },
       "dprod_expected": "Failure(MissingValue ex:retentionPeriod) (the policy applies to the grantor, and the subject-less prohibition's condition is evaluated at step 4)"
     },
@@ -98,7 +91,6 @@
         "parties": { "odrl:assignee": "agent:outside-vendor" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "outside-vendor is not quant-research or a member of it; every rule is F on the assignee part. NotApplicable." },
       "dprod_expected": "NotApplicable (§7.3: the agent is neither grantor nor grantee)"
     }

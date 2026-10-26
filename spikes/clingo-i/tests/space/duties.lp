@@ -3,9 +3,8 @@
 % Each answer set is one input to the duty differential (`Duties` in test_brute_force.py): one to
 % `rules` rules, each with at most one leaf constraint; up to `duties` duties, each with at most
 % one leaf guard, an evidence row by one actor or none, and a deadline that has passed or none;
-% the edges by which permissions require duties; with `obligations` 1, a root obligation and
-% whether its violation denies; the subject of the request; the operand statuses (rules.lp); and the conflict
-% strategy. Every rule is for `use` on target `a` with no assignee.
+% the edges by which permissions require duties; with `obligations` 1, a root obligation; the
+% subject of the request; the operand statuses (rules.lp); and the conflict strategy. Every rule is for `use` on target `a` with no assignee.
 %
 % Duty `d(G, A, P)` has guard `G` (a leaf or `none`), evidence by actor `A` (`none` for no
 % evidence row), and `P` 1 when its deadline has passed. The duties are sorted, so each multiset
@@ -18,7 +17,7 @@
 %   2 for the subject alice or none, 1 for alice only; `actors`, 1 to 3 for the evidence actors
 %   none, alice, and bob.
 % - **Shows:** `slot/2`, `operand/2`, `conflict/1`, `subject/1`, `dterm/2`, `edge/2`,
-%   `obligation/1`, `violations/1`.
+%   `obligation/1`.
 
 #const rules = 1.
 #const duties = 1.
@@ -73,7 +72,6 @@ duty(D) :- k(N), D = 0..N - 1.
 :- duty(D), not edge(_, D).
 
 { obligation(X) : dterm(X) } = 1 :- obligations = 1.
-{ violations(deny) } :- obligation(_).
 
 #show slot/2.
 #show operand/2.
@@ -82,4 +80,3 @@ duty(D) :- k(N), D = 0..N - 1.
 #show dterm/2.
 #show edge/2.
 #show obligation/1.
-#show violations/1.

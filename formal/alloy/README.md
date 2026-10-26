@@ -17,7 +17,7 @@ The script needs Java 17 or later, curl, and python3. It runs Alloy 6.2.0, the M
 |---|---|---|
 | `k_completion_key.als` | K: the completion key is sound, and one-sided at the leaves | `due2-workflows.md` §5.4, §6.4; `due2-profiles.md` §3, §4; `decisions/0012`, `0015`, `0016`, `0023` |
 | `kleene_regularity.als` | The connectives are regular, which carries K's one-sidedness from the leaves to the findings | `due2-workflows.md` §5.2; `decisions/0016` |
-| `resolve.als` | None: a module, W3 over one completion, opened by the four models below | `due2-workflows.md` §6.1–§6.4 |
+| `resolve.als` | None: a module, W3 over one completion, opened by the four models below | `due2-workflows.md` §6.1–§6.4; `decisions/0045` |
 | `m_monotonicity.als` | M: the verdict is monotone in every finding, and the uniform variables are bounded by the two extremes | `due2-workflows.md` §6.4 |
 | `f_frontier_relevance.als` | F: two `Pending` completions that agree on the relevant unknowns have one frontier, and the same open routes | `due2-workflows.md` §6.4; `decisions/0004`, `0026` |
 | `w_basis_waiver.als` | W: a definite `Permit` or `Deny` with an empty basis has a `U` finding on a variable that another literal reads too | `due2-workflows.md` §6.4; `decisions/0016` |

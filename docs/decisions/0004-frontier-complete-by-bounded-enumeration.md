@@ -46,3 +46,5 @@ The model in `check_completion.py` covers one policy. Under conflict `invalid` w
 ## Amendment (2026-10-24, the bound is config)
 
 `max_frontier_vars` (#3) is a field of `config` (`due2-workflows.md` §3.4), set by the caller, default 8, rather than a limit of W3. It changes `frontier_complete` and the listed frontier, so it must be an input for L1 and replay to hold. The definition and the computation stand.
+
+**Note (2026-10-26, `decisions/0045`):** there is no config. `max_frontier_vars` is a constant of the spec, 8 (`due2-workflows.md` §3.4), which supersedes the amendment of 2026-10-24. It still changes `frontier_complete` and the listed frontier, so L1 and replay hold over the inputs and the spec version.

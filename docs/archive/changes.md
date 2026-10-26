@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.51** (2026-10-26, `decisions/0043`, `decisions/0044`): world hierarchy edges reach the case as `closure` events, one answer per module and request entity, and the latest answer replaces an earlier one (§3.3, §7.1). An event carries the version of the source that answered, which W2 never reads (§7.1). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.50** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): the SOTW keeps each source's answer, `attribution` is dropped, and W2 combines the admitted answers of a property (§3.3, §5.4); `admit_age` is dropped, because keeping values current is the SOTW service's job (§3.4). The evaluator computes `evaluation` and `diagnostic` too, so it returns the whole trace (§3.5). A case fixes its request, corpus, config, and pins, and an evaluation records only its SOTW and outcome (§7.1). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.49** (2026-10-26, `decisions/0039`, #136): the lineage is a collection with relations of its own (§3.6), one per policy version and normaliser version, found by the policy store and never merged; §2 counts six collections, and §3.7 and L10 read the lineage of each policy in the corpus. Earlier changes are in `docs/archive/changes.md`.
@@ -59,6 +61,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Coherence updates, 2026-10-10** (after `decisions/0002`): L9 restated as a refinement — conditional-duty hoisting splits one unknown into correlated findings completed independently, so the equality as previously written cannot hold under unknowns; L6 scoped to §6.2's conflict eliminations, because `eliminated` now also records `violated_precondition` removals (§3.5, §6.1), which give a closed route visibility in `verdict_basis` (role `closed`); the absent conflict term takes a selected profile's declared default first (normalisation spec §3); §5.3's no-guard sentence scoped to the parent relation.
 
 ## `correctness-strategy.md`
+
+**Changes in v0.21** (2026-10-26, #23): §7 names the workflows of the tiers; the slow tier's runs the Alloy models and clingo-i's slow bounds. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.20** (2026-10-26, `decisions/0039`, #136): §4.3's lineage bullet names the lineage relation that L10 reads, and §4.6 reads the lineage of each policy. Earlier changes are in `docs/archive/changes.md`.
 
@@ -123,6 +127,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.23** (2026-10-26, `decisions/0040`, #137): §3 *Admissibility* keeps `admit_source`, which W2 applies when it combines the answers of several sources, and drops `admit_age`, because keeping values current is the SOTW service's job. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.22** (2026-10-26, `decisions/0038`, #107): §7 keys `activation` by the duty atom, and §8.1 says that an anonymous rule's identity is minted. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.21** (2026-10-25, #127): §8.1 states which DPROD examples pass unchanged, and why the others are rejected. Earlier changes are in `docs/archive/changes.md`.
@@ -178,6 +184,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **v0.4** (2026-10-17, `decisions/0013` amendment, #69): `MalformedConstraint` covers an empty list as a set right operand. **v0.3** (2026-10-17, `decisions/0014`, `decisions/0015`): new rows `ConflictingProfileDeclaration` (named in profiles §2 since v0.4 but never registered), `RetypedOperand`, and `OperandRangeMismatch`; `InvalidBinding` and `OperatorTypeMismatch` cover concept schemes. **v0.2** (2026-10-17, `decisions/0013`, #64): `MalformedConstraint` covers more than one right-operand value on an operator that is not set-based, and a set right operand that mixes a list with other values or gives two lists.
 
 ## `due2-architecture.md`
+
+**Changes in v0.16** (2026-10-26, `decisions/0040`, `decisions/0042`, #137, #139): §7 says that a case and its evaluations together pin their inputs (`decisions/0042`), and §8 harvests RL2's admissibility by source but not its freshness filter, which is the SOTW service's job (`decisions/0040`). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.15** (2026-10-26, `decisions/0038`, #107): §3 says that an anonymous rule's identity is minted, and §7 that an amendment reaches an earlier request through a new case, what evidence for a grant names, and that the re-evaluation trigger is a change of facts or evidence. Earlier changes are in `docs/archive/changes.md`.
 
@@ -253,9 +261,9 @@ Changes in 0.12: selected profile modules as input (§3); profile policy subclas
 
 ## `conformance/README.md` § Coverage gaps
 
-Re-derived 2026-10-25, after `due2-assigner-of` and `due2-assignee-of` (#122), `due2-action-without-value` and `due2-refined-action-skolem` (#123), `due2-literal-bearer` (#124), `due2-constrained-bearer` (#129), `due2-impossible-operand`, `due2-impossible-deadline`, and `due2-week-duration` (#125), and `due2-constraint-cycle` (#126).
+Re-derived 2026-10-26, after `decisions/0045` removed the config (five scenarios removed, one added to `due2-grant-signers`), and after `due2-violated-precondition-beside-permission` was added.
 
-Earlier re-derivations: 2026-10-24, after `due2-literal-party`, `due2-and-or`, `due2-two-right-operand-references`, `due2-action-without-parent`, `due2-action-two-parents`, and `due2-has-policy` (#117); 2026-10-24, after `due2-datetime-no-timezone`, `due2-date-with-timezone`, `due2-eq-over-set`, `due2-deadline-no-timezone`, and `due2-mixed-duration` (#116); 2026-10-24, after `due2-replaced-policy` and `due2-unrecognised-profile` (#115); 2026-10-24, after `due2-unknown-fulfilment-deadline` and `due2-grant-two-targets` (#113); 2026-10-24, after `due2-reevaluation-moves-at` (#111); 2026-10-24, after `due2-void-keeps-obligation` (#110); 2026-10-24, after `due2-duty-disjunction` (#109); 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
+Earlier re-derivations: 2026-10-25, after `due2-assigner-of` and `due2-assignee-of` (#122), `due2-action-without-value` and `due2-refined-action-skolem` (#123), `due2-literal-bearer` (#124), `due2-constrained-bearer` (#129), `due2-impossible-operand`, `due2-impossible-deadline`, and `due2-week-duration` (#125), and `due2-constraint-cycle` (#126).; 2026-10-24, after `due2-literal-party`, `due2-and-or`, `due2-two-right-operand-references`, `due2-action-without-parent`, `due2-action-two-parents`, and `due2-has-policy` (#117); 2026-10-24, after `due2-datetime-no-timezone`, `due2-date-with-timezone`, `due2-eq-over-set`, `due2-deadline-no-timezone`, and `due2-mixed-duration` (#116); 2026-10-24, after `due2-replaced-policy` and `due2-unrecognised-profile` (#115); 2026-10-24, after `due2-unknown-fulfilment-deadline` and `due2-grant-two-targets` (#113); 2026-10-24, after `due2-reevaluation-moves-at` (#111); 2026-10-24, after `due2-void-keeps-obligation` (#110); 2026-10-24, after `due2-duty-disjunction` (#109); 2026-10-22, after the repeated-member cases of #100; 2026-10-20, after the placement cases of #93; 2026-10-19, after `due2-nested-unknowns` (#81); 2026-10-17, after the negative case `due2-empty-logical-constraint` (`decisions/0017`), after the concept-scheme cases `due2-concept-purpose`, `due2-concept-purpose-prohibition`, `due2-concept-complement`, and their three negative cases (`decisions/0015`), and `due2-empty-right-operand` (`decisions/0013`, amendment), after `due2-unresolved-or-missing` and the change to `due2-shared-reads` (`decisions/0016`), after the operand-binding cases `due2-rebound-pay-amount`, `due2-retyped-operand`, and `due2-operand-range-mismatch` (`decisions/0014`), after `due2-repeated-right-operand` and `due2-malformed-right-operand` (`decisions/0013`), and after `due2-shared-reads` (`decisions/0012`); 2026-10-16, after the explanation fields (#57) and the OVAL refresh (#51).
 
 ## README § Status, as it stood on 2026-10-19
 

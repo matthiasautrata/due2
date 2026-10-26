@@ -19,7 +19,6 @@
         "facts": { "ex:targetErasureRequestValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The policy has no permission or prohibition, so nothing applies and nothing matches the request; ex:erasePersonalDataDuty is not in force, although its guard holds and the request is for its own action (an obligation is not matched by its own action, §5.2). NotApplicable; RL2's obligate(erase) and Active status have no counterpart." },
       "rl2_expected": "NotApplicable"
     },
@@ -34,7 +33,6 @@
         "facts": { "ex:targetErasureRequestValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No rule of the policy matches, so the obligation is not in force (its guard is F as well). Nothing applies: NotApplicable." }
     },
     {
@@ -48,7 +46,6 @@
         "facts": { "ex:targetErasureRequestValid": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No rule of the policy matches, so the obligation is not in force whatever its U guard; it is not reported. Nothing applies, so every completion gives NotApplicable." }
     }
   ]

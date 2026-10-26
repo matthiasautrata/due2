@@ -3,7 +3,7 @@
   "source": "Constructed from DPROD Contracts vocabulary (EKGF dprod, develop, 50db943): dprod-contracts.ttl dprod:not, specification.md §4.9, operands from examples/data-use-policy.ttl and baseline.ttl. No DPROD example uses dprod:not.",
   "classification": "odrl-profile",
   "needs": ["dprod:not", "dprod:DataOffer (policy class)"],
-  "notes": "Constructed, because no DPROD example uses dprod:not. Rules are named from the start. Operands are declared as in the DPROD examples, with no rdfs:range, so DPROD never raises TypeMismatch for them and comparisons fall through to apply. due2 normalises not(isAnyOf) to isNoneOf and not(and(a, b)) to or(neq a, neq b) (due2-profiles.md §5); these are permission constraints, so the guard/witness split of duty constraints does not arise. DPROD evaluates Not by negating the inner result and propagates errors (formal-semantics.md §6.1, §13.2). DPROD Σ: Σ₀, clock = request.at; there are no duties, so no obligation is ever in force and config.violations has nothing to act on (every scenario uses the default ignore; deny gives the same verdicts). Scenarios 4 and 5 are DPROD Failures that due2 decides or reports Indeterminate; in scenario 5, De Morgan exposes a false conjunct that makes the U one irrelevant (refinement, not an exception). Scenario 6 is exception 1 under negation: DPROD's apply returns false for the incomparable integer-versus-duration comparison, dprod:not turns that into true, and DPROD grants derive on malformed data, while due2 keeps U through the negation and reports Indeterminate. So 'incomparable is false' is not even fail-safe once dprod:not exists. due2-profiles.md §8.2 exception 1 now states this case: under a prohibition or dprod:not, DPROD's false turns malformed data into a Permit and DPROD fails open, where due2 returns Indeterminate.",
+  "notes": "Constructed, because no DPROD example uses dprod:not. Rules are named from the start. Operands are declared as in the DPROD examples, with no rdfs:range, so DPROD never raises TypeMismatch for them and comparisons fall through to apply. due2 normalises not(isAnyOf) to isNoneOf and not(and(a, b)) to or(neq a, neq b) (due2-profiles.md §5); these are permission constraints, so the guard/witness split of duty constraints does not arise. DPROD evaluates Not by negating the inner result and propagates errors (formal-semantics.md §6.1, §13.2). DPROD Σ: Σ₀, clock = request.at; there are no duties, so no obligation is ever in force. Scenarios 4 and 5 are DPROD Failures that due2 decides or reports Indeterminate; in scenario 5, De Morgan exposes a false conjunct that makes the U one irrelevant (refinement, not an exception). Scenario 6 is exception 1 under negation: DPROD's apply returns false for the incomparable integer-versus-duration comparison, dprod:not turns that into true, and DPROD grants derive on malformed data, while due2 keeps U through the negation and reports Indeterminate. So 'incomparable is false' is not even fail-safe once dprod:not exists. due2-profiles.md §8.2 exception 1 now states this case: under a prohibition or dprod:not, DPROD's false turns malformed data into a Permit and DPROD fails open, where due2 returns Indeterminate.",
   "prefixes": {
     "ex": "https://example.org/",
     "agent": "https://example.org/agents/",
@@ -19,7 +19,6 @@
         "params": { "odrl:purpose": { "@id": "ex:research" }, "ex:environment": { "@id": "ex:internal" }, "ex:classification": { "@id": "ex:confidential" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "research isNoneOf {marketing, advertising} is T; environment neq external is T, so the De Morgan disjunction is T. rule:neg-read applies. Permit." },
       "dprod_expected": "Permit"
     },
@@ -31,7 +30,6 @@
         "params": { "odrl:purpose": { "@id": "ex:marketing" }, "ex:environment": { "@id": "ex:internal" }, "ex:classification": { "@id": "ex:public" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "marketing isNoneOf {marketing, advertising} is F, so rule:neg-read is F. NotApplicable." },
       "dprod_expected": "NotApplicable"
     },
@@ -43,7 +41,6 @@
         "params": { "odrl:purpose": { "@id": "ex:research" }, "ex:environment": { "@id": "ex:external" }, "ex:classification": { "@id": "ex:confidential" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "environment neq external and classification neq confidential are both F, so the negated conjunction is F and rule:neg-read is F. NotApplicable." },
       "dprod_expected": "NotApplicable"
     },
@@ -55,7 +52,6 @@
         "params": { "ex:environment": { "@id": "ex:internal" }, "ex:classification": { "@id": "ex:public" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The negated purpose atom is U and the second constraint T, so rule:neg-read is U: Permit or NotApplicable depending on the completion." },
       "dprod_expected": "Failure(MissingValue odrl:purpose)"
     },
@@ -67,7 +63,6 @@
         "params": { "odrl:purpose": { "@id": "ex:research" }, "ex:classification": { "@id": "ex:public" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "After De Morgan the second constraint is (environment neq external) ∨ (classification neq confidential) = U ∨ T = T; the purpose constraint is T. rule:neg-read applies in every completion. Permit." },
       "dprod_expected": "Failure(MissingValue ex:environment) (And evaluates the environment conjunct first, inside Not)"
     },
@@ -79,7 +74,6 @@
         "params": { "ex:retentionPeriod": { "@value": "400", "@type": "xsd:integer" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "gt needs operands of the same ordered type; an xsd:integer against an xsd:duration is invalid, so the atom is U, and so is its negation (lteq). rule:neg-derive is U: Permit or NotApplicable." },
       "dprod_expected": "Permit (apply(gt, 400, P1Y) is false for incomparable operands, §6.2; Not makes it true)"
     },
@@ -91,7 +85,6 @@
         "params": { "ex:retentionPeriod": { "@value": "P2Y", "@type": "xsd:duration" } }
       },
       "sotw": { "effective_at": "2026-06-01T09:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "P2Y gt P1Y is T (same single component), so its negation is F and rule:neg-derive is F. NotApplicable." },
       "dprod_expected": "NotApplicable"
     }

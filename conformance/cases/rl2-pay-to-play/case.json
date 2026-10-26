@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/pay-to-play.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "ex:paymentDuty is named once and plays both of its RL2 roles (due2-workflows.md §3.1 root): rl2:prerequisiteDuty becomes odrl:duty on the permission, the precondition, and RL2's independent rl2:clause becomes odrl:obligation on the policy, a root obligation. As an obligation it is in force whenever ex:viewPrivilege matches the request (§5.2) and its status is reported; as a precondition it gates the permission. One atom, one member-scope instance (the default, profiles §2 point 9), so one payment fulfils both roles and serves every later view by Alice. The duty names ex:Alice, so only evidence with actor ex:Alice is a witness (§5.3); another customer's payment does not count (scenario 4). With no deadline the duty is never violated, so violations = deny would change nothing here. Scenarios 3 and 4 are added. Divergence: with no qualifying payment, RL2's prerequisite is Active, so the privilege contributes no permit and the decision is NotApplicable; due2 reports the route as Pending with ex:paymentDuty outstanding.",
+  "notes": "ex:paymentDuty is named once and plays both of its RL2 roles (due2-workflows.md §3.1 root): rl2:prerequisiteDuty becomes odrl:duty on the permission, the precondition, and RL2's independent rl2:clause becomes odrl:obligation on the policy, a root obligation. As an obligation it is in force whenever ex:viewPrivilege matches the request (§5.2) and its status is reported; as a precondition it gates the permission. One atom, one member-scope instance (the default, profiles §2 point 9), so one payment fulfils both roles and serves every later view by Alice. The duty names ex:Alice, so only evidence with actor ex:Alice is a witness (§5.3); another customer's payment does not count (scenario 4). Scenarios 3 and 4 are added. Divergence: with no qualifying payment, RL2's prerequisite is Active, so the privilege contributes no permit and the decision is NotApplicable; due2 reports the route as Pending with ex:paymentDuty outstanding.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {
@@ -17,8 +17,7 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-20T00:00:00Z", "actor": "ex:Alice", "action": "ex:pay", "object": "ex:PhotoLicence" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
-      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:paymentDuty", "status": "fulfilled" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:viewPrivilege is T. ex:ev1 is a witness for ex:paymentDuty: before effective_at, action ex:pay, object ex:PhotoLicence, actor ex:Alice, no signer restriction; the duty has no constraints, so it is T and the candidate is ready. ex:viewPrivilege matches, so the same duty is in force as a root obligation, with the same witness: fulfilled." },
+      "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:paymentDuty", "status": "fulfilled" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:viewPrivilege is T. ex:ev1 is a witness for ex:paymentDuty: before effective_at, action ex:pay, object ex:PhotoLicence, actor ex:Alice, no attester; the duty has no constraints, so it is T and the candidate is ready. ex:viewPrivilege matches, so the same duty is in force as a root obligation, with the same witness: fulfilled." },
       "rl2_expected": "Permit"
     },
     {
@@ -32,7 +31,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-20T00:00:00Z", "actor": "ex:Alice", "action": "ex:pay", "object": "ex:PhotoLicence" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "verdict_basis": [], "eliminated": [], "why": "ex:Bob ⊑ ex:Alice is F, so ex:viewPrivilege is F and is no candidate; its duty is not evaluated (§5.5). No rule of the policy matches, so the obligation is not in force either." },
       "rl2_expected": "NotApplicable"
     },
@@ -43,7 +41,6 @@
         "parties": { "odrl:assignee": "ex:Alice" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:paymentDuty" ] ], "obligations": [ { "duty": "ex:paymentDuty", "status": "outstanding" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "duty" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:viewPrivilege is T; ex:paymentDuty has no witness, so it is F (outstanding) and has no deadline. The one alternative is pending. As a root obligation the duty is in force and outstanding." }
     },
     {
@@ -57,7 +54,6 @@
         "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-05-20T00:00:00Z", "actor": "ex:Bob", "action": "ex:pay", "object": "ex:PhotoLicence" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:paymentDuty" ] ], "obligations": [ { "duty": "ex:paymentDuty", "status": "outstanding" } ], "verdict_basis": [ { "ref": "ex:viewPrivilege", "role": "permission" }, { "ref": "ex:paymentDuty", "role": "duty" }, { "ref": "ex:paymentDuty", "role": "obligation" } ], "eliminated": [], "why": "ex:ev2's actor ex:Bob is not the duty's assignee ex:Alice, so it is no witness; with no witness the duty is outstanding and the permission's only route is pending; the in-force obligation is outstanding for the same reason." }
     }
   ]

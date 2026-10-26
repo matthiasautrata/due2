@@ -17,7 +17,6 @@
         "facts": { "ex:requesterAuthenticationLevel": { "status": "resolved", "values": [ { "@value": "2", "@type": "xsd:integer" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "2 ≥ 2, so ex:highRiskReadPrivilege applies and has no duties. Ready candidate: Permit. The permission matches, but the obligation's guard 2 < 2 is F, so ex:stepUpDuty is not in force." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterAuthenticationLevel": { "status": "resolved", "values": [ { "@value": "1", "@type": "xsd:integer" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [ { "duty": "ex:stepUpDuty", "status": "outstanding" } ], "why": "1 ≥ 2 is F, so the permission does not apply. Nothing applies. The permission still matches (constraints aside) and the guard 1 < 2 is T, so ex:stepUpDuty is in force; no ex:authenticate witness by ex:Employee, so it is outstanding (RL2: Active)." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requesterAuthenticationLevel": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [ { "duty": "ex:stepUpDuty", "status": "unknown" } ], "why": "The level constraint is U, so the permission is U. Permissive completion: Permit; restrictive: NotApplicable. Not invariant. The obligation's guard is U, so it is in force with finding U and reported unknown." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:requesterAuthenticationLevel": { "status": "resolved", "values": [ { "@value": "1", "@type": "xsd:integer" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No permission covers ex:authenticate (ex:authenticate ⊑ ex:read is F), so no rule of the policy matches and ex:stepUpDuty is not in force, although its guard 1 < 2 holds: an obligation is not matched by its own action (§5.2). Nothing applies." }
     }
   ]

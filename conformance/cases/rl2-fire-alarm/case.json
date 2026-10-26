@@ -17,7 +17,6 @@
         "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Action, target, and assignee match and fireAlarmActive = true, so ex:evacuatePrivilege is T; it has no duties and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission is F and no candidate remains; nothing else applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:fireAlarmActive": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the constraint and the permission are U. The permissive completion gives Permit, the restrictive one NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -62,7 +59,6 @@
         "facts": { "ex:fireAlarmActive": { "status": "invalid", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "An invalid fact makes the constraint U, never F (due2-profiles.md §3); the permission is U and its completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -77,7 +73,6 @@
         "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:Visitor ⊑ ex:Occupant does not hold (no closure edge), so the party part is F and the permission is F whatever the alarm state." }
     },
     {
@@ -91,7 +86,6 @@
         "facts": { "ex:fireAlarmActive": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The request does not name the assignee function, so the party part is U (absent is not false, due2-workflows.md §5.2); with the constraint T the permission is U, and its completions give Permit and NotApplicable." }
     }
   ]

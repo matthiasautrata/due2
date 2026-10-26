@@ -17,7 +17,6 @@
         "evidence": [ { "id": "ex:approval1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:approve", "object": "ex:WireTransfer" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:approvalDuty", "status": "fulfilled" } ], "why": "ex:executePrivilege applies to Alice. ex:approval1 is a witness for ex:approvalDuty (actor Bob, action approve, object ex:WireTransfer, before effective_at), so the duty is T and the candidate ready. The same atom is the root obligation, in force because ex:executePrivilege matches, and fulfilled (RL2: Fulfilled)." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "evidence": [ { "id": "ex:approval2", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Alice", "action": "ex:approve", "object": "ex:WireTransfer" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:approvalDuty" ] ], "obligations": [ { "duty": "ex:approvalDuty", "status": "outstanding" } ], "why": "ex:approval2's actor is Alice, not the duty's assignee Bob, so it is no witness. The duty is F, outstanding; the permission applies, so the one alternative is pending. As a root obligation it is in force and outstanding." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "evidence": [ { "id": "ex:approval3", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:approve", "object": "ex:OtherTransfer" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:approvalDuty" ] ], "obligations": [ { "duty": "ex:approvalDuty", "status": "outstanding" } ], "why": "ex:approval3's object is ex:OtherTransfer ≠ ex:WireTransfer, so it is no witness. The duty is outstanding, as precondition and as obligation in force." }
     },
     {
@@ -61,7 +58,6 @@
         "evidence": [ { "id": "ex:approval1", "occurred_at": "2026-06-01T09:00:00Z", "actor": "ex:Bob", "action": "ex:approve", "object": "ex:WireTransfer" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The permission is assigned to Alice; no partOf edge leads from Bob to Alice, so it is F and its precondition is not evaluated. No rule of the policy matches, so the obligation is not in force either (Bob's approval in evidence is not reported). NotApplicable." }
     }
   ]

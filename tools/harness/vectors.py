@@ -39,7 +39,7 @@ REFERENCES = {
 }
 
 FILE_FIELDS = {"file", "source", "notes", "tags", "prefixes", "corpus", "scenarios"}
-SCENARIO_FIELDS = {"name", "tags", "request", "sotw", "config", "expected"}
+SCENARIO_FIELDS = {"name", "tags", "request", "sotw", "expected"}
 NOT_PREFIXES = {"party", "sha256"}  # scope values and digests start with these
 
 
@@ -73,7 +73,7 @@ class Schemas:
         )
         defs = as_obj(collections["$defs"], "$defs")
         self.relations: dict[str, dict[str, Obj]] = {}
-        for c in ("Corpus", "Request", "Sotw", "Config", "Trace"):
+        for c in ("Corpus", "Request", "Sotw", "Trace"):
             props = as_obj(as_obj(defs[c], c)["properties"], c)
             self.relations[c] = {r: as_obj(s, r) for r, s in props.items()}
         base = as_str(collections["$id"], "$id")
@@ -261,7 +261,7 @@ def check_vector_file(path: Path, schemas: Schemas) -> list[str]:
         seen.add(sname)
         problems += [f"{where}: unknown field {k}" for k in sorted(set(s) - SCENARIO_FIELDS)]
         problems += _check_tags(s, where)
-        for field, collection in (("request", "Request"), ("sotw", "Sotw"), ("config", "Config")):
+        for field, collection in (("request", "Request"), ("sotw", "Sotw")):
             coll, more = expand(s.get(field, {}), collection, prefixes, schemas, f"{where}.{field}")
             problems += more + check_collection(
                 coll, collection, collection, schemas, f"{where}.{field}"

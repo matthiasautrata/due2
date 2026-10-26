@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/compliance-attestation.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Direct translation. The agent-scoped attested fact agent.complianceStatus becomes the state property ex:requesterComplianceStatus with range compliance:Status (a class range: the value must be an IRI). RL2 filters candidates by validity interval and by the configured admissibility record before resolving. due2 has the admissibility record in configuration (admit_source, due2-workflows.md §3.4) but no validity interval, because keeping a value current is the SOTW service's job (decisions/0040). The case format gives facts no source, so a scenario cannot show the filter at work; scenario 3 therefore shows its result — the assembler-filtered property reported missing — which is also how RL2 resolves it. The RL2 text states Indeterminate for missing, inadmissible, and conflicting data; scenarios 2–4 carry those. Scenario 5 is added.",
+  "notes": "Direct translation. The agent-scoped attested fact agent.complianceStatus becomes the state property ex:requesterComplianceStatus with range compliance:Status (a class range: the value must be an IRI). RL2 filters candidates by validity interval and by the configured admissibility record before resolving. due2 admits sources when it records answers, since the orchestrator records a fact only from a source registered for the property (due2-platform.md §2.4), but it has no validity interval, because keeping a value current is the SOTW service's job (decisions/0040). The case format gives facts no source, so a scenario cannot show the filter at work; scenario 3 therefore shows its result — the assembler-filtered property reported missing — which is also how RL2 resolves it. The RL2 text states Indeterminate for missing, inadmissible, and conflicting data; scenarios 2–4 carry those. Scenario 5 is added.",
   "prefixes": { "ex": "https://example.org/", "compliance": "https://example.org/profile/compliance#" },
   "scenarios": [
     {
@@ -17,7 +17,6 @@
         "facts": { "ex:requesterComplianceStatus": { "status": "resolved", "values": [ { "@id": "compliance:Certified" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Assignee, action, and target match and the status is compliance:Certified, so ex:certifiedProcessing applies with no duties." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterComplianceStatus": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The status is missing, so the constraint and the permission are U. Completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requesterComplianceStatus": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "An inadmissible value is treated as absent (due2-profiles.md §3), so the property is missing and the permission U. Completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -62,7 +59,6 @@
         "facts": { "ex:requesterComplianceStatus": { "status": "conflict", "values": [ { "@id": "compliance:Certified" }, { "@id": "compliance:Suspended" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two distinct values for a cardinality-one property are a conflict, so the constraint is U. Completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -77,7 +73,6 @@
         "facts": { "ex:requesterComplianceStatus": { "status": "resolved", "values": [ { "@id": "compliance:Suspended" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "compliance:Suspended eq compliance:Certified is F, so the permission does not apply." }
     }
   ]

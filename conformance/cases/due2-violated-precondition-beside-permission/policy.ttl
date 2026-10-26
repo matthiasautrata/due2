@@ -1,0 +1,49 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: two permissions grant the same read. One has a precondition duty whose
+# deadline has passed; the other has none. A violated duty is a precondition of its own
+# permission only (ODRL IM §2.6.1), so it closes that candidate and leaves the other
+# (due2-workflows.md §6.1, decisions/0045).
+
+ex:datasetAgreement a odrl:Agreement ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:assigner ex:Provider ;
+    odrl:assignee ex:Analyst ;
+    odrl:target ex:Dataset ;
+    odrl:permission ex:readAfterAttesting , ex:readForAudit .
+
+ex:readAfterAttesting a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:duty ex:attestTraining .
+
+# Its parties are stated, so neither interiorisation nor inheritance supplies them.
+ex:attestTraining a odrl:Duty ;
+    odrl:assignee ex:Analyst ;
+    odrl:assigner ex:Provider ;
+    odrl:action ex:attest ;
+    odrl:target ex:Dataset ;
+    dprod:deadline "2026-03-01T00:00:00Z"^^xsd:dateTime .
+
+ex:readForAudit a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:purpose ;
+        odrl:operator odrl:eq ;
+        odrl:rightOperand "audit"
+    ] .
+
+# IM 2.4: an action other than use and transfer is included in exactly one other.
+ex:attest a odrl:Action ; odrl:includedIn odrl:use .
+
+# A purpose the requesting application declares, as a state fact (not odrl:purpose, which
+# due2-core binds to the request).
+ex:purpose a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:declaredPurpose ;
+    rdfs:range xsd:string .

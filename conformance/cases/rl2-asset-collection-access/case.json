@@ -15,7 +15,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:Demographics partOf ex:ClinicalOutcomes, an AssetCollection, so the target part holds; action and assignee match; ex:collectionAccess applies with no duties." },
       "rl2_expected": "Permit"
     },
@@ -26,7 +25,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:Outcomes partOf ex:ClinicalOutcomes; the permission applies with no duties." },
       "rl2_expected": "Permit"
     },
@@ -37,7 +35,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "ex:CancerRegistry partOf ex:Registries partOf ex:ClinicalOutcomes; the path passes only through AssetCollections, and the closure is transitive, so ex:CancerRegistry ⊑ ex:ClinicalOutcomes and the permission applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -48,7 +45,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "No partOf path leads from ex:Genomics to ex:ClinicalOutcomes, so the target part is F and the permission does not apply; no other rule exists." }
     }
   ]

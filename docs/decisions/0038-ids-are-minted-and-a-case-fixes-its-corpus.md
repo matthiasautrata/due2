@@ -77,3 +77,5 @@ Which of these needs an id computed from content?
 - #119 gives a recurring duty's occurrence a form other than an `Instant`.
 
 **Note (2026-10-26, `decisions/0042`, #139):** a case fixes its config and pins too, by the argument of item 2 here: within a case, only the world changes. *A case fixes its corpus* in `due2-workflows.md` §7.1 becomes *A case fixes its terms*.
+
+**Note (2026-10-26, `decisions/0045`):** there is no config, so a case fixes its request, corpus, and pins: `case (case_id | request, corpus, pins)`.

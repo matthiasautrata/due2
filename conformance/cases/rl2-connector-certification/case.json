@@ -17,7 +17,6 @@
         "facts": { "ex:requesterConnectorCertificationValid": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The policy-level assignee matches, action and target match, and the certification fact is true, so ex:certifiedConnectorAccess applies with no duties." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterConnectorCertificationValid": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false eq true is F, so the permission does not apply; no other rule exists." }
     },
     {
@@ -46,7 +44,6 @@
         "facts": { "ex:requesterConnectorCertificationValid": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The registry has no record valid at effective_at, so the property is missing and the permission U. Completions give Permit and NotApplicable." }
     }
   ]

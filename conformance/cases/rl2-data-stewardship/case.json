@@ -20,7 +20,6 @@
         "evidence": [ { "id": "ex:ev1", "occurred_at": "2026-05-15T00:00:00Z", "actor": "ex:Researcher", "action": "ex:steward", "object": "ex:SensitiveData" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [ { "duty": "ex:stewardshipDuty", "status": "fulfilled" } ], "why": "ex:acceptedAccess applies. ex:ev1 is a witness for ex:stewardshipDuty (actor ex:Researcher, action, object, before effective_at), so the precondition is T and the candidate ready. The permission matches, so the same duty is in force as an obligation and fulfilled (RL2: Fulfilled)." },
       "rl2_expected": "Permit"
     },
@@ -31,7 +30,6 @@
         "parties": { "odrl:assignee": "ex:Researcher" }, "params": {}
       },
       "sotw": { "effective_at": "2026-06-01T00:00:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:stewardshipDuty" ] ], "obligations": [ { "duty": "ex:stewardshipDuty", "status": "outstanding" } ], "why": "ex:acceptedAccess applies; its duty has no witness, so it is outstanding and, with no deadline, never violated. The only alternative is pending. As an obligation in force the duty is likewise outstanding." },
       "rl2_expected": "NotApplicable"
     },
@@ -46,7 +44,6 @@
         "evidence": [ { "id": "ex:ev2", "occurred_at": "2026-06-02T00:00:00Z", "actor": "ex:Researcher", "action": "ex:steward", "object": "ex:SensitiveData" } ],
         "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Pending", "frontier": [ [ "ex:stewardshipDuty" ] ], "obligations": [ { "duty": "ex:stewardshipDuty", "status": "outstanding" } ], "why": "ex:ev2 occurred after sotw.effective_at, so it is no witness (§5.3); the duty is outstanding in both roles and the candidate pending." }
     }
   ]

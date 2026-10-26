@@ -15,11 +15,11 @@
 % - **Consumes:** `context_property/2`, `closure/3`, `triple/3`, `voc/2` (lift.lp); `rank/2`
 %   (kleene.lp); `duty_atom/1`, `rule/1`, `policy/1`, `atom/1`, `atom_policy/2`, `pre/2`,
 %   `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`, `duty_deadline/2`,
-%   `deadline_kind/2`, `duty_scope/2` (structure.lp); `top_constraint/2`, `top_refinement/2`,
-%   `conn/2`, `member/2`, `leaf/1`, `left/2`, `node_tree/2` (constraint.lp); `src/2`, `prop/2`
+%   `deadline_kind/2`, `duty_scope/2`, `attester/2`, `has_attester/1` (structure.lp);
+%   `top_constraint/2`, `top_refinement/2`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `node_tree/2` (constraint.lp); `src/2`, `prop/2`
 %   (operand.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
 %   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`,
-%   `evidence_discharges/3`, `activation/2`, `signer/2`, `sotw_effective_at/1`,
+%   `evidence_discharges/3`, `activation/2`, `sotw_effective_at/1`,
 %   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver); `le_k/3` (lift.lp).
 % - **Provides:** `duty_root/2`, `duty_part/2`, `split_part/2`, `witness_leaf/1`,
 %   `has_witness/1`, `has_guard/1`, `guard/2`, `witness_cond/2`, `in_witness/1`, `rule_node/1`,
@@ -27,7 +27,7 @@
 %   `policy_match/2`, `instance/1`, `witness_pair/2`, `check_kind/1`, `effective_pos/1`,
 %   `occurred_pos/2`, `activated/1`, `activation_at/2`, `deadline_at/2`, `passed/1`,
 %   `ev_reaches/2`, `subject/1`, `member_bearer/2`, `has_member_bearer/1`, `performer/2`,
-%   `open_actor/2`, `signed/1`, `admitted/2`, `keyed/1`, `discharged/2`,
+%   `open_actor/2`, `attested/2`, `keyed/1`, `discharged/2`,
 %   `status/3`; extends `evaluates/2` (compare.lp), `item/1`, `holds/2` (applies.lp),
 %   `reject/2` (structure.lp), and `unsupported/1` (lift.lp).
 
@@ -260,7 +260,7 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/2`) | otherwise | never: the closure is closed-world |
 % | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
 % | `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
-% | `signer` | the config lists no signer for the duty (`signed/1`), or lists the evidence's issuer (`admitted/2`) | it lists signers, and not the issuer | never |
+% | `attester` | the duty has no attester (`has_attester/1`, structure.lp), or the evidence's issuer is at or below one (`attested/2`) | the duty has an attester, and the evidence has no issuer or one that is not at or below it | never |
 % | `discharges` | the instance is not the request's grant (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is the request's grant, and the evidence does not | never |
 %
 % The collection rows are decisions/0018: each member bears a duty whose bearer is a party
@@ -282,10 +282,10 @@ witness_pair(Y, E) :- instance(Y), evidence(E, _, _, _).
 %*! check_kind(K)
 
 `K` is a check of the witness test: `effective` (`occurred_at ≤ effective_at`), `deadline`
-(`occurred_at` no later than the deadline), `action`, `object`, `actor`, `signer`, and
+(`occurred_at` no later than the deadline), `action`, `object`, `actor`, `attester`, and
 `discharges`. The test is due2-workflows.md §5.3's.
 *%
-check_kind(effective; deadline; action; object; actor; signer; discharges).
+check_kind(effective; deadline; action; object; actor; attester; discharges).
 
 % Each check of each pair is an item, so a check that a rule forgets fails loudly.
 item(check(Y, E, K)) :- witness_pair(Y, E), check_kind(K).
@@ -423,25 +423,24 @@ holds(check(Y, E, actor), u) :- witness_pair(Y, E), evidence(E, _, Actor, _),
     open_actor(Y, Actor).
 holds(check(Y, E, actor), u) :- witness_pair(Y, E), bearer(Y, none), not subject(_).
 
-%*! signed(Duty)
+%*! attested(Duty, E)
 
-The config lists `signer` entries for `Duty`, so only evidence from a listed issuer counts for
-it. The signers are due2-workflows.md §3.4's.
+The evidence `E` has an issuer at or below an attester of `Duty`: the attester itself, or a
+party below it under the party closure (`le_k/3`), such as a member of an attester that is a
+party collection. The attester is due2-workflows.md §5.3's.
 *%
-signed(Duty) :- signer(Duty, _).
+attested(Duty, E) :- attester(Duty, Issuer), evidence_issuer(E, Issuer).
+attested(Duty, E) :- attester(Duty, A), evidence_issuer(E, Issuer), le_k(Issuer, A, party).
 
-%*! admitted(Duty, E)
-
-The evidence `E` has an issuer that a `signers` element lists for `Duty`.
-*%
-admitted(Duty, E) :- signer(Duty, Issuer), evidence_issuer(E, Issuer).
-
-holds(check(a(Duty, Term, T, Party), E, signer), t) :- witness_pair(a(Duty, Term, T, Party), E),
-    not signed(Duty).
-holds(check(a(Duty, Term, T, Party), E, signer), t) :- witness_pair(a(Duty, Term, T, Party), E),
-    admitted(Duty, E).
-holds(check(a(Duty, Term, T, Party), E, signer), f) :- witness_pair(a(Duty, Term, T, Party), E),
-    signed(Duty), not admitted(Duty, E).
+% A duty with no attester counts evidence from any issuer, or none. One with an attester counts
+% only attested evidence, so evidence with no issuer is `f`, never `u`: the SOTW states every
+% issuer it has.
+holds(check(a(Duty, Term, T, Party), E, attester), t) :- witness_pair(a(Duty, Term, T, Party), E),
+    not has_attester(Duty).
+holds(check(a(Duty, Term, T, Party), E, attester), t) :- witness_pair(a(Duty, Term, T, Party), E),
+    attested(Duty, E).
+holds(check(a(Duty, Term, T, Party), E, attester), f) :- witness_pair(a(Duty, Term, T, Party), E),
+    has_attester(Duty), not attested(Duty, E).
 
 %*! keyed(Y)
 
@@ -541,7 +540,7 @@ status(k, Y, unknown) :- holds(fulfilled(Y), u).
 %    `odrl:use`, and the target is `ex:a`. So `policy_match(O, 2)`, and with no guard
 %    `holds(in_force(O), t)` and `instance(O)`.
 % 2. `witness_pair(O, "ex:e1")`. Six checks are `t`: `effective`, `action`, `object`, `actor`
-%    (the bearer is `none` and `ex:alice` is the subject), `signer`, and `discharges`. `deadline`
+%    (the bearer is `none` and `ex:alice` is the subject), `attester`, and `discharges`. `deadline`
 %    is `f`, since 15 May is after 1 May. So `holds(witness(O, "ex:e1"), f)`, and
 %    `holds(fulfilled(O), f)`.
 % 3. `deadline_at(O, 0)`, since 1 May is the earliest instant of the vector and positions are

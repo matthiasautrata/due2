@@ -21,7 +21,6 @@
         "facts": { "ex:customerDatasetAge": { "status": "resolved", "values": [ { "@value": "PT2H", "@type": "xsd:dayTimeDuration" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The policy has no permission or prohibition, so nothing applies and ex:freshnessDuty is not in force (no rule of its policy matches). Its guard (PT2H > PT6H, F) would keep it out of force anyway, matching RL2's Active." },
       "rl2_expected": "NotApplicable"
     },
@@ -36,7 +35,6 @@
         "facts": { "ex:customerDatasetAge": { "status": "resolved", "values": [ { "@value": "PT7H", "@type": "xsd:dayTimeDuration" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "The guard holds (PT7H > PT6H), but no rule of the policy matches the request, so the obligation is not in force and is not reported; RL2's Violated status has no counterpart in the access question. Nothing applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -51,7 +49,6 @@
         "facts": { "ex:customerDatasetAge": { "status": "resolved", "values": [ { "@value": "PT7H", "@type": "xsd:dayTimeDuration" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "An obligation is not matched by its own action (§5.2): with no Permit or Forbid in the policy, ex:freshnessDuty is not in force even for an ex:refresh request. No permission exists, so NotApplicable: an obligation to act is not a permission to act." }
     }
   ]

@@ -17,7 +17,6 @@
         "facts": { "licensing:contextUseCategory": { "status": "resolved", "values": [ { "@id": "licensing:Advertising" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The three operands are T, F, F; exactly one holds, so the xone is T and ex:categoryPrivilege applies with no duties." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "licensing:contextUseCategory": { "status": "resolved", "values": [ { "@id": "licensing:Commercial" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "All three operands are F, so the xone is F and the permission does not apply." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "licensing:contextUseCategory": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "All three operands are U, so every DNF disjunct of the xone is U and the permission is U: Permit in the permissive completion, NotApplicable in the restrictive one." },
       "rl2_expected": "Indeterminate"
     },
@@ -62,7 +59,6 @@
         "facts": { "licensing:contextUseCategory": { "status": "conflict", "values": [ { "@id": "licensing:Advertising" }, { "@id": "licensing:Editorial" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one property are a conflict, so every operand is U, the xone is U, and the completions disagree." },
       "rl2_expected": "Indeterminate"
     },
@@ -77,7 +73,6 @@
         "facts": { "licensing:contextUseCategory": { "status": "resolved", "values": [ { "@id": "licensing:Editorial" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The operands are F, T, F; the DNF disjunct ¬a ∧ b ∧ ¬c is T, so the xone holds and the permission applies." }
     }
   ]

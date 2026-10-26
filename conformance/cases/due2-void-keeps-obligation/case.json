@@ -3,13 +3,13 @@
   "source": "due2-native, after the external review's R03 (docs/briefings/due2-review-2026-10-24.md): a void policy keeps its root obligations (decisions/0029)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Authored for due2; no origin result. Under odrl:invalid, a T permission and a T prohibition of one policy void its permissions and prohibitions; its root obligations stay in force (due2-workflows.md §6.2, decisions/0029). ex:deleteCopy is in force because ex:use matches the request, constraints aside (§6.1), and it is violated because 2026-06-01 has passed with no witness (§5.3). Scenario 1 is the research request, with no conflict: the violated obligation denies. Scenario 2 is the marketing request, which voids the pair: the obligation still denies, so asking for the forbidden use does not escape it. Under the reading that a void policy keeps nothing, scenario 2 would be NotApplicable while scenario 1 is Deny, and adding ex:noMarketing would have raised the verdict, against L5. Scenarios 3 and 4 show that the Deny comes from the obligation: under violations = ignore, or with the copy deleted in time, the void policy gives NotApplicable. The bearer is ex:Steward, the obligation's assignee.",
+  "notes": "Authored for due2; no origin result. Under odrl:invalid, a T permission and a T prohibition of one policy void its permissions and prohibitions; its root obligations stay in force (due2-workflows.md §6.2, decisions/0029). ex:deleteCopy is in force because ex:use matches the request, constraints aside (§6.1), and it is violated because 2026-06-01 has passed with no witness (§5.3). Scenario 1 is the research request, with no conflict: Permit, with the violated obligation reported beside it. Scenario 2 is the marketing request, which voids the pair: NotApplicable, and the obligation is still reported violated, so asking for the forbidden use does not hide it. Under the reading that a void policy keeps nothing, scenario 2 would report no obligation. Scenario 3 has the copy deleted in time: the obligation is fulfilled. The bearer is ex:Steward, the obligation's assignee.",
   "prefixes": {
     "ex": "https://example.org/"
   },
   "scenarios": [
     {
-      "name": "research purpose, copy not deleted, violations deny",
+      "name": "research purpose, copy not deleted",
       "request": {
         "reference": "req-1",
         "action": "odrl:use",
@@ -31,12 +31,8 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides",
-        "violations": "deny"
-      },
       "expected": {
-        "verdict": "Deny",
+        "verdict": "Permit",
         "frontier": [],
         "obligations": [
           {
@@ -45,6 +41,10 @@
           }
         ],
         "verdict_basis": [
+          {
+            "ref": "ex:use",
+            "role": "permission"
+          },
           {
             "ref": "ex:deleteCopy",
             "role": "obligation"
@@ -52,69 +52,11 @@
         ],
         "eliminated": [],
         "unknown_parts": [],
-        "why": "ex:noMarketing is F, so there is no conflict, and ex:use is ready. ex:deleteCopy is in force and violated, and under violations = deny it denies (§6.4)."
+        "why": "ex:noMarketing is F, so there is no conflict, and ex:use is ready: Permit. ex:deleteCopy is in force and violated, and it is reported beside the verdict (§6.1)."
       }
     },
     {
-      "name": "marketing purpose, copy not deleted, violations deny",
-      "request": {
-        "reference": "req-2",
-        "action": "odrl:use",
-        "target": "ex:Dataset",
-        "at": "2026-06-02T12:00:00Z",
-        "parties": {
-          "odrl:assignee": "ex:Dana"
-        },
-        "params": {
-          "odrl:purpose": {
-            "@id": "ex:marketing"
-          }
-        }
-      },
-      "sotw": {
-        "effective_at": "2026-06-02T12:00:00Z",
-        "facts": {},
-        "evidence": [],
-        "activation": {},
-        "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides",
-        "violations": "deny"
-      },
-      "expected": {
-        "verdict": "Deny",
-        "frontier": [],
-        "obligations": [
-          {
-            "duty": "ex:deleteCopy",
-            "status": "violated"
-          }
-        ],
-        "verdict_basis": [
-          {
-            "ref": "ex:deleteCopy",
-            "role": "obligation"
-          }
-        ],
-        "eliminated": [
-          {
-            "ref": "ex:use",
-            "by": "ex:noMarketing",
-            "rule": "invalid"
-          },
-          {
-            "ref": "ex:noMarketing",
-            "by": "ex:use",
-            "rule": "invalid"
-          }
-        ],
-        "unknown_parts": [],
-        "why": "ex:use and ex:noMarketing are both T, so under invalid they void each other (§6.2). ex:deleteCopy stays in force and violated, and under violations = deny it denies (§6.4)."
-      }
-    },
-    {
-      "name": "marketing purpose, copy not deleted, violations ignore",
+      "name": "marketing purpose, copy not deleted",
       "request": {
         "reference": "req-3",
         "action": "odrl:use",
@@ -135,9 +77,6 @@
         "evidence": [],
         "activation": {},
         "closure": []
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "NotApplicable",
@@ -167,11 +106,11 @@
           }
         ],
         "unknown_parts": [],
-        "why": "The pair is voided as in scenario 2. Under the default violations = ignore the violated obligation is reported but does not deny, and no candidate is left (§6.4)."
+        "why": "ex:use and ex:noMarketing are both T, so under odrl:invalid they void each other (§6.2). ex:deleteCopy stays in force and is reported violated, and no candidate is left: NotApplicable."
       }
     },
     {
-      "name": "marketing purpose, copy deleted in time, violations deny",
+      "name": "marketing purpose, copy deleted in time",
       "request": {
         "reference": "req-4",
         "action": "odrl:use",
@@ -202,10 +141,6 @@
         "activation": {},
         "closure": []
       },
-      "config": {
-        "combination": "prohibit-overrides",
-        "violations": "deny"
-      },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],
@@ -234,7 +169,7 @@
           }
         ],
         "unknown_parts": [],
-        "why": "The pair is voided as in scenario 2. ev-delete fulfils ex:deleteCopy before its deadline, so nothing denies and no candidate is left (§6.4)."
+        "why": "The pair is voided as in scenario 2. ev-delete fulfils ex:deleteCopy before its deadline, and no candidate is left: NotApplicable."
       }
     }
   ]

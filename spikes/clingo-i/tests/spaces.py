@@ -192,7 +192,7 @@ def to_input(atoms: Sequence[Symbol], duties: bool) -> Case | Duties:
     ds: dict[int, Duty] = {}
     edges: list[tuple[str, int]] = []
     request: tuple[str, str | None, str | None] = ("use", "a", None)
-    conflict, obligation, violations = "perm", None, "ignore"
+    conflict, obligation = "perm", None
     for a in atoms:
         x = a.arguments
         match a.name:
@@ -212,8 +212,6 @@ def to_input(atoms: Sequence[Symbol], duties: bool) -> Case | Duties:
                 edges.append((f"r{x[0].number - 1}", x[1].number))
             case "obligation":
                 obligation = duty(x[0])
-            case "violations":
-                violations = "deny"
             case _:
                 raise ValueError(a)
     missing = STATUS["missing"]
@@ -231,7 +229,6 @@ def to_input(atoms: Sequence[Symbol], duties: bool) -> Case | Duties:
         tuple(ds.get(k, OPEN) for k in range(len(DUTY_ACTIONS))),
         tuple(sorted(edges)),
         obligation,
-        violations,
     )
 
 
@@ -313,7 +310,7 @@ def duty_count(k: dict[str, int]) -> int:
                 continue
             routes = sum(mult(kinds, n) * (2**p - 1) ** n for n in range(k["duties"] + 1))
             total += mult(perms, p) * mult(prohibs, q) * (3 if p and q else 1) * routes
-    obligation = kinds * 2 if k["obligations"] else 1
+    obligation = kinds if k["obligations"] else 1
     return total * mult(4, k["operands"]) * k["subjects"] * obligation
 
 

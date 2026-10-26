@@ -21,7 +21,6 @@
         "facts": { "ex:requestedWithinRemaining": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "12000 ≤ 20000 and the quota fact is true, so ex:limitedRetrieval applies; it has no duties and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -40,7 +39,6 @@
         "facts": { "ex:requestedWithinRemaining": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "25000 ≤ 20000 is F, so the permission does not apply; no other rule applies." }
     },
     {
@@ -58,7 +56,6 @@
         "facts": { "ex:requestedWithinRemaining": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The ceiling holds but the quota constraint is U, so the permission is U. The permissive completion gives Permit and the restrictive one NotApplicable, so the verdict is not invariant." }
     }
   ]

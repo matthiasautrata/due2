@@ -17,7 +17,6 @@
         "facts": { "ex:recipientClass": { "status": "resolved", "values": [ { "@value": "internal", "@type": "xsd:string" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "\"internal\" = \"internal\", so ex:internalUse is T; it has no duties and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:recipientClass": { "status": "resolved", "values": [ { "@value": "external", "@type": "xsd:string" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "\"external\" = \"internal\" is F, so the permission is F. The policy has no prohibition, so external use is not authorised but not denied either." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:recipientClass": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The recipient class is missing, so the constraint and the permission are U; the completions give Permit and NotApplicable." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:recipientClass": { "status": "resolved", "values": [ { "@value": "internal", "@type": "xsd:string" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "odrl:read ⊑ odrl:use by the corpus closure (profiles/odrl-actions.ttl), so the action part is T; with the recipient internal the permission is T and has no duties." }
     }
   ]

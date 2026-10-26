@@ -17,7 +17,6 @@
         "facts": { "ex:legalReviewApproved": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "The approval fact is true, so ex:approvedVendorAccess is T; it has no duties and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:legalReviewApproved": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "false = true is F, so the permission is F and nothing else applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:legalReviewApproved": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The fact is missing, so the permission is U; the permissive completion gives Permit and the restrictive one NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -62,7 +59,6 @@
         "facts": { "ex:legalReviewApproved": { "status": "invalid", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "An invalid value makes the constraint U, not F; the permission is U and its completions disagree." },
       "rl2_expected": "Indeterminate"
     },
@@ -77,7 +73,6 @@
         "facts": { "ex:legalReviewApproved": { "status": "conflict", "values": [ { "@value": "true", "@type": "xsd:boolean" }, { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two disagreeing values give status conflict, so the constraint is U; the completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -92,7 +87,6 @@
         "facts": { "ex:legalReviewApproved": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:VendorData ⊑ ex:CustomerData does not hold, so the relation part is F and the permission is F; F ∧ U = F, so the missing fact cannot change the outcome." }
     }
   ]

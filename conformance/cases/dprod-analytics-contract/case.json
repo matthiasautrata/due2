@@ -46,7 +46,6 @@
         "activation": { "duty:cust-delivery-2026-001": "2026-02-09T07:00:00Z" },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -71,7 +70,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-02-10T07:10:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "NotApplicable",
         "frontier": [],
@@ -91,7 +89,6 @@
         "params": {}
       },
       "sotw": { "effective_at": "2026-02-10T07:10:00Z", "facts": {}, "evidence": [], "activation": {}, "closure": [] },
-      "config": { "combination": "prohibit-overrides" },
       "expected": {
         "verdict": "Deny",
         "frontier": [],
@@ -103,7 +100,7 @@
       "dprod_expected": "Deny (prohibition overrides)"
     },
     {
-      "name": "overdue usage report under DPROD-faithful deny",
+      "name": "overdue usage report, the read still permitted",
       "request": {
         "reference": "req-4",
         "action": "odrl:read",
@@ -119,17 +116,16 @@
         "activation": { "duty:cust-report-2026-001": "2026-01-05T09:00:00Z" },
         "closure": []
       },
-      "config": { "combination": "prohibit-overrides", "violations": "deny" },
       "expected": {
-        "verdict": "Deny",
+        "verdict": "Permit",
         "frontier": [],
         "obligations": [
           { "duty": "duty:cust-schema-2026-001", "status": "outstanding" },
           { "duty": "duty:cust-report-2026-001", "status": "violated" }
         ],
-        "why": "The report duty was activated on 2026-01-05 (the case history supplies it), so its P30D deadline passed on 2026-02-04; with no witness by effective_at 2026-02-10 it is violated, and under violations = deny that denies the grantee's read — the consumer is held to its own reporting duty. The delivery duty has no activation entry, so its anchor is effective_at 07:10, which the daily-07:00 rule does not generate: no instance is owed yet, and an obligation with no owed instance is not reported (not-yet-owed, due2-profiles.md §9). The schema obligation is in force and outstanding."
+        "why": "The report duty was activated on 2026-01-05 (the case history supplies it), so its P30D deadline passed on 2026-02-04; with no witness by effective_at 2026-02-10 it is violated. It is a root obligation, not a precondition of rule:an-read, so it is reported and does not gate the read (§6.1); rule:an-read is ready and the distribute prohibition does not match read: Permit. The delivery duty has no activation entry, so its anchor is effective_at 07:10, which the daily-07:00 rule does not generate: no instance is owed yet, and an obligation with no owed instance is not reported (not-yet-owed, due2-profiles.md §9). The schema obligation is in force and outstanding."
       },
-      "dprod_expected": "Permit (report never matches read, so the duty is not collected and the violation never denies — exception 6)"
+      "dprod_expected": "Permit (report never matches read, so the duty is not collected and the violation never denies)"
     }
   ]
 }

@@ -41,7 +41,6 @@ from tests.test_brute_force import (
     check,
     check_duties,
     check_waiver,
-    duty_items,
     duty_oracle,
     duty_shapes,
     holds_by_cases,
@@ -53,7 +52,6 @@ from tests.test_brute_force import (
     render,
     render_duties,
     resolve,
-    resolve_duties,
     shapes,
 )
 
@@ -84,7 +82,6 @@ EXPOSED_BY = {
     "duty-roots-negated": ("guards", "pr"),
     "fulfilled-share-a-variable": ("routes", "pr"),
     "fulfilled-u-as-f": ("routes", "pr"),
-    "in-force-guards-ignored": ("obligation", "pr"),
     "violated-u-owed-listed": ("guards", "slow"),
 }
 
@@ -224,21 +221,6 @@ def prohibitions_cancel(x: Case | Duties) -> Monotone:
     return monotone_input(x)[0], verdict
 
 
-def deny_needs_a_rule(x: Case | Duties) -> Monotone:
-    """DPROD's reading of a violated obligation (due2-workflows.md §6.4, exception 6 of
-    due2-profiles.md §8.2): it denies only once a rule applies, so a new permission can turn
-    `NotApplicable` into `Deny`."""
-    assert isinstance(x, Duties)
-    items, _ = duty_items(x)
-
-    def verdict(w: dict[Literal, bool]) -> str:
-        v = resolve_duties(x, w)[0]
-        ruled = any(applies(r.name, items[r.name], w) for r in x.case.rules)
-        return "NotApplicable" if v == "Deny" and not ruled else v
-
-    return monotone_input(x)[0], verdict
-
-
 def mixed_as_uniform(x: Case | Duties) -> Monotone:
     """The computation without its enumeration: each mixed variable completed as if it moved
     the verdict up."""
@@ -249,8 +231,7 @@ def mixed_as_uniform(x: Case | Duties) -> Monotone:
 # Each change that the check must catch, and the space and tier whose inputs expose it.
 MONOTONE_MUTANTS: dict[str, tuple[Callable[[Case | Duties], Monotone], str, str]] = {
     "prohibitions-cancel": (prohibitions_cancel, "leaves", "pr"),
-    "deny-needs-a-rule": (deny_needs_a_rule, "obligation", "pr"),
-    "mixed-as-uniform": (mixed_as_uniform, "obligation", "slow"),
+    "mixed-as-uniform": (mixed_as_uniform, "trees", "slow"),
 }
 
 
@@ -274,9 +255,9 @@ def test_monotone_check_kills_mutant(name: str) -> None:
 
 
 def test_pr_spaces_hold_by_cases(interpreter: Interpreter, duty_interpreter: Interpreter) -> None:
-    """The PR spaces reach a definite verdict that holds by cases, among rules and duties
-    alike, so `check_waiver` is not vacuous there. The oracle picks the inputs whose basis
-    lacks a permission or a prohibition; the reply decides."""
+    """The PR spaces reach a definite verdict that holds by cases, so `check_waiver` is not
+    vacuous there. The oracle picks the inputs whose basis lacks a permission or a prohibition;
+    the reply decides. Among duties the shape needs the slow bound (`test_waiver_worked_example`)."""
     found: Counter[str] = Counter()
     for name in SPACES:
         for x in inputs(name, "pr"):
@@ -288,28 +269,27 @@ def test_pr_spaces_hold_by_cases(interpreter: Interpreter, duty_interpreter: Int
                 continue
             got = duty_interpreter.reply(render_duties(x)) if duty else interpreter.reply(render(x))
             assert isinstance(got["output"], dict)
-            found[name] += holds_by_cases(got["output"], x.violations if duty else "ignore")
-    assert found == {"leaves": 2, "obligation": 2}
+            found[name] += holds_by_cases(got["output"])
+    assert found == {"leaves": 2}
 
 
 def test_waiver_worked_example(duty_interpreter: Interpreter) -> None:
-    """TESTS.md, claim W: input 94 of `obligation` at the PR bound denies by cases.
-    The prohibition applies when `o0 eq` holds; otherwise the obligation's guard `o0 neq` holds
-    and the obligation is violated. No atom denies in every completion, so the basis names the
-    obligation with status `unknown`, and `o0` is listed `unresolved`."""
-    x = list(inputs("obligation", "pr"))[94]
-    assert isinstance(x, Duties) and x.violations == "deny"
+    """TESTS.md, claim W: input 450 of `guards` at the slow bound permits by cases.
+    Where `o0 eq` holds, `ex:d0` is owed and lapsed, so `r0` is closed and `r1` permits;
+    elsewhere `r1` does not apply and `r0` permits. No permission permits in every completion,
+    so the basis is empty, and `o0` is listed `unresolved`."""
+    x = list(inputs("guards", "slow"))[450]
+    assert isinstance(x, Duties) and x.edges == (("r0", 0),) and x.duties[0].past
     got = duty_interpreter.reply(render_duties(x))["output"]
     assert isinstance(got, dict)
-    ob, r0, o0 = (f"https://example.org/{n}" for n in ("ob", "r0", "o0"))
-    assert got["verdict"] == "Deny"
-    assert got["verdict_basis"] == [{"ref": ob, "role": "obligation"}]
-    assert got["obligations"] == [{"duty": ob, "status": "unknown"}]
+    d0, r1, o0 = (f"https://example.org/{n}" for n in ("d0", "r1", "o0"))
+    assert got["verdict"] == "Permit"
+    assert got["verdict_basis"] == []
     assert got["unknown_parts"] == [
-        {"ref": ob, "input": o0, "status": "unresolved"},
-        {"ref": r0, "input": o0, "status": "unresolved"},
+        {"ref": d0, "input": o0, "status": "unresolved"},
+        {"ref": r1, "input": o0, "status": "unresolved"},
     ]
-    assert holds_by_cases(got, x.violations)
+    assert holds_by_cases(got)
 
 
 def test_waiver_check_kills_missing_paired() -> None:

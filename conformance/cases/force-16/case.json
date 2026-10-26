@@ -33,9 +33,6 @@
           ]
         ]
       },
-      "config": {
-        "combination": "prohibit-overrides"
-      },
       "expected": {
         "verdict": "Permit",
         "frontier": [],
@@ -68,9 +65,6 @@
             "ex:partyCollection"
           ]
         ]
-      },
-      "config": {
-        "combination": "prohibit-overrides"
       },
       "expected": {
         "verdict": "NotApplicable",

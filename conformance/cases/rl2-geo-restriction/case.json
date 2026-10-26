@@ -17,7 +17,6 @@
         "facts": { "ex:requestJurisdiction": { "status": "resolved", "values": [ { "@value": "EU", "@type": "xsd:string" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "\"EU\" = \"EU\", so ex:euAccess is T; it has no duties and nothing prohibits.",
         "verdict_basis": [ { "ref": "ex:euAccess", "role": "permission" } ], "eliminated": [], "unknown_parts": [] },
       "rl2_expected": "Permit"
@@ -33,7 +32,6 @@
         "facts": { "ex:requestJurisdiction": { "status": "resolved", "values": [ { "@value": "US", "@type": "xsd:string" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "\"US\" = \"EU\" is F, so the permission is F; nothing else applies, and no rule denies.",
         "verdict_basis": [], "eliminated": [], "unknown_parts": [] },
       "rl2_expected": "NotApplicable"
@@ -49,7 +47,6 @@
         "facts": { "ex:requestJurisdiction": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The jurisdiction service did not answer, so the constraint and the permission are U; the completions give Permit and NotApplicable.",
         "verdict_basis": [ { "ref": "ex:euAccess", "role": "unknown" } ], "eliminated": [],
         "unknown_parts": [ { "ref": "ex:euAccess", "input": "ex:requestJurisdiction", "status": "unresolved" } ],
@@ -66,7 +63,6 @@
         "facts": { "ex:requestJurisdiction": { "status": "conflict", "values": [ { "@value": "EU", "@type": "xsd:string" }, { "@value": "US", "@type": "xsd:string" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Two values for a cardinality-one operand give status conflict, so the constraint is U even though one value is \"EU\"; the completions give Permit and NotApplicable.",
         "verdict_basis": [ { "ref": "ex:euAccess", "role": "unknown" } ], "eliminated": [],
         "unknown_parts": [ { "ref": "ex:euAccess", "input": "ex:requestJurisdiction", "status": "conflict" } ],

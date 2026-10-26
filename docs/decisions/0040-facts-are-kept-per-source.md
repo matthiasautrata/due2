@@ -53,3 +53,5 @@ Two questions follow. Where are several sources' answers combined? And who check
 
 - A deployment has a source that cannot report changes, and its values go stale between evaluations.
 - Two sources must be ranked rather than compared, so that one source's value outweighs another's.
+
+**Note (2026-10-26, `decisions/0045`):** `admit_source` moves out of the evaluation and into the connector registry. The orchestrator records a fact answer only from a source registered for the property, so every answer a case records is admitted, and W2 combines them by item 3.

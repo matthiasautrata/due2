@@ -17,7 +17,6 @@
         "facts": { "ex:requesterAccountStatus": { "status": "resolved", "values": [ { "@id": "account:Suspended" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "status eq Suspended is T, so not(…) is F and ex:platformAccess does not apply; no other rule applies." },
       "rl2_expected": "NotApplicable"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requesterAccountStatus": { "status": "resolved", "values": [ { "@id": "account:Active" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Permit", "frontier": [], "obligations": [], "why": "Active ≠ Suspended, so the negated constraint is T; action, target, and assignee match, the permission is T with no duties, and nothing prohibits." },
       "rl2_expected": "Permit"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requesterAccountStatus": { "status": "missing", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "A missing fact makes the inner eq U, and not(U) = U, so the permission is U. The permissive completion gives Permit, the restrictive one NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -62,7 +59,6 @@
         "facts": { "ex:requesterAccountStatus": { "status": "conflict", "values": [ { "@id": "account:Active" }, { "@id": "account:Suspended" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "Status conflict gives U for the constraint, so the permission is U; the two completions give Permit and NotApplicable." },
       "rl2_expected": "Indeterminate"
     },
@@ -77,7 +73,6 @@
         "facts": { "ex:requesterAccountStatus": { "status": "resolved", "values": [ { "@id": "account:Active" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "ex:OtherUser ⊑ ex:User is F, so the assignee part is F and the permission is F whatever the constraint; F ∧ T = F." }
     }
   ]

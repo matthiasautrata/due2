@@ -9,12 +9,13 @@
 % - **Consumes:** the driver's facts (flatten.py): the graphs (`triple/3`,
 %   `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
 %   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`,
-%   `fact_value/2`, `evidence/4`, `evidence_param/3`, `activation/2`, `sotw_closure/3`), the
-%   config (`config_combination/1`), and the driver's own findings
-%   (`unread/1`, `unplaceable/2`); `policy/1`, `rule/1`, `structure_node/1`, `action_term/1`,
-%   `duty_node/1`, `pre_rule/2`, and `node_deadline/2` (structure.lp); `right/2` (constraint.lp).
+%   `fact_value/2`, `evidence/4`, `evidence_param/3`, `activation/2`, `sotw_closure/3`), and the
+%   driver's own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`,
+%   `action_term/1`, `duty_node/1`, `pre_rule/2`, and `node_deadline/2` (structure.lp);
+%   `right/2` (constraint.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
-%   `match_key/1`, `bearer_fn/1`, `vocab_ns/1`, `annotation/1`, `annotation_ns/1`, `operator/2`,
+%   `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `vocab_ns/1`, `annotation/1`,
+%   `annotation_ns/1`, `operator/2`,
 %   `set_based/1`, `connective/1`, `binding_key/1`, `source_kind/2`, `context_property/2`,
 %   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`,
 %   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
@@ -101,6 +102,7 @@ voc(deadline,    "https://ekgf.org/dprod/spec/develop/deadline").
 voc(recurrence,  "https://ekgf.org/dprod/spec/develop/recurrence").
 voc(playsRole,   "https://w3id.org/due2/profile#playsRole").
 voc(bearer,      "https://w3id.org/due2/profile#bearer").
+voc(attester,    "https://w3id.org/due2/profile#attester").
 voc(instanceScope, "https://w3id.org/due2/profile#instanceScope").
 voc(member,      "https://w3id.org/due2/profile#member").
 voc(grant,       "https://w3id.org/due2/profile#grant").
@@ -156,6 +158,15 @@ The baseline gives it to `odrl:assignee`, DPROD to `dprod:subjectOfDuty` (due2-p
 The bearer of a duty must perform it (due2-workflows.md §5.3).
 *%
 bearer_fn(F) :- function(F), module(_, F, Pred, Role), voc(playsRole, Pred), voc(bearer, Role).
+
+%*! attester_fn(F)
+
+The function `F` plays the attester role: a selected module states `F due2:playsRole
+due2:attester`. The core profile gives it to `due2:attestingParty` (due2-profiles.md §6). Only
+evidence whose issuer is at or below a duty's attester counts for the duty (due2-workflows.md
+§5.3).
+*%
+attester_fn(F) :- function(F), module(_, F, Pred, Role), voc(playsRole, Pred), voc(attester, Role).
 
 %*! match_key(F)
 
@@ -804,8 +815,6 @@ The input field `Field` has content the spike does not read, so the vector is de
 the smallest `Field`. An empty field gives no facts, so it declines nothing.
 *%
 unsupported_input("sotw.closure") :- sotw_closure(Pred, _, _), not closure_relation(Pred).
-unsupported_input("config.combination") :- config_combination(Comb), Comb != "prohibit-overrides".
-unsupported_input(Field) :- unread(Field).
 
 %## The values the program compares
 

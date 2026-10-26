@@ -17,7 +17,6 @@
         "facts": { "ex:requiredDisclosure": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Deny", "frontier": [], "obligations": [], "why": "requiredDisclosure eq false is T, and action, target, and assignee match, so ex:noRedistribution is T and survives; Deny." },
       "rl2_expected": "Deny"
     },
@@ -32,7 +31,6 @@
         "facts": { "ex:requiredDisclosure": { "status": "resolved", "values": [ { "@value": "true", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "true eq false is F, so the prohibition does not apply; the policy has no permission." },
       "rl2_expected": "NotApplicable"
     },
@@ -47,7 +45,6 @@
         "facts": { "ex:requiredDisclosure": { "status": "unresolved", "values": [] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "Indeterminate", "frontier": [], "obligations": [], "why": "The constraint is U, so the prohibition is U. The restrictive completion gives Deny, the permissive one NotApplicable." }
     },
     {
@@ -61,7 +58,6 @@
         "facts": { "ex:requiredDisclosure": { "status": "resolved", "values": [ { "@value": "false", "@type": "xsd:boolean" } ] } },
         "evidence": [], "activation": {}, "closure": []
       },
-      "config": { "combination": "prohibit-overrides" },
       "expected": { "verdict": "NotApplicable", "frontier": [], "obligations": [], "why": "odrl:use ⊑ ex:redistribute is F (ex:redistribute is included in odrl:use, not the reverse), so the prohibition does not apply, and the agreement grants no permission for use." }
     }
   ]
