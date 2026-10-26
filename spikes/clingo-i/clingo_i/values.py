@@ -31,7 +31,7 @@ IRIs, and other datatypes are compared only for equality, by their terms, so the
 position.
 
 **Positions.** In the `numeric` space, if every value is an integer within 32 bits, `N` is the
-value itself. Otherwise, and in every other space, `N` is the dense rank `0..k−1` of the
+value itself. Otherwise, and in every other space, `N` is the dense rank `0..k-1` of the
 space's distinct values in the vector. Equal values get equal ranks. A rank means nothing
 across vectors; within one, `N₁ < N₂` exactly when the values are so ordered.
 
