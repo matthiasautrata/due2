@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.17 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.18 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.17** (2026-10-26, `decisions/0037`, #134): §4.2's invariant 7 is that an all-atomic policy normalises to itself, and §3's `Den` row no longer names Atomic Policy construction. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.18** (2026-10-26, #83): §8 lists only the steps that remain, and §9 says in one line where each resolved row is settled; the steps taken and the rows' statements moved to `docs/archive/correctness-strategy-completed.md`. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -245,37 +245,24 @@ The tier placement is `ways-of-working.md` §8. What each tier runs, as the piec
 
 ## 8. Sequence
 
-1. The open items of §9. Row 11 is settled by the prover spike of step 6, which is parked.
-2. The case-format extension for negative cases (`expected_rejection`, §4.2).
-3. The status matrix and Kleene truth tables, as data (ASP facts, `decisions/0009`). They are spec as much as tests, and `I` uses them first.
-4. Slow `I`, the clingo semantics program (issue #9, `decisions/0009`): the driver and its syntactic flatten, the one-value integrity constraint, then every runnable corpus scenario, triage per §6. Fast mode (`due2-workflows.md` §6.4's computation) follows, differentially against enumeration.
-5. The input-space description, the bounded-exhaustive enumerator, and the generators (§1.1, §5), with the coverage histogram, first over clingo-i (#42, #44).
-6. The formal model (§4.8, `decisions/0021`): an Alloy model per claim and, for M and W, the bounded-exhaustive search over clingo-i, then the prover spike on M, parked (`decisions/0021`, the amendment of 2026-10-24).
-7. The W2/W3 evaluator (`decisions/0027`; its language is #104): relation-level vectors (#36, #37), clingo-i's relation-level face (#41), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4 and as in §4.4 and §4.5 as far as the vectors reach.
-8. W1 stage 1 with the Python `Den` oracle. The formal model's `Den` (issue #8) waits for the prover spike.
-9. W1 stage 2, gated by L9 against `I`.
-10. The W2/W3 evaluator on the full corpus through W1, completing the §4.4 and §4.5 gates.
-11. The ledger (data model in §4.7), gated by the stateful machine.
+The steps that remain, in order. What is being worked on now is in `CLAUDE.md` § Next. The steps already taken, and the sequence as it stood, are in `docs/archive/correctness-strategy-completed.md`.
+
+1. The W2/W3 evaluator (`decisions/0027`; its language is #104): relation-level vectors (#37), clingo-i's relation-level face (#41), then the evaluator as a spike under the shared suite, gated by `decisions/0006` #4 and as in §4.4 and §4.5 as far as the vectors reach.
+2. W1 stage 1 with the Python `Den` oracle.
+3. W1 stage 2, gated by L9 against `I`.
+4. The W2/W3 evaluator on the full corpus through W1, completing the §4.4 and §4.5 gates.
+5. The ledger (data model in §4.7), gated by the stateful machine.
+
+Two items wait outside the order. Fast `I` (§3) is tested differentially against slow `I` below the cap when it is built. The prover spike on M, which settles §9 row 11 and gives the formal model its `Den` (issue #8), is parked until the evaluator reaches production (`decisions/0021`, the amendment of 2026-10-24).
 
 ---
 
 ## 9. Open decisions register
 
-Rows keep their numbers, because issues and other documents cite them. Each open row has an issue; a resolved row leaves the table and is stated below it.
+Rows keep their numbers, because issues and other documents cite them. Each open row has an issue; a resolved row leaves the table.
 
 | # | Decision | Section | Issue | Blocked on |
 |---|---|---|---|---|
 | 11 | The prover for the formal model | §4.8 | #70 | A spike, parked until the evaluator reaches production: Lean 4 first, Isabelle/HOL optional (`decisions/0021` #4 and the amendment of 2026-10-24); the result is an amendment to that record |
 
-Rows 1–10 are resolved, each where its section states it:
-
-- **1.** Strategy before code is a standing rule (§1; `CLAUDE.md`).
-- **2.** Oracles implement definitions; `I` is the clingo program, slow mode first, then fast mode, the two differentially tested (§3, `decisions/0009`).
-- **3.** `I` and W1 share only the Turtle reading, and the driver is tested on its own (§4.1, `decisions/0009`).
-- **4.** Negative cases are `expected_rejection` with codes from the diagnostic registry (§4.2, `due2-diagnostics.md`).
-- **5.** `check_completion.py` covers `violations = deny` and `frontier_complete`, and leaves multi-policy conflict under `invalid` and nested constraints to the differential against slow `I` (§4.5).
-- **6.** The generator coverage histogram is a failing check (§5).
-- **7.** The disagreement protocol is §6.
-- **8.** The critical features are atomization, evaluation, and case history, tested bounded-exhaustively, by generation, and differentially (§1.1).
-- **9.** The ledger data model is `due2-workflows.md` §7.1 (§4.7, `decisions/0008`).
-- **10.** The enumeration bounds are measured per input space and tier, not guessed (§1.1). clingo-i's bounds, for evaluation, and their timings are in `spikes/clingo-i/TESTS.md` (#42); W1's and the case history's follow the same rule.
+Rows 1–10 are resolved, and this document states each resolution: row 1 in §1, 2 in §3, 3 in §4.1, 4 in §4.2, 5 in §4.5, 6 in §5, 7 in §6, 8 and 10 in §1.1, and 9 in §4.7. Row 10 is that enumeration bounds are measured per input space and tier, not guessed; clingo-i's bounds and timings are in `spikes/clingo-i/TESTS.md` (#42). Their statements when they closed are in `docs/archive/correctness-strategy-completed.md`.

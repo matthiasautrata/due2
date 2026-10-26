@@ -203,7 +203,7 @@ Literals take the form `{"v", "t", "l"}` of `due2-workflows.md` §2, not the JSO
 
 Specified and marked decided, but with no exercising case. Each gap is an authoring task, not a spec change; the list is re-derived by grepping the corpus. **Tracked as GitHub issues** (label `corpus`); this section remains the specification record.
 
-Re-derived 2026-10-25, after `due2-assigner-of` and `due2-assignee-of` (#122), `due2-action-without-value` and `due2-refined-action-skolem` (#123), `due2-literal-bearer` (#124), `due2-constrained-bearer` (#129), `due2-impossible-operand`, `due2-impossible-deadline`, and `due2-week-duration` (#125), and `due2-constraint-cycle` (#126); earlier re-derivations are listed in `docs/archive/changes.md` § `conformance/README.md` § Coverage gaps.
+Past re-derivations, and the cases that prompted each, are in `docs/archive/changes.md` § `conformance/README.md` § Coverage gaps.
 
 Closed gaps, with the cases that close them:
 
