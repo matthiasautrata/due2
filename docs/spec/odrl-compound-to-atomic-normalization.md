@@ -1,13 +1,13 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.23  
+Version: 0.24  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.23 (2026-10-26, `decisions/0036` amendment, #132): §1 defines `EvalSet` over the union of agreeing corpora, and §5.1 says that a policy that disagrees with a published one is rejected when it is published. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.24 (2026-10-26, `decisions/0037`, #134): `N(P0)` is internal to W1 and never serialised (§1, §4). The `atomic-policy` and `activity` id domains and the Atomic Policy node are dropped, and each atomic root Rule occurrence is a root atom of the authored policy (§5.2, §6.4). The lineage is recorded as tuples, without PROV-O (§7), and invariant 7 says that an all-atomic policy normalises to itself (§8). Earlier changes are in `docs/archive/changes.md`.
 
-The profile version stays `1` until an artifact has been produced under it. From then on, any change to admitted input or generated identity bumps it.
+The profile version stays `1` until a corpus has been produced under it. From then on, any change to admitted input or generated identity bumps it.
 
 ## 1. Goal
 
@@ -15,11 +15,11 @@ This specification defines one deterministic transformation:
 
 ```text
 one valid compound ODRL Policy P0
-    -> one default RDF graph N(P0) containing valid Atomic Policies
-    + one separate PROV-O lineage graph
+    -> N(P0), P0 with every Rule atomic
+    + its lineage records
 ```
 
-The normalized graph is intended to be passed as one artifact to an evaluator. The normalizer performs structural expansion, identity normalization, and lineage recording. It does not reason about, evaluate, compare, or enforce policies.
+`N(P0)` is the input of W1 stage 2, which builds the corpus from it (`due2-workflows.md` §4). It stays inside W1 and is never serialised (§4). The normalizer performs structural expansion, identity normalization, and lineage recording. It does not reason about, evaluate, compare, or enforce policies.
 
 For the supported profile:
 
@@ -27,9 +27,9 @@ For the supported profile:
 Den(P0) ≅ Den(N(P0))
 ```
 
-where `Den` is the denotation of §8.1 and `≅` is the bijection the lineage graph records. Every due2 evaluation depends on a Policy only through its denotation (`due2-workflows.md` §4), so this implies `Eval(P0, C) = EvalSet(N(P0), C)` for every evaluator context `C`. Policies `P1 … Pn` evaluated together are evaluated over the union of `N(P1) … N(Pn)`.
+where `Den` is the denotation of §8.1 and `≅` is the bijection the lineage records. Every due2 evaluation depends on a Policy only through its denotation (`due2-workflows.md` §4), so this implies `Eval(P0, C) = EvalSet(N(P0), C)` for every evaluator context `C`. Policies `P1 … Pn` evaluated together are evaluated over the union of `N(P1) … N(Pn)`.
 
-`EvalSet` consumes complete artifacts: the whole `N(P0)`, or the union of the corpora of several policies, which agree on every node they share (`due2-workflows.md` §4, *Several policies are one corpus*). It is not defined over part of an artifact, or over corpora that disagree.
+`EvalSet` consumes complete inputs: the whole `N(P0)`, or the union of the corpora of several policies, which agree on every node they share (`due2-workflows.md` §4, *Several policies are one corpus*). It is not defined over part of one, or over corpora that disagree.
 
 The key words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are interpreted as in BCP 14 when written in capitals.
 
@@ -67,14 +67,14 @@ A Policy node is a distinct RDF node with an explicit `rdf:type` of `odrl:Policy
 Every constraint and every Rule MUST sit where the ODRL vocabulary places it. The vocabulary fixes the subject of each property by its `rdfs:domain`, and this profile reads each property only there. A value anywhere else would be dropped or read as something it is not, so it is rejected instead:
 
 - An `odrl:refinement` narrows an Action, an Asset Collection, or a Party Collection (IM §2.5; Vocabulary §3.14.3), and an `odrl:constraint` conditions a Rule (IM §2.5, §2.6; Vocabulary §3.14.2). A refinement on anything other than an Action or a collection, such as a Policy or a Rule, and a constraint on anything other than a Policy or a Rule, such as an Action, an Asset, a Party, or a collection, are rejected with `MisplacedConstraint`, which names the node and the property. The domain is tested, not a list of the places each may not sit, so a Party that only a profile's own role reaches, such as DPROD's `dprod:subjectOfDuty`, is covered. A refinement on an Asset or a Party is read as a collection refinement, which is rejected with `UnsupportedConstruct` (`due2-profiles.md` §8.1), and so is a constraint on the Policy itself (above). Neither is read in the other's place: a Rule's refinement read as its constraint would be an approximation.
-- `odrl:permission`, `odrl:prohibition`, and `odrl:obligation` have a Policy as their subject (Vocabulary §3.9.2, §3.10.2, §3.13.2); `odrl:duty` a Permission (Vocabulary §3.13.3); `odrl:remedy` a Prohibition (Vocabulary §3.13.5); and `odrl:consequence` a Duty that `odrl:duty` or `odrl:obligation` references (Vocabulary §3.13.4; IM §2.6.3). Permission, Prohibition, and Duty are pairwise disjoint (IM §2.6; Vocabulary §3.9.1, §3.10.1, §3.13.1). A Rule edge from any other subject, and a node that its incoming Rule edges and its explicit types place in two Rule classes, are rejected with `InvalidNesting`. A Prohibition nested in a Permission, for instance, is none of `P0`'s Rules, and §6.4 builds Atomic Policies only from `P0`'s Rule edges. Admitting it would drop it, and the Permission would permit what the Prohibition forbids.
+- `odrl:permission`, `odrl:prohibition`, and `odrl:obligation` have a Policy as their subject (Vocabulary §3.9.2, §3.10.2, §3.13.2); `odrl:duty` a Permission (Vocabulary §3.13.3); `odrl:remedy` a Prohibition (Vocabulary §3.13.5); and `odrl:consequence` a Duty that `odrl:duty` or `odrl:obligation` references (Vocabulary §3.13.4; IM §2.6.3). Permission, Prohibition, and Duty are pairwise disjoint (IM §2.6; Vocabulary §3.9.1, §3.10.1, §3.13.1). A Rule edge from any other subject, and a node that its incoming Rule edges and its explicit types place in two Rule classes, are rejected with `InvalidNesting`. A Prohibition nested in a Permission, for instance, is none of `P0`'s Rules, and §6.4 takes root atoms only from `P0`'s Rule edges. Admitting it would drop it, and the Permission would permit what the Prohibition forbids.
 
 `P0` MUST also meet two requirements of the ODRL Information Model that the vocabulary's domains do not state:
 
 - **Assets and Parties are resources.** The value of `odrl:function` is a Party and the value of `odrl:relation` an Asset (IM §2.2, §2.3, §2.6; their `rdfs:range` in `profiles/vendor/w3c/ODRL22.ttl`), and every `rdfs:subPropertyOf` descendant of either inherits that range. So the value of any of these properties is an IRI or a blank node, and a literal there is rejected with `LiteralEntity`. The descendants are read from the ODRL vocabulary, due2's core, the selected profile modules, and the source graph together. They include `odrl:target`, `odrl:output`, the function predicates listed below, and a profile's own party roles, such as DPROD's `dprod:subjectOfDuty`. A Rule whose assignee is the literal `"Bob"` names no party that a request could match, so its party part would never be `T` (`due2-workflows.md` §5.2), and its author would not be told why. A duty whose `dprod:subjectOfDuty` is the literal `"Alice"` would have a bearer that no evidence could name, since an evidence `actor` is an `Id`, an IRI (`due2-workflows.md` §2; `schema/collections.schema.json`), so no evidence could ever fulfil it.
 - **Every action reaches `odrl:use` or `odrl:transfer`.** An action other than these two has exactly one `odrl:includedIn`, whose value is an `odrl:Action`, and following `odrl:includedIn` from it reaches `odrl:use` or `odrl:transfer` (IM §2.4). The edges are read from the source graph, the selected profile modules, due2's core, and the ODRL vocabulary together, so an edge the policy states adds to the vocabulary's and never replaces it: restating `odrl:display odrl:includedIn odrl:use` gives `odrl:display` a second value beside the vocabulary's `odrl:play`. An action node that states an `rdf:value` is a refined action, a blank node or an IRI alike, typed `odrl:Action` or not: its action is its `rdf:value` (IM §2.5.4), and the node itself is not an action of the hierarchy, so a skolem IRI that replaces it (§5.1) needs no `odrl:includedIn`. A blank action node without an `rdf:value` names no action and violates the requirement. The requirement covers every action a Rule names, the `rdf:value` of every refined action, every action the source graph defines other than a refined-action node, and the ancestors of each. It skips the actions the ODRL vocabulary marks `owl:deprecated`, which have no `odrl:includedIn` there, and terms that no vocabulary defines, which `UndeclaredProfile` rejects already. A violation is rejected with `InvalidActionHierarchy`. Action matching reads the `odrl:includedIn` closure (`due2-workflows.md` §5.2): without this requirement, a custom action could sit outside it, and a Prohibition of `odrl:use` would not cover it.
 
-An absent term takes the conflict default a selected profile declares with `odrl:conflict` on its profile resource — DPROD declares `odrl:prohibit` — and otherwise means `odrl:invalid` (ODRL IM §2.10). Either way it is made explicit on every output Atomic Policy. All three values survive decomposition. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids the source Policy when one of its Permissions and one of its Prohibitions both apply, and the source Policy remains identifiable: one `N(P0)` artifact derives from exactly one source Policy, and every downstream atom carries its source Policy (`due2-workflows.md` §3.1).
+An absent term takes the conflict default a selected profile declares with `odrl:conflict` on its profile resource — DPROD declares `odrl:prohibit` — and otherwise means `odrl:invalid` (ODRL IM §2.10). Either way it is made explicit in `N(P0)`. All three values survive decomposition. `prohibit` and `perm` are pairwise precedence rules. `invalid` voids the source Policy when one of its Permissions and one of its Prohibitions both apply, and the source Policy remains identifiable: `N(P0)` derives from exactly one source Policy, and every downstream atom carries its source Policy (`due2-workflows.md` §3.1).
 
 Anonymous structure must have a local shape:
 
@@ -95,31 +95,21 @@ The baseline recognizes these ODRL Common Vocabulary axes:
 
 Other predicates are preserved as annotations but MUST NOT introduce additional relation, function, inheritance, or expansion semantics. Such semantics require a future versioned profile. A Rule edge, `odrl:constraint`, or `odrl:refinement` outside the place this section gives it is not an annotation: it is rejected as above.
 
-The invocation MUST include limits for input triples, generated Rules, and generated Policies. Exceeding a limit fails the complete invocation without partial authoritative output.
+The invocation MUST include limits for input triples and generated Rules. Exceeding a limit fails the complete invocation without output.
 
-`source_digest` in §5.2 covers the entire supplied graph and identifies the input in lineage. It enters no output node identity: an edit to one part of the input changes only the identities that depend on that part (§8, invariant 10). The caller MUST still pass the intended stable Policy graph, not an ambient RDF store projection.
+`source_digest` in §5.2 covers the entire supplied graph and identifies the input in lineage. It enters no identity in `N(P0)`: an edit to one part of the input changes only the identities that depend on that part (§8, invariant 10). The caller MUST still pass the intended stable Policy graph, not an ambient RDF store projection.
 
-## 4. Output contract
+## 4. Output
 
-The primary output is one plain default RDF graph containing a non-empty set:
+`N(P0)` is `P0` with every Rule atomic. It has:
 
-```text
-N(P0) = { NP_i | 0 <= i < |N(P0)| }
-```
+- `P0`'s identity, Policy class, profile, conflict term — made explicit (§3) — and non-shortcut metadata;
+- its root atoms, one for each atomic root Rule occurrence, each with the role of its root edge (§6.4); and
+- the atomic Rules they reach, including Duties, each valid under this profile and identified as §5 requires.
 
-Each `NP_i` MUST:
+Shared resources are represented once and referenced by every Rule that reaches them.
 
-- be a valid ODRL Policy;
-- have exactly one root Permission, Prohibition, or Obligation;
-- contain only atomic reachable Rules, including Duties;
-- retain `P0`'s Policy class, profile, conflict term — made explicit (§3) — and non-shortcut metadata; and
-- have the identity required by §5.
-
-Shared resources are represented once and referenced by all applicable Atomic Policies. The primary graph contains no PROV-O, run metadata, membership triples, or transformer vocabulary.
-
-The graph's file or API value is its artifact boundary. Named graphs are not used. Independently produced artifacts MUST NOT be concatenated for evaluation.
-
-The normative serialization is canonical N-Quads: each triple in the canonical term form of RDF Dataset Canonicalization 1.0, lines sorted by Unicode code point. The output contains no blank nodes, so no blank-node labelling is involved. Presentation serializations MAY also be emitted but are not conformance artifacts.
+`N(P0)` is held in W1's internal form, the lifted tree of `due2-workflows.md` §4. Stage 2 reads it, and nothing else does. It is never serialised and is not a conformance artifact: no RDF leaves W1 (`decisions/0037`). W1's outputs are the corpus and the lineage collection (`due2-workflows.md` §3.1, §3.6). An export to atomised ODRL is a separate tool, written when one is needed (`decisions/0037` #6).
 
 ## 5. Identity normalization
 
@@ -135,15 +125,15 @@ By §3, a Policy always takes case 1 or 2. Case 3 applies to anonymous Rules, As
 
 An existing valid authored UID is preserved. Distinct resources MUST NOT claim the same effective identity, within one policy or across published policies (as `due2-workflows.md` §4 defines them): a policy whose corpus says something different of a node that a published policy's corpus holds is rejected when it is published (`due2-workflows.md` §4, *Several policies are one corpus*). A resource with more than one UID is invalid.
 
-Output is skolem-only:
+`N(P0)` is skolem-only:
 
 - an identifiable blank node is replaced by its effective identity IRI;
 - any other blank node, including an RDF list cell, is replaced by its generated UUID IRI; and
-- no blank node remains in the primary output.
+- no blank node remains in `N(P0)`.
 
-For an IRI node whose authored UID differs from its node IRI, the node IRI and inbound RDF edges remain unchanged; consumers use the authored UID as its semantic identity.
+For an IRI node whose authored UID differs from its node IRI, the authored UID is its identity.
 
-When one compound Rule expands into several Rules, its authored UID cannot belong to every atom. Each atom receives a generated UID. The source UID is retained as one-to-many lineage, not as an output Rule UID. Unexpanded resources retain their authored identity.
+When one compound Rule expands into several Rules, its authored UID cannot belong to every atom. Each atom receives a generated UID. The source UID is retained as one-to-many lineage, not as the UID of any atom. Unexpanded resources retain their authored identity.
 
 ### 5.2 Deterministic UUIDs
 
@@ -174,31 +164,22 @@ anon_node_uid = H(frame(
 ))
 ```
 
-`parent_effective_uid` is the effective identity of the node's single parent, assigned top-down from the anchor. `duplicate_index` numbers, from 0, the siblings that share parent, predicate, and local digest. Such siblings are indistinguishable, so any assignment of indices yields the same output graph; their descendants differ through their parents.
+`parent_effective_uid` is the effective identity of the node's single parent, assigned top-down from the anchor. `duplicate_index` numbers, from 0, the siblings that share parent, predicate, and local digest. Such siblings are indistinguishable, so any assignment of indices yields the same `N(P0)`; their descendants differ through their parents.
 
 An anonymous node's identity therefore depends only on its own content, its parent, and the predicate that reaches it. Editing triples anywhere else — an annotation, a different Rule — leaves it unchanged. That is deliberate: an anonymous node has no name, so its place (its parent and the predicate that reaches it) and its content are all that identify it, and two anonymous nodes under different parents are distinct however alike they are. Sharing is stated by naming: a Rule, duty, or constraint that several parents or policies share, or whose identity must survive an edit to its content, should be named (§3, `due2-workflows.md` §3.1, `atom.atom_id`).
 
-**Generated Rules, Policies, and the Activity.**
+**Generated Rules.**
 
 ```text
 atomic_rule_uid = H(frame(
   namespace, "atomic-rule", source_rule_effective_uid,
   canonical_selection_tuple
 ))
-
-atomic_policy_uid = H(frame(
-  namespace, "atomic-policy", source_policy_uid,
-  root_role_iri, root_atomic_rule_uid
-))
-
-activity_uid = H(frame(
-  namespace, "activity", source_digest
-))
 ```
 
-`root_role_iri` deliberately distinguishes Permission, Prohibition, and Obligation occurrences. The canonical selection tuple is the framed sequence of selected `(predicate IRI, canonical N-Quads term)` pairs in the order defined by §6.3; after skolemization every selected term is an IRI or a literal.
+The canonical selection tuple is the framed sequence of selected `(predicate IRI, canonical N-Quads term)` pairs in the order defined by §6.3; after skolemization every selected term is an IRI or a literal.
 
-`source_digest` is the raw SHA-256 of the canonical N-Quads (§4) of the input graph after skolemization, and `source_ni` the corresponding RFC 6920 `ni:///sha-256;...` URI. Skolemization is deterministic and label-independent, so isomorphic inputs share a source digest. Only the Activity and the lineage depend on it.
+`source_digest` is the raw SHA-256 of the input graph after skolemization, serialised as canonical N-Quads: each triple in the canonical term form of RDF Dataset Canonicalization 1.0, lines sorted by Unicode code point. The skolemized graph has no blank nodes, so no blank-node labelling is involved. Skolemization is deterministic and label-independent, so isomorphic inputs share a source digest. Only the lineage and `policy.version` (`due2-workflows.md` §3.1) depend on it.
 
 These UUIDs are stable names with 122 retained digest bits. They are not signatures or authorization credentials.
 
@@ -215,11 +196,11 @@ The implementation MUST run these phases in order:
 3. compute the source digest of the skolemized graph;
 4. interiorize compact Policy properties;
 5. validate post-interiorization Rule requirements, including Rule-reference acyclicity (§6.3);
-6. compute exact generated-Rule and generated-Policy counts and fail any limit before materialization;
+6. compute the exact generated-Rule count and fail any limit before materialization;
 7. expand compound Rules with graph memoization;
-8. create one Atomic Policy per atomic root Rule occurrence;
-9. validate the output and emit canonical N-Quads; and
-10. emit the separate lineage graph.
+8. record one root atom per atomic root Rule occurrence (§6.4);
+9. validate `N(P0)`; and
+10. record the lineage (§7).
 
 ### 6.2 Compact Policy interiorization
 
@@ -250,53 +231,44 @@ The ordered expansion axes are:
 
 Values are ordered by the Unicode code-point order of their canonical N-Quads term strings. The lexicographically ordered Cartesian product produces the atomic Rules.
 
-Each atom generated from a compound Rule copies the source Rule class and all non-axis outgoing properties except the source `odrl:uid`. Its RDF node IRI and sole `odrl:uid` MUST both be its generated `atomic_rule_uid`; generated atoms MUST NOT share the source Rule node. Multiple Constraints, Duties, Consequences, and Remedies are retained together; they are not expansion axes.
+Each atom generated from a compound Rule copies the source Rule class and all non-axis outgoing properties except the source `odrl:uid`. Its identity is its generated `atomic_rule_uid`; generated atoms MUST NOT share the source Rule's identity. Multiple Constraints, Duties, Consequences, and Remedies are retained together; they are not expansion axes.
 
-Transform each source Rule once. Every non-root inbound reference to an expanded Rule is fanned out to its atoms. This includes `odrl:duty`, `odrl:consequence`, `odrl:remedy`, and annotation references. Root Policy edges are instead consumed when §6.4 creates Atomic Policies. Fan-out intentionally copies an inbound annotation reference to every derived atom.
+Transform each source Rule once. Every non-root inbound reference to an expanded Rule is fanned out to its atoms. This includes `odrl:duty`, `odrl:consequence`, `odrl:remedy`, and annotation references. Root Policy edges instead yield root atoms (§6.4). Fan-out intentionally copies an inbound annotation reference to every derived atom.
 
 An already atomic Rule retains its node and effective identity.
 
-### 6.4 Atomic Policies
+### 6.4 Root atoms
 
-Create one `NP_i` for every atomic root Rule occurrence. It has one root edge with the same role as in `P0`, copies the permitted Policy metadata, and references the shared normalized component graph.
-
-Retain `P0` and its authored UID only when no Rule anywhere in the input graph was expanded and the result is one Atomic Policy. Otherwise every generated Atomic Policy uses `atomic_policy_uid` as both its RDF node and sole `odrl:uid`; the source Policy UID remains in lineage. Thus expanding only a nested Duty still produces a new Policy identity even when the output cardinality is one.
+Every atomic root Rule occurrence is a root atom of `N(P0)`, with the role of its root edge in `P0`: `odrl:permission`, `odrl:prohibition`, or `odrl:obligation`. Stage 2 records each as a `root` tuple naming `P0` (`due2-workflows.md` §3.1, `decisions/0036`). `P0` keeps its identity however its Rules expand, and no node stands for a root atom and the Rules it reaches (`decisions/0037`).
 
 ## 7. Required lineage
 
-The separate lineage graph MUST record:
+Stage 1 records, as tuples of the lineage collection (`due2-workflows.md` §3.6):
 
-- each generated Atomic Policy `prov:wasDerivedFrom` `P0`;
-- each generated atomic Rule `prov:wasDerivedFrom` its source Rule;
-- the selected tuple and inbound role for each generated atom;
-- every IRI minted for an anonymous node, marked as generated;
+- each generated atomic Rule's source Rule, with its selected tuple and inbound role;
+- every id minted for an anonymous node, marked as generated;
 - every authored, effective, and generated UID mapping;
-- `activity_uid` as the generating `prov:Activity`;
-- the profile IRI and version; and
-- `prov:used` from the Activity to the source graph entity identified by `source_ni`.
+- which values came from Policy-level interiorization (§6.2); and
+- the profile IRI and version, and `source_digest`.
 
-The sidecar MUST use only PROV-O, RDF, and these profile terms under `https://w3id.org/due2/odrl-normalization/v1#`: `sourceNode`, `effectiveUid`, `generatedUid`, `selectionTuple`, `inboundRole`, `normalizationProfile`, and `profileVersion`. The Activity records the pinned profile IRI with `normalizationProfile` and the literal version `"1"` with `profileVersion`. The subject of a mapping is the normalized node. An anonymous node's parent and predicate are already in the primary graph and are not repeated.
+Retained resources are recorded as retained mappings, not as self-derivations. An anonymous node's parent and predicate are already in `N(P0)` and are not repeated. The lineage holds no timestamps or host information, so it is deterministic.
 
-Retained resources are recorded as retained mappings, not as self-derivations. Volatile timestamps and host information belong in an optional operational log, not the deterministic lineage graph. The lineage graph is a separate default graph, contains no blank nodes, and is serialized as canonical N-Quads (§4).
-
-The `wasDerivedFrom` and `selectionTuple` records are not only audit data. They define the bijection under which invariant 3 is checked (§8.1); a lineage graph that does not define one is non-conforming.
+The source-Rule and selected-tuple records are not only audit data. They define the bijection under which invariant 3 is checked (§8.1); a lineage that does not define one is non-conforming.
 
 ## 8. Invariants
 
 A conforming implementation establishes:
 
-1. **Validity:** every output Policy and reachable Rule is valid under this profile, and the Rule-reference graph is acyclic.
+1. **Validity:** every Rule of `N(P0)` is valid under this profile, and the Rule-reference graph is acyclic.
 2. **Completeness:** every Cartesian selection appears exactly once and no other atom is generated.
-3. **Structural preservation:** `Den(P0) ≅ Den(N(P0))` under the bijection the lineage graph records (§8.1). Because every due2 evaluation depends on a Policy only through `Den`, this gives `Eval(P0, C) = EvalSet(N(P0), C)` for the supported fragment.
+3. **Structural preservation:** `Den(P0) ≅ Den(N(P0))` under the bijection the lineage records (§8.1). Because every due2 evaluation depends on a Policy only through `Den`, this gives `Eval(P0, C) = EvalSet(N(P0), C)` for the supported fragment.
 4. **Sharing:** a shared source Duty remains one shared atomic Duty or shared set of atomic Duties; fulfillment-once identity is not cloned per parent.
 5. **Identity:** unexpanded resources retain authored identities; expanded resources receive deterministic identities with complete one-to-many lineage.
-6. **Determinism:** isomorphic input graphs yield identical primary and lineage bytes.
-7. **Idempotence:** normalizing the test extraction of an already normalized `NP_i` returns the same singleton canonical bytes.
-8. **Boundedness:** limits fail before partial authoritative output.
+6. **Determinism:** isomorphic input graphs yield the same `N(P0)` and identical canonical lineage bytes (`decisions/0007`).
+7. **Idempotence:** a Policy whose Rules are all atomic normalises to itself: every Rule keeps its effective identity (§5.1), and `N(P0)` has the same atoms, roots, and edges as `P0`.
+8. **Boundedness:** limits fail before any output.
 9. **Purity:** output depends only on the supplied graph, the selected profile modules, the fixed profile, and limits; there is no I/O or ambient entailment.
-10. **Locality:** an output IRI depends only on its source identity; for an anonymous node, on its own content, parent, and predicate; and for a generated Rule or Policy, on the selection that produced it. Editing triples elsewhere in the input changes no output IRI.
-
-For invariant 7 only, `Extract(N(P0), NP_i)` is the smallest default graph obtained by starting at `NP_i`, including every triple whose subject has been reached, and recursively reaching each object IRI that is also a subject in `N(P0)`, except any Policy node other than `NP_i`. This includes the complete reachable shared component graph. Extraction is a conformance-test operation, not permission to concatenate, split, or independently deploy normalized artifacts.
+10. **Locality:** an identity in `N(P0)` depends only on its source identity; for an anonymous node, on its own content, parent, and predicate; and for a generated Rule, on the selection that produced it. Editing triples elsewhere in the input changes no identity in `N(P0)`.
 
 ### 8.1 Denotation
 
@@ -308,13 +280,13 @@ Let `P` be a valid input graph after skolemization (§5.2) and compact interiori
 - **roots** `R`: `(role, (uid(r), σ))` for every root edge of `P` and every `σ ∈ Sel(r)`;
 - **edges** `E`: `((uid(p), σp), role, (uid(d), σd))` for every Rule reference `p → d` with that role, and every `σp ∈ Sel(p)` and `σd ∈ Sel(d)`.
 
-In `N(P0)` every Rule is atomic, so `Den(N(P0))` reads directly off the graph. Invariant 3 holds when the lineage records map the atoms of `Den(P0)` one-to-one onto those of `Den(N(P0))`, preserving class, selected values, non-axis properties, roots, and edges.
+In `N(P0)` every Rule is atomic, so `Den(N(P0))` reads directly off it. Invariant 3 holds when the lineage records map the atoms of `Den(P0)` one-to-one onto those of `Den(N(P0))`, preserving class, selected values, non-axis properties, roots, and edges.
 
-The definition has no memoization, no fan-out bookkeeping, and no Atomic Policy construction — the parts of §6 most likely to be wrong — which is what makes it an independent oracle. It is a pure function over a finite structure, the kind of target `ways-of-working.md` §9 names for machine-checked verification. `correctness-strategy.md` §4.8 states it again in the formal model (issue #8).
+The definition has no memoization and no fan-out bookkeeping — the parts of §6 most likely to be wrong — which is what makes it an independent oracle. It is a pure function over a finite structure, the kind of target `ways-of-working.md` §9 names for machine-checked verification. `correctness-strategy.md` §4.8 states it again in the formal model (issue #8).
 
 ## 9. Evaluator boundary and non-goals
 
-`N(P0)` is consumed by stage 2 of W1 (`due2-workflows.md` §4), which builds the evaluation corpus; it is not evaluated directly. The retained conflict term governs active Permissions and Prohibitions derived from the same source Policy — precedence under `prohibit` and `perm`, voiding under `invalid` — which is why every Atomic Policy carries it. Shared Duties remain shared here. Instantiating them per parameter binding is stage 2's job.
+`N(P0)` is consumed by stage 2 of W1 (`due2-workflows.md` §4), which builds the evaluation corpus; it is not evaluated directly. The retained conflict term governs active Permissions and Prohibitions derived from the same source Policy — precedence under `prohibit` and `perm`, voiding under `invalid` — which is why `N(P0)` carries it. Shared Duties remain shared here. Instantiating them per parameter binding is stage 2's job.
 
 Ordering Duty alternatives belongs to W3 (`due2-workflows.md` §6.3). The normalizer does not construct, rank, or select Duty sets.
 
@@ -325,8 +297,8 @@ This specification does not:
 - perform RDFS/OWL inference or ODRL action/constraint inference;
 - simplify Constraints or LogicalConstraints;
 - resolve conflicts, evaluate fulfillment, or enforce Policies;
-- merge separately normalized artifacts;
-- support blank nodes in output or named-graph packaging;
+- combine the outputs of several Policies, whose corpora are united as `due2-workflows.md` §4 says;
+- emit RDF (`decisions/0037`);
 - define custom profile relation/function axes; or
 - compile to an evaluator-specific representation.
 
@@ -334,8 +306,8 @@ This specification does not:
 
 The first implementation MUST include golden positive and negative vectors for:
 
-- an already normalized atomic Policy returning byte-identical output;
-- `2 targets x 2 actions` producing four Atomic Policies;
+- a Policy whose Rules are all atomic normalising to itself (invariant 7);
+- `2 targets x 2 actions` producing four root atoms;
 - compact Action and target interiorization;
 - a Permission with no target failing after interiorization;
 - a Duty with `odrl:output` alone succeeding;
@@ -343,10 +315,9 @@ The first implementation MUST include golden positive and negative vectors for:
 - compact Policy `odrl:target` not reaching a root Duty that states `odrl:output`, and a Rule-level `odrl:assignee` overriding the Policy-level one;
 - a Policy typed only by a declared profile subclass, and an absent conflict term taking a selected profile's default;
 - multiple values of each recognized function predicate;
-- an IRI-identified compound Rule producing distinct atom node IRIs equal to their distinct `atomic_rule_uid` values;
+- an IRI-identified compound Rule producing atoms identified by distinct `atomic_rule_uid` values;
 - a shared named Duty referenced by two Permissions, remaining one Duty;
 - a compound shared Duty with an authored UID expanding once, remaining shared, and receiving one-to-many lineage;
-- an atomic root Rule with a compound nested Duty producing one newly identified Atomic Policy rather than retaining `P0`'s UID;
 - two structurally equal named Duties remaining distinct, and two structurally equal anonymous siblings — identical refined actions on one Rule — receiving distinct IRIs;
 - obligations, Duties, Consequences, and Remedies retaining their edge roles;
 - each misplacement of §3 rejected with its diagnostic: a refinement on a Policy and on a Rule, a constraint on an Action, on a collection, and on a Party that only a profile's own role names (`MisplacedConstraint`), a constraint on `P0` (`UnsupportedConstruct`), a Prohibition nested in a Permission, a Remedy on a Duty, a Consequence on a Permission, and a Consequence on a Consequence or a Remedy (`InvalidNesting`);
@@ -356,9 +327,8 @@ The first implementation MUST include golden positive and negative vectors for:
 - acceptance of all three conflict values, and of an absent term emitted as explicit `odrl:invalid`; rejection of `odrl:inheritFrom`, named graphs, and multiple Policies;
 - acceptance of an anonymous Rule with a local identity; rejection of a multiply referenced anonymous node and an unanchored anonymous node, each with its diagnostic;
 - a Rule-reference cycle rejected, with every Rule and edge of the cycle in the diagnostic;
-- an edit to an annotation, and an edit to one Rule, each leaving every unrelated output IRI unchanged;
-- exact-limit success and over-limit failure;
-- absence of provenance and transformer metadata from the primary graph; and
+- an edit to an annotation, and an edit to one Rule, each leaving every unrelated identity unchanged;
+- exact-limit success and over-limit failure; and
 - a `Den` oracle (§8.1), implemented independently of §6, agreeing with every positive vector through the lineage bijection.
 
 Property tests SHOULD permute triple order, JSON-LD order, and source blank-node labels, and SHOULD check invariant 3 against the `Den` oracle on generated Policies. A second implementation MAY serve as a differential oracle, but it must implement this same contract.
@@ -368,8 +338,8 @@ Implementation technology is replaceable:
 | Approach | Acceptance condition |
 |---|---|
 | Direct deterministic transformer | Recommended baseline; pure bounded core and simplest replay and testing. |
-| Generated code | Generator inputs and output are versioned and reproduce the same conformance bytes. |
-| RDF/SPARQL or rule engine | Evaluation order, graph scope, limits, identity generation, and serialization are deterministic. |
+| Generated code | Generator inputs and output are versioned and reproduce the same outputs. |
+| RDF/SPARQL or rule engine | Evaluation order, graph scope, limits, and identity generation are deterministic. |
 | LLM or chat skill | May propose examples or tests, but is not an authoritative transformer unless every output is deterministically checked and canonicalized. |
 
 A first implementation is complete when it passes this suite, emits structured diagnostics with the codes of `due2-diagnostics.md`, and exposes the deterministic transformation as a library or command-line operation. Evaluation, comparison, storage, networking, and user interfaces are separate projects.
@@ -381,8 +351,6 @@ A first implementation is complete when it passes this suite, emits structured d
 - W3C POE Working Group, [Validation and normalization notes](https://www.w3.org/2016/poe/wiki/Validation). Informative compact and compound transformation sketches.
 - W3C, [RDF Dataset Canonicalization 1.0](https://www.w3.org/TR/rdf-canon/).
 - W3C, [RDF 1.1 Concepts and Abstract Syntax](https://www.w3.org/TR/rdf11-concepts/), §3.5 on skolemization.
-- W3C, [PROV-O](https://www.w3.org/TR/prov-o/).
-- IETF, [RFC 6920: Naming Things with Hashes](https://www.rfc-editor.org/rfc/rfc6920).
 - IETF, [RFC 9562: UUIDs](https://www.rfc-editor.org/rfc/rfc9562).
 - Steyskal and Polleres, [Towards Formal Semantics for ODRL Policies](https://aic.ai.wu.ac.at/~polleres/publications/stey-poll-2015RuleML.pdf), RuleML 2015.
 - De Vos, Kirrane, Padget, and Satoh, [ODRL Policy Modelling and Compliance Checking](https://doi.org/10.1007/978-3-030-31095-0_3), RuleML+RR 2019.

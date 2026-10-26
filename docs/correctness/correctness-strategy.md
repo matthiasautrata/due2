@@ -1,8 +1,8 @@
 # due2 — Correctness Strategy
 
-**Status:** v0.16 (2026-10-25). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
+**Status:** v0.17 (2026-10-26). The rule of §1 is a standing rule of the repository (`CLAUDE.md`). An item marked **[O]** is proposed and not adopted.
 
-**Changes in v0.16** (2026-10-25, `decisions/0027` amendment of 2026-10-25, #38, #41): clingo-i's slow mode, read through its relation-level face (#41), replaces the brute-force W3 (#38) as the W2/W3 evaluator's executable oracle, beside the vectors' hand-derived traces, in §3, §4.5, §7, §8, and §9; §4.5 states how a fallback is compared with it. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.17** (2026-10-26, `decisions/0037`, #134): §4.2's invariant 7 is that an all-atomic policy normalises to itself, and §3's `Den` row no longer names Atomic Policy construction. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -87,7 +87,7 @@ An oracle is only as useful as it is independent. The question for each one is w
 | Hand-derived corpus (positive and negative cases, `why` per scenario) | End-to-end verdict, frontier, obligations | All code | The prose; the deriver's reading of it (R4, R5) | **[D]** |
 | External suites' own answers (`force_expected`, …) | The origin's semantics | due2's prose | Nothing; differences are explained in `notes` | **[D]** |
 | L9 direct interpreter `I`: the clingo semantics program over the authored form (`decisions/0009`) | The corpus's verdicts; with W1, the pipeline's verdict (L9) | W1's rewriting and the corpus relations | Prose of `due2-workflows.md` §5–§6; the canonical-literal key; the Turtle reader, shared with W1 (§4.1) | **[D]** (`decisions/0009`), issue #9 |
-| `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | Its §6 algorithm: memoization, fan-out, Atomic Policy construction | `Sel` | **[D]**, issue #8 |
+| `Den` (`odrl-compound-to-atomic-normalization.md` §8.1), Python, then in the formal model | Stage 1, invariant 3 | Its §6 algorithm: memoization and fan-out | `Sel`, and the lifted tree it reads `N(P0)` from | **[D]**, issue #8 |
 | The formal model (§4.8): a small executable model in a prover | The claims of `due2-workflows.md` §6.4, by proof; the verdict of every input it covers, by running | clingo-i's encoding and the algorithms of W1–W3 | The prose of `due2-workflows.md` §5–§6 and the formaliser's reading of it (R4); the reader that turns a vector into its input, chosen at the spike | **[D]** (`decisions/0021`), issue #70 |
 | `tools/check_completion.py` | `due2-workflows.md` §6.4's two-extreme computation against brute force | Everything else | Its abstract model: flat conjunctions, unguarded obligations, no recurrence | **[D]** |
 | Laws L1–L10, invariants 1–10 | Metamorphic relations; no expected output needed | The expected outputs | The law statements themselves | **[D]**, properties to write |
@@ -123,7 +123,7 @@ Numbered in the order they were added; §8 gives the order they are built in. Ea
 - **Risks.** R1, R6.
 - **Before code.** Negative cases in the case format: `expected_rejection` (`conformance/README.md`), with codes from `due2-diagnostics.md`. The rejection codes with no negative case are listed in `conformance/README.md` § Coverage gaps; `odrl-compound-to-atomic-normalization.md` §10 names the stage-1 vectors.
 - **Oracles.** `Den` through the lineage bijection (invariant 3). Golden vectors from `odrl-compound-to-atomic-normalization.md` §10.
-- **Properties.** Invariants 6 (determinism over permuted triples, JSON-LD order, and blank-node labels), 7 (idempotence), and 10 (locality: an unrelated edit changes no output IRI). Invariant 8 as exact-limit success and limit-plus-one failure.
+- **Properties.** Invariants 6 (determinism over permuted triples, JSON-LD order, and blank-node labels), 7 (idempotence: an all-atomic policy normalises to itself), and 10 (locality: an unrelated edit changes no identity). Invariant 8 as exact-limit success and limit-plus-one failure.
 - **Done.** The minimum suite of `odrl-compound-to-atomic-normalization.md` §10 passes, `Den` agrees on every positive vector and on generated policies, and the formal model's `Den` (§4.8, issue #8) follows as the second, machine-checked oracle.
 
 ### 4.3 W1 stage 2: the builder (lifted form to relations)

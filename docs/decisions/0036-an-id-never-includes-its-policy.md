@@ -1,6 +1,6 @@
 # 0036 — An id never includes its policy, and an atom roots each policy that states it
 
-**Status:** Decided, 2026-10-26 (the owner, on #130); amended 2026-10-26 (the owner, on #132)
+**Status:** Decided, 2026-10-26 (the owner, on #130); amended 2026-10-26 (the owner, on #132); note 2026-10-26 (`decisions/0037`)
 **Context documents:** `due2-workflows.md` §3.1, §3.5, §4, §5.1, §5.2, §6.2, §8 (L2) · `odrl-compound-to-atomic-normalization.md` §5.1, §5.2 · `due2-diagnostics.md` §3 · `due2-platform.md` §2.3 · `decisions/0028` · `decisions/0032` · `spikes/clingo-i/lp/duty.lp` · issues #130, #107, #131
 
 ## Question
@@ -97,3 +97,7 @@ A conflict within a set of policies is a conflict between two of them, so if eve
 **Publishing is order-dependent, by design.** Of two policies that disagree, the one published later fails. The later one is the one whose author can still fix it, and restating a published IRI with a different description does not redefine it. So a shared node's description changes only under a new id, or by publishing new versions of every policy that holds it at once, if the store offers that.
 
 **Consequences.** `due2-workflows.md` v0.46 states the precondition in §4. `odrl-compound-to-atomic-normalization.md` 0.23 defines `EvalSet` over agreeing corpora in §1 and extends §5.1 to published policies. `due2-diagnostics.md` v0.18 gives `IdentityConflict` the stage "1, publish". `due2-platform.md` v0.8 publishes one policy's corpus at a time in §2.3, and §5 #1 no longer asks which sets of policies get a corpus. Building the checker is #133.
+
+## Note (2026-10-26, no Atomic Policy node)
+
+Decision item 2 says that a `root` tuple says the atom "roots an Atomic Policy of that policy". Stage 1 builds no Atomic Policy node (`decisions/0037`), so a `root` tuple says that the atom is a root atom of the authored policy it names. Nothing else in this record changes.

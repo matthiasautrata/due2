@@ -1,6 +1,6 @@
 # 0007 — Collections are JCS JSON arrays, identified by SHA-256
 
-**Status:** Decided, 2026-10-16; amended 2026-10-24
+**Status:** Decided, 2026-10-16; amended 2026-10-24 and 2026-10-26
 **Context documents:** `due2-workflows.md` §2, §9 #1 · `ways-of-working.md` §2.4 · `decisions/0006` · `odrl-compound-to-atomic-normalization.md` §4 · issue #3
 
 ## Question
@@ -43,3 +43,7 @@ The decision said that a collection is a JSON array of tuples, but every collect
 
 - **The schema states it directly.** Each relation is one property of the collection, with its own tuple schema, so JSON Schema validates a collection without a discriminator.
 - **The alternative needs a reserved field.** Tagging each tuple with its relation name keeps one array, but the tag must be a name no relation uses as a field, and the corpus's `closure` already has a field called `relation`.
+
+## Amendment (2026-10-26, stage 1 emits no RDF)
+
+Item 2's last sentence no longer holds. Stage 1's output stays inside W1 and is never serialised, so W1 writes no N-Quads (`decisions/0037`). Every output of W1 is a collection under this record.

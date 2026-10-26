@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.46** (2026-10-26, `decisions/0036` amendment, #132): agreement between the corpora of the policies evaluated together is a precondition of their union, checked when a policy is published, so the union never fails (§4). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.45** (2026-10-26, `decisions/0036`, #130): no named node's id includes its policy (§3.1, `atom.atom_id`). An atom's policies are in `root`, which becomes `(atom_id, policy_id)`, with a tuple for each policy that states the atom, and `atom` drops `policy_id`. A constraint's attachment moves out of `constraint` into `atom_constraint` and `duty_constraint`, which holds the clause number, so a named constraint is one tuple. A shared permission or prohibition takes part once in each of its policies, and remains while any of these entries survives; `eliminated` gains `policy_id` (§3.5, §6.2). A duty that several policies state as an obligation is in force when any of them matches the request (§5.1, §5.2, L2). The corpus of policies evaluated together is the union of their corpora, and two corpora that say different things of one node are `IdentityConflict` (§4). §6.4's proof covers an atom with several entries, and §3.7 follows.
 
 **Changes in v0.44** (2026-10-25, `decisions/0032` amendment, #121): a duty atom's id identifies what it asks for, by stage 1's construction extended with what stage 2 adds (§3.1, §4), and replaces `binding_key`, which is dropped. A `member` instance is its duty atom; W2 mints an instance id from the atom's id with the request subject when the subject is the performer, the `reference` for a `grant` instance, and the occurrence (§5.3). `instance_key` is an `Id` (§3.3, §3.5).
@@ -50,6 +52,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.16** (2026-10-25, `decisions/0027` amendment of 2026-10-25, #38, #41): clingo-i's slow mode, read through its relation-level face (#41), replaces the brute-force W3 (#38) as the W2/W3 evaluator's executable oracle, beside the vectors' hand-derived traces, in §3, §4.5, §7, §8, and §9; §4.5 states how a fallback is compared with it. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.15** (2026-10-24, #114): §4.4 and §4.5 follow the restated laws L2, L3, L6, and L7 and give each law's first property-test cases; §4.7's *pinning suffices* excepts the `evaluation` tuple.
 
 **Changes in v0.14** (2026-10-24, `decisions/0030`, #111): §4.7 adds the property that an access evaluation's `at` is never earlier than its `effective_at`, and that its request differs from its case's only in `at`; a moved `at` is a cause of a verdict transition. Earlier changes are in `docs/archive/changes.md`.
@@ -80,6 +84,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L10) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
 
 ## `ways-of-working.md`
+
+**Changes in v0.7** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4 drops a recommendation its pick overrides; §7.1 and §11 lose history; §13 states the resolved rows more briefly. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.6** (2026-10-20, #83): a cold read. §4 no longer calls its tool undecided; §2.2 names the diagnostics document; §10.2, §10.3, §11, §12, and §14.3 lose their status and history markers; §13 lists the open rows with their issues and states the resolved rows below the table, row 12 as `decisions/0009` and `decisions/0021` leave it; §15 states its reason without the history. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
@@ -167,6 +173,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-platform.md`
 
+**Changes in v0.8** (2026-10-26, `decisions/0036` amendment, #132): §2.3 publishes one policy's corpus at a time, refuses one that disagrees with a published corpus, and returns the union of exactly the selected policies' corpora; §5 #1 no longer asks which sets of policies get a corpus. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.7** (2026-10-24, `decisions/0033`, #115): §2.3 says that the store selects the replacement of a replaced policy, never the policy it replaces.
 
 **Changes in v0.6** (2026-10-24, `decisions/0032`, #113): §3.2 says that evidence names the grant it answers, the authored duty and the request's `reference`, not an instance key.
@@ -178,6 +186,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.23 (2026-10-26, `decisions/0036` amendment, #132): §1 defines `EvalSet` over the union of agreeing corpora, and §5.1 says that a policy that disagrees with a published one is rejected when it is published. Earlier changes are in `docs/archive/changes.md`.
 
 Changes in 0.22 (2026-10-26, `decisions/0036`, #130): §5.2 says that an anonymous node is identified by its place, so two anonymous nodes in different places are distinct, and that sharing is stated by naming. §5.1's rule that distinct resources do not claim one identity extends to the policies normalised together.
 

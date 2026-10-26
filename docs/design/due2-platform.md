@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.8. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.9. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.8** (2026-10-26, `decisions/0036` amendment, #132): §2.3 publishes one policy's corpus at a time, refuses one that disagrees with a published corpus, and returns the union of exactly the selected policies' corpora; §5 #1 no longer asks which sets of policies get a corpus. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.9** (2026-10-26, `decisions/0037`, #134): §2.3 and §5 #1 say "per root atom", since stage 1 builds no Atomic Policy. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -185,7 +185,7 @@ The store never runs W1. Normalisation (§2.8) produces each corpus as a batch j
 
 **Selection must over-select.** `decide` reads only the policies in its corpus, so choosing that corpus is part of the decision's soundness. Suppose policy A permits reading dataset D and policy B prohibits it. Over both, the verdict is `Deny`; over A alone, it is `Permit`. Prohibition monotonicity (L5, `due2-workflows.md` §8) says only that adding B cannot raise the verdict, not that a corpus may leave B out.
 
-Including a policy that cannot match the request is safe, because root atoms that are certainly `F` leave the trace unchanged (L8, `due2-workflows.md` §8). The converse needs care. A policy's obligations are in force when one of its `Permit` or `Forbid` atoms *matches* the request on action, relation, and parties, whatever its constraints (`due2-workflows.md` §5.2). So a policy whose permission matches but whose constraint is certainly `F` still puts its obligations in force, and under `violations = deny` a violated one acts as a prohibition (`due2-workflows.md` §6.4). Selection must therefore keep every policy with a `Permit` or `Forbid` atom whose match on action, target, and parties is not certainly `F`, and may skip a policy on those fields only, never on a constraint. This is the policy-level reading of the index rule of `due2-workflows.md` §5.5; #105 is to state the rule per atomic policy, with a property test. A catalog's attachment of a policy to a dataset helps find policies but is not the criterion: a policy whose target is a classification the dataset falls under applies whether or not anyone attached it.
+Including a policy that cannot match the request is safe, because root atoms that are certainly `F` leave the trace unchanged (L8, `due2-workflows.md` §8). The converse needs care. A policy's obligations are in force when one of its `Permit` or `Forbid` atoms *matches* the request on action, relation, and parties, whatever its constraints (`due2-workflows.md` §5.2). So a policy whose permission matches but whose constraint is certainly `F` still puts its obligations in force, and under `violations = deny` a violated one acts as a prohibition (`due2-workflows.md` §6.4). Selection must therefore keep every policy with a `Permit` or `Forbid` atom whose match on action, target, and parties is not certainly `F`, and may skip a policy on those fields only, never on a constraint. This is the policy-level reading of the index rule of `due2-workflows.md` §5.5; #105 is to state the rule per root atom, with a property test. A catalog's attachment of a policy to a dataset helps find policies but is not the criterion: a policy whose target is a classification the dataset falls under applies whether or not anyone attached it.
 
 ### 2.4 SOTW services
 
@@ -406,7 +406,7 @@ Either way, the ledger has to record which engine produced each evaluation, besi
 
 | # | Question | Where | Issue |
 |---|---|---|---|
-| 1 | Policy selection: what `select` may use, how it is shown to over-select, per policy and per atomic policy, and what a request gets when a selected policy has no published corpus | §2.3 | #94, #105 |
+| 1 | Policy selection: what `select` may use, how it is shown to over-select, per policy and per root atom, and what a request gets when a selected policy has no published corpus | §2.3 | #94, #105 |
 | 2 | A hierarchy lookup that fails cannot be recorded, because `closure` has no status, and hierarchy is closed-world, so a missing classification makes a part `F` | §2.5 | #95 |
 | 3 | Asking request parameters in order of importance: a status for a parameter not yet asked, or an evaluation of the draft outside the ledger | §3.1 | #96 |
 | 4 | Inquiries: how the requests of one inquiry share questions, answers, and presentation | §2.6 | #97 |

@@ -12,7 +12,7 @@
     "codes": [
       "InvalidNesting"
     ],
-    "why": "The Permission <http://example.com/policy:1010#use> holds a Prohibition through odrl:prohibition, whose domain is a Policy (Vocabulary §3.10.2). Normalisation rejects a Rule edge outside its domain in stage 1 (odrl-compound-to-atomic-normalization.md §3): read as authored the Prohibition would be dropped, because Atomic Policies are built from the Policy's own edges only. W1 rejects the policy."
+    "why": "The Permission <http://example.com/policy:1010#use> holds a Prohibition through odrl:prohibition, whose domain is a Policy (Vocabulary §3.10.2). Normalisation rejects a Rule edge outside its domain in stage 1 (odrl-compound-to-atomic-normalization.md §3): read as authored the Prohibition would be dropped, because root atoms come from the Policy's own Rule edges only. W1 rejects the policy."
   },
   "oval_expected": [
     {

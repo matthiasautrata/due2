@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.7 (2026-10-22)
+**Status:** Draft v0.8 (2026-10-26)
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.7** (2026-10-22, #83): a length pass. Dates leave the headings and markers; §4 drops a recommendation its pick overrides; §7.1 and §11 lose history; §13 states the resolved rows more briefly. No rule changes. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.8** (2026-10-26, `decisions/0037`, #134): §2.4 names one RDF boundary, the input; W1 emits no RDF. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -78,12 +78,12 @@ This is mandatory for any union representing domain semantics. It is the cheapes
 
 ### 2.4 RDF at the boundary **[D]**
 
-RDF is a wire format, not a working representation. It appears in three places: parsing authored policies and profile modules at the input boundary; emitting the canonical N-Quads artifacts and digest terms (normalisation spec §4, §5.2) at the output boundary; and nowhere between. Every transformation and every evaluation runs on the plain frozen structures of §2 — the lifted tree inside W1 stage 1, relations of tuples whose fields are terms everywhere else (`due2-workflows.md` §2, §4) — not a graph API.
+RDF is a wire format, not a working representation. It appears at one boundary: parsing authored policies and profile modules. W1 emits none (`decisions/0037`). The canonical N-Quads term form survives only inside hashes: the terms of generated identities and the input's `source_digest` (`odrl-compound-to-atomic-normalization.md` §5.2). Every transformation and every evaluation runs on the plain frozen structures of §2 — the lifted tree inside W1 stage 1, relations of tuples whose fields are terms everywhere else (`due2-workflows.md` §2, §4) — not a graph API.
 
 - **One adapter module owns the library.** A third-party RDF library may exist inside it; its types, its `Any`s, and every `# type: ignore` stay there (§3). Nothing RDF-shaped escapes. The acceptance test is a grep: no RDF import outside the adapter and the test tree.
-- **The lift is immediate and lossless by construction.** The parsed graph becomes typed trees in the same call that reads it. The input profile is what makes that possible: anonymous structure is a forest hanging from named anchors, rule references are acyclic, IRIs are never dereferenced, there are no named graphs, and output has no blank nodes (normalisation spec §3–§5) — so no graph algorithm is needed after the door. The lift owns the term model — IRI, literal `(lexical, datatype[, language])`, list cells — which is the real, bounded cost of this rule.
-- **Serialisation is a pure function from the internal structures** — term rendering and a sort, not a library graph re-serialised. Digests and canonical bytes come from these renderings, which is what keeps them deterministic by construction.
-- **The library's remaining job is the slow tier.** Property tests round-trip the lift against the library's own parse — isomorphic inputs, equal canonical bytes (§7.3 ratchet). A discrepancy is a lift bug.
+- **The lift is immediate and lossless by construction.** The parsed graph becomes typed trees in the same call that reads it. The input profile is what makes that possible: anonymous structure is a forest hanging from named anchors, rule references are acyclic, IRIs are never dereferenced, there are no named graphs, and skolemisation leaves no blank nodes (`odrl-compound-to-atomic-normalization.md` §3–§5) — so no graph algorithm is needed after the door. The lift owns the term model — IRI, literal `(lexical, datatype[, language])`, list cells — which is the real, bounded cost of this rule.
+- **Hashing is a pure function from the internal structures** — term rendering and a sort, not a library graph re-serialised. Digests come from these renderings, which is what keeps them deterministic by construction.
+- **The library's remaining job is the slow tier.** Property tests round-trip the lift against the library's own parse — isomorphic inputs, equal `source_digest` (`odrl-compound-to-atomic-normalization.md` §5.2; §7.3 ratchet). A discrepancy is a lift bug.
 
 What this buys: exhaustiveness where it pays (§2.3) instead of `isinstance` chains against open graph APIs; a hot path free of graph indexes (§10.1); canonical-byte determinism for free; and an evaluator in another language that reads the corpus, not an RDF stack (`decisions/0027`).
 
