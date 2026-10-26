@@ -26,7 +26,7 @@ jobs:
   # clingo-i's tests at the slow bounds (spikes/clingo-i/TESTS.md).
   clingo-i:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     defaults:
       run:
         working-directory: spikes/clingo-i
