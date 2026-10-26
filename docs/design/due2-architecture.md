@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.15
+**Status:** Draft v0.16
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.15** (2026-10-26, `decisions/0038`, #107): §3 says that an anonymous rule's identity is minted, and §7 that an amendment reaches an earlier request through a new case, what evidence for a grant names, and that the re-evaluation trigger is a change of facts or evidence. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.16** (2026-10-26, `decisions/0040`, `decisions/0042`, #137, #139): §7 says that a case and its evaluations together pin their inputs (`decisions/0042`), and §8 harvests RL2's admissibility by source but not its freshness filter, which is the SOTW service's job (`decisions/0040`). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -202,7 +202,7 @@ Every decision is recorded. Because `decide` is pure over `(corpus, request, SOT
 
 **Re-evaluate, never patch.** The temptation is to find `Pending` cases whose petition has been approved and flip them. A `Pending` record is not a promise; it is a decision made under facts that have since changed, and the only sound way to learn the new answer is to ask again.
 
-**An evaluation pins its inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change gives a new corpus, and a new case over it can get another verdict with no policy edit) — and the SOTW, which is the case's own record of the world: the facts consulted, with their values (the trace's `read` relation; `due2-workflows.md` §3.3). Values, not timestamps into a source, so the entry stands even when the source keeps no history.
+**A case and its evaluations pin their inputs:** request, policy version, **both normaliser versions** — the stage-1 profile IRI and version, and the stage-2 builder version (the corpus is derived, so a normaliser change gives a new corpus, and a new case over it can get another verdict with no policy edit) — and the SOTW, which is the case's own record of the world: the facts consulted, with their values (the trace's `read` relation; `due2-workflows.md` §3.3). Values, not timestamps into a source, so the entry stands even when the source keeps no history.
 
 **The direction is not only upward.** Re-evaluation can turn Permit into Deny — a role changed, a dataset was reclassified, a policy was amended. An amendment reaches an earlier request through a new case over the new corpus, since a case fixes its corpus (`due2-workflows.md` §7.1). A mechanism built as "upgrade pending to permit" has no path for that, and revocation matters more to a control function than issuance. The operation is verdict-agnostic and the ledger records transitions both ways.
 
@@ -256,7 +256,7 @@ Harvested — section numbers cite RL2's specs (`Model` = `spec/RL2_Model.md`, `
 
 - **Evidence and fulfilment** — Model §4.3–§4.5, §7.3: evidence as records of performed actions; absence means not yet fulfilled; trust verified before evaluation, with a closed signer admissibility record.
 - **Duty instances** — Semantics §Duty Template Binding: per-member and per-grant occurrence identity, with evidence naming the grant it discharges.
-- **Typed operands** — Model §4.2–§4.4: value types, the missing / invalid / conflict discipline, admissibility and freshness, merged with DPROD's one-hop bindings (`due2-profiles.md` §3).
+- **Typed operands** — Model §4.2–§4.4: value types, the missing / invalid / conflict discipline, and admissibility by source, merged with DPROD's one-hop bindings (`due2-profiles.md` §3). RL2's freshness filter is not harvested: keeping values current is the SOTW service's job (`decisions/0040`).
 - **Guards and witness conditions** — RL2's `condition` and `postCondition` (`due2-workflows.md` §5.2).
 - **The use cases** — all 49, rewritten in ODRL as `conformance/cases/rl2-*` (§10).
 

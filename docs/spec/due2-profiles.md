@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.22
+**Status:** Draft v0.23
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.22** (2026-10-26, `decisions/0038`, #107): §7 keys `activation` by the duty atom, and §8.1 says that an anonymous rule's identity is minted. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.23** (2026-10-26, `decisions/0040`, #137): §3 *Admissibility* keeps `admit_source`, which W2 applies when it combines the answers of several sources, and drops `admit_age`, because keeping values current is the SOTW service's job. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -69,7 +69,7 @@ ex:purpose a odrl:LeftOperand ;
 | Source | Reads | due2 data (`due2-workflows.md` §3) |
 |---|---|---|
 | `dprod:requestSource` | a property of the normalised request | `request_param` keyed by the property IRI |
-| `dprod:stateSource` | a property of the normalised world-state node | SOTW `fact` keyed by the property IRI |
+| `dprod:stateSource` | a property of the normalised world-state node | SOTW `fact` keyed by the property IRI and the answering source |
 | `dprod:contextSource` | a built-in | the table below |
 | `due2:witnessSource` | inside a duty's constraints only: a parameter of the witness (`due2-workflows.md` §5.3) | `evidence_param` keyed by the property IRI |
 
@@ -83,7 +83,7 @@ ex:purpose a odrl:LeftOperand ;
 
 **One hop.** Resolution reads one property of one node. Anything nested — "the department of the requester", "the classification of the target" — is flattened onto the request or state node by whoever assembles them, before evaluation. That is DPROD's normalisation rule, and it is what keeps evaluation free of traversal, live lookups, and argument binding: computing a value is the assembler's job, never the evaluator's.
 
-**Resolution.** For a request or state property `p` and a declared range `τ`:
+**Resolution.** For a request property `p`, or one source's answer for a state property `p`, and a declared range `τ`:
 
 | Values present | Outcome | due2 status |
 |---|---|---|
@@ -108,7 +108,7 @@ These checks are coarse on purpose. They leave out class subsumption and disjoin
 
 **Baseline bindings.** `profiles/due2-core.ttl` binds the ODRL Common Vocabulary operands that need no profile: `odrl:dateTime` to `due2:actionTime`, `odrl:purpose` and `odrl:recipient` to the request, and `odrl:payAmount` to the witness source (§9 #6). The last makes the idiom of the W3C CG examples and OVAL — "pay at least x" as an `odrl:payAmount` refinement of the duty's `odrl:compensate` — an ordinary witness condition with no per-policy binding. It is still an explicit binding, not a position-dependent reading: outside a duty `odrl:payAmount` is rejected (`WitnessOutsideDuty`), and a policy that means a requested amount rebinds its source to `dprod:requestSource` (§2), keeping the baseline's range `xsd:decimal`. Every other common-vocabulary operand needs a profile binding before use. A selected profile may rebind an operand's source and property, never its type (§2): under DPROD, `odrl:dateTime` reads `dprod:clock`, decision time, and is still an `xsd:dateTime`. Selecting a profile adopts all of its declarations, not just the terms a policy happens to use: a policy that wants `dprod:deadline` but action-time semantics for its time constraints rebinds `odrl:dateTime` to `due2:actionTime` in its own graph, the highest layer, or binds an operand of its own.
 
-**Admissibility and freshness [D].** Configuration may restrict, per state property, the admitted sources and their age (`admit_source`, `admit_age`, `due2-workflows.md` §3.4), as RL2's `spec/RL2_Model.md` §4.4 does. A value failing the filter is treated as absent: `missing`, never a separate outcome.
+**Admissibility [D].** Configuration may restrict, per state property, the sources whose answers count (`admit_source`, `due2-workflows.md` §3.4), as RL2's `spec/RL2_Model.md` §4.4 does. W2 combines the admitted answers of a property into one status (`due2-workflows.md` §3.3, *Several sources*). A property whose answers all come from sources that are not admitted is `missing`, never a separate outcome. RL2 also drops a value whose validity interval has ended; due2 has no such filter, because keeping a value current is the SOTW service's job, and a changed value reaches the case as a new event (`decisions/0040`).
 
 ---
 

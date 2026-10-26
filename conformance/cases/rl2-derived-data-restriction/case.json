@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/derived-data-restriction.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Direct translation. The asset-scoped fact asset.assessment.nonReconstructing becomes one state property, ex:targetAssessedNonReconstructing, which the assembler resolves for the requested target. RL2 requires the fact to be attributed to the vendor-approved assessment process; in due2 that is the admissibility record in configuration (admit_source, due2-workflows.md §3.4), and a value failing it is treated as missing. The case format lists config admit_source but gives sotw.facts no attribution field, so no scenario tests it. RL2's prose names five outcomes (true, false, missing, invalid, conflicting); each is a scenario. due2 agrees with all of them. Scenario 6 is added.",
+  "notes": "Direct translation. The asset-scoped fact asset.assessment.nonReconstructing becomes one state property, ex:targetAssessedNonReconstructing, which the assembler resolves for the requested target. RL2 requires the fact to be attributed to the vendor-approved assessment process; in due2 that is the admissibility record in configuration (admit_source, due2-workflows.md §3.4), and a property whose answers all fail it is missing. The case format lists config admit_source but gives sotw.facts no source field, so no scenario tests it. RL2's prose names five outcomes (true, false, missing, invalid, conflicting); each is a scenario. due2 agrees with all of them. Scenario 6 is added.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {

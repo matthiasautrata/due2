@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.49
+**Status:** Draft v0.50
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.49** (2026-10-26, `decisions/0039`, #136): the lineage is a collection with relations of its own (§3.6), one per policy version and normaliser version, found by the policy store and never merged; §2 counts six collections, and §3.7 and L10 read the lineage of each policy in the corpus. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.50** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): the SOTW keeps each source's answer, `attribution` is dropped, and W2 combines the admitted answers of a property (§3.3, §5.4); `admit_age` is dropped, because keeping values current is the SOTW service's job (§3.4). The evaluator computes `evaluation` and `diagnostic` too, so it returns the whole trace (§3.5). A case fixes its request, corpus, config, and pins, and an evaluation records only its SOTW and outcome (§7.1). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -148,9 +148,8 @@ request_param  (name | value: Term)
 
 ```text
 sotw              (| effective_at: Instant)
-fact              (property | status: Enum)
-fact_value        (property, value: Term)
-attribution       (property, source | observed_at: Instant)
+fact              (property, source | status: Enum)
+fact_value        (property, source, value: Term)
 evidence          (evidence_id | occurred_at: Instant, actor, action, object?, issuer?, discharges_duty?, discharges_reference?: String)
 evidence_param    (evidence_id, name | value: Term)
 activation        (atom_id | at: Instant)
@@ -160,8 +159,8 @@ closure           (module, relation, narrower, broader)
 | Relation | Meaning |
 |---|---|
 | `sotw.effective_at` | The instant at which the world is observed, an `xsd:dateTime` with a timezone — decision time. Evidence counts only if it occurred no later. |
-| `fact` | One property of the normalised world-state node, which state-source operands read (`due2-profiles.md` §3), and its `status`: `Enum {resolved, missing, invalid, conflict, unresolved}`, never collapsed. *Missing*: the source says no value exists. *Unresolved*: the source could not be asked or did not answer. Whoever assembles the SOTW flattens onto this node everything the policies read — "the requester's department" becomes one property — so computing values is the assembler's job, never W2's. |
-| `fact_value` | Exactly one value when `resolved` — for a set-valued operand, its members, of which there may be none — two or more when `conflict`, none otherwise. |
+| `fact` | One source's answer for one property of the normalised world-state node, which state-source operands read (`due2-profiles.md` §3), and its `status`: `Enum {resolved, missing, invalid, conflict, unresolved}`, never collapsed. *Missing*: the source says no value exists. *Unresolved*: the source could not be asked or did not answer. `source` names who answered: a service, or a person who volunteered the fact (`due2-platform.md` §1.4). W2 reads the combination of a property's admitted answers (*Several sources*, below). Whoever assembles the SOTW flattens onto this node everything the policies read — "the requester's department" becomes one property — so computing values is the assembler's job, never W2's. |
+| `fact_value` | The source's values: exactly one when `resolved` — for a set-valued operand, its members, of which there may be none — two or more when `conflict`, none otherwise. |
 | `evidence` | A record that an action was performed: when, by whom, which action, on what, and who attests it (`issuer`). Approvals, payments, notifications. `discharges_duty` and `discharges_reference`, both or neither, name the grant the evidence was submitted against: an authored duty and a request's `reference` (§5.3). Fulfilment is derived from evidence and never stored as a flag. Signatures and provenance are verified before the SOTW is frozen; W2 only compares `issuer` against configuration (§3.4). |
 | `evidence_param` | Parameters of the performed action — an amount, a recipient — the counterpart of `request_param` for a proposed action. Read only by witness-source operands (`due2-profiles.md` §3). |
 | `activation` | When the instance of a duty atom was first owed. Derived, not observed: the evaluation that first finds the instance owed records it in the case (`due2-profiles.md` §7). It anchors relative deadlines and recurrence occurrences (§5.3). An instance of one occurrence of a recurring duty is activated at that occurrence, which needs no record. |
@@ -181,7 +180,18 @@ plan : Corpus × Request → Reads
 
 **Read limit [O].** The plan's size is fixed by the corpus and the request — the bound properties, plus the edges above the request's entities — and is known before any fetch, as W1's limits are known before expansion (`due2-architecture.md` §4). A shell limit, `max_reads`, bounds it. What exceeding it yields is open: refuse the request before a case is created, or create the case and evaluate with the excess `unresolved`, so those parts are `U` (§9 #9, issue #34).
 
-An evaluation's SOTW is frozen once W2 runs; a fact that changes later is a new event, which the next evaluation reads (§7.1). Two sources that disagree about the same fact at the same time are a `conflict`.
+An evaluation's SOTW is frozen once W2 runs; a fact that changes later is a new event, which the next evaluation reads (§7.1). Keeping a value current is the SOTW service's job: when the value changes in the world, the service supplies the new one, and a re-evaluation asks no source again (`decisions/0040`).
+
+**Several sources [D]** (`decisions/0040`). Each source's answer is kept as it came, and W2 combines the admitted answers of each property into one status and one set of values:
+
+- *Admitted.* An answer counts when `admit_source` lists its source for the property (§3.4). A property with no `admit_source` tuples admits every source.
+- *Answers with values.* These are the admitted answers whose status is `resolved` or `conflict`. If there are any, the combined status is `resolved` when all of them are `resolved` with the same values, compared as sets of written terms (§2), and `conflict` otherwise; the combined values are theirs, and admitted answers without values are ignored. A `resolved` answer for a set-valued operand with no members counts as one with values.
+- *No answer with values.* The combined status is `unresolved` if any admitted answer is `unresolved`, otherwise `invalid` if any is `invalid`, otherwise `missing`. A property whose answers all come from sources that are not admitted is `missing` (`due2-profiles.md` §3).
+- *No answer at all.* A property with no `fact` is `unresolved` (§5.4).
+
+The shell asks every admitted source it has for a planned property, and records a source that cannot be asked as `unresolved`, so an admitted source does not drop out of the combination unseen.
+
+The part's truth value, and the `status` of `unknown_part` and `witness_part` (§3.5), are those of the combined status. Answers without values cannot outweigh one with values, because they give the part nothing to compare; two different values cannot both be right, so they are a `conflict`.
 
 ### 3.4 Config
 
@@ -189,10 +199,9 @@ An evaluation's SOTW is frozen once W2 runs; a fact that changes later is a new 
 config        (| combination: Enum, violations: Enum, max_mixed: Count, max_frontier_vars: Count)
 signer        (source_duty, issuer)
 admit_source  (property, source)
-admit_age     (property | max_age: Term)
 ```
 
-Parameters that are not policy content. `combination` is the cross-policy strategy, `Enum {prohibit-overrides}`; other strategies are open (§6.2). `max_mixed` and `max_frontier_vars` bound W3's exact computations (§6.4); the caller sets each, 8 unless it has reason to choose otherwise. They are config, not constants of the evaluator, because they change the trace: L1 (§8) requires the same trace bytes from the same evaluation, and an evaluation is its four input collection ids (§3.5), `config_id` among them. A declared preference among frontier alternatives (§6.3) would be a config field too; its form is open (#5). `signer` is the admissibility record for evidence. When a duty has `signer` tuples, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2's `spec/RL2_Model.md` §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` and `admit_age` are the admissibility record for facts: a value whose `attribution` source is not listed for its property, or that was observed longer than `max_age`, an `xsd:duration`, before `effective_at`, is treated as absent — `missing` (`due2-profiles.md` §3).
+Parameters that are not policy content. `combination` is the cross-policy strategy, `Enum {prohibit-overrides}`; other strategies are open (§6.2). `max_mixed` and `max_frontier_vars` bound W3's exact computations (§6.4); the caller sets each, 8 unless it has reason to choose otherwise. They are config, not constants of the evaluator, because they change the trace: L1 (§8) requires the same trace bytes from the same evaluation, and an evaluation is its four input collection ids (§3.5), `config_id` among them. A declared preference among frontier alternatives (§6.3) would be a config field too; its form is open (#5). `signer` is the admissibility record for evidence. When a duty has `signer` tuples, only evidence whose `issuer` is listed counts for it, and evidence without an issuer counts for nothing. A duty with no entries accepts any issuer (RL2's `spec/RL2_Model.md` §4.4). `violations` is `ignore` (the default) or `deny` (§6.4). `admit_source` is the admissibility record for facts: when a property has `admit_source` tuples, only the answers of the sources listed count for it (*Several sources*, §3.3). A person may volunteer a fact nobody asked for, and it is in the case because it happened, but it decides nothing unless its source is admitted. No age limit applies: keeping values current is the SOTW service's job (`decisions/0040`).
 
 ### 3.5 Trace — output of W2 and W3
 
@@ -215,9 +224,9 @@ verdict_range  (| low: Enum, high: Enum)
 diagnostic     (policy_id, code: Enum, ref)
 ```
 
-| Relation | Written by | Meaning |
+| Relation | Computed by | Meaning |
 |---|---|---|
-| `evaluation` | shell | The four input collection ids. The evaluation id is the digest of this tuple — derived, not stored. The case is not an input: the ledger links each evaluation to its case (§7), so the trace depends on content alone. |
+| `evaluation` | W2 | The four input collection ids, each the digest of its collection's canonical bytes (`decisions/0007`), computed from the inputs `decide` receives (`decisions/0041`). The evaluation id is the digest of this tuple — derived, not stored. The case is not an input: the ledger links each evaluation to its case (§7), so the trace depends on content alone. |
 | `finding` | W2 | One truth value per evaluated atom and predicate — `applies`, `in_force`, `owed`, or `fulfilled` (§5.1). |
 | `basis` | W2 | The parts that *determine* the finding, keyed by the finding's atom and predicate. The parts of a duty's witness conditions are in `witness_basis` instead. `kind ∈ {action, relation, party, constraint, evidence, fact}`; `ref` is the constraint, evidence, state property, or function; `truth` is that part's value. An `F` finding names the part that failed. |
 | `unknown_part` | W2 | Every `U` part of every finding W2 produces whose value is `T` or `U`, determining or not, except the parts of a duty's witness conditions, which are in `witness_part`: its atom, the finding's predicate, the part's `kind` and `ref` as in `basis`, the `input` it reads (`odrl:target`, a party function, or an operand's property), and that input's `status`: `missing`, `invalid`, `conflict`, `unresolved`, or `misfit`, a `resolved` value that does not fit the operator (§5.4). An `unresolved` part is completed, and every other part is opaque (§6.4). An `F` finding's `U` parts are not named: none of them can change it, and an index may skip a certainly-`F` atom (§5.5), so naming them would make the relation depend on the index. Root atoms, and a duty's clauses, are the disjuncts of the constraint DNF, unsimplified, with negation pushed to the leaves and `xone` expanded (§3.1, §4 stage 2, §6.4), so a `U` leaf of the authored tree is named exactly when some root atom or duty clause that reads it is `T` or `U`, even if the node above it is decided: in `or(a, u)` with `a` true, `u` is named; in `and(a, u)` with `a` false, it is not. **[D]** (`decisions/0016` and its amendment, `decisions/0028`) |
@@ -231,7 +240,7 @@ diagnostic     (policy_id, code: Enum, ref)
 | `verdict` | W3 | The verdict; whether the reported alternatives are known to be all of them; and whether the computation was exact, or fell back beyond `max_mixed` (independent completion) or `max_frontier_vars` (`frontier_complete` false) (§6.4). `exact` is relative to completion over literals (§6.4): it does not mean that the operands' values were reasoned over. |
 | `verdict_basis` | W3 | The atoms that determined the verdict, by role: `prohibition`, `permission`, `duty`, `unknown`, `obligation` — and `closed`, naming the candidates a violated precondition removed, so a `NotApplicable` that closed a route can be told apart from one where nothing matched. |
 | `verdict_range` | W3 | For an `Indeterminate` only: the least and the greatest completion verdict in the order `Deny < NotApplicable < Pending < Permit` (§6.4). Sound, and possibly wider, when `verdict.exact` is false. **[D]** (`decisions/0011`) |
-| `diagnostic` | shell | The corpus `diagnostic` tuples of every policy of an atom in `finding` (§3.1 `root`), copied unchanged, so that a verdict that rests on a contested reading says so (`due2-diagnostics.md` §1). |
+| `diagnostic` | W2 | The corpus `diagnostic` tuples of every policy of an atom in `finding` (§3.1 `root`), copied unchanged, so that a verdict that rests on a contested reading says so (`due2-diagnostics.md` §1). |
 
 ### 3.6 Lineage — output of W1 **[D]** (`decisions/0039`)
 
@@ -259,7 +268,7 @@ A *stage-1 rule* is an atomic rule that stage 1 emits (`odrl-compound-to-atomic-
 
 | Relation | Meaning |
 |---|---|
-| `lineage` | The run: the policy and the version W1 normalised (§3.1, `policy.version`), the stage-1 profile IRI and version (the `Profile` line of `odrl-compound-to-atomic-normalization.md`), and the version of stage 2. The last three together are the *normaliser version*: what the policy store's calls take as `normaliser_version` (`due2-platform.md` §2.3), and what an evaluation pins (§7.1, `due2-architecture.md` §7). |
+| `lineage` | The run: the policy and the version W1 normalised (§3.1, `policy.version`), the stage-1 profile IRI and version (the `Profile` line of `odrl-compound-to-atomic-normalization.md`), and the version of stage 2. The last three together are the *normaliser version*: what the policy store's calls take as `normaliser_version` (`due2-platform.md` §2.3), and what a case pins for its evaluations (§7.1, `due2-architecture.md` §7). |
 | `minted` | Every id that the run minted, in stage 1 or stage 2 (§2, `Id`). These are the ids that the policy store may rename when it publishes the corpus (§4), and the renaming applies here too, so a published lineage names the published ids. |
 | `anonymous` | For each node that no author named and that stage 1 minted an id for (`odrl-compound-to-atomic-normalization.md` §5.1, case 3): the subject and predicate of the one triple whose object it is (`odrl-compound-to-atomic-normalization.md` §3). Following `parent` upward reaches the node's anchor, the named node it is a part of. |
 | `identity` | Each IRI node whose authored `odrl:uid` differs from its node IRI: the node IRI, and the uid, which is the node's id everywhere else (`odrl-compound-to-atomic-normalization.md` §5.1). A node without a tuple has its node IRI or its minted id as its id. A blank node with an authored `odrl:uid` has the uid as its id and no tuple, since a blank node has no name of its own to map. |
@@ -281,7 +290,7 @@ A verdict alone does not explain a decision; the trace does. Every evaluation th
 | `verdict` | every input that was missing, invalid, in conflict, unresolved, or a misfit, in a finding that is not `F`, whether or not it mattered | `unknown_part`; for a witness condition, `witness_part` |
 | an atom | its findings | `finding` |
 | a finding | the parts that determined it (§5.2) | `basis`; for a duty, also `witness_basis` and `instance` |
-| a `fact` part | the value and status read | `read`, and the SOTW's `fact`, `fact_value`, `attribution` |
+| a `fact` part | the value and status read, and which sources answered | `read`, the SOTW's `fact` and `fact_value`, and the config's `admit_source` |
 | an `evidence` part, or the `witness` of a `witness_basis` or `witness_part` row | the record | the SOTW's `evidence`, `evidence_param` |
 | a `constraint` part | the constraint as normalised | the corpus's `constraint`, `constraint_value` |
 | a removed atom | the atom that removed it, and the rule | `eliminated` |
@@ -433,9 +442,9 @@ Fulfilment is derivation, not bookkeeping. Evidence is appended to the case and 
 For a constraint with left operand `o`:
 
 1. `o`'s binding (`due2-profiles.md` §3) gives its source — request, state, witness, or context — its property, value type, cardinality, allowed operators, and any concept schemes.
-2. For a state-source operand, W2 records the property in `read` and looks up its `fact`. A request-source operand reads `request_param`, a witness-source operand the witness's `evidence_param` (§5.3), and a context operand its built-in.
-3. Status `resolved` → apply the operator to the value(s) and `constraint_value`(s), giving `T` or `F`, or `U` when a value does not fit the operator: a kind other than the right operand's, a `dateTime` without a timezone or a `date` with one (`decisions/0024`), or a concept in none of the operand's schemes (`due2-profiles.md` §4). A state property with any other status, or with no fact at all → `U`, with basis kind `fact` and the property as `ref`: what resolves it is the property's fact. Every other `U` from a value has basis kind `constraint` and the constraint as `ref`: a value of any source that does not fit, or a request or witness value that is `missing`, `invalid`, or in `conflict` (`due2-profiles.md` §3). What resolves it is a value that fits, not a state fact. Every `U` part is also recorded in `unknown_part` (§3.5), or in `witness_part` under its witness for a part of a witness clause (§5.3), with the status of what it read: the state property's status (`unresolved` when it has no fact), the request or witness value's status, or `misfit` for a `resolved` value that does not fit. An absent target or party (§5.2) is `missing`.
-4. The shell finds properties still to resolve as `read` properties with no `fact` in the SOTW. Derived, not recorded twice.
+2. For a state-source operand, W2 records the property in `read` and combines its admitted `fact` answers (§3.3, *Several sources*). A request-source operand reads `request_param`, a witness-source operand the witness's `evidence_param` (§5.3), and a context operand its built-in.
+3. Status `resolved` → apply the operator to the value(s) and `constraint_value`(s), giving `T` or `F`, or `U` when a value does not fit the operator: a kind other than the right operand's, a `dateTime` without a timezone or a `date` with one (`decisions/0024`), or a concept in none of the operand's schemes (`due2-profiles.md` §4). A state property with any other combined status, or with no fact at all → `U`, with basis kind `fact` and the property as `ref`: what resolves it is the property's fact. Every other `U` from a value has basis kind `constraint` and the constraint as `ref`: a value of any source that does not fit, or a request or witness value that is `missing`, `invalid`, or in `conflict` (`due2-profiles.md` §3). What resolves it is a value that fits, not a state fact. Every `U` part is also recorded in `unknown_part` (§3.5), or in `witness_part` under its witness for a part of a witness clause (§5.3), with the status of what it read: the state property's combined status (`unresolved` when it has no fact), the request or witness value's status, or `misfit` for a `resolved` value that does not fit. An absent target or party (§5.2) is `missing`.
+4. The shell finds properties still to resolve as `read` properties with no `fact` from an admitted source in the SOTW. Derived, not recorded twice.
 
 Operators form a closed, typed registry. Strings compare by Unicode code point. No operator consults the clock, the locale, or randomness. Time enters only as `request.at`, `sotw.effective_at`, and evidence times, each an `xsd:dateTime` with a timezone (`decisions/0024`): a constraint on when the action happens (ODRL `dateTime`) reads `request.at` for a permission or prohibition and the witness's `occurred_at` for a duty.
 
@@ -558,27 +567,27 @@ An evaluation is one run of W2 and W3 over a case (§7.1), identified by its fou
 
 ### 7.1 The ledger **[D]** (`decisions/0008`)
 
-The ledger holds cases. A request opens a case over the corpus chosen for it, and everything after it — facts, evidence, activations, evaluations — is an event on that case, in the order recorded. The SOTW is the case's truth about the world as it evolves: there is no separate revision, only the events so far.
+The ledger holds cases. A request opens a case under the terms chosen for it — the corpus, the config, and the normaliser pins — and everything after it — facts, evidence, activations, evaluations — is an event on that case, in the order recorded. The SOTW is the case's truth about the world as it evolves: there is no separate revision, only the events so far.
 
 ```text
-case        (case_id | request, corpus: Digest)
+case        (case_id | request, corpus: Digest, config: Digest, pins)
 event       (case_id, seq | kind, valid_at?, ref)
-evaluation  (case_id, seq | request, corpus, sotw, config, pins, trace?, verdict?, error?)
+evaluation  (case_id, seq | sotw: Digest, trace?, verdict?, error?)
 ```
 
 | Relation | Meaning |
 |---|---|
-| `case` | One per request and corpus: `request` is the request that opened the case, and `corpus` the corpus id chosen when it was opened. `case_id` is assigned by the shell. |
-| `event` | `seq` counts from 1, in the order the shell recorded events, and numbers `evaluation` tuples too. `kind ∈ {fact, evidence, activation}`; `ref` is the content id of the §3.3 tuple recorded. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events, and they change no case (below). |
-| `evaluation` | The evaluation recorded at `seq`, once; `event` does not repeat it. It holds the request, corpus, SOTW, and config ids (§3.5 names all four); the corpus is the case's. The request is the case's, with an earlier `at` moved to `effective_at` (§3.2). It also holds the normaliser versions in force (`pins`), and the outcome: `trace` and `verdict`, or `error` with its cause. |
+| `case` | The terms the case was opened under: `request` is the request that opened it, `corpus` and `config` the ids of the corpus and config chosen then, and `pins` the normaliser versions that built the corpus. `case_id` is assigned by the shell. |
+| `event` | `seq` counts from 1, in the order the shell recorded events, and numbers `evaluation` tuples too. `kind ∈ {fact, evidence, activation}`; `ref` is the content id of the §3.3 tuple recorded: for a fact, one source's answer. `valid_at` is when it held in the world; a fact learned late simply carries an earlier `valid_at`. Policy amendments and normaliser upgrades are not events, and they change no case (below). |
+| `evaluation` | The evaluation recorded at `seq`, once; `event` does not repeat it. It holds the SOTW id and the outcome: `trace` and `verdict`, or `error` with its cause. Its corpus, config, and pins are the case's, and its request is the case's with an earlier `at` moved to `effective_at` (§3.2), so §3.5's four input ids are all derived from the case and the SOTW (`decisions/0042`). |
 
-**The SOTW of an evaluation** is the case's events before it, taken as of `sotw.effective_at`: for each fact, the value with the latest `valid_at` no later than `effective_at`. It is frozen as a collection, and its digest is the evaluation's `sotw` id.
+**The SOTW of an evaluation** is the case's events before it, taken as of `sotw.effective_at`: for each property and source, the answer with the latest `valid_at` no later than `effective_at`. A re-evaluation asks no source again: it reads the answers already recorded, and a value that changed in the world reaches the case as a new event from the SOTW service (`decisions/0040`). It is frozen as a collection, and its digest is the evaluation's `sotw` id.
 
 **The current answer** for a case is its latest evaluation.
 
-**A case fixes its corpus [D]** (`decisions/0038`). Every evaluation of a case names the case's corpus, so no case is evaluated against terms it was not opened under. To apply an amended policy or a new normaliser version to an earlier request, as for a revocation, the orchestrator opens a new case for the request over the new corpus. Its activations start afresh, and evidence recorded on the earlier case counts only if it is recorded again.
+**A case fixes its terms [D]** (`decisions/0038`, `decisions/0042`). Every evaluation of a case uses the case's request, corpus, config, and pins, so no case is evaluated against terms it was not opened under; within a case, only the world changes. To apply an amended policy, a new normaliser version, or a new config to an earlier request, as for a revocation, the orchestrator opens a new case for the request under the new terms. Its activations start afresh, and evidence recorded on the earlier case counts only if it is recorded again.
 
-**What did we decide, and when.** Earlier decisions are not recomputed: the answer is the earlier `evaluation` event, which pins its inputs, and replay reproduces its trace (§7).
+**What did we decide, and when.** Earlier decisions are not recomputed: the answer is the earlier `evaluation` event, which with its case pins its inputs, and replay reproduces its trace (§7).
 
 **Append-only.** Events are added, never changed. The shell serialises writes per case.
 
@@ -592,7 +601,7 @@ Acceptance criteria for any implementation, checked by property tests over gener
 |---|---|
 | **L1** | **Determinism.** Same evaluation, same trace bytes, whatever the tuple order, machine, or locale. |
 | **L2** | **Boundaries.** An atom's W2 finding reads no other atom's finding. It is unchanged by adding, removing, or changing other atoms, with one exception: a root obligation's `in_force` reads whether some root `Permit` or `Forbid` of one of its root policies matches the request (§5.2, *In force*), so it can change with those atoms' action, relation, and party parts. W3's output is unchanged by any change to the request or SOTW that leaves W3's inputs from W2 unchanged: `finding`, `basis`, `unknown_part`, and `instance` (§6). A change that leaves the findings alone can still change the others, for example a later `effective_at` that sets an instance's `passed` (`decisions/0032`). |
-| **L3** | **Prefetch neutrality.** Adding facts that W2 does not read leaves the trace unchanged, except for the `evaluation` tuple, whose `sotw_id` names the larger SOTW (§3.5). Adding a `resolved` value for a state property that W2 reads and that had none (`unresolved`, §5.4) can only turn `U` into `T` or `F`, or leave it `U` as a misfit (L4). A second value for a property that has one is not covered: under cardinality one it is a `conflict`, which makes the part `U` (`due2-profiles.md` §3). |
+| **L3** | **Prefetch neutrality.** Adding facts that W2 does not read leaves the trace unchanged, except for the `evaluation` tuple, whose `sotw_id` names the larger SOTW (§3.5). Adding a `resolved` value for a state property that W2 reads and that had none (`unresolved`, §5.4) can only turn `U` into `T` or `F`, or leave it `U` as a misfit (L4). A second value for a property that has one is not covered: under cardinality one it is a `conflict`, and so is an admitted source's answer that differs from another's (§3.3, *Several sources*); either makes the part `U` (`due2-profiles.md` §3). |
 | **L4** | **Information monotonicity.** Resolving an unknown never turns `Permit` into `Deny` or back. A value that arrives and fits, for an unresolved or an opaque part, can only replace `Indeterminate`. One that arrives as a misfit, or the answer that none exists, makes a completed part opaque (§6.4), and can turn a definite verdict into `Indeterminate`, never into another definite one (`decisions/0016`). |
 | **L5** | **Prohibition monotonicity.** Adding an applicable prohibition never raises the verdict. |
 | **L6** | **Duty neutrality.** Conflict resolution (§6.2) reads no duty finding: its eliminations depend only on the candidates that enter it and the prohibitions. Adding, removing, or fulfilling duties changes them only by changing which candidates §6.1 removes with rule `violated_precondition`; when those removals are unchanged, so are the eliminations of §6.2. Under `perm`, for example, timely evidence for a precondition whose deadline has passed restores its permission, which then eliminates its policy's `T` `Forbid`. |

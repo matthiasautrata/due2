@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.11. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.12. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.11** (2026-10-26, `decisions/0039`, #136): §2.3 finds a policy's lineage by the policy, its version, and the normaliser version, and §2.10 says how explanation reaches it. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.12** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): each state fact is one source's answer, the evaluator combines the admitted ones, and the SOTW service keeps values current (§1.4, §2.4, §2.6, §3.1, §5 #7). `decide` returns the whole trace, and the orchestrator builds no part of it (§2.2, §2.6). A case fixes its request, corpus, config, and pins, so `create_case` takes all four (§2.2, §2.6, §2.10). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -30,7 +30,7 @@ The specification governs. Where this document and `due2-workflows.md` disagree,
 | port | A component's interface, stated in the data model of `due2-workflows.md` §3, independent of transport (Cockburn's term, `references.md` §8). |
 | adapter | A binding of a port to one transport: an in-process call, REST, or MCP (the Model Context Protocol, through which a language-model assistant calls tools). |
 | orchestrator | The case workflow (§2.6): the one component that calls the others (§1.2). This document calls it the orchestrator, so that "workflow" keeps the sense of W1–W3. |
-| evaluation | The record of one `decide` call: the `evaluation` tuple of `due2-workflows.md` §3.5, which names the four input collections, with the pins and the trace (§2.2). The act is a call to `decide`. |
+| evaluation | The record of one `decide` call: the SOTW it read and the trace `decide` returned, whose `evaluation` tuple names the four input collections (`due2-workflows.md` §3.5, §7.1). Its corpus, config, and pins are its case's (§2.2). The act is a call to `decide`. |
 | engine | One deployment of the evaluator, named by implementation and version. The predecessor's evaluator is another engine (§2.6, §4). |
 | normal path, fast path | Whether a call to the evaluator carries its corpus in full or only the corpus's digest (§1.3). |
 | connector | An adapter that fetches one kind of fact from an outside system, such as HR or a data catalog, for the SOTW services (§2.4). |
@@ -79,9 +79,9 @@ Every collection, whether corpus, request, SOTW, config, or trace, is canonical 
 ### 1.4 Who decides, and who may assert a fact
 
 - **Only the evaluator decides.** No other component computes, approximates, or overrides a verdict. A rendering may select and order the reasons the trace holds, and never adds one (`due2-workflows.md` §3.7).
-- **The configuration decides whose facts count.** Each state fact carries an `attribution`, its source and observation time. `admit_source` and `admit_age` say which sources count for which property (`due2-workflows.md` §3.4). A value from a source not admitted for its property is treated as `missing`.
+- **The configuration decides whose facts count.** Each state fact is one source's answer, recorded with its source (`due2-workflows.md` §3.3). `admit_source` says which sources count for which property (`due2-workflows.md` §3.4), and the evaluator combines the admitted answers of each property. A property whose answers all come from sources that are not admitted is `missing`.
 - **The requester states the request.** Request-source operands, such as purpose or record count, read the request (`due2-profiles.md` §3). The requester supplies them, and the profile's binding is what makes them the requester's to state.
-- **The intelligent services assert nothing.** They choose and phrase questions, map free text onto request fields and catalog entries, and narrate a rendered explanation. A state fact a person gives through them is recorded with that person as its `attribution` source, and counts only for properties whose `admit_source` lists that source. Otherwise it is treated as `missing` (`due2-workflows.md` §3.4), an opaque `U` part that completion does not split (`decisions/0016`), so an inadmissible answer can widen the verdict range instead of narrowing it. The orchestrator therefore asks a person only for properties whose `admit_source` admits them.
+- **The intelligent services assert nothing.** They choose and phrase questions, map free text onto request fields and catalog entries, and narrate a rendered explanation. A state fact a person gives through them is recorded with that person as its source, and counts only for properties whose `admit_source` lists that source. A property whose answers all come from sources that are not admitted is `missing` (`due2-workflows.md` §3.3), an opaque `U` part that completion does not split (`decisions/0016`), so an inadmissible answer can widen the verdict range instead of narrowing it. The orchestrator therefore asks a person only for properties whose `admit_source` admits them.
 
 ---
 
@@ -120,7 +120,7 @@ Explanation (§2.9) is a component the orchestrator calls, as it calls the evalu
 | 2.1 | Evaluator | `plan` and `decide` (`due2-architecture.md` §2; `due2-workflows.md` §3.3, §5–§6) |
 | 2.2 | Ledger | `due2-workflows.md` §7.1; `decisions/0008` |
 | 2.3 | Policy store | `due2-workflows.md` §3.1 (corpus), §3.6 (lineage); `decisions/0007` |
-| 2.4 | SOTW services | `due2-profiles.md` §3 (operand bindings); `due2-workflows.md` §3.3 (`fact`, `attribution`) |
+| 2.4 | SOTW services | `due2-profiles.md` §3 (operand bindings); `due2-workflows.md` §3.3 (`fact`, `fact_value`) |
 | 2.5 | Catalog | `due2-workflows.md` §3.3 (world `closure` modules) |
 | 2.6 | Case workflow | `due2-workflows.md` §1, §3.3 (the shell loop); `due2-architecture.md` §7 (re-evaluation) |
 | 2.7 | Intelligent services | Nothing: the component is new |
@@ -146,20 +146,20 @@ All four inputs arrive by value, and the evaluator fetches nothing (§1.2). §1.
 
 ### 2.2 Ledger
 
-Holds cases: one per request and corpus, with every fact, piece of evidence, activation, and evaluation recorded as an event, append-only (`due2-workflows.md` §7.1).
+Holds cases: one per request and the terms it is decided under (corpus, config, and normaliser pins), with every fact, piece of evidence, activation, and evaluation recorded as an event, append-only (`due2-workflows.md` §7.1).
 
 ```text
-create_case(request, corpus_id)            -> case_id
+create_case(request, corpus_id, config_id, pins) -> case_id
 append(case_id, event)                     -> seq
-record_evaluation(case_id, evaluation)     -> seq            # built by the orchestrator (§2.6)
-case(case_id)                              -> request, corpus, events, evaluations
+record_evaluation(case_id, evaluation)     -> seq            # the SOTW id and the trace `decide` returned (§2.6)
+case(case_id)                              -> request, corpus, config, pins, events, evaluations
 sotw(case_id, effective_at)                -> sotw_id        # the case's events as of effective_at, frozen
 get(collection_id)                         -> collection     # a request, SOTW, or evaluation it holds
 cases(latest_verdict?)                     -> case_ids       # for re-evaluation (§3.3)
 owed(party, at)                            -> duty instances # the monitoring question, open (#6)
 ```
 
-The orchestrator calls `decide` and builds the `evaluation` (its ids, pins, and trace); the ledger only records it, and calls no other component (§1.2). Replay is therefore the orchestrator's (§2.6). The ledger never edits an event and never recomputes an earlier decision to answer an audit question: the earlier `evaluation` event is the answer.
+The orchestrator calls `decide`, which returns the whole trace, and records the evaluation: the SOTW id and the trace as returned, of which it builds no part (`decisions/0041`). The ledger only records it, and calls no other component (§1.2). Replay is therefore the orchestrator's (§2.6). The ledger never edits an event and never recomputes an earlier decision to answer an audit question: the earlier `evaluation` event is the answer.
 
 ### 2.3 Policy store
 
@@ -190,20 +190,21 @@ Including a policy that cannot match the request is safe, because root atoms tha
 
 ### 2.4 SOTW services
 
-Fetch the facts a plan names and return them in the form the SOTW records them: a status, values, and an attribution (`due2-workflows.md` §3.3). One connector serves each bound state property, or a family of them. The registry maps a property IRI to its connector.
+Fetch the facts a plan names and return them in the form the SOTW records them: one answer per source, with its status and values (`due2-workflows.md` §3.3). One connector serves each bound state property, or a family of them. The registry maps a property IRI to its connector.
 
 ```text
-resolve(property, entities, at)            -> fact(status, values, attribution)
+resolve(property, entities, at)            -> fact(source, status, values)
 edges(module, entities)                    -> closure edges, with the module's version
 register(property | module, connector)
 ```
 
-Four rules from the specification bind every connector:
+Five rules from the specification bind every connector:
 
 - **One hop.** "The requester's department" is one property, flattened by the connector. Computing values is the connector's job and never the evaluator's (`due2-profiles.md` §3).
 - **Statuses are never collapsed.** `missing` means the source says no value exists. `unresolved` means the source could not be asked or did not answer. A connector that times out returns `unresolved`, never `missing`.
 - **Answers, not extensions.** The case records the answer to the question asked, such as membership of one group, and the source version it came from. It never records the dataset the answer was computed from (`due2-workflows.md` §3.3).
 - **The corpus decides what is needed.** A connector is needed for each property that the corpus's constraints read and that a profile binds to the state source. A profile binding that no policy reads needs none. A planned property with no connector is recorded as `unresolved` (§3.6).
+- **The service keeps values current.** When a value it supplied changes in the world, it supplies the new one, and the orchestrator records it as a new event on the cases that read it. No one checks an answer's age, and a re-evaluation asks no source again (`decisions/0040`). How a change is reported is open (§5 #7).
 
 ### 2.5 Catalog
 
@@ -237,9 +238,9 @@ replay(case_id, seq, engine)                   -> match | mismatch
 
 **Draft requests.** A case's request is fixed when its case is created, except for its `at`, which each evaluation moves to its own time (`due2-workflows.md` §3.2, §7.1). Request parameters, such as purpose, therefore have to be gathered before the case is created, while the request is a draft. State facts are gathered after, as events on the case. §3.1 walks through the sequence.
 
-**Re-evaluation.** When facts change, the orchestrator re-evaluates the affected cases. When a policy or normaliser version changes, it opens a new case over the new corpus for each affected request instead, because a case fixes its corpus (`due2-workflows.md` §7.1, `decisions/0038`). The new case starts without the earlier one's activations and evidence. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated, or reopened over a new corpus, as well. Each evaluation asks at its own time: the orchestrator builds its request from the case's, with `at` moved to the evaluation's `effective_at` when the case's `at` is earlier, so it never sends an access evaluation an `at` earlier than its `effective_at`. The latest evaluation is the case's current answer, and the newest case of a request gives the request's (`due2-workflows.md` §3.2, §7.1; `decisions/0030`).
+**Re-evaluation.** When facts change, the SOTW service supplies the new values (§2.4), and the orchestrator records them in the affected cases and re-evaluates those cases. A re-evaluation reads what its case holds and asks no source again (`decisions/0040`). When a policy, a normaliser version, or the config changes, the orchestrator opens a new case under the new terms for each affected request instead, because a case fixes its terms (`due2-workflows.md` §7.1, `decisions/0038`, `decisions/0042`). The new case starts without the earlier one's activations and evidence. Which cases count as affected is open. `due2-architecture.md` §7 starts with recomputing every pending case on any change. That alone never revokes a `Permit`, because a decided case is not pending, so revocation (§3.3) needs decided cases re-evaluated, or reopened over a new corpus, as well. Each evaluation asks at its own time: the orchestrator builds its request from the case's, with `at` moved to the evaluation's `effective_at` when the case's `at` is earlier, so it never sends an access evaluation an `at` earlier than its `effective_at`. The latest evaluation is the case's current answer, and the newest case of a request gives the request's (`due2-workflows.md` §3.2, §7.1; `decisions/0030`).
 
-**Replay.** To check a recorded evaluation, the orchestrator fetches the four collections it names, from the policy store and the ledger, calls `decide` with them, and compares the digest of the new trace with the recorded one (`due2-workflows.md` §7). To the evaluator this is an ordinary call. The orchestrator chooses the `engine` that answers: a replay on the engine that made the evaluation checks the record, and a replay on the current engine checks for a regression. The first needs the ledger to record each evaluation's engine, which is open (§5 #5).
+**Replay.** To check a recorded evaluation, the orchestrator fetches the case's corpus and config and the evaluation's SOTW from the policy store and the ledger, builds the evaluation's request from the case's as above, calls `decide` with the four, and compares the digest of the new trace with the recorded one (`due2-workflows.md` §7). To the evaluator this is an ordinary call. The orchestrator chooses the `engine` that answers: a replay on the engine that made the evaluation checks the record, and a replay on the current engine checks for a regression. The first needs the ledger to record each evaluation's engine, which is open (§5 #5).
 
 ### 2.7 Intelligent services
 
@@ -275,8 +276,8 @@ explain_policy(corpus, lineage, warnings) -> atoms and constraints per authored 
 Mostly a consequence of §1.3, plus one obligation:
 
 - **Content ids and immutable collections:** §1.3.
-- **What each evaluation pins:** the corpus, SOTW, and config ids, and the normaliser versions in force (`due2-workflows.md` §7.1).
-- **Which authored rule each atom came from:** the lineage (`due2-workflows.md` §3.6). An evaluation's corpus names each policy and its version in `policy`, and the evaluation pins the normaliser versions, so `lineage` finds the lineage of each policy it holds.
+- **What each evaluation pins:** its SOTW id; its corpus and config ids and the normaliser versions in force are its case's (`due2-workflows.md` §7.1, `decisions/0042`).
+- **Which authored rule each atom came from:** the lineage (`due2-workflows.md` §3.6). An evaluation's corpus names each policy and its version in `policy`, and its case pins the normaliser versions, so `lineage` finds the lineage of each policy it holds.
 - **The obligation — retention:** replay needs every collection an evaluation names (`due2-workflows.md` §7). A store may therefore not delete a corpus or profile version that any retained evaluation references, nor the lineage of a policy in such a corpus.
 
 ### 2.11 Authoring
@@ -307,8 +308,8 @@ what_if(corpus_id, case_ids)              -> verdict changes
 3. **Select.** The orchestrator asks the policy store for the corpus of every policy that may apply (§2.3), and fetches it.
 4. **Draft.** The orchestrator drafts a request: the action, the dataset as target, the subject from authentication, and the time.
 5. **Plan.** `plan` names everything the decision can read: request parameters, state properties, and hierarchy modules.
-6. **Ask for parameters.** The planned request parameters are questions for the requester. When they are answered, the request is complete and the case is created. `plan` runs again on the complete request, since what it names can depend on the request.
-7. **Fetch.** The connectors fetch every planned state property and hierarchy module. Each answer is recorded as an event, including failures as `unresolved`.
+6. **Ask for parameters.** The planned request parameters are questions for the requester. When they are answered, the request is complete, and the case is created with the request, the corpus, the config, and the normaliser pins (§2.2). `plan` runs again on the complete request, since what it names can depend on the request.
+7. **Fetch.** The connectors fetch every planned state property and hierarchy module. Each answer is recorded as an event, one per source, including failures as `unresolved`.
 8. **Decide.** Every planned read is now in the case, so `decide` runs and the evaluation is recorded.
 9. **Show.** The verdict and its explanation are shown:
    - a `Permit` names the policies that permit, so over an offer it reads "this offer permits you to proceed";
@@ -413,5 +414,6 @@ Either way, the ledger has to record which engine produced each evaluation, besi
 | 4 | Inquiries: how the requests of one inquiry share questions, answers, and presentation | §2.6 | #97 |
 | 5 | The ledger: the engine that produced each evaluation, references to predecessor records, where shadow results go, and safe retries | §1.2, §4 | #98 |
 | 6 | What-if results: recorded, and where | §2.11 | #99 |
+| 7 | How a SOTW service reports a changed value, and which cases receive it | §2.4, §2.6 | #140 |
 
 Already open elsewhere: the monitoring question (#6), the read limit `max_reads` (#34), re-evaluation triggers (`due2-architecture.md` §7), remedies in the trace (#61).

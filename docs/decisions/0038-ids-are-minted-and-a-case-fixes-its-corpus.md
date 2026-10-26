@@ -75,3 +75,5 @@ Which of these needs an id computed from content?
 
 - A case has to outlive a policy amendment, for example because a long-running obligation must be carried into the amended terms. That needs a migration of the case's activations and evidence, which is a design of its own.
 - #119 gives a recurring duty's occurrence a form other than an `Instant`.
+
+**Note (2026-10-26, `decisions/0042`, #139):** a case fixes its config and pins too, by the argument of item 2 here: within a case, only the world changes. *A case fixes its corpus* in `due2-workflows.md` §7.1 becomes *A case fixes its terms*.

@@ -64,7 +64,7 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 - `config_combination/1`: `combination`, a string. Read by lift.lp.
 - `config_violations/1`: `violations`, `ignore` or `deny`. Read by resolve.lp.
 - `signer/2`, `signer(Duty, Issuer)`: each `signers` element. Read by duty.lp.
-- `unread/1`, `unread(Field)`: `preference`, `admit_source`, `admit_age`. The case format
+- `unread/1`, `unread(Field)`: `preference`, `admit_source`. The case format
   defines no shape for them (`conformance/README.md`), so their presence is recorded, and
   lift.lp declines it.
 
@@ -118,7 +118,7 @@ STATUSES = ("resolved", "missing", "invalid", "conflict", "unresolved")
 VIOLATIONS = ("ignore", "deny")
 # Config fields the case format names but gives no shape (conformance/README.md): their
 # presence is recorded as `unread`, and the program declines it.
-UNREAD_CONFIG = ("preference", "admit_source", "admit_age")
+UNREAD_CONFIG = ("preference", "admit_source")
 
 
 @contextmanager
