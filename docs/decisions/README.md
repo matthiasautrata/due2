@@ -47,9 +47,10 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0037](0037-w1-emits-no-rdf.md) | W1 emits no RDF: stage 1's atomised form is internal | 2026-10-26 | In force, with a note: `source_digest` is dropped (`decisions/0038`) |
 | [0038](0038-ids-are-minted-and-a-case-fixes-its-corpus.md) | Ids are minted once, and a case fixes its corpus | 2026-10-26 | In force, with a note: a case fixes its config and pins too (`decisions/0042`); there is no config (`decisions/0045`) |
 | [0039](0039-the-lineage-is-a-collection-of-its-own.md) | The lineage is a collection with relations of its own | 2026-10-26 | In force |
-| [0040](0040-facts-are-kept-per-source.md) | Facts are kept per source, and W2 combines them | 2026-10-26 | In force, with a note: the connector registry admits sources (`decisions/0045`) |
+| [0040](0040-facts-are-kept-per-source.md) | Facts are kept per source, and W2 combines them | 2026-10-26 | In force, with notes: the connector registry admits sources (`decisions/0045`); a changed value arrives by an explicit call (`decisions/0046`) |
 | [0041](0041-the-evaluator-returns-the-whole-trace.md) | The evaluator returns the whole trace | 2026-10-26 | In force |
 | [0042](0042-a-case-fixes-its-config-and-pins.md) | A case fixes its request, corpus, config, and pins | 2026-10-26 | In force, with a note: there is no config (`decisions/0045`) |
 | [0043](0043-world-edges-are-case-events.md) | World hierarchy edges are events on the case | 2026-10-26 | In force |
 | [0044](0044-the-source-version-is-on-the-event.md) | The source version is recorded on the event | 2026-10-26 | In force |
 | [0045](0045-no-config.md) | An evaluation has no config | 2026-10-26 | In force |
+| [0046](0046-platform-calls-are-explicit.md) | Publication is its own workflow, and a case changes only by explicit calls | 2026-10-26 | In force |

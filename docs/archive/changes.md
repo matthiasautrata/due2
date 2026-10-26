@@ -185,6 +185,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-architecture.md`
 
+**Changes in v0.17** (2026-10-26, `decisions/0045`): there is no config, so `decide` takes the corpus, the request, and the SOTW (§2, §7). §6.2 fixes prohibit-overrides across policies, and a void policy's violated obligation is reported, not denied. A duty's attester names whose evidence counts (§3). §0's worked example is the case's `Permit` scenario, with the violated delivery reported. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.16** (2026-10-26, `decisions/0040`, `decisions/0042`, #137, #139): §7 says that a case and its evaluations together pin their inputs (`decisions/0042`), and §8 harvests RL2's admissibility by source but not its freshness filter, which is the SOTW service's job (`decisions/0040`). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.15** (2026-10-26, `decisions/0038`, #107): §3 says that an anonymous rule's identity is minted, and §7 that an amendment reaches an earlier request through a new case, what evidence for a grant names, and that the re-evaluation trigger is a change of facts or evidence. Earlier changes are in `docs/archive/changes.md`.
@@ -208,6 +210,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `due2-platform.md`
+
+**Changes in v0.13** (2026-10-26, `decisions/0043`, `decisions/0044`): `resolve` and `edges` return the source's version with each answer, and `edges` answers per request entity with the edges on the paths up from it (§2.4). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.12** (2026-10-26, `decisions/0040`, `decisions/0041`, `decisions/0042`, #137, #138, #139): each state fact is one source's answer, the evaluator combines the admitted ones, and the SOTW service keeps values current (§1.4, §2.4, §2.6, §3.1, §5 #7). `decide` returns the whole trace, and the orchestrator builds no part of it (§2.2, §2.6). A case fixes its request, corpus, config, and pins, so `create_case` takes all four (§2.2, §2.6, §2.10). Earlier changes are in `docs/archive/changes.md`.
 

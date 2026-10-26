@@ -1,9 +1,9 @@
 # due2 — Architecture
 
-**Status:** Draft v0.17
+**Status:** Draft v0.18
 **Companions:** `ways-of-working.md` (engineering discipline) · `due2-workflows.md` (the three workflows and the reference data model, language-independent) · `odrl-compound-to-atomic-normalization.md` (normalisation stage 1, normative). This document covers what due2 *is* and why; the workflows document fixes what each step consumes, produces, and preserves.
 
-**Changes in v0.17** (2026-10-26, `decisions/0045`): there is no config, so `decide` takes the corpus, the request, and the SOTW (§2, §7). §6.2 fixes prohibit-overrides across policies, and a void policy's violated obligation is reported, not denied. A duty's attester names whose evidence counts (§3). §0's worked example is the case's `Permit` scenario, with the violated delivery reported. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.18** (2026-10-26, `decisions/0046`): §7's first re-evaluation trigger is an explicit call per case, with no subscription. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companion: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -212,7 +212,7 @@ Every decision is recorded. Because `decide` is pure over `(corpus, request, SOT
 
 **Re-evaluation trigger [O]:**
 
-- *Recompute all pending on any change of facts or evidence.* A policy or normaliser change opens new cases instead (above). Trivially correct, no bookkeeping. Pending sets in governance are small and approvals are rare, so this is almost certainly sufficient. **Start here.**
+- *Explicit calls.* Whoever records a changed fact on a case asks for its re-evaluation (submitting evidence evaluates the case by itself), and re-evaluating every pending case is a loop of such calls; there is no subscription (`due2-platform.md` §2.6, `decisions/0046`). A policy or normaliser change reaches a request only when its case is reopened, as a new case (above). Trivially correct, no bookkeeping. Pending sets in governance are small and approvals are rare, so this is almost certainly sufficient. **Start here.**
 - *Dependency index.* Index pending cases by the state properties in their `read` relation, which W2 already produces as a byproduct. Justified only when the first option measurably hurts.
 
 ---
@@ -320,6 +320,6 @@ Rows keep their numbers, because issues cite them. Rows 1, 3, 4, and 6 are resol
 | # | Decision | Section | Issue | Blocked on |
 |---|---|---|---|---|
 | 2 | Atom-count threshold values and diagnostic | §4 | #11 | The first pathological policy. Only DNF is exponential (`decisions/0003`), and its exact-count limit is decided (§4 item 3) |
-| 5 | Re-evaluation trigger: recompute-all vs dependency index | §7 | #14 | Measurement once pending volume is known |
+| 5 | Re-evaluation trigger: explicit calls (`decisions/0046`) vs dependency index | §7 | #14 | Measurement once pending volume is known |
 | 7 | Policy diff via query containment | §8.1 | #15 | A spike |
 | 8 | Execution target beyond indexed in-memory evaluation | §9 | #16 | Measurement per §9.1 |
