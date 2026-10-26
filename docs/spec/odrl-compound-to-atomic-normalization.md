@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.25  
+Version: 0.26  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.25 (2026-10-26, `decisions/0038`, #107): every id that no author chose is minted, not computed from content (§5.2). `source_digest` and invariant 10 (*Locality*) are dropped, values are no longer ordered for expansion (§6.3), and W1 is deterministic up to the renaming of minted ids (§8, invariant 6). Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.26 (2026-10-26, `decisions/0039`, #136): §7 names the lineage relation of each record, records the triple that reaches an anonymous node, and drops the inbound role, which `N(P0)` and the corpus carry. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until a corpus has been produced under it. From then on, any change to admitted input or to the output bumps it.
 
@@ -206,13 +206,14 @@ Every atomic root Rule occurrence is a root atom of `N(P0)`, with the role of it
 
 Stage 1 records, as tuples of the lineage collection (`due2-workflows.md` §3.6):
 
-- each generated atomic Rule's source Rule, with its selected tuple and inbound role;
-- every minted id, marked as minted;
-- every authored, effective, and minted UID mapping;
-- which values came from Policy-level interiorization (§6.2); and
-- the profile IRI and version.
+- each atomic Rule's source Rule, in `rule_source`, and its selected tuple, one value per expansion axis (§6.3), in `selected`;
+- every id it mints, in `minted`;
+- the triple that reaches each anonymous node, by its subject and predicate, in `anonymous`, since `N(P0)` is never serialised (§4);
+- each authored UID that differs from its node IRI, in `identity` (§5.1);
+- the predicates whose values a root Rule took from Policy-level interiorization (§6.2), in `interiorised`; and
+- the profile IRI and version, in `lineage`.
 
-Retained resources are recorded as retained mappings, not as self-derivations. An anonymous node's parent and predicate are already in `N(P0)` and are not repeated. The lineage holds no timestamps or host information, so two runs give lineages that one renaming of minted ids makes equal (§8, invariant 6).
+A retained Rule, one that stage 1 does not expand, is its own source: its `rule_source` tuple names it twice. The role by which a Rule is reached is not recorded, because `N(P0)`'s root atoms and Rule references carry it (§6.4), and the corpus keeps it in `root` and `edge` (`due2-workflows.md` §3.1). The lineage holds no timestamps or host information, so two runs give lineages that one renaming of minted ids makes equal (§8, invariant 6).
 
 The source-Rule and selected-tuple records are not only audit data. They define the bijection under which invariant 3 is checked (§8.1); a lineage that does not define one is non-conforming.
 

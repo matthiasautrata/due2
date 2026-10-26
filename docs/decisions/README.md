@@ -46,3 +46,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0036](0036-an-id-never-includes-its-policy.md) | An id never includes its policy, and an atom roots each policy that states it | 2026-10-26 | Amended: agreement between corpora is a precondition, checked at publish; a note: a `root` tuple names an authored policy, since no Atomic Policy node exists (`decisions/0037`); a note: ids computed from content are minted, and publishing renames them (`decisions/0038`) |
 | [0037](0037-w1-emits-no-rdf.md) | W1 emits no RDF: stage 1's atomised form is internal | 2026-10-26 | In force, with a note: `source_digest` is dropped (`decisions/0038`) |
 | [0038](0038-ids-are-minted-and-a-case-fixes-its-corpus.md) | Ids are minted once, and a case fixes its corpus | 2026-10-26 | In force |
+| [0039](0039-the-lineage-is-a-collection-of-its-own.md) | The lineage is a collection with relations of its own | 2026-10-26 | In force |

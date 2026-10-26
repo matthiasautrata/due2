@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.48** (2026-10-26, `decisions/0038`, #107): an id that no author chose is minted, not derived (§2, §3.1). A case fixes its corpus (§7.1). A duty instance is keyed by its atom and occurrence (§3.3, §3.5, §5.3), `alt_id` is a position (§3.5, §6.3), `discharges` is two fields (§3.3, §5.3), and W1 is deterministic up to renaming of minted ids (§4).
+
 **Changes in v0.47** (2026-10-26, `decisions/0037`, #134): W1 emits no RDF. Stage 1's output stays inside W1 (§2, §4), and `root` names the root atoms of stage 1 (§3.1). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.46** (2026-10-26, `decisions/0036` amendment, #132): agreement between the corpora of the policies evaluated together is a precondition of their union, checked when a policy is published, so the union never fails (§4). Earlier changes are in `docs/archive/changes.md`.
@@ -53,6 +55,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Coherence updates, 2026-10-10** (after `decisions/0002`): L9 restated as a refinement — conditional-duty hoisting splits one unknown into correlated findings completed independently, so the equality as previously written cannot hold under unknowns; L6 scoped to §6.2's conflict eliminations, because `eliminated` now also records `violated_precondition` removals (§3.5, §6.1), which give a closed route visibility in `verdict_basis` (role `closed`); the absent conflict term takes a selected profile's declared default first (normalisation spec §3); §5.3's no-guard sentence scoped to the parent relation.
 
 ## `correctness-strategy.md`
+
+**Changes in v0.19** (2026-10-26, `decisions/0038`, #107): §4.2 drops invariant 10 (*Locality*), and the model-based tests of §4.7 open a new case on an amendment.
 
 **Changes in v0.18** (2026-10-26, #83): §8 lists only the steps that remain, and §9 says in one line where each resolved row is settled; the steps taken and the rows' statements moved to `docs/archive/correctness-strategy-completed.md`. No rule changes. Earlier changes are in `docs/archive/changes.md`.
 
@@ -185,6 +189,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-platform.md`
 
+**Changes in v0.10** (2026-10-26, `decisions/0038`, #107): a case fixes its corpus, so `create_case` takes one, and an amended policy reaches an earlier request through a new case (§2.2, §2.6, §2.11, §3.3, §3.5). Evidence names its grant in two fields (§3.2). `put_corpus` renames the ids W1 minted for a published node's parts to the published ones (§2.3), and a policy version is a minted id (§2.3).
+
 **Changes in v0.9** (2026-10-26, `decisions/0037`, #134): §2.3 and §5 #1 say "per root atom", since stage 1 builds no Atomic Policy. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.8** (2026-10-26, `decisions/0036` amendment, #132): §2.3 publishes one policy's corpus at a time, refuses one that disagrees with a published corpus, and returns the union of exactly the selected policies' corpora; §5 #1 no longer asks which sets of policies get a corpus. Earlier changes are in `docs/archive/changes.md`.
@@ -200,6 +206,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.25 (2026-10-26, `decisions/0038`, #107): every id that no author chose is minted, not computed from content (§5.2). `source_digest` and invariant 10 (*Locality*) are dropped, values are no longer ordered for expansion (§6.3), and W1 is deterministic up to the renaming of minted ids (§8, invariant 6).
 
 Changes in 0.24 (2026-10-26, `decisions/0037`, #134): `N(P0)` is internal to W1 and never serialised (§1, §4). The `atomic-policy` and `activity` id domains and the Atomic Policy node are dropped, and each atomic root Rule occurrence is a root atom of the authored policy (§5.2, §6.4). The lineage is recorded as tuples, without PROV-O (§7), and invariant 7 says that an all-atomic policy normalises to itself (§8). Earlier changes are in `docs/archive/changes.md`.
 

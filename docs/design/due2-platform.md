@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.10. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.11. Every section is **[O]**: a map of the components around the evaluator, not a build order and not a decision. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.10** (2026-10-26, `decisions/0038`, #107): a case fixes its corpus, so `create_case` takes one, and an amended policy reaches an earlier request through a new case (§2.2, §2.6, §2.11, §3.3, §3.5). Evidence names its grant in two fields (§3.2). `put_corpus` renames the ids W1 minted for a published node's parts to the published ones (§2.3), and a policy version is a minted id (§2.3). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.11** (2026-10-26, `decisions/0039`, #136): §2.3 finds a policy's lineage by the policy, its version, and the normaliser version, and §2.10 says how explanation reaches it. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -169,6 +169,7 @@ Holds authored policies, their corpora, configs, profile modules with their oper
 put_policy(document)                       -> policy_id, version
 put_corpus(policy_id, normaliser_version, corpus, lineage) -> corpus_id | IdentityConflict  # W1's output (§2.8)
 corpus(policy_ids, normaliser_version)     -> corpus_id | absent          # the union of these policies' corpora
+lineage(policy_id, version, normaliser_version) -> lineage_id | absent  # due2-workflows.md §3.6
 get(collection_id)                         -> collection
 profiles()                                 -> profile modules
 binding(property)                          -> operand binding             # due2-profiles.md §3
@@ -275,8 +276,8 @@ Mostly a consequence of §1.3, plus one obligation:
 
 - **Content ids and immutable collections:** §1.3.
 - **What each evaluation pins:** the corpus, SOTW, and config ids, and the normaliser versions in force (`due2-workflows.md` §7.1).
-- **Which authored rule each atom came from:** the lineage (`due2-workflows.md` §3.6).
-- **The obligation — retention:** replay needs every collection an evaluation names (`due2-workflows.md` §7). A store may therefore not delete a corpus, profile version, or lineage that any retained evaluation references.
+- **Which authored rule each atom came from:** the lineage (`due2-workflows.md` §3.6). An evaluation's corpus names each policy and its version in `policy`, and the evaluation pins the normaliser versions, so `lineage` finds the lineage of each policy it holds.
+- **The obligation — retention:** replay needs every collection an evaluation names (`due2-workflows.md` §7). A store may therefore not delete a corpus or profile version that any retained evaluation references, nor the lineage of a policy in such a corpus.
 
 ### 2.11 Authoring
 

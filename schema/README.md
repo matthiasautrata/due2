@@ -1,19 +1,19 @@
 # The port schema
 
-These files state, in JSON Schema 2020-12, what the evaluator port of `due2-platform.md` §2.1 takes and returns: the five collections of `due2-workflows.md` §3, encoded as `due2-workflows.md` §2 states. Read them if you write an evaluator, an adapter (REST or MCP, `due2-platform.md` §2.1), or a relation-level vector file (`conformance/README.md`).
+These files state, in JSON Schema 2020-12, what the evaluator port of `due2-platform.md` §2.1 takes and returns: the five collections of `due2-workflows.md` §3.1 to §3.5, encoded as `due2-workflows.md` §2 states. They also define the sixth collection, the lineage that W1 emits beside each corpus (`due2-workflows.md` §3.6), which the evaluator never reads. Read them if you write an evaluator, a normaliser, an adapter (REST or MCP, `due2-platform.md` §2.1), or a relation-level vector file (`conformance/README.md`).
 
 | File | Defines |
 |---|---|
-| `collections.schema.json` | One definition per collection (`Corpus`, `Request`, `Sotw`, `Config`, `Trace`), one per value type of `due2-workflows.md` §2, and `Literal`, the object form a `Term` or `Instant` takes |
+| `collections.schema.json` | One definition per collection (`Corpus`, `Request`, `Sotw`, `Config`, `Trace`, `Lineage`), one per value type of `due2-workflows.md` §2, and `Literal`, the object form a `Term` or `Instant` takes |
 | `evaluator.schema.json` | The two calls: `PlanInput` and `PlanOutput` for `plan(corpus, request)`, `DecideInput` and `DecideOutput` for `decide(corpus, request, sotw, config)` |
 
-**Generated, never edited.** `tools/gen_schema.py` reads the relation blocks of `due2-workflows.md` §3.1 to §3.5 and writes both files. To change the schema, edit the spec and run `uv run python tools/gen_schema.py`. `tests/test_schema.py` fails when a committed file differs from what the script generates, and when either file is not valid JSON Schema. The schema decides nothing the spec does not, except the lexical patterns that make its types checkable: an IRI, a language tag, an `xsd:dateTime` with a timezone.
+**Generated, never edited.** `tools/gen_schema.py` reads the relation blocks of `due2-workflows.md` §3.1 to §3.6 and writes both files. To change the schema, edit the spec and run `uv run python tools/gen_schema.py`. `tests/test_schema.py` fails when a committed file differs from what the script generates, and when either file is not valid JSON Schema. The schema decides nothing the spec does not, except the lexical patterns that make its types checkable: an IRI, a language tag, an `xsd:dateTime` with a timezone.
 
 **Identifiers.** Each file's `$id` is under `https://w3id.org/due2/schema/`, and `evaluator.schema.json` refers to `collections.schema.json` by that name. A validator should not fetch them: register both files locally, as `tools/harness/vectors.py` does.
 
 ## How a collection is described
 
-- **Collection.** An object with one optional property per relation. Any other property is invalid. The singletons `request`, `sotw`, and `config` are required in their collections. `DecideOutput` is a `Trace` that must contain `verdict`.
+- **Collection.** An object with one optional property per relation. Any other property is invalid. The singletons `request`, `sotw`, `config`, and `lineage` are required in their collections. `DecideOutput` is a `Trace` that must contain `verdict`.
 - **Relation.** An array of tuples with at least one item, because an empty relation is omitted, and with no item repeated. A relation with an empty key, such as `verdict`, holds exactly one tuple when it is present.
 - **Tuple.** An object with one property per field. A field marked `?` in `due2-workflows.md` §3 is optional; every other field is required. Any other property is invalid.
 - **`x-key`.** Each relation carries its key fields as the annotation `x-key`. JSON Schema cannot state that no two tuples share a key, so validators ignore `x-key`, and the harness checks it (`check_collection` in `tools/harness/vectors.py`).

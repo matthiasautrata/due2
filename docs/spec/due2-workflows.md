@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.48
+**Status:** Draft v0.49
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.48** (2026-10-26, `decisions/0038`, #107): an id that no author chose is minted, not derived (§2, §3.1). A case fixes its corpus (§7.1). A duty instance is keyed by its atom and occurrence (§3.3, §3.5, §5.3), `alt_id` is a position (§3.5, §6.3), `discharges` is two fields (§3.3, §5.3), and W1 is deterministic up to renaming of minted ids (§4). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.49** (2026-10-26, `decisions/0039`, #136): the lineage is a collection with relations of its own (§3.6), one per policy version and normaliser version, found by the policy store and never merged; §2 counts six collections, and §3.7 and L10 read the lineage of each policy in the corpus. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -51,7 +51,7 @@ The two *never* clauses are the boundaries. They make W2 parallel and indexable,
 
 **Identity.** Occurrence identity lives in ids. Two tuples with equal content and different ids never merge — the property a naïve set-of-tuples model loses (`due2-architecture.md` §3.1).
 
-**Collections.** Data comes in five collections — Corpus, Request, SOTW, Config, Trace. Each is identified by the digest of its canonical form, and tuples inside a collection do not repeat its id.
+**Collections.** Data comes in six collections — Corpus, Request, SOTW, Config, Trace, and Lineage. Each is identified by the digest of its canonical form, and tuples inside a collection do not repeat its id.
 
 **Value types.**
 
@@ -103,7 +103,7 @@ diagnostic        (policy_id, code: Enum, ref)
 | Field | Meaning |
 |---|---|
 | `policy.conflict` | `Enum {prohibit, perm, invalid}` — the source policy's ODRL conflict strategy. An absent term takes a selected profile's declared default first, then `invalid` (`odrl-compound-to-atomic-normalization.md` §3); W1 makes the result explicit. The policy's class (Set, Offer, Agreement, or a profile's subclass of one) is not kept: W1 stage 1 carries it (`odrl-compound-to-atomic-normalization.md` §4), and no workflow reads it (`decisions/0031`). |
-| `policy.version` | The version of the authored policy: an id that the policy store mints when it stores the document (`put_policy`, `due2-platform.md` §2.3). Versions are told apart by id, never by a number that has to be ordered. No workflow reads it. **[D]** (`decisions/0038`) |
+| `policy.version` | The version of the authored policy: an id that the policy store mints when it stores the document (`put_policy`, `due2-platform.md` §2.3). Versions are told apart by id, never by a number that has to be ordered. W2 and W3 never read it. Explanation uses it to find the policy's lineage (§3.6). **[D]** (`decisions/0038`) |
 | `policy_profile` | Each profile the policy names with `odrl:profile`, one tuple per IRI. A policy may name none, or several. |
 | `atom.effect` | `Enum {Permit, Forbid, Oblige}` — one required field (`due2-architecture.md` §3). |
 | `atom.action` | The atom's single action, unrefined. Refinements are constraints with scope `action`. |
@@ -120,7 +120,7 @@ diagnostic        (policy_id, code: Enum, ref)
 | `root` | The root atoms of W1 stage 1 (`odrl-compound-to-atomic-normalization.md` §6.4), each with the policy it roots: every `Permit` and `Forbid` atom and every policy-level obligation, with one tuple for each policy that states it, however many policies are evaluated together (§4). `root.policy_id` drives the per-source conflict fold in W3 (§6.2) and decides which requests put an obligation in force (§5.2). An atom's *policies* are those its `root` tuples name and, for the child of an edge, its parents' policies. A precondition, remedy, or consequence that no policy states as an obligation has no `root` tuple. Stored, because it is not derivable: one named duty can be both an obligation of its policy and the precondition of a permission, so a root can also be the child of an edge. **[D]** (`decisions/0036`) |
 | `closure` | Direct hierarchy edges declared in the policy and its profile modules — `odrl:includedIn` between actions, typed `odrl:partOf` between assets or parties and their collections, `rdfs:subClassOf`, and `rdf:type` edges — those that type collections and those of individuals an `isA` constraint can compare. Between concepts there are two relations. `skos:broader` is the hierarchy, and a `skos:narrower` triple is recorded as the inverse `skos:broader` edge. `skos:inScheme` relates a concept to each scheme it is in, whether the input states that as `skos:inScheme`, `skos:topConceptOf`, or `skos:hasTopConcept` (`due2-profiles.md` §6). ODRL's own action hierarchy is one such module (`profiles/odrl-actions.ttl`). |
 | `duty` | For every `Oblige` atom: the authored duty it instantiates, and its instance scope `Enum {member, grant}`. Scope defaults to `member`. W2 derives the duty instance from the atom (§5.3). |
-| `duty.atom_id` | A duty atom stands for one rule of stage 1 under one binding. It keeps stage 1's id (`atom.atom_id`) when stage 2 binds nothing into it: no inherited party role and no parameter value (§4). One that stage 2 binds gets a minted id, and its binding is in the lineage (§3.6). Stage 2 makes one atom for each rule and binding, whatever parent or policy states it. So a named duty bound identically in two places is one atom, found again by its duty and its binding when a later policy states it (§4, *Several policies are one corpus*), and one bound differently in two places, such as with the inherited assignees Alice and Bob, is two atoms. **[D]** (`decisions/0032`, amendment of 2026-10-25; `decisions/0038`) |
+| `duty.atom_id` | A duty atom stands for one rule of stage 1 under one binding. It keeps stage 1's id (`atom.atom_id`) when stage 2 binds nothing into it: no inherited party role and no parameter value (§4). One that stage 2 binds gets a minted id, and its binding, the party roles it inherited, is read from its `atom_party` tuples and the lineage (§3.6, `atom_rule`). Stage 2 makes one atom for each rule and binding, whatever parent or policy states it. So a named duty bound identically in two places is one atom, found again by its duty and its binding when a later policy states it (§4, *Several policies are one corpus*), and one bound differently in two places, such as with the inherited assignees Alice and Bob, is two atoms. **[D]** (`decisions/0032`, amendment of 2026-10-25; `decisions/0038`) |
 | `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term with a timezone (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
 | `duty.recurrence` | An RFC 5545 RRULE string; the duty is owed once per occurrence. W2 derives the instances (§5.3). |
 | `diagnostic` | A warning W1 accepted the policy with: its code (`due2-diagnostics.md` §3) and the node it is about. Only warnings appear, because an error leaves no corpus (§4). W2 and W3 never read it; it is in the corpus so that the corpus digest, and with it the evaluation id, records the reading the policy was normalised under. |
@@ -233,9 +233,41 @@ diagnostic     (policy_id, code: Enum, ref)
 | `verdict_range` | W3 | For an `Indeterminate` only: the least and the greatest completion verdict in the order `Deny < NotApplicable < Pending < Permit` (§6.4). Sound, and possibly wider, when `verdict.exact` is false. **[D]** (`decisions/0011`) |
 | `diagnostic` | shell | The corpus `diagnostic` tuples of every policy of an atom in `finding` (§3.1 `root`), copied unchanged, so that a verdict that rests on a contested reading says so (`due2-diagnostics.md` §1). |
 
-### 3.6 Lineage
+### 3.6 Lineage — output of W1 **[D]** (`decisions/0039`)
 
-Which authored rule, which expansion selection, and which parameter binding produced each atom is a separate collection, produced by W1 and referenced by digest from the corpus. W2 and W3 never read it. Explanation and audit do (§3.7). Stage 1's part is normative (`odrl-compound-to-atomic-normalization.md` §7). Stage 2 adds, for each root atom, the constraint disjunct it came from, for each duty clause the disjunct it holds, and for each atom the parameter binding (§4).
+```text
+lineage       (| policy_id, version, stage1_profile, stage1_version: String, stage2_version: String)
+minted        (id)
+anonymous     (id | parent, predicate)
+identity      (node | id)
+rule_source   (rule_id | source_rule)
+selected      (rule_id, predicate | value)
+interiorised  (rule_id, predicate)
+atom_rule     (atom_id | rule_id)
+negation      (constraint_id | negates)
+```
+
+The lineage says where each id of a corpus comes from: which authored node, and which selection of an expanded rule. It holds only what the corpus does not. W1 emits one lineage with each corpus, so there is one for each policy version and normaliser version (§4). The policy store keeps it beside the corpus and finds it by the policy, the version, and the normaliser version (`due2-platform.md` §2.3). The corpus of several policies is the union of their corpora (§4), but their lineages are not merged: each policy's lineage stays its own.
+
+W2 and W3 never read the lineage. Three readers do:
+
+- explanation, which follows an atom of a trace to the authored rule (§3.7);
+- the `Den` oracle, which checks stage 1 through the bijection that `rule_source` and `selected` record (`odrl-compound-to-atomic-normalization.md` §7, §8.1); and
+- the policy store, which renames the ids in `minted` when it publishes a corpus (§4, *Several policies are one corpus*).
+
+A *stage-1 rule* is an atomic rule that stage 1 emits (`odrl-compound-to-atomic-normalization.md` §4), and `rule_id` is its id (§3.1, `atom.atom_id`). Stage 2 builds the corpus atoms from the stage-1 rules.
+
+| Relation | Meaning |
+|---|---|
+| `lineage` | The run: the policy and the version W1 normalised (§3.1, `policy.version`), the stage-1 profile IRI and version (the `Profile` line of `odrl-compound-to-atomic-normalization.md`), and the version of stage 2. The last three together are the *normaliser version*: what the policy store's calls take as `normaliser_version` (`due2-platform.md` §2.3), and what an evaluation pins (§7.1, `due2-architecture.md` §7). |
+| `minted` | Every id that the run minted, in stage 1 or stage 2 (§2, `Id`). These are the ids that the policy store may rename when it publishes the corpus (§4), and the renaming applies here too, so a published lineage names the published ids. |
+| `anonymous` | For each node that no author named and that stage 1 minted an id for (`odrl-compound-to-atomic-normalization.md` §5.1, case 3): the subject and predicate of the one triple whose object it is (`odrl-compound-to-atomic-normalization.md` §3). Following `parent` upward reaches the node's anchor, the named node it is a part of. |
+| `identity` | Each IRI node whose authored `odrl:uid` differs from its node IRI: the node IRI, and the uid, which is the node's id everywhere else (`odrl-compound-to-atomic-normalization.md` §5.1). A node without a tuple has its node IRI or its minted id as its id. A blank node with an authored `odrl:uid` has the uid as its id and no tuple, since a blank node has no name of its own to map. |
+| `rule_source` | For every stage-1 rule, the authored rule it comes from: the rule itself when stage 1 kept it, and the rule it expanded otherwise (`odrl-compound-to-atomic-normalization.md` §6.3). |
+| `selected` | For every stage-1 rule, its value on each expansion axis: `odrl:action` and its action, the relation predicate and its value, and each party function and its party (`odrl-compound-to-atomic-normalization.md` §6.3). With `rule_source`, it is the atom `(uid(r), σ)` of the denotation, the authored rule `r` and the selection `σ` (`odrl-compound-to-atomic-normalization.md` §8.1). The corpus atoms repeat these values, but the `Den` oracle checks stage 1 through this record alone, so that a fault of stage 2 cannot hide one of stage 1. |
+| `interiorised` | The predicates whose values a root stage-1 rule took from the policy level, because the rule stated no value of that family (`odrl-compound-to-atomic-normalization.md` §6.2). Stage 2 reads it to resolve party roles (§4). |
+| `atom_rule` | For every corpus atom, the stage-1 rule it was built from, including an atom that keeps the rule's id. The atom's `source_rule` (§3.1) is that rule's `rule_source.source_rule`. The constraint disjunct of a `Permit` or `Forbid` atom and the clauses of a duty atom are in the corpus (`atom_constraint`, `duty_constraint`), not here. So is a duty atom's binding: a duty that states any party function inherits none (§4), so the roles it inherited are its `atom_party` tuples whose function its rule has no `selected` value for. |
+| `negation` | Each constraint that stage 2 made by negating another, when it eliminates `xone` or pushes `dprod:not` inward (§4), and the constraint it negates. |
 
 ### 3.7 Explanation **[D]** (`decisions/0010`)
 
@@ -253,14 +285,14 @@ A verdict alone does not explain a decision; the trace does. Every evaluation th
 | an `evidence` part, or the `witness` of a `witness_basis` or `witness_part` row | the record | the SOTW's `evidence`, `evidence_param` |
 | a `constraint` part | the constraint as normalised | the corpus's `constraint`, `constraint_value` |
 | a removed atom | the atom that removed it, and the rule | `eliminated` |
-| an atom | the authored rule, expansion selection, and binding | `source_rule`, lineage (§3.6) |
+| an atom | the authored rule, expansion selection, and binding | `source_rule`; the lineage's `atom_rule` and `selected`, and the atom's `atom_party` (§3.6) |
 | a policy in the derivation | the contested readings it was accepted under | `diagnostic` |
 
-Reading it needs the trace, the evaluation's four input collections, and the lineage, and nothing else. It never re-runs W2 or W3 and never reads the world. Law L10 (§8) makes this checkable: every reference resolves, and every finding follows from its basis. The derivation is typed relations under the canonical encoding (`decisions/0007`), so it is parseable by any reader that reads the trace.
+Reading it needs the trace, the evaluation's four input collections, and the lineage of each policy in its corpus (§3.6), and nothing else. It never re-runs W2 or W3 and never reads the world. Law L10 (§8) makes this checkable: every reference resolves, and every finding follows from its basis. The derivation is typed relations under the canonical encoding (`decisions/0007`), so it is parseable by any reader that reads the trace.
 
 **Groups are keys.** What belongs together is a key the trace, the corpus, or the lineage already holds. The reader never infers it.
 
-- *The atoms of one authored rule* share `source_rule` and the lineage's selection tuple.
+- *The atoms of one authored rule* share `source_rule`. Atoms with one `atom_rule.rule_id` were built from one selection of that rule (§3.6).
 - *A permission and the duties that gate it* are linked by `edge`, `alternative`, and `alt_duty`.
 - *The instances of one duty* are its `instance` tuples.
 - *The policies evaluated together* are told apart by `root.policy_id`. Each elimination names its rule: the policy's own strategy, or the cross-policy combination (§6.2).
@@ -289,7 +321,7 @@ Two stages, both pure, each with its own preservation obligation:
 | Stage | Does | Specified in |
 |---|---|---|
 | **1. Atomise** | Compact interiorisation; expansion of multi-valued action, relation, and party axes; identity, with an id minted for each node no author named; lineage. Structure-preserving: shared duties stay shared. | `odrl-compound-to-atomic-normalization.md` |
-| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation, each binding a duty atom with its own id (§3.1, `duty.atom_id`); party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (`odrl-compound-to-atomic-normalization.md` §6.2); projection into §3.1 — a duty's guards stay on its atom (`decisions/0003`); provenance from stage-1 lineage. | `due2-architecture.md` §4–§5 |
+| **2. Build** | Constraint DNF, including `xone`; parameter substitution and per-binding duty instantiation, each binding a duty atom with its own id (§3.1, `duty.atom_id`); party-role inheritance — a duty that declares no function properties takes all of them from its parent permission (ODRL IM §2.6.5), one that declares any takes none, and for each role a value the rule states beats one interiorised from the policy level (`odrl-compound-to-atomic-normalization.md` §6.2); projection into §3.1 — a duty's guards stay on its atom (`decisions/0003`); the lineage of §3.6, with stage 1's part and stage 2's `minted`, `atom_rule`, and `negation`. | `due2-architecture.md` §4–§5 |
 
 **Two forms carry a policy through W1.** Stage 1 parses the authored graph into a **lifted tree** — a forest of trees hanging from named rules (`odrl-compound-to-atomic-normalization.md` §3) — and transforms that; RDF is a boundary format, read at the parse and never written (`ways-of-working.md` §2.4). Stage 1's output stays inside W1 (`decisions/0037`). Stage 2 projects the lifted form into the **relations** of §3.1 — collections of tuples whose fields are the terms of §2 — and the relations are all W2 and W3 ever see.
 
@@ -567,7 +599,7 @@ Acceptance criteria for any implementation, checked by property tests over gener
 | **L7** | **Readiness.** If some candidate is ready after §6.2, no surviving `Forbid` is `T` or `U`, and, under `violations = deny`, no obligation whose `in_force` is `T` or `U` has an instance that is `violated`, or `unknown` with `passed` set (§5.3), the verdict is `Permit`. |
 | **L8** | **Skip soundness.** Evaluating more root atoms that are certainly `F` leaves the trace unchanged. |
 | **L9** | **Preservation.** For a direct interpreter `I` over authored policies (`due2-architecture.md` §10), which completes the authored policy's unknown literals by the same rule (§6.4): `W3(W2(W1(p), r, s), c) = I(p, r, s, c)` whenever `verdict.exact` holds. The parts W1 rewrites — DNF disjuncts, including `xone`'s negated operands and `dprod:not` pushed inward — are identical or complementary to authored ones, so they denote the same variables, and the two sides enumerate the same completions. Opaque parts (§6.4) are variables of their own on the pipeline side and stay `U` in `I`'s tree. W1's rewrites are strong Kleene equivalences, so the tree is `U` exactly when its atoms' disjunction is, and both sides offer W3 the same choices (`decisions/0016`). A duty's condition is rewritten into clauses within its one atom, and the clauses of a kind are disjoined back into one finding (`decisions/0003`, `decisions/0028`). With `exact = false` the law weakens to refinement: a definite pipeline verdict equals `I`'s, and the pipeline may return `Indeterminate` where `I` decides. |
-| **L10** | **Explicability** (§3.7, `decisions/0010`). Every atom, part, fact, and evidence id the trace names resolves in the trace, the evaluation's inputs, or the lineage. Every finding's truth is its predicate's connective over its `basis` truths (§5.1–§5.3). For a `fulfilled` finding the connective is per witness: a clause is the Kleene conjunction of its `witness_basis` truths under that witness, the witness satisfies the conditions by the disjunction of its clauses, and the finding is the disjunction of that value over the records named by its `evidence` parts, each conjoined with the record's `evidence` truth (§5.2, §5.3). Every atom in `verdict_basis` or `eliminated` has its findings and an authored source. |
+| **L10** | **Explicability** (§3.7, `decisions/0010`). Every atom, part, fact, and evidence id the trace names resolves in the trace, the evaluation's inputs, or the lineages of its policies (§3.6). Every finding's truth is its predicate's connective over its `basis` truths (§5.1–§5.3). For a `fulfilled` finding the connective is per witness: a clause is the Kleene conjunction of its `witness_basis` truths under that witness, the witness satisfies the conditions by the disjunction of its clauses, and the finding is the disjunction of that value over the records named by its `evidence` parts, each conjoined with the record's `evidence` truth (§5.2, §5.3). Every atom in `verdict_basis` or `eliminated` has its findings and an authored source. |
 
 ---
 
