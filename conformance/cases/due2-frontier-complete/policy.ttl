@@ -1,0 +1,50 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: whether the listed frontier is every completion's frontier
+# (frontier_complete, due2-workflows.md §6.4). One route always applies; two more apply
+# only under a state fact, and a scenario leaves that fact unknown.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:viaManager, ex:viaLegalInEU, ex:viaBothForGold .
+
+ex:viaManager a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:duty ex:managerApproval .
+
+# A route of its own, incomparable with ex:viaManager's.
+ex:viaLegalInEU a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:clientRegion ; odrl:operator odrl:eq ; odrl:rightOperand ex:EU ] ;
+    odrl:duty ex:legalReview .
+
+# Demands a superset of ex:viaManager's route, so it is dominated whenever it applies.
+ex:viaBothForGold a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:clientTier ; odrl:operator odrl:eq ; odrl:rightOperand ex:Gold ] ;
+    odrl:duty ex:managerApproval, ex:legalReview .
+
+ex:managerApproval a odrl:Duty ;
+    odrl:assignee ex:Manager ; odrl:action ex:approve ; odrl:target ex:ExportRequest .
+
+ex:legalReview a odrl:Duty ;
+    odrl:assignee ex:Counsel ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:clientRegion a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:clientRegion .
+
+ex:clientTier a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:clientTier .
+
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# none is named for these, so odrl:use, the broadest.
+ex:export a odrl:Action ; odrl:includedIn odrl:use .
+ex:approve a odrl:Action ; odrl:includedIn odrl:use .
+ex:review a odrl:Action ; odrl:includedIn odrl:use .

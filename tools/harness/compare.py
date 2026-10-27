@@ -3,15 +3,16 @@
 Output shape (spikes/README.md):
   {"verdict": str, "frontier": [[duty IRI, ...], ...],
    "obligations": [{"duty": IRI, "status": str, "instance"?: dateTime}], "exact"?: bool,
+   "frontier_complete"?: bool,
    "verdict_basis"?: [{"ref": IRI, "role": str}], "eliminated"?: [{"ref": IRI, "by": IRI, "rule": str}],
    "verdict_range"?: {"low": str, "high": str},
    "unknown_parts"?: [{"ref": IRI, "input": IRI, "status": str}]}
 
 The frontier is a set of sets; obligations, the basis, the eliminations, and the unknown parts
-are sets. `exact`
-is compared only where the scenario states it (conformance/README.md). The explanation fields
-are compared only where the scenario states them and the output has them; `unemitted` names
-the ones a scenario states and the output lacks. Prefixed names are expanded on both sides.
+are sets. `exact` is compared only where the scenario states it (conformance/README.md). The
+explanation fields and `frontier_complete` are compared only where the scenario states them and
+the output has them; `unemitted` names the ones a scenario states and the output lacks.
+Prefixed names are expanded on both sides.
 """
 
 from __future__ import annotations
@@ -23,6 +24,8 @@ STATUSES = frozenset({"fulfilled", "outstanding", "violated", "unknown"})
 ROLES = frozenset({"prohibition", "permission", "duty", "unknown", "obligation", "closed"})
 PART_STATUSES = frozenset({"missing", "invalid", "conflict", "unresolved", "misfit"})
 EXPLANATION = ("verdict_basis", "eliminated", "verdict_range", "unknown_parts")
+# Compared like the explanation: where the scenario states it and the output has it.
+OPTIONAL = (*EXPLANATION, "frontier_complete")
 
 type Obligation = tuple[str, str, str | None]
 
@@ -104,9 +107,9 @@ def _range(value: Json) -> tuple[str, str]:
 
 
 def unemitted(expected: Obj, actual: Json) -> list[str]:
-    """The explanation fields the scenario states and the output lacks."""
+    """The optional fields the scenario states and the output lacks."""
     got = actual if isinstance(actual, dict) else {}
-    return [k for k in EXPLANATION if k in expected and k not in got]
+    return [k for k in OPTIONAL if k in expected and k not in got]
 
 
 def mismatches(expected: Obj, actual: Json, prefixes: dict[str, str]) -> list[str]:
@@ -132,6 +135,12 @@ def mismatches(expected: Obj, actual: Json, prefixes: dict[str, str]) -> list[st
             )
         if "exact" in expected and got.get("exact") != expected["exact"]:
             out.append(f"exact: expected {expected['exact']}, got {got.get('exact')}")
+        if "frontier_complete" in expected and "frontier_complete" in got:
+            want_c, got_c = expected["frontier_complete"], got["frontier_complete"]
+            if not isinstance(got_c, bool):
+                return [f"malformed output: frontier_complete {got_c!r} is not a boolean"]
+            if got_c != want_c:
+                out.append(f"frontier_complete: expected {want_c}, got {got_c}")
         sets = (
             ("verdict_basis", _basis),
             ("eliminated", _eliminated),

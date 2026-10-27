@@ -1,0 +1,155 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: the max_frontier_vars bound of due2-workflows.md §6.4 (decisions/0004).
+# One route always applies. Nine desk routes apply only for their desk's flag, and
+# each demands a superset of the first route, so each is dominated whenever it
+# applies: every completion has the same frontier. With nine flags unknown the
+# frontier is not enumerated, and the fallback cannot tell that the frontier is complete.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:viaManager, ex:viaDesk1, ex:viaDesk2, ex:viaDesk3, ex:viaDesk4, ex:viaDesk5, ex:viaDesk6, ex:viaDesk7, ex:viaDesk8, ex:viaDesk9 .
+
+ex:viaManager a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:duty ex:managerApproval .
+
+ex:viaDesk1 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember1 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview1 .
+
+ex:viaDesk2 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember2 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview2 .
+
+ex:viaDesk3 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember3 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview3 .
+
+ex:viaDesk4 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember4 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview4 .
+
+ex:viaDesk5 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember5 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview5 .
+
+ex:viaDesk6 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember6 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview6 .
+
+ex:viaDesk7 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember7 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview7 .
+
+ex:viaDesk8 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember8 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview8 .
+
+ex:viaDesk9 a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action ex:export ; odrl:target ex:ClientData ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:deskMember9 ; odrl:operator odrl:eq ; odrl:rightOperand true ] ;
+    odrl:duty ex:managerApproval, ex:deskReview9 .
+
+ex:managerApproval a odrl:Duty ;
+    odrl:assignee ex:Manager ; odrl:action ex:approve ; odrl:target ex:ExportRequest .
+
+ex:deskReview1 a odrl:Duty ;
+    odrl:assignee ex:DeskHead1 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview2 a odrl:Duty ;
+    odrl:assignee ex:DeskHead2 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview3 a odrl:Duty ;
+    odrl:assignee ex:DeskHead3 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview4 a odrl:Duty ;
+    odrl:assignee ex:DeskHead4 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview5 a odrl:Duty ;
+    odrl:assignee ex:DeskHead5 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview6 a odrl:Duty ;
+    odrl:assignee ex:DeskHead6 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview7 a odrl:Duty ;
+    odrl:assignee ex:DeskHead7 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview8 a odrl:Duty ;
+    odrl:assignee ex:DeskHead8 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskReview9 a odrl:Duty ;
+    odrl:assignee ex:DeskHead9 ; odrl:action ex:review ; odrl:target ex:ExportRequest .
+
+ex:deskMember1 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember1 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember2 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember2 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember3 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember3 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember4 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember4 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember5 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember5 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember6 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember6 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember7 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember7 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember8 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember8 ;
+    rdfs:range xsd:boolean .
+
+ex:deskMember9 a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:deskMember9 ;
+    rdfs:range xsd:boolean .
+
+# IM 2.4: an action other than use and transfer is included in exactly one other;
+# none is named for these, so odrl:use, the broadest.
+ex:export a odrl:Action ; odrl:includedIn odrl:use .
+ex:approve a odrl:Action ; odrl:includedIn odrl:use .
+ex:review a odrl:Action ; odrl:includedIn odrl:use .

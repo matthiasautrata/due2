@@ -46,7 +46,8 @@ class Spike:
     command: list[str]
     checks: tuple[Check, ...]
     sources: tuple[str, ...]  # globs, relative to the spike: the code that counts as its size
-    # Completes unknowns exactly and has no beyond-max_mixed fallback (decisions/0009 #5).
+    # Completes unknowns exactly, with no fallback beyond max_mixed or max_frontier_vars
+    # (decisions/0009 #5).
     exact_only: bool = False
 
 

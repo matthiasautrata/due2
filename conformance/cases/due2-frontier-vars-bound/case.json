@@ -1,0 +1,267 @@
+{
+  "case": "due2-frontier-vars-bound",
+  "source": "due2-native: the max_frontier_vars bound (due2-workflows.md §6.4, decisions/0004)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Closes the rest of the gap of #30. ex:viaManager applies in every scenario and waits on ex:managerApproval, so every completion is Pending. Each ex:viaDeskN applies only when its desk flag is true and demands ex:managerApproval and its own review, so ex:viaManager dominates it whenever it applies, and every completion's frontier is [[ex:managerApproval]]. The relevant unknowns of due2-workflows.md §6.4 are the variables of the uncertain candidates' U parts: one per unknown flag. With nine, more than max_frontier_vars (8), W3 does not enumerate them: it lists the routes of the candidates that are ready or pending whatever the unknowns are, and reports frontier_complete and exact false (decisions/0004 #4), although enumeration would give true. With eight, at the bound, it enumerates all 2^8 assignments and finds the frontier complete. A backend with no fallback (clingo-i, exact_only) is not asked scenario 1.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "scenarios": [
+    {
+      "name": "nine flags unknown: beyond the bound",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:deskMember1": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember2": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember3": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember4": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember5": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember6": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember7": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember8": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember9": {
+            "status": "missing",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:managerApproval"
+          ]
+        ],
+        "obligations": [],
+        "exact": false,
+        "frontier_complete": false,
+        "verdict_basis": [
+          {
+            "ref": "ex:viaManager",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:managerApproval",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:viaDesk1",
+            "input": "ex:deskMember1",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk2",
+            "input": "ex:deskMember2",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk3",
+            "input": "ex:deskMember3",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk4",
+            "input": "ex:deskMember4",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk5",
+            "input": "ex:deskMember5",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk6",
+            "input": "ex:deskMember6",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk7",
+            "input": "ex:deskMember7",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk8",
+            "input": "ex:deskMember8",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk9",
+            "input": "ex:deskMember9",
+            "status": "missing"
+          }
+        ],
+        "why": "ex:viaManager waits on ex:managerApproval in every completion, so the verdict is Pending. The nine desk permissions are U, nine relevant unknowns, more than max_frontier_vars (8), so W3 lists the route of the one candidate pending whatever the unknowns are, [[ex:managerApproval]], with frontier_complete and exact false (due2-workflows.md §6.4, decisions/0004)."
+      }
+    },
+    {
+      "name": "eight flags unknown: at the bound",
+      "request": {
+        "reference": "req-2",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:deskMember1": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember2": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember3": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember4": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember5": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember6": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember7": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember8": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:deskMember9": {
+            "status": "resolved",
+            "values": [
+              {
+                "@value": "false",
+                "@type": "xsd:boolean"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:managerApproval"
+          ]
+        ],
+        "obligations": [],
+        "exact": true,
+        "frontier_complete": true,
+        "verdict_basis": [
+          {
+            "ref": "ex:viaManager",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:managerApproval",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:viaDesk1",
+            "input": "ex:deskMember1",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk2",
+            "input": "ex:deskMember2",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk3",
+            "input": "ex:deskMember3",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk4",
+            "input": "ex:deskMember4",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk5",
+            "input": "ex:deskMember5",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk6",
+            "input": "ex:deskMember6",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk7",
+            "input": "ex:deskMember7",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:viaDesk8",
+            "input": "ex:deskMember8",
+            "status": "missing"
+          }
+        ],
+        "why": "Desk 9's flag is false, so ex:viaDesk9 does not apply and eight relevant unknowns remain, exactly max_frontier_vars, and all 2^8 assignments are enumerated. In each, ex:viaManager's {ex:managerApproval} dominates every desk route that applies, so every frontier is [[ex:managerApproval]] and frontier_complete is true."
+      }
+    }
+  ]
+}

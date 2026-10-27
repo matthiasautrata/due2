@@ -199,7 +199,7 @@ What each file consumes and provides, the meaning of every relation and its argu
 
 Atoms are projected to their source rule, the `R` of `a(R, A, T, Party)`, and duty atoms to their duty node (`due2-workflows.md` §3.7). So the atoms of one rule share one `ref`. An elimination whose `ref` and `by` come from the same rule (under `invalid`, two atoms of one rule) is dropped, because at the authored level the rule would remove itself, and `invalid` says "other than itself".
 
-The spike has no beyond-`max_mixed` fallback (`decisions/0009` #5), so `backend.toml` sets `exact_only` (`spikes/README.md`). The harness reports a scenario that states `exact: false` as `unsupported: max_mixed fallback` without asking the spike.
+The spike has no fallback beyond `max_mixed` or `max_frontier_vars` (`decisions/0009` #5), so `backend.toml` sets `exact_only` (`spikes/README.md`). The harness reports a scenario that states `exact: false` as `unsupported: inexact fallback` without asking the spike.
 
 ## Negation as failure
 

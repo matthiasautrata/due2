@@ -1,0 +1,211 @@
+{
+  "case": "due2-frontier-complete",
+  "source": "due2-native: frontier_complete under a definite Pending (due2-workflows.md §6.4, decisions/0004, decisions/0026)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Closes part of the gap of #30. ex:viaManager applies in every scenario and waits on ex:managerApproval, so every completion is Pending and the verdict is definite. frontier_complete is true iff every completion's frontier is the listed frontier (due2-workflows.md §6.4). An uncertain candidate makes it false when, completed T, it adds a route (scenario 1, ex:viaLegalInEU), and leaves it true when that route is dominated in every completion (scenario 2, ex:viaBothForGold); a rule that sets it false whenever a candidate is uncertain gets scenario 2 wrong (the cheaper rule that decisions/0004 compares). One unknown is within max_frontier_vars, so both scenarios enumerate it and are exact. The listed frontier is the same under decisions/0026 and under its v0.33 predecessor in every scenario, since only ex:viaManager's route suffices in both completions.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "scenarios": [
+    {
+      "name": "the region is unknown: a completion adds a route",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": {
+            "status": "missing",
+            "values": []
+          },
+          "ex:clientTier": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Silver"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:managerApproval"
+          ]
+        ],
+        "obligations": [],
+        "exact": true,
+        "frontier_complete": false,
+        "verdict_basis": [
+          {
+            "ref": "ex:viaManager",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:managerApproval",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:viaLegalInEU",
+            "input": "ex:clientRegion",
+            "status": "missing"
+          }
+        ],
+        "why": "ex:viaManager waits on ex:managerApproval in every completion, so the verdict is Pending. ex:viaLegalInEU is U: completed T it adds the incomparable route {ex:legalReview}, which only that completion has, so the listed frontier [[ex:managerApproval]] is not every completion's frontier and frontier_complete is false."
+      }
+    },
+    {
+      "name": "the tier is unknown: the added route is always dominated",
+      "request": {
+        "reference": "req-2",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:US"
+              }
+            ]
+          },
+          "ex:clientTier": {
+            "status": "missing",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:managerApproval"
+          ]
+        ],
+        "obligations": [],
+        "exact": true,
+        "frontier_complete": true,
+        "verdict_basis": [
+          {
+            "ref": "ex:viaManager",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:managerApproval",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:viaBothForGold",
+            "input": "ex:clientTier",
+            "status": "missing"
+          }
+        ],
+        "why": "ex:viaBothForGold is U, but completed T its route {ex:managerApproval, ex:legalReview} is dominated by ex:viaManager's {ex:managerApproval} (due2-workflows.md §6.3), so both completions have the frontier [[ex:managerApproval]] and frontier_complete is true."
+      }
+    },
+    {
+      "name": "nothing is unknown: both routes are listed",
+      "request": {
+        "reference": "req-3",
+        "action": "ex:export",
+        "target": "ex:ClientData",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:EU"
+              }
+            ]
+          },
+          "ex:clientTier": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Silver"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:managerApproval"
+          ],
+          [
+            "ex:legalReview"
+          ]
+        ],
+        "obligations": [],
+        "exact": true,
+        "frontier_complete": true,
+        "verdict_basis": [
+          {
+            "ref": "ex:viaManager",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:viaLegalInEU",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:managerApproval",
+            "role": "duty"
+          },
+          {
+            "ref": "ex:legalReview",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:viaManager and ex:viaLegalInEU apply and wait on one duty each, and the two routes are incomparable, so both are listed; ex:viaBothForGold does not apply. With no unknown there is one completion, so frontier_complete is true."
+      }
+    }
+  ]
+}

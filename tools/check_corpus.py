@@ -1430,6 +1430,7 @@ def check_case(case_dir: Path) -> list[Report]:
             r.err(f"{tag}: Pending needs a frontier")
         check_explanation(tag, exp, g, prefixes, r)
         check_range(tag, exp, r)
+        check_frontier_complete(tag, exp, r)
         check_unknown_parts(tag, exp, g, prefixes, {str(p) for _, p, _ in used.values()}, r)
     return reports
 
@@ -1460,6 +1461,17 @@ def check_range(tag: str, exp: dict[str, Any], r: Report) -> None:
         r.err(f"{tag}: verdict_range ends must be one of {list(CHAIN)}")
     elif CHAIN.index(rng["low"]) >= CHAIN.index(rng["high"]):
         r.err(f"{tag}: verdict_range low {rng['low']} is not below high {rng['high']}")
+
+
+def check_frontier_complete(tag: str, exp: dict[str, Any], r: Report) -> None:
+    """expected.frontier_complete (conformance/README.md, workflows 6.4, decisions/0004): whether
+    every completion's frontier is the listed one, recorded for a Pending only."""
+    if "frontier_complete" not in exp:
+        return
+    if not isinstance(exp["frontier_complete"], bool):
+        r.err(f"{tag}: frontier_complete must be true or false")
+    elif exp.get("verdict") != "Pending":
+        r.err(f"{tag}: frontier_complete is recorded for a Pending only (workflows 6.4)")
 
 
 PART_STATUSES = {"missing", "invalid", "conflict", "unresolved", "misfit"}

@@ -87,6 +87,18 @@ def test_exact_is_compared_only_when_stated() -> None:
     assert mismatches(want, GOOD, PFX) == ["exact: expected False, got None"]
 
 
+def test_frontier_complete_is_compared_when_stated_and_emitted() -> None:
+    want = GOOD | {"frontier_complete": False}
+    assert mismatches(want, want, PFX) == []
+    assert mismatches(want, GOOD | {"frontier_complete": True}, PFX) == [
+        "frontier_complete: expected False, got True"
+    ]
+    assert mismatches(GOOD, GOOD | {"frontier_complete": True}, PFX) == []  # not stated
+    assert mismatches(want, GOOD, PFX) == []  # not emitted: unemitted's business
+    assert unemitted(want, GOOD) == ["frontier_complete"]
+    assert mismatches(want, GOOD | {"frontier_complete": "no"}, PFX)[0].startswith("malformed")
+
+
 def test_obligation_instances_are_distinct() -> None:
     a: Obj = {
         **GOOD,
@@ -215,8 +227,8 @@ def test_echo_backend_passes_every_vector(tmp_path: Path, vectors: list[Vector],
 def test_exact_only_backend_is_not_asked_for_the_fallback(
     tmp_path: Path, vectors: list[Vector], init: Obj
 ) -> None:
-    # Without the flag, a slow-mode backend fails the beyond-max_mixed scenario that its exact
-    # answer contradicts (due2-max-mixed, scenario 1), though it computes what the spec defines.
+    # Without the flag, a slow-mode backend fails a fallback scenario that its exact answer
+    # contradicts (due2-max-mixed, due2-frontier-vars-bound), though it computes what the spec defines.
     session = Session(replace(fake(tmp_path, "echo"), exact_only=True), init)
     try:
         results = {v.id: run_interpret(session, v) for v in vectors}
@@ -226,7 +238,7 @@ def test_exact_only_backend_is_not_asked_for_the_fallback(
     assert fallback
     for vid, r in results.items():
         if vid in fallback:
-            assert (r.status, r.detail) == ("unsupported", "unsupported: max_mixed fallback")
+            assert (r.status, r.detail) == ("unsupported", "unsupported: inexact fallback")
         else:
             assert r.status == "pass"
 

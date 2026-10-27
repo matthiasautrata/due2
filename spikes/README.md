@@ -28,7 +28,7 @@ spikes/<name>/
 ```toml
 command = ["uv", "run", "python", "main.py"]   # run with spikes/<name>/ as working directory
 sources = ["src/**/*.py"]                      # globs: the code that counts as the spike's size
-exact_only = true                              # optional: no beyond-max_mixed fallback (below)
+exact_only = true                              # optional: no inexact fallback (below)
 
 [[check]]                                      # one per compiler, type checker, or linter
 name = "basedpyright"
@@ -40,7 +40,7 @@ Match the checker's own diagnostic form, not a bare `warning:`: the tool's own w
 
 Without `count`, a nonzero exit counts as one diagnostic.
 
-A backend that completes unknowns only exactly, slow mode with no beyond-`max_mixed` fallback (`decisions/0009` #5), declares `exact_only = true`. A scenario stating `exact: false` asserts the fallback's answer (`conformance/README.md`), so the harness reports it `unsupported: max_mixed fallback` for that backend, without calling it.
+A backend that completes unknowns only exactly, slow mode with no fallback beyond `max_mixed` or `max_frontier_vars` (`decisions/0009` #5), declares `exact_only = true`. A scenario stating `exact: false` asserts a fallback's answer (`conformance/README.md`), so the harness reports it `unsupported: inexact fallback` for that backend, without calling it.
 
 ## Protocol
 
@@ -78,7 +78,7 @@ One vector per positive scenario in `conformance/cases/` (negative cases wait fo
  "unknown_parts": [{"ref": "<rule IRI>", "input": "<IRI>", "status": "missing"}]}
 ```
 
-The verdict is one of the five. The frontier is a set of alternatives, each a set of duty IRIs. Obligations are a set; `status` is `fulfilled`, `outstanding`, `violated`, or `unknown`, and `instance` is present only for an instance of a recurring duty. `exact` is compared only for scenarios that state it. `verdict_basis` and `eliminated` are the explanation at the authored level (`conformance/README.md`, `due2-workflows.md` §3.7), each a set, and both optional. `verdict_range` is an `Indeterminate`'s least and greatest completion verdict (`decisions/0011`), also optional. `unknown_parts` is every `U` part of every rule whose finding is not `F`, under any verdict, as a set: the input it reads and that input's status (`decisions/0016`, `conformance/README.md`), also optional. Each is compared when the scenario states it and the output has it. A vector whose output matches but lacks a field the scenario states is reported unsupported (`not emitted: verdict_basis`), never as a pass. A spike that emits none of them yet still runs green, and grows into them by increment. Names may be full IRIs or use the vector's prefixes.
+The verdict is one of the five. The frontier is a set of alternatives, each a set of duty IRIs. Obligations are a set; `status` is `fulfilled`, `outstanding`, `violated`, or `unknown`, and `instance` is present only for an instance of a recurring duty. `exact` is compared only for scenarios that state it. `frontier_complete`, a boolean for a `Pending`, is optional, and is compared like the explanation fields below. `verdict_basis` and `eliminated` are the explanation at the authored level (`conformance/README.md`, `due2-workflows.md` §3.7), each a set, and both optional. `verdict_range` is an `Indeterminate`'s least and greatest completion verdict (`decisions/0011`), also optional. `unknown_parts` is every `U` part of every rule whose finding is not `F`, under any verdict, as a set: the input it reads and that input's status (`decisions/0016`, `conformance/README.md`), also optional. Each is compared when the scenario states it and the output has it. A vector whose output matches but lacks a field the scenario states is reported unsupported (`not emitted: verdict_basis`), never as a pass. A spike that emits none of these optional fields runs green. Names may be full IRIs or use the vector's prefixes.
 
 ### `decide`
 
