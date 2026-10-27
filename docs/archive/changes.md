@@ -66,6 +66,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.22** (2026-10-26, `decisions/0045`): a violated obligation never denies, so §4.5's first case of L7 is a violated obligation beside a ready candidate, and claims M and W (§4.8) and §5's structural completeness drop `violations = deny`; claim M counts 73,012 inputs and claim W 61. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.21** (2026-10-26, #23): §7 names the workflows of the tiers; the slow tier's runs the Alloy models and clingo-i's slow bounds. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.20** (2026-10-26, `decisions/0039`, #136): §4.3's lineage bullet names the lineage relation that L10 reads, and §4.6 reads the lineage of each policy. Earlier changes are in `docs/archive/changes.md`.
