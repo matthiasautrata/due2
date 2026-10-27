@@ -166,7 +166,7 @@ DIAGNOSTICS_DOC = ROOT / "docs" / "spec" / "due2-diagnostics.md"
 
 
 def load_registry() -> dict[str, tuple[str, int]]:
-    """code -> (severity, stage), from the registry table (due2-diagnostics.md 3)."""
+    """code -> (severity, stage), from the registry table (due2-diagnostics.md §3)."""
     reg: dict[str, tuple[str, int]] = {}
     for line in DIAGNOSTICS_DOC.read_text().splitlines():
         m = re.match(r"^\| `(\w+)` \| (error|warning) \| (\d) \|", line)
@@ -205,7 +205,7 @@ class Report:
             self.diagnostics.append((code, msg))
 
     def rejection(self) -> list[str]:
-        """The codes W1 reports: every error of the first stage that has one (workflows 4)."""
+        """The codes W1 reports: every error of the first stage that has one (due2-workflows.md §4)."""
         if not self.diagnostics:
             return []
         first = min(REGISTRY[c][1] for c, _ in self.diagnostics)
@@ -397,7 +397,7 @@ class Bindings:
                 r.diag(
                     "ConflictingProfileDeclaration",
                     f"{q(g, op)}: two selected profile modules state {q(g, pred)} differently "
-                    f"(due2-profiles.md 2, decisions/0014 #3)",
+                    f"(due2-profiles.md §2, decisions/0014 #3)",
                 )
         if conflicted:
             self.conflicted.add(op)
@@ -424,8 +424,21 @@ class Bindings:
                     r.diag(
                         "RetypedOperand",
                         f"{q(g, op)}: {q(g, pred)} restated above the layer that owns "
-                        f"the operand's type (due2-profiles.md 2, decisions/0014 #2)",
+                        f"the operand's type (due2-profiles.md §2, decisions/0014 #2)",
                     )
+        # Range, unit, and cardinality are single-valued, each of one kind (due2-profiles.md §3,
+        # Checks at normalisation). A blank-node range is admitted and checks nothing.
+        for pred in (RDFS.range, DUE2.unit, DUE2.cardinality):
+            if len(typed[pred]) > 1:
+                r.diag("InvalidBinding", f"{q(g, op)}: the binding states two of {q(g, pred)}")
+        if any(not isinstance(u, URIRef) for u in typed[DUE2.unit]):
+            r.diag("InvalidBinding", f"{q(g, op)}: due2:unit is not an IRI")
+        if typed[DUE2.cardinality] - {DUE2.one, DUE2.set}:
+            r.diag(
+                "InvalidBinding", f"{q(g, op)}: due2:cardinality is neither due2:one nor due2:set"
+            )
+        if any(isinstance(v, Literal) for v in typed[RDFS.range]):
+            r.diag("InvalidBinding", f"{q(g, op)}: rdfs:range is a literal")
         (card,) = typed[DUE2.cardinality] if len(typed[DUE2.cardinality]) == 1 else (DUE2.one,)
         b = Binding(
             where[0], where[1], typed[RDFS.range], typed[DUE2.unit], card,
@@ -478,7 +491,7 @@ class Bindings:
             r.diag(
                 "OperandRangeMismatch",
                 f"{q(g, op)}: its range is of kind {sorted(mine)}, but {q(g, prop)} "
-                f"has range kind {sorted(theirs)} (due2-profiles.md 3, decisions/0014 #5)",
+                f"has range kind {sorted(theirs)} (due2-profiles.md §3, decisions/0014 #5)",
             )
 
 
@@ -501,13 +514,13 @@ def check_repeats(g: Graph, c: Node, p: Node, r: Report) -> None:
     if len(set(ms)) < len(ms):
         r.diag(
             "MalformedConstraint",
-            f"{q(g, c)}: {q(g, p)} names a member twice (due2-profiles.md 5, decisions/0022)",
+            f"{q(g, c)}: {q(g, p)} names a member twice (due2-profiles.md §5, decisions/0022)",
         )
     keys = [k for m in set(ms) if (k := leaf_key(g, m)) is not None]
     if p == ODRL.xone and len(set(keys)) < len(keys):
         r.diag(
             "MalformedConstraint",
-            f"{q(g, c)}: odrl:xone states one leaf twice (due2-profiles.md 5, decisions/0022)",
+            f"{q(g, c)}: odrl:xone states one leaf twice (due2-profiles.md §5, decisions/0022)",
         )
 
 
@@ -547,7 +560,7 @@ def constraint_tree(g: Graph, root: Node, r: Report) -> list[Node]:
             r.diag(
                 "MalformedConstraint",
                 f"logical constraint cycle: {' -> '.join(q(g, n) for n in cycle)} "
-                f"(due2-profiles.md 5)",
+                f"(due2-profiles.md §5)",
             )
             return []
         else:
@@ -578,7 +591,7 @@ def check_constraint(
                     r.diag(
                         "MalformedConstraint",
                         f"{q(g, c)}: {q(g, p)} over the empty list "
-                        f"(due2-profiles.md 5, decisions/0017)",
+                        f"(due2-profiles.md §5, decisions/0017)",
                     )
             check_repeats(g, c, p, r)
         return
@@ -604,25 +617,25 @@ def check_constraint(
         r.diag(
             "MalformedConstraint",
             f"{q(g, c)}: {len(rights)} rightOperand values on {q(g, operator)}, "
-            f"which is not set-based (due2-profiles.md 4, decisions/0013)",
+            f"which is not set-based (due2-profiles.md §4, decisions/0013)",
         )
     elif lists and len(rights) > 1:
         r.diag(
             "MalformedConstraint",
             f"{q(g, c)}: a list rightOperand together with other values; write one list "
-            f"or repeated values (due2-profiles.md 4, decisions/0013)",
+            f"or repeated values (due2-profiles.md §4, decisions/0013)",
         )
     if operator in SET_BASED and RDF.nil in rights:
         r.diag(
             "MalformedConstraint",
             f"{q(g, c)}: the empty list as the right operand of {q(g, operator)} "
-            f"(due2-profiles.md 4, decisions/0013 amendment)",
+            f"(due2-profiles.md §4, decisions/0013 amendment)",
         )
     if operator in CONTESTED and sum(len(members(g, ro)) for ro in rights) > 1:
         r.diag(
             "ContestedOperatorReading",
             f"{q(g, c)}: {q(g, operator)} with a list right operand "
-            f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)",
+            f"is read after Salas-Pareti (due2-profiles.md §4, decisions/0005)",
         )
     bnd = b.resolve(op)
     if bnd is None:
@@ -648,13 +661,13 @@ def check_constraint(
         r.diag(
             "ContestedOperatorReading",
             f"{q(g, c)}: {q(g, operator)} over a set-valued operand "
-            f"is read after Salas-Pareti (due2-profiles.md 4, decisions/0005)",
+            f"is read after Salas-Pareti (due2-profiles.md §4, decisions/0005)",
         )
     elif operator in ONE_VALUE and card == DUE2.set:
         r.diag(
             "OperatorTypeMismatch",
             f"{q(g, c)}: {q(g, operator)} takes one left value, and {q(g, op)} is set-valued "
-            f"(due2-profiles.md 4, decisions/0025)",
+            f"(due2-profiles.md §4, decisions/0025)",
         )
     if bnd.allowed and operator not in bnd.allowed:
         r.diag(
@@ -677,7 +690,7 @@ def check_constraint(
             f"{q(g, op)}'s declared unit (due2-profiles.md §3 Units)",
         )
     check_concepts(g, c, op, operator, rights, bnd, b, r)
-    # The right operand's kind against the range's (due2-profiles.md 3 Kinds); a range
+    # The right operand's kind against the range's (due2-profiles.md §3 Kinds); a range
     # without a kind (a blank-node union, rdfs:Resource) admits any value, and
     # rdfs:Literal any literal.
     want = {k for v in bnd.range if (k := b.range_kind(v))}
@@ -749,7 +762,7 @@ def check_concepts(
     b: Bindings,
     r: Report,
 ) -> None:
-    """The three checks on a concept-scheme operand (due2-profiles.md 4, decisions/0015 #8).
+    """The three checks on a concept-scheme operand (due2-profiles.md §4, decisions/0015 #8).
     A range of kind IRI or `rdfs:Literal`, or with no kind, is not a datatype."""
     schemes = b.schemes(op)
     if not schemes:
@@ -758,7 +771,7 @@ def check_concepts(
         r.diag(
             "InvalidBinding",
             f"{q(g, c)}: {q(g, op)} names a concept scheme, but its range is a datatype "
-            f"(due2-profiles.md 4, decisions/0015 #8)",
+            f"(due2-profiles.md §4, decisions/0015 #8)",
         )
     if operator not in CONCEPT_OPERATORS:
         r.diag(
@@ -1550,7 +1563,7 @@ def check_unknown_parts(
     that each ref is a rule or duty of the case's policies, and that a target or party input is missing.
 
     An input that is not the property of an operand the policy reads, `props`, is the target
-    or a party function. A request field is never unresolved (due2-profiles.md 3), and the
+    or a party function. A request field is never unresolved (due2-profiles.md §3), and the
     case format carries an absent target or party as absent, so its status can only be
     `missing`. An operand's property, `odrl:purpose` among them, can have any status.
     """

@@ -13,9 +13,9 @@ Translation (recorded per case in `notes`):
   * odrl:partOf triples in the SOTW -> sotw.closure.
   * A DutyReport with performanceState Performed -> one evidence record by the
     duty's bearer. FORCE's asserted deontic states are not inputs in due2,
-    which derives duty status from evidence (due2-profiles.md 8.2, exc. 2).
+    which derives duty status from evidence (due2-profiles.md §8.2, exc. 2).
   * odrl:source on collections is kept: due2 admits a refinement-free source
-    as an inert annotation (due2-profiles.md 8.1); membership is the SOTW's
+    as an inert annotation (due2-profiles.md §8.1); membership is the SOTW's
     partOf edges. An explicit odrl:conflict is added.
   * FORCE's own result is kept as `force_expected` (rule kind:activation).
 

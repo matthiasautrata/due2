@@ -1,0 +1,31 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. ex:fee's binding states
+# two units, the euro and the US dollar, in one graph. A value read for the
+# operand has one unit, so W1 rejects the binding (due2-profiles.md §3).
+
+ex:feePolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:copy .
+
+ex:copy a odrl:Permission ;
+    odrl:action odrl:reproduce ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:fee ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "100"^^xsd:decimal
+    ] .
+
+ex:fee a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:fee ;
+    rdfs:range xsd:decimal ;
+    due2:unit <http://dbpedia.org/resource/Euro>, <http://dbpedia.org/resource/United_States_dollar> .

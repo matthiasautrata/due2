@@ -1,0 +1,17 @@
+{
+  "case": "due2-binding-two-units",
+  "source": "due2-native: a binding whose owner states two units (#145)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. due2:unit names the one unit of every value read for the operand (decisions/0049 #1), so a binding with two units says nothing about which one a value is in. Two values from different layers would be RetypedOperand, and from two selected modules ConflictingProfileDeclaration; this case states the two units in one graph, the policy's own. Two ranges or two cardinalities are rejected by the same rule, and clingo-i's unit tests cover them.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "InvalidBinding"
+    ],
+    "why": "ex:fee's binding states the euro and the US dollar as its unit. A unit is single-valued, so W1 rejects the binding in stage 2 (due2-profiles.md §3, Checks at normalisation)."
+  }
+}

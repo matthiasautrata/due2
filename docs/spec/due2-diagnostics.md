@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.20 (2026-10-26)
+**Status:** Draft v0.21 (2026-10-26)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.20** (2026-10-26, `decisions/0049`): the warning `UncheckedUnit`, for a constraint that states a unit its binding does not declare; `OperatorTypeMismatch` covers a unit other than the binding's, and `RetypedOperand` a restated unit. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.21** (2026-10-26, #145): `InvalidBinding` covers a binding whose owning layer (`due2-profiles.md` §2) states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table, and the one the policy store emits when it publishes a policy's corpus (`IdentityConflict` across policies). Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -59,7 +59,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; a set right operand that mixes a list with other values, gives two lists, or is the empty list; a logical constraint with more than one operand property, or with the empty list as an operand value, or whose list names one node twice; logical constraints whose members form a cycle; or an `odrl:xone` with two members, neither a logical constraint, that have the same left operand, operator, unit, and right operand values. | ODRL IM §2.5.1, §2.5.2; `due2-profiles.md` §4 (`decisions/0013` and its amendment), §5 (`decisions/0017`, `decisions/0022`) |
 | `UnsupportedOperator` | error | 2 | An operator outside the core registry. | `due2-profiles.md` §4 |
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | `due2-profiles.md` §3 |
-| `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in; or a `due2:conceptScheme` on an operand whose range is a datatype. | `due2-profiles.md` §3, §4 |
+| `InvalidBinding` | error | 2 | A binding whose source is not one of the closed sources, whose property is not an IRI, or whose context property is not built in; whose owning layer states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range (a blank-node range is admitted); or a `due2:conceptScheme` on an operand whose range is a datatype. | `due2-profiles.md` §2, §3, §4 |
 | `ConflictingProfileDeclaration` | error | 2 | Two selected profile modules declare the same term differently. | `due2-profiles.md` §2 |
 | `RetypedOperand` | error | 2 | A layer above the one that owns an operand's type states a range, unit, cardinality, or allowed operators different from the owner's. An attribute the owner omits counts as its default. | `due2-profiles.md` §2 (`decisions/0014`, `decisions/0049`) |
 | `OperandRangeMismatch` | error | 2 | A binding whose range is of a different kind from the `rdfs:range` of the property it reads. | `due2-profiles.md` §3 (`decisions/0014`) |

@@ -58,11 +58,12 @@
 %   `reject("WitnessOutsideDuty", C)`. `node_tree/2` (constraint.lp) gives each node's trees: its
 %   constraint roots, and the refinement roots of the action terms it states. A tree shared by a
 %   duty and a rule is in both, and so is rejected.
-% - `card(Op, K)`: `set` if the binding states `due2:set`, otherwise `one`. Another cardinality IRI,
-%   or two, declines as `binding: cardinality`.
+% - `card(Op, K)`: `set` if the binding states `due2:set`, otherwise `one`. Another cardinality,
+%   or two, is `reject("InvalidBinding", C)`.
 % - `range_kind(Op, K)`: the kind the owner's range admits (`admits_kind/2`). `rdfs:Resource` admits
-%   every kind, so it has no `range_kind`. Two ranges, or one that is not an IRI, decline as
-%   `binding: range`.
+%   every kind, so it has no `range_kind`. Two ranges, or a literal one, are
+%   `reject("InvalidBinding", C)`. A blank-node range, such as an OWL class expression, declines as
+%   `binding: range`: due2 admits it, and the spike does not read it.
 % - `prop_range_kind(Op, K)`: the kind of the `rdfs:range` that some layer states for the property
 %   `Op` reads. When no value has both kinds, the binding is `reject("OperandRangeMismatch", C)`
 %   (decisions/0014 #5): every value the property gives would fail the range. Two kinds that differ
@@ -188,9 +189,11 @@ due2-profiles.md §3.
 *%
 card(Op, set) :- bdecl(Op, cardinality, Iri), cardinality_value(Iri, set).
 card(Op, one) :- used(Op), not card(Op, set).
-unsupported("binding: cardinality") :- bdecl(Op, cardinality, Iri), not cardinality_value(Iri, _).
-unsupported("binding: cardinality") :- bdecl(Op, cardinality, Iri), bdecl(Op, cardinality, Iri2),
-    Iri != Iri2.
+% One cardinality, `due2:one` or `due2:set` (due2-profiles.md §3, Checks at normalisation).
+reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, cardinality, Iri),
+    not cardinality_value(Iri, _).
+reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, cardinality, Iri),
+    bdecl(Op, cardinality, Iri2), Iri != Iri2.
 
 %*! has_range(Op)
 
@@ -203,8 +206,10 @@ has_range(Op) :- bdecl(Op, range, _).
 `Op`'s range admits values of kind `K` (`admits_kind/2`).
 *%
 range_kind(Op, K) :- bdecl(Op, range, Rg), admits_kind(Rg, K).
-unsupported("binding: range") :- bdecl(Op, range, Rg), bdecl(Op, range, Rg2), Rg != Rg2.
-unsupported("binding: range") :- bdecl(Op, range, Rg), not kind(Rg, iri).
+% One range, not a literal (due2-profiles.md §3, Checks at normalisation).
+reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, range, Rg), bdecl(Op, range, Rg2), Rg != Rg2.
+reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, range, Rg), kind(Rg, lit).
+unsupported("binding: range") :- bdecl(Op, range, Rg), kind(Rg, blank).
 
 %*! has_range_kind(Op)
 
@@ -276,8 +281,8 @@ reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, O), singl
 % A leaf that states a unit on an operand whose binding declares none is admitted, and is `u`
 % whatever is read (compare.lp), with status `misfit` (completion.lp): nothing says what unit
 % the read value is in (due2-profiles.md §3 Units, decisions/0049). W1 also warns with
-% `UncheckedUnit`; the spike reports no warnings. Two units, or one that is not an IRI, decline
-% as `binding: unit`.
+% `UncheckedUnit`; the spike reports no warnings. Two units, or one that is not an IRI, are
+% `reject("InvalidBinding", C)` (due2-profiles.md §3, Checks at normalisation).
 
 %*! unchecked_unit(C)
 
@@ -286,8 +291,9 @@ Leaf `C` states a unit that its operand's binding does not declare: the binding 
 unchecked_unit(C) :- unit(C, _), left(C, Op), not owned(Op, operandUnit, _).
 reject("OperatorTypeMismatch", C) :- unit(C, Iri), left(C, Op), owned(Op, operandUnit, Iri2),
     Iri != Iri2.
-unsupported("binding: unit") :- bdecl(Op, operandUnit, U), bdecl(Op, operandUnit, U2), U != U2.
-unsupported("binding: unit") :- bdecl(Op, operandUnit, U), not kind(U, iri).
+reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandUnit, U), bdecl(Op, operandUnit, U2),
+    U != U2.
+reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandUnit, U), not kind(U, iri).
 
 %## Concept schemes
 

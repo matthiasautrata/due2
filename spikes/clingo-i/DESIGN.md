@@ -255,7 +255,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | Reason | File | Why |
 |---|---|---|
 | `action: blank node without rdf:value`, `action: several rdf:value` | `structure.lp` | the action term names no single action |
-| `binding: cardinality`, `binding: range`, `binding: unit` | `operand.lp` | a cardinality, range, or unit the spike cannot read, or two of them |
+| `binding: range` | `operand.lp` | a blank-node range, such as an OWL class expression, which due2 admits and the spike does not read |
 | `constraint: cycle`, `constraint: dprod:not with several members`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (`completion.lp`) |
 | `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |

@@ -139,6 +139,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.27** (2026-10-26, `decisions/0049`): §2, §3: a binding may declare its operand's unit, `due2:unit`, a type attribute; a constraint whose `odrl:unit` differs from it is rejected, and one that states a unit its binding does not declare is admitted with `UncheckedUnit` and is `U`; the baseline's `odrl:payAmount` declares no unit. §4 says how a unit affects a comparison. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.26** (2026-10-26, `decisions/0048`): §4, §6: a hierarchy comparison is `U`, not `F`, when a world-edge answer for its narrower side is `unresolved` and the recorded edges do not make it `T`. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.25** (2026-10-26, `decisions/0047`): §2: W1 writes each constraint's operand binding into the corpus, which is where W2 reads it. §6: the world edges fetched are those above the entities a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
@@ -172,6 +174,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **v0.11** (2026-10-17, `decisions/0013` amendment, #69): §4 rejects an empty list as a set right operand. **v0.10** (2026-10-17, `decisions/0016`): §3 says that only an `unresolved` value is completed. **v0.9** (2026-10-17, #68): §3 *Kinds* says what `rdfs:Literal` and `rdfs:Resource` admit. **v0.8** (2026-10-17, `decisions/0014`, `decisions/0015`, #52, #65): §2 gives an operand's type to the lowest layer that declares it, lets higher layers rebind only its source and property, and drops the order of profile modules; §3 defines kinds, compares values by kind when there is no range, and checks a binding's range against the read property's; §4 and §6 compare concepts under a declared SKOS concept scheme. **v0.7** (2026-10-17, `decisions/0013`, #64): §4 admits a set right operand written as repeated values as well as an RDF list, and rejects the forms with no reading. **v0.6** (2026-10-16): every DPROD-derived adoption is marked provisional against the vendored commit, pending a batch of upstream PRs (§1, §8, §9 #7; issue #35); §3's context table names `dprod:agent`, the `dprod:EvaluationContext` property (`dprod-contracts.ttl`) that the left operand `dprod:currentAgent` reads through `dprod:operandProperty` — the table lists properties, as its `dprod:clock` row does; §9 rows #2 and #5 are merged (issue #18). **History:** v0.3–v0.5 are in git; the substantive decisions are `decisions/0005`, and `decisions/0001` for the DPROD adoption itself.
 
 ## `due2-diagnostics.md`
+
+**Changes in v0.20** (2026-10-26, `decisions/0049`): the warning `UncheckedUnit`, for a constraint that states a unit its binding does not declare; `OperatorTypeMismatch` covers a unit other than the binding's, and `RetypedOperand` a restated unit. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.19** (2026-10-26, #53): the warning `IgnoredPredicate`, for a predicate on a structure node that no loaded vocabulary or the annotation allowlist covers (§3). Earlier changes are in `docs/archive/changes.md`.
 

@@ -88,7 +88,7 @@ def test_a_self_member_is_a_cycle(tmp_path: Path) -> None:
     `ex:c0 -> ex:c0 -> ex:c0`."""
     body = "ex:c0 a odrl:LogicalConstraint ; odrl:and ( ex:c0 ) .\n"
     assert failures(tmp_path / "policy.ttl", body) == [
-        "logical constraint cycle: ex:c0 -> ex:c0 (due2-profiles.md 5) [MalformedConstraint]"
+        "logical constraint cycle: ex:c0 -> ex:c0 (due2-profiles.md §5) [MalformedConstraint]"
     ]
 
 

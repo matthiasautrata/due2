@@ -935,6 +935,15 @@ def test_typed_part_of(
          "OperatorTypeMismatch"),
         (leaf("eq", '"v"'), bound("x", extra=" ; due2:conceptScheme ex:s ; rdfs:range xsd:string"),
          "InvalidBinding"),
+        # A single-valued type attribute stated twice, or of the wrong kind (#145).
+        (leaf("eq", "ex:v"), bound("x", extra=" ; due2:cardinality due2:many"), "InvalidBinding"),
+        (leaf("eq", "ex:v"), bound("x", extra=" ; due2:cardinality due2:one, due2:set"),
+         "InvalidBinding"),
+        (leaf("eq", "ex:v"), bound("x", extra=" ; rdfs:range xsd:integer, xsd:string"),
+         "InvalidBinding"),
+        (leaf("eq", "ex:v"), bound("x", extra=' ; rdfs:range "xsd:string"'), "InvalidBinding"),
+        (leaf("eq", "ex:v"), bound("x", extra=" ; due2:unit ex:EUR, ex:USD"), "InvalidBinding"),
+        (leaf("eq", "ex:v"), bound("x", extra=' ; due2:unit "EUR"'), "InvalidBinding"),
         # A dateTime without a timezone, or a date with one (decisions/0024).
         (leaf("lt", '"2026-01-01T00:00:00"^^xsd:dateTime'), "", "OperatorTypeMismatch"),
         (leaf("eq", '"2026-01-01Z"^^xsd:date'), "", "OperatorTypeMismatch"),
@@ -1042,10 +1051,8 @@ def test_distinct_or_idempotent_members_admitted(interpreter: Interpreter, const
          "constraint: cycle"),
         (leaf("eq", "()"), "", "constraint: list on a scalar operator"),
         (leaf("eq", "( ex:v )"), "", "constraint: list on a scalar operator"),
-        (leaf("eq", "ex:v"), " ; due2:cardinality due2:many", "binding: cardinality"),
-        (leaf("eq", "ex:v"), " ; rdfs:range xsd:integer, xsd:string", "binding: range"),
-        (leaf("eq", "ex:v"), " ; due2:unit ex:EUR, ex:USD", "binding: unit"),
-        (leaf("eq", "ex:v"), ' ; due2:unit "EUR"', "binding: unit"),
+        (leaf("eq", "ex:v"), " ; rdfs:range [ <http://www.w3.org/2002/07/owl#unionOf> ( xsd:integer xsd:string ) ]",
+         "binding: range"),
     ],
 )  # fmt: skip
 def test_constraint_declines(
