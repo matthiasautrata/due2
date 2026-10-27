@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.53** (2026-10-26, `decisions/0047`): the corpus carries each constraint's operand binding, as fields of `constraint` and the relation `constraint_scheme` (§3.1, §4, §5.4). `Reads`, the output of `plan`, is four relations, and world modules are named by the kind of hierarchy they hold (§3.3). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.52** (2026-10-26, `decisions/0045`): an evaluation has no config, so `decide` takes three inputs and a case holds no config id (§3.4, §3.5, §7.1). Prohibit-overrides is the fixed rule across policies (§6.2). A violated obligation is reported and never denies (§6.1, §6.4, L7). A duty's attester replaces the signer record (§5.3). `max_mixed` and `max_frontier_vars` are constants (§3.4). Every recorded answer is admitted (§3.3). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.51** (2026-10-26, `decisions/0043`, `decisions/0044`): world hierarchy edges reach the case as `closure` events, one answer per module and request entity, and the latest answer replaces an earlier one (§3.3, §7.1). An event carries the version of the source that answered, which W2 never reads (§7.1). Earlier changes are in `docs/archive/changes.md`.
@@ -129,6 +131,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.25** (2026-10-26, `decisions/0047`): §2: W1 writes each constraint's operand binding into the corpus, which is where W2 reads it. §6: the world edges fetched are those above the entities a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.24** (2026-10-26, `decisions/0045`): there is no config. §3 *Admissibility*: the orchestrator records answers only from the sources registered for a property, so W2 combines every recorded answer. §6 adds the role `due2:attester`, played by `due2:attestingParty`, which names whose evidence counts for a duty. §7 *Violations and access*: a violated obligation never denies. §8.2 exception 6 covers every case where DPROD denies for a violation. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.23** (2026-10-26, `decisions/0040`, #137): §3 *Admissibility* keeps `admit_source`, which W2 applies when it combines the answers of several sources, and drops `admit_age`, because keeping values current is the SOTW service's job. Earlier changes are in `docs/archive/changes.md`.
@@ -216,6 +220,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `due2-platform.md`
+
+**Changes in v0.15** (2026-10-26, `decisions/0047`): §3.1 step 7 fetches the edges above a state property's values once its facts are recorded, and the loop's end argument covers them. §2.4: a world-edge answer is for any entity a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.14** (2026-10-26, `decisions/0045`, `decisions/0046`): `decide` takes three inputs, and the connector registry, keyed by property and source, decides whose answers a case records (§1.4, §2.4). §1.3 tells apart the two relations named `evaluation`, and §2.3 drops the configured rule for violated obligations. Publication is a workflow of its own (§2.11). A case changes only by explicit calls, among them `record_facts`, `refresh`, `reevaluate`, and `reopen` (§2.6). Earlier changes are in `docs/archive/changes.md`.
 

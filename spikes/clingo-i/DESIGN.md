@@ -205,7 +205,7 @@ The spike has no beyond-`max_mixed` fallback (`decisions/0009` #5), so `backend.
 
 `not` never turns a missing truth value into `f`. Each use reads something that is complete by construction:
 
-- the declared hierarchy edges (`not action_matches`, `not target_matches`, `not party_matches`, `not le_k`, `not inst`), which are closed-world (`due2-profiles.md` §6);
+- the declared hierarchy edges (`not action_matches`, `not target_matches`, `not party_matches`, `not le_k`, `not inst`), which are closed-world (`due2-profiles.md` §6). They are complete in the case format, which records no `unresolved` world-edge answer (`conformance/README.md` § Coverage gaps), so no comparison here is `U` for a failed lookup;
 - input syntax and what `lift.lp`, `structure.lp`, `constraint.lp`, and `duty.lp` derive from it: whether a family is stated, a predicate consumed, a function named, a duty inheriting or with a bearer, a node a list, a leaf or a connective, a leaf a witness leaf, a tree with a witness or a guard leaf (`has_witness`, `has_guard`), a node in a rule's tree (`rule_node`) or in a witness condition, or a duty with a deadline or a relation value. `witness_only/1`, which `evaluates(k, C)` negates, reads only these, never a rank, so the ground program has no cycle through it;
 - the value table and the term shapes (`not placed`, `not kind`, `not same_type`), which decide only that a pair is a misfit, and a misfit is `u`;
 - the reads: `not read_resolved`, `not card_ok`, and `not conforms` make a read `u`, never `f`;

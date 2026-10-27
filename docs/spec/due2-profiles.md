@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.25
+**Status:** Draft v0.26
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.25** (2026-10-26, `decisions/0047`): §2: W1 writes each constraint's operand binding into the corpus, which is where W2 reads it. §6: the world edges fetched are those above the entities a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.26** (2026-10-26, `decisions/0048`): §4, §6: a hierarchy comparison is `U`, not `F`, when a world-edge answer for its narrower side is `unresolved` and the recorded edges do not make it `T`. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -141,7 +141,7 @@ Because the reading is adopted, not given by ODRL, normalisation accepts a list 
 | `c` | `eq` |
 |---|---|
 | in one of the operand's schemes, and `c ⊑ d` | `T` |
-| in one of the operand's schemes, with no path to `d` | `F`: closed-world over the declared edges, as for actions |
+| in one of the operand's schemes, with no path to `d` | `F`: closed-world over the declared edges, as for actions, unless a world-edge answer for `c`, or above it, is `unresolved`, which makes it `U` (§6) |
 | in none of the operand's schemes | `U`: the value is `invalid`, so a prohibition never silently misses a concept whose edges were not supplied |
 
 Only IRIs are concepts. A string compares by code point whether or not the operand has a scheme, and a string against a concept does not fit, so `U`. The baseline's `odrl:purpose`, which has no range, therefore serves both ways of writing a purpose: as a string, or as a concept once a layer names its scheme. Normalisation rejects, with `OperatorTypeMismatch`, an IRI right operand that is in none of the operand's schemes by the memberships the policy and its profile modules declare, and any operator other than `eq`, `neq`, `isAnyOf`, and `isNoneOf` on an operand with a scheme. Normalisation does not see the SOTW, so a membership that only the SOTW supplies does not save a right operand. A `due2:conceptScheme` on an operand whose range is a datatype is rejected with `InvalidBinding`.
@@ -204,7 +204,7 @@ A duty with both roles is one atom with one set of parties. As a root obligation
 
 **Hierarchies.** Actions follow the `odrl:includedIn` closure. Assets and parties follow the typed `odrl:partOf` closure: an asset path may pass only through `odrl:AssetCollection`, a party path only through `odrl:PartyCollection`, and a cross-kind path is invalid (`formal-semantics.md` §5.4). `isA` follows `rdf:type` and `rdfs:subClassOf`; the `rdf:type` edges of the individuals it compares travel in the closure like any other edge (`due2-workflows.md` §3.1). Concepts follow `skos:broader`, within the concept schemes their operand names (§4; `decisions/0015`). A `skos:narrower` triple is read as the inverse `skos:broader` edge. A concept is in a scheme when it states `skos:inScheme` or `skos:topConceptOf` for it, or the scheme states `skos:hasTopConcept` for the concept (SKOS Reference S7, S8). Membership is not inherited along the hierarchy, as in SKOS, and cross-scheme mappings such as `skos:exactMatch` are not read.
 
-Edges declared in the policy and in its profile modules travel with the policy into the corpus `closure`. ODRL's own action hierarchy is shipped as one such module, `profiles/odrl-actions.ttl`, so `odrl:read ⊑ odrl:use` holds without each policy restating it. Edges about the world — who is in which team today — arrive in the SOTW `closure`; only the edges above the entities that the case's comparisons name are fetched and recorded (`due2-workflows.md` §3.3). W2 uses the transitive closure of both (`due2-workflows.md` §3.1, §3.3). The reading is closed-world over the declared edges: a membership that no edge establishes does not hold. A catch-all collection therefore needs its membership edges supplied, or nothing matches it.
+Edges declared in the policy and in its profile modules travel with the policy into the corpus `closure`. ODRL's own action hierarchy is shipped as one such module, `profiles/odrl-actions.ttl`, so `odrl:read ⊑ odrl:use` holds without each policy restating it. Edges about the world — who is in which team today — arrive in the SOTW `closure`; only the edges above the entities that the case's comparisons name are fetched and recorded (`due2-workflows.md` §3.3). W2 uses the transitive closure of both (`due2-workflows.md` §3.1, §3.3). The reading is closed-world over the declared edges: a membership that no edge establishes does not hold. A catch-all collection therefore needs its membership edges supplied, or nothing matches it. A source that fails to answer, for the narrower entity or for one the recorded edges reach from it, is another exception: its answer is `unresolved`, and the comparison is then `U` unless the edges recorded already make it `T` (`due2-workflows.md` §3.3, `decisions/0048`).
 
 ---
 

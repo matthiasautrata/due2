@@ -59,6 +59,8 @@ ENUMS: dict[tuple[str, str, str], list[str]] = {
     ("Corpus", "duty", "scope"): ["member", "grant"],
     ("Corpus", "diagnostic", "code"): ["<warnings>"],
     ("Sotw", "fact", "status"): ["resolved", "missing", "invalid", "conflict", "unresolved"],
+    ("Sotw", "closure_answer", "status"): ["resolved", "unresolved"],
+    ("Reads", "read_evidence_edges", "field"): ["issuer", "actor"],
     ("Trace", "finding", "predicate"): PREDICATES,
     ("Trace", "basis", "predicate"): PREDICATES,
     ("Trace", "basis", "kind"): KINDS,

@@ -46,3 +46,5 @@ W2 evaluates a constraint by its left operand's binding: its source, its propert
 
 - A comparison needs a hierarchy that none of the four kinds holds.
 - A value's kind must be known to choose between the party and the asset module, as when one IRI names a party in one hierarchy and an asset in another.
+
+**Note (2026-10-26, `decisions/0048`):** `Reads` gains `read_evidence_edges` and `read_witness_edges`, so it is six relations, and the edges above evidence values are planned and fetched when evidence is recorded. An answer names its source and carries a status, which resolves the two last consequences. A plan over `max_reads` is refused, and `max_reads` counts each relation tuple once, not each fact value as the fourth consequence supposed.

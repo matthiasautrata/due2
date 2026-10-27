@@ -852,6 +852,43 @@
             ],
             "additionalProperties": false
           }
+        },
+        "closure_answer": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "module",
+            "entity",
+            "source"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "module": {
+                "$ref": "#/$defs/Id"
+              },
+              "entity": {
+                "$ref": "#/$defs/Id"
+              },
+              "source": {
+                "$ref": "#/$defs/Id"
+              },
+              "status": {
+                "enum": [
+                  "resolved",
+                  "unresolved"
+                ]
+              }
+            },
+            "required": [
+              "module",
+              "entity",
+              "source",
+              "status"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false,
@@ -928,6 +965,59 @@
           }
         },
         "read_fact_edges": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "module",
+            "property"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "module": {
+                "$ref": "#/$defs/Id"
+              },
+              "property": {
+                "$ref": "#/$defs/Id"
+              }
+            },
+            "required": [
+              "module",
+              "property"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "read_evidence_edges": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "module",
+            "field"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "module": {
+                "$ref": "#/$defs/Id"
+              },
+              "field": {
+                "enum": [
+                  "issuer",
+                  "actor"
+                ]
+              }
+            },
+            "required": [
+              "module",
+              "field"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "read_witness_edges": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,

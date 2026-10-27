@@ -40,3 +40,5 @@ In `due2-workflows.md` v0.50 §7.1, an `event` has `kind ∈ {fact, evidence, ac
 - A source can answer only one edge at a time. The shell would then assemble each path answer from several lookups before recording it.
 
 **Note (2026-10-26, `decisions/0047`):** an answer is for one entity, which may also be a right operand's value or a value of a recorded fact, and the module is named by the kind of hierarchy it holds. `read_fact_edges` asks for edges above each value of a fact, so the number of answers is fixed only once the facts are recorded.
+
+**Note (2026-10-26, `decisions/0048`):** an answer is one source's, and carries a status, `resolved` or `unresolved`. The SOTW of an evaluation takes the latest answer for each module, entity, and source, and an `unresolved` answer for the narrower side makes a hierarchy comparison `U`, not `F`.

@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.15. Every section is **[O]**: a map of the components around the evaluator, not a build order. A paragraph marked **[D]** states a decision record. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.16. Every section is **[O]**: a map of the components around the evaluator, not a build order. A paragraph marked **[D]** states a decision record. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.15** (2026-10-26, `decisions/0047`): §3.1 step 7 fetches the edges above a state property's values once its facts are recorded, and the loop's end argument covers them. §2.4: a world-edge answer is for any entity a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.16** (2026-10-26, `decisions/0048`): a world-edge answer is one source's, with a status, so a catalog that does not answer makes a comparison `U` (§2.4, §2.5; §5 #2 resolved). `submit_evidence` fetches the edges above the evidence's values before it evaluates (§2.6). A plan over `max_reads` is refused before a case is created (§3.1). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -206,7 +206,7 @@ Fetch the facts a plan names and return them in the form the SOTW records them: 
 
 ```text
 resolve(property, entities, at)            -> fact(source, status, values), with the source's version
-edges(module, entities)                    -> per entity, the closure edges on the paths up from it, with the source's version
+edges(module, entities)                    -> per entity, the source's answer: its status and the closure edges on the paths up from it, with the source's version
 register(property | module, source, connector)
 sources(property | module)                 -> registered sources, each with its connector
 ```
@@ -216,8 +216,8 @@ sources(property | module)                 -> registered sources, each with its 
 Five rules from the specification bind every connector:
 
 - **One hop.** "The requester's department" is one property, flattened by the connector. Computing values is the connector's job and never the evaluator's (`due2-profiles.md` §3).
-- **Statuses are never collapsed.** `missing` means the source says no value exists. `unresolved` means the source could not be asked or did not answer. A connector that times out returns `unresolved`, never `missing`.
-- **Answers, not extensions.** The case records the answer to the question asked, such as membership of one group, and, on its event, the version of the source it came from (`decisions/0044`). For a world module, one answer holds the edges on the paths up from one entity, and a later answer for the entity replaces it (`decisions/0043`). The case never records the dataset the answer was computed from (`due2-workflows.md` §3.3).
+- **Statuses are never collapsed.** `missing` means the source says no value exists. `unresolved` means the source could not be asked or did not answer. A connector that times out returns `unresolved`, never `missing`. For a world module the same holds: a source that does not answer gives an `unresolved` answer, and one that holds no edges above the entity gives a `resolved` answer with none (`decisions/0048`).
+- **Answers, not extensions.** The case records the answer to the question asked, such as membership of one group, and, on its event, the version of the source it came from (`decisions/0044`). For a world module, one answer holds the edges on the paths up from one entity that one source knows, and a later answer from the source for the entity replaces it (`decisions/0043`, `decisions/0048`). The case never records the dataset the answer was computed from (`due2-workflows.md` §3.3).
 - **The corpus decides what is needed.** A connector is needed for each property that the corpus's constraints read and that a profile binds to the state source. A profile binding that no policy reads needs none. A planned property with no registered source has no `fact`, and the evaluator reads it as `unresolved` (`due2-workflows.md` §5.4; §3.6).
 - **The service keeps values current.** When a value it supplied changes in the world, the new one reaches the case as a new event, through an explicit call to the orchestrator: `record_facts`, which records answers the caller brings, or `refresh`, which asks the registered sources again (§2.6, `decisions/0046`). No one checks an answer's age, and a re-evaluation asks no source again (`decisions/0040`).
 
@@ -235,7 +235,7 @@ search(text)                               -> datasets
 - policy selection (§2.3);
 - matching, as SOTW closure edges recorded in the case.
 
-**The catalog is the most dangerous connector.** Hierarchy is closed-world: an edge that is not recorded does not hold, and the part that needs it is `F`, not `U` (`due2-workflows.md` §3.3). The one exception is concept-scheme membership: a concept with no `skos:inScheme` edge to its operand's schemes makes its constraint `U` (`due2-workflows.md` §3.3, `due2-profiles.md` §4). A dataset's classification is a target hierarchy edge, not a scheme membership, so the exception does not cover it. A catalog that fails to report a classification therefore does not make a prohibition on that classification unknown. It makes the prohibition certainly not apply. `due2-workflows.md` §3.3 says that a lookup that fails is recorded as `unresolved`, but `closure` has no status field, so the SOTW has no way to record a hierarchy lookup that failed (§5 #2).
+**The catalog is the most dangerous connector [D]** (`decisions/0048`). Hierarchy is closed-world: an edge that is not recorded does not hold, so a classification the catalog fails to report would make a prohibition on that classification certainly not apply. The catalog's answer for a dataset therefore has a status, like every world-edge answer (§2.4). A catalog that does not answer gives an `unresolved` answer, and a comparison that needs the edges above the dataset is then `U`, not `F` (`due2-workflows.md` §3.3, `closure`). A catalog that answers but omits a classification still makes the part `F`: completeness of what it does report is the connector's obligation, and no evaluation can check it.
 
 ### 2.6 Case workflow
 
@@ -253,7 +253,7 @@ show(case_id, seq?)                            -> verdict, rendered explanation
 replay(case_id, seq, engine)                   -> match | mismatch
 ```
 
-`key` is the caller's idempotency key, on every call that records an event or opens a case: a retry of a call with the same key records nothing a second time (`decisions/0046`). How the ledger keeps keys is open (§5 #5). `submit_evidence` records the evidence and evaluates the case, because the person who submits it waits for the answer. `record_facts` and `refresh` only record, and return the sequence number of the last event they recorded, so a caller can record several changes before one `reevaluate`. `record_facts` refuses with `Error` an answer whose source is not registered for its property (§2.4). `show` renders the case's latest evaluation, or the one at `seq`, through the explanation service (§2.9).
+`key` is the caller's idempotency key, on every call that records an event or opens a case: a retry of a call with the same key records nothing a second time (`decisions/0046`). How the ledger keeps keys is open (§5 #5). `submit_evidence` records the evidence, fetches the edges above its values that the plan names in `read_evidence_edges` and `read_witness_edges` (`due2-workflows.md` §3.3), records each answer, and evaluates the case, because the person who submits it waits for the answer. `record_facts` and `refresh` only record, and return the sequence number of the last event they recorded, so a caller can record several changes before one `reevaluate`. `record_facts` refuses with `Error` an answer whose source is not registered for its property (§2.4). `show` renders the case's latest evaluation, or the one at `seq`, through the explanation service (§2.9).
 
 **Inquiries.** A request has at most one target (`due2-workflows.md` §3.2), and each request has one case (`decisions/0008`). A person asking about three datasets therefore makes three requests, and the inquiry groups them. How the requests share questions and answers is open (§5 #4). In the simplest form, each request is asked and decided on its own, and the inquiry only groups the answers.
 
@@ -335,8 +335,8 @@ Publishing changes no case: each case keeps its corpus (`due2-workflows.md` §7.
 3. **Select.** The orchestrator asks the policy store for the corpus of every policy that may apply (§2.3), and fetches it.
 4. **Draft.** The orchestrator drafts a request: the action, the dataset as target, the subject from authentication, and the time.
 5. **Plan.** `plan` names everything the decision can read: request parameters, state properties, and hierarchy modules.
-6. **Ask for parameters.** The planned request parameters are questions for the requester. When they are answered, the request is complete, and the case is created with the request, the corpus, and the normaliser pins (§2.2). `plan` runs again on the complete request, since what it names can depend on the request.
-7. **Fetch.** The connectors of every registered source fetch each planned state property and the edges above each planned entity (§2.4). Once the facts are recorded, they fetch the edges above each value of the state properties that `read_fact_edges` names (`due2-workflows.md` §3.3). Each answer is recorded as an event, one per source, including failures as `unresolved`.
+6. **Ask for parameters.** The planned request parameters are questions for the requester. When they are answered, the request is complete, and `plan` runs again on it, since what it names can depend on the request. If the plan has more tuples than `max_reads`, the limit the deployment sets, the orchestrator refuses the request with `Error`, and no case is created (`due2-workflows.md` §3.3, `decisions/0048`). Otherwise the case is created with the request, the corpus, and the normaliser pins (§2.2).
+7. **Fetch.** The connectors of every registered source fetch each planned state property and the edges above each planned entity (§2.4). Once the facts are recorded, they fetch the edges above each value of the state properties that `read_fact_edges` names (`due2-workflows.md` §3.3). Each answer is recorded as an event, one per source, including failures as `unresolved`, for world modules as for facts (`decisions/0048`). The edges above evidence values are fetched later, when evidence is submitted (§2.6).
 8. **Decide.** Every planned read is now in the case, so `decide` runs and the evaluation is recorded.
 9. **Show.** The verdict and its explanation are shown:
    - a `Permit` names the policies that permit, so over an offer it reads "this offer permits you to proceed";
@@ -346,7 +346,7 @@ Publishing changes no case: each case keeps its corpus (`due2-workflows.md` §7.
 
 **Why the loop is safe.** Information monotonicity (L4, `due2-workflows.md` §8) concerns one world whose unknowns get answered. A value that fits can only replace an `Indeterminate`. An answer that turns out not to fit, or that says no value exists, can turn a definite verdict into `Indeterminate`, but never into another definite one. So within one world, asking more never replaces one definite verdict by a different one; at worst it makes the answer less certain. A fact that changes in the world while the loop runs is a different matter: it is a new fact, and the verdict can move either way (§3.3).
 
-**Why the loop ends.** It asks only about planned reads. The plan is fixed by the corpus and the complete request (`due2-workflows.md` §3.3), so it is finite, and so are the edges it asks for above fact values, since a recorded fact has finitely many values. The orchestrator asks a person for each read at most once, and retries a connector at most up to the retry limit. Once every planned read has an answer, the retries are spent, or the person declines to give more, there is nothing left to ask.
+**Why the loop ends.** It asks only about planned reads. The plan is fixed by the corpus and the complete request (`due2-workflows.md` §3.3), so it is finite, and so are the edges it asks for above fact values and evidence values, since a recorded fact has finitely many values and each submitted piece of evidence has one issuer, one actor, and finitely many parameters. The orchestrator asks a person for each read at most once, and retries a connector at most up to the retry limit. Once every planned read has an answer, the retries are spent, or the person declines to give more, there is nothing left to ask.
 
 **Worked example.** The case `conformance/cases/rl2-geo-restriction`, translated from RL2, has one policy (`policy.ttl`) and four scenarios (`case.json`). The case fixes the policy, the facts, and the verdicts; the steps around them, and the registered sources, are this document's illustration.
 
@@ -436,10 +436,11 @@ Either way, the ledger has to record which engine produced each evaluation, besi
 | # | Question | Where | Issue |
 |---|---|---|---|
 | 1 | Policy selection: what `select` may use, how it is shown to over-select, per policy and per root atom, and what a request gets when a selected policy has no published corpus | §2.3 | #94, #105 |
-| 2 | A hierarchy lookup that fails cannot be recorded, because `closure` has no status, and hierarchy is closed-world, so a missing classification makes a part `F` | §2.5 | #95 |
 | 3 | Asking request parameters in order of importance: a status for a parameter not yet asked, or an evaluation of the draft outside the ledger | §3.1 | #96 |
 | 4 | Inquiries: how the requests of one inquiry share questions, answers, and presentation | §2.6 | #97 |
 | 5 | The ledger: the engine that produced each evaluation, references to predecessor records, where shadow results go, and safe retries | §1.2, §4 | #98 |
 | 6 | What-if results: recorded, and where | §2.11 | #99 |
 
-Already open elsewhere: the monitoring question (#6), the read limit `max_reads` (#34), re-evaluation triggers (`due2-architecture.md` §7), remedies in the trace (#61).
+Rows keep their numbers when resolved. Row 2, a hierarchy lookup that fails, is resolved: a world-edge answer has a status, and an `unresolved` one makes a comparison `U` (§2.5, `decisions/0048`).
+
+Already open elsewhere: the monitoring question (#6), re-evaluation triggers (`due2-architecture.md` §7), remedies in the trace (#61).

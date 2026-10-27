@@ -50,8 +50,9 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0040](0040-facts-are-kept-per-source.md) | Facts are kept per source, and W2 combines them | 2026-10-26 | In force, with notes: the connector registry admits sources (`decisions/0045`); a changed value arrives by an explicit call (`decisions/0046`) |
 | [0041](0041-the-evaluator-returns-the-whole-trace.md) | The evaluator returns the whole trace | 2026-10-26 | In force |
 | [0042](0042-a-case-fixes-its-config-and-pins.md) | A case fixes its request, corpus, config, and pins | 2026-10-26 | In force, with a note: there is no config (`decisions/0045`) |
-| [0043](0043-world-edges-are-case-events.md) | World hierarchy edges are events on the case | 2026-10-26 | In force, with a note: the entities of an answer (`decisions/0047`) |
+| [0043](0043-world-edges-are-case-events.md) | World hierarchy edges are events on the case | 2026-10-26 | In force, with notes: the entities of an answer (`decisions/0047`); an answer's source and status (`decisions/0048`) |
 | [0044](0044-the-source-version-is-on-the-event.md) | The source version is recorded on the event | 2026-10-26 | In force |
 | [0045](0045-no-config.md) | An evaluation has no config | 2026-10-26 | In force |
 | [0046](0046-platform-calls-are-explicit.md) | Publication is its own workflow, and a case changes only by explicit calls | 2026-10-26 | In force |
-| [0047](0047-bindings-in-the-corpus-and-reads.md) | The corpus carries operand bindings, and `Reads` is four relations | 2026-10-26 | In force |
+| [0047](0047-bindings-in-the-corpus-and-reads.md) | The corpus carries operand bindings, and `Reads` is four relations | 2026-10-26 | In force, with a note: `Reads` gains two relations (`decisions/0048`) |
+| [0048](0048-world-answers-have-a-source-and-a-status.md) | A world-edge answer has a source and a status, evidence edges are planned, and a plan over the read limit is refused | 2026-10-26 | In force |
