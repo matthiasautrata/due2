@@ -68,7 +68,7 @@ ex:forbid a odrl:Prohibition ; odrl:action odrl:use ; odrl:target ex:b .
 BASE: Obj = {
     "case": "test",
     "scenario": "test",
-    "policy": POLICY,
+    "policies": [POLICY],
     "prefixes": {"odrl": "http://www.w3.org/ns/odrl/2/", "ex": "https://example.org/"},
     "request": {
         "reference": "req-1",
@@ -92,7 +92,7 @@ def vector(policy: str | None = None, /, **sections: Obj) -> Obj:
     """BASE with the policy replaced and each named section updated key by key."""
     v = copy.deepcopy(BASE)
     if policy is not None:
-        v["policy"] = policy
+        v["policies"] = [policy]
     for name, changes in sections.items():
         section = v[name]
         assert isinstance(section, dict)

@@ -31,7 +31,7 @@ from tests.conftest import BASE, SPIKE
 ROOT = SPIKE.parents[1]
 TURTLE = sorted(
     {
-        *ROOT.glob("conformance/cases/*/policy.ttl"),
+        *ROOT.glob("conformance/cases/*/policy*.ttl"),
         *ROOT.glob("profiles/**/*.ttl"),
         *ROOT.glob("conformance/external/**/*.ttl"),
     }
@@ -164,10 +164,14 @@ def normalise(vector: Obj) -> Obj:
         s["effective_at"] = sotw["effective_at"]
     facts: Obj = {}
     for k, f in as_obj(sotw.get("facts") or {}, "facts").items():
-        fo = as_obj(f, k)
+        # One answer names no source, which the facts call `unnamed`; a list names each.
+        answers = [as_obj(a, k) for a in ([f] if isinstance(f, dict) else as_list(f, k))]
         facts[harness_expand(k, pfx)] = {
-            "status": fo["status"],
-            "values": canon([norm_value(x, pfx) for x in as_list(fo.get("values") or [], k)]),
+            norm_name(a["source"], pfx) if "source" in a else "unnamed": {
+                "status": a["status"],
+                "values": canon([norm_value(x, pfx) for x in as_list(a.get("values") or [], k)]),
+            }
+            for a in answers
         }
     evidence: Obj = {}
     for raw in as_list(sotw.get("evidence") or [], "evidence"):
@@ -226,8 +230,12 @@ def decode(facts: list[Symbol]) -> Obj:
     sets: set[str] = set()
     parties: dict[str, list[Json]] = {}
     params: dict[str, list[Json]] = {}
-    facts_o: dict[str, Obj] = {}
+    facts_o: dict[str, dict[str, Obj]] = {}
     evidence: dict[str, Obj] = {}
+
+    def answer(prop: str, source: str) -> Obj:
+        return facts_o.setdefault(prop, {}).setdefault(source, {"values": []})
+
     closure: list[Json] = []
     activation: Obj = {}
     for f in facts:
@@ -251,12 +259,12 @@ def decode(facts: list[Symbol]) -> Obj:
                 params.setdefault(a[0].string, []).append(decode_value(a[1]))
             case "sotw_effective_at":
                 s["effective_at"] = lex(a[0])
-            case "fact":
-                facts_o.setdefault(a[0].string, {"values": []})["status"] = text(a[1])
-            case "fact_value":
-                vs = facts_o.setdefault(a[0].string, {"values": []})["values"]
+            case "fact_answer":
+                answer(a[0].string, text(a[1]))["status"] = text(a[2])
+            case "fact_answer_value":
+                vs = answer(a[0].string, text(a[1]))["values"]
                 assert isinstance(vs, list)
-                vs.append(decode_value(a[1]))
+                vs.append(decode_value(a[2]))
             case "evidence":
                 evidence.setdefault(a[0].string, {}).update(
                     occurred_at=lex(a[1]), actor=a[2].string, action=a[3].string
@@ -280,9 +288,10 @@ def decode(facts: list[Symbol]) -> Obj:
     if params:
         r["params"] = {k: {"set": canon(v)} if k in sets else v[0] for k, v in params.items()}
         assert all(len(v) == 1 for k, v in params.items() if k not in sets)
-    for fo in facts_o.values():
-        fo["values"] = canon(as_list(fo["values"], "values"))
-    facts_j: Obj = dict(facts_o.items())
+    for answers in facts_o.values():
+        for fo in answers.values():
+            fo["values"] = canon(as_list(fo["values"], "values"))
+    facts_j: Obj = {k: dict(v.items()) for k, v in facts_o.items()}
     evidence_j: Obj = dict(evidence.items())
     put(
         s,
@@ -427,6 +436,11 @@ def sections(**changes: Obj) -> Obj:
         ({"sotw": {"weather": {}}}, "sotw: unknown field 'weather'"),
         ({"sotw": {"facts": {"ex:x": {"status": "known"}}}}, "unknown status 'known'"),
         ({"sotw": {"facts": {"ex:x": {"values": []}}}}, "missing field 'status'"),
+        (
+            {"sotw": {"facts": {"ex:x": [{"source": "ex:s", "status": "missing"}] * 2}}},
+            "a second answer from source",
+        ),
+        ({"sotw": {"facts": {"ex:x": [{"status": "missing"}]}}}, "missing field 'source'"),
         ({"request": {"params": {"ex:purpose": "ex:research"}}}, "expected an object, got str"),
         (
             {

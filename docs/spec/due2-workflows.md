@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.55
+**Status:** Draft v0.56
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.55** (2026-10-26, #92): §6.4 states how due2's reading of a void policy departs from ODRL 2.2, why each half holds, and what it gives up. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.56** (2026-10-26, #1): §9 row 7, cases with several policies, is resolved by the case-format extension. Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -666,9 +666,8 @@ Scope decisions — which ODRL constructs are admitted, including `invalid` — 
 | 4 | Monitoring question — the duties a party owes at a given time, independent of any request. Obligations in force for a request are covered by §5.2 and §6.1 | §1 | Obligation-monitoring requirements | #6 |
 | 5 | Request match keys beyond `assignee` | §5.2 | Survey of real policies | #7 |
 | 6 | Domain-aware completion over parts that read one fact or request field but are neither identical nor complementary (enumerated values, overlapping ranges, distinct values of a single-valued field such as the target). Identical parts that make the same read, and complementary constraint parts, already share a variable (§6.4, `decisions/0012`) | §6.4 | A real policy where the remaining over-approximation matters | #25 |
-| 7 | Cases with several policies, needed to test cross-policy combination and errors in policies that do not apply | §6.2 | Case-format extension | #1 |
 
-Rows 1, 8, and 9 are resolved: row 1, the canonical encoding of collections (§2, `decisions/0007`); row 8, a request without a target, whose relation part is `U` (§5.2; cases `oval-no-target-permission` and `oval-no-target-prohibition`); and row 9, the read limit, which refuses a request whose plan exceeds it (§3.3, `decisions/0048`).
+Rows 1, 7, 8, and 9 are resolved: row 1, the canonical encoding of collections (§2, `decisions/0007`); row 7, cases with several policies, whose files a case adds beside `policy.ttl` and evaluates as one corpus (§4, *Several policies are one corpus*; `conformance/README.md`; case `due2-prohibit-overrides`), while an error in a policy that does not apply is W1's rejection of that policy alone, so it is a negative case of its own (§4); row 8, a request without a target, whose relation part is `U` (§5.2; cases `oval-no-target-permission` and `oval-no-target-prohibition`); and row 9, the read limit, which refuses a request whose plan exceeds it (§3.3, `decisions/0048`).
 
 Deadlines and the `violated` status are decided (§5.3). The *not-yet-owed* state of an instance whose occurrence or window is in the future is open (`due2-profiles.md` §9, #18).
 

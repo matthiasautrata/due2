@@ -1,0 +1,297 @@
+{
+  "case": "due2-fact-sources",
+  "source": "due2-native: one state property answered by several sources (due2-workflows.md §3.3, Several sources; decisions/0040)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Shows several sources at work. Each sotw.facts entry here is a list of answers, one per source (conformance/README.md). The answers that have values, those resolved or in conflict, decide: the combination is resolved when they all are resolved with the same values, and conflict otherwise, and answers without values are ignored. If no answer has values, the combination is unresolved if any answer is, else invalid if any is, else missing (due2-workflows.md §3.3, decisions/0045). Scenario 3 shows that an unresolved source does not hide another source's value; scenarios 4 and 5 show the order among the statuses without values. A reading that lets any non-resolved answer make the fact U gets scenario 3 wrong.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "two sources agree",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:ClientReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": [
+            {
+              "source": "ex:crm",
+              "status": "resolved",
+              "values": [
+                {
+                  "@id": "ex:EU"
+                }
+              ]
+            },
+            {
+              "source": "ex:registry",
+              "status": "resolved",
+              "values": [
+                {
+                  "@id": "ex:EU"
+                }
+              ]
+            }
+          ]
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForEU",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "Both sources answer ex:EU, so the combined fact is resolved to ex:EU (due2-workflows.md §3.3). The constraint is T and ex:readForEU applies: Permit."
+      }
+    },
+    {
+      "name": "two sources disagree",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:ClientReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": [
+            {
+              "source": "ex:crm",
+              "status": "resolved",
+              "values": [
+                {
+                  "@id": "ex:EU"
+                }
+              ]
+            },
+            {
+              "source": "ex:registry",
+              "status": "resolved",
+              "values": [
+                {
+                  "@id": "ex:US"
+                }
+              ]
+            }
+          ]
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForEU",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readForEU",
+            "input": "ex:clientRegion",
+            "status": "conflict"
+          }
+        ],
+        "why": "The sources answer ex:EU and ex:US, so the combined fact is conflict with both values, and a single-valued operand in conflict is U (due2-workflows.md §3.3, due2-profiles.md §3). ex:readForEU is the only candidate and is U, so its completions give NotApplicable and Permit: Indeterminate."
+      }
+    },
+    {
+      "name": "one source resolves, one does not",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:ClientReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": [
+            {
+              "source": "ex:crm",
+              "status": "resolved",
+              "values": [
+                {
+                  "@id": "ex:EU"
+                }
+              ]
+            },
+            {
+              "source": "ex:registry",
+              "status": "unresolved",
+              "values": []
+            }
+          ]
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForEU",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "Only ex:crm's answer has values, and an answer without values is ignored, so the combined fact is resolved to ex:EU (due2-workflows.md §3.3). The constraint is T: Permit."
+      }
+    },
+    {
+      "name": "no value: unresolved before missing",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:ClientReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": [
+            {
+              "source": "ex:crm",
+              "status": "missing",
+              "values": []
+            },
+            {
+              "source": "ex:registry",
+              "status": "unresolved",
+              "values": []
+            }
+          ]
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForEU",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readForEU",
+            "input": "ex:clientRegion",
+            "status": "unresolved"
+          }
+        ],
+        "why": "No answer has values, and one is unresolved, so the combined fact is unresolved (due2-workflows.md §3.3). The constraint is U, so ex:readForEU's completions give NotApplicable and Permit: Indeterminate."
+      }
+    },
+    {
+      "name": "no value: invalid before missing",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:ClientReport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:clientRegion": [
+            {
+              "source": "ex:crm",
+              "status": "invalid",
+              "values": []
+            },
+            {
+              "source": "ex:registry",
+              "status": "missing",
+              "values": []
+            }
+          ]
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readForEU",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:readForEU",
+            "input": "ex:clientRegion",
+            "status": "invalid"
+          }
+        ],
+        "why": "No answer has values and none is unresolved; one is invalid, so the combined fact is invalid (due2-workflows.md §3.3). The constraint is U: Indeterminate, NotApplicable..Permit."
+      }
+    }
+  ]
+}

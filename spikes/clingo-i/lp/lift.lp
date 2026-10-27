@@ -8,9 +8,9 @@
 %
 % - **Consumes:** the driver's facts (flatten.py): the graphs (`triple/3`,
 %   `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
-%   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`,
-%   `fact_value/2`, `evidence/4`, `evidence_param/3`, `activation/2`, `sotw_closure/3`), and the
-%   driver's own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`,
+%   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`, `fact_answer/3`,
+%   `fact_answer_value/3`, `evidence/4`, `evidence_param/3`, `activation/2`,
+%   `sotw_closure/3`), and the driver's own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`,
 %   `action_term/1`, `duty_node/1`, `pre_rule/2`, and `node_deadline/2` (structure.lp);
 %   `right/2` (constraint.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
@@ -21,7 +21,8 @@
 %   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
 %   `subclass/2`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`, `stated_conflict/2`,
 %   `profile_conflict/1`, `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`,
-%   `decl/4`, `layer_rank/2`, `concept_scheme/2`); the kinds (`declared_datatype/1`,
+%   `decl/4`, `layer_rank/2`, `concept_scheme/2`); the combined facts (`valued/2`, `differs/1`,
+%   `fact/2`, `fact_value/2`); the kinds (`declared_datatype/1`,
 %   `datatype/1`, `dt_kind/2`, `term_kind/2`, `admits_kind/2`, `range_iri/1`); the hierarchies
 %   (`closure_key/1`, `closure/3`, `declared_in_scheme/2`, `coll_kind/2`, `node_kind/2`,
 %   `le_k/3`); the declines (`policy_predicate/1`, `family_predicate/1`, `anywhere_predicate/1`,
@@ -606,6 +607,56 @@ admits_kind(Rg, iri) :- range_iri(Rg), not xsd_datatype(Rg), not declared_dataty
 Some layer states the IRI `Rg` as a range.
 *%
 range_iri(Rg) :- decl(_, _, range, Rg), kind(Rg, iri).
+
+%## Several sources
+
+% A state property may have several answers, one per source (due2-workflows.md §3.3, *Several
+% sources*; decisions/0040). The program reads one status and one set of values per property, so
+% this section combines the answers: those with values decide, and a disagreement among them is a
+% `conflict`. The SOTW names no source in a case whose fact is one answer; the driver then names
+% it `unnamed`, and the combination of one answer is that answer.
+
+%*! valued(Prop, Source)
+
+`Source`'s answer for `Prop` has values: its status is `resolved`, possibly with no value, or
+`conflict`.
+*%
+valued(Prop, Source) :- fact_answer(Prop, Source, resolved).
+valued(Prop, Source) :- fact_answer(Prop, Source, conflict).
+
+%*! differs(Prop)
+
+Two answers for `Prop` that have values differ: one holds a value the other lacks. Values are
+compared as sets of written terms, so a `resolved` answer with no value differs from one with a
+value.
+*%
+differs(Prop) :- valued(Prop, Source), valued(Prop, Other),
+    fact_answer_value(Prop, Source, Value), not fact_answer_value(Prop, Other, Value).
+
+%*! fact(Prop, S)
+
+The combined status of the answers for the state property `Prop`. If some answer has values, it
+is `resolved` when every such answer is `resolved` with the same values, and `conflict`
+otherwise. If none has, it is the first of `unresolved`, `invalid`, and `missing` that some
+answer has. A property with no answer has no `fact`, and operand.lp reads it as `unresolved`.
+*%
+fact(Prop, conflict) :- fact_answer(Prop, _, conflict).
+fact(Prop, conflict) :- differs(Prop).
+% `resolved` restates the two `conflict` rules' bodies rather than reading `not fact(Prop,
+% conflict)`, so `fact/2` does not depend negatively on itself and the program stays stratified.
+fact(Prop, resolved) :- valued(Prop, _), not fact_answer(Prop, _, conflict), not differs(Prop).
+fact(Prop, unresolved) :- fact_answer(Prop, _, unresolved), not valued(Prop, _).
+fact(Prop, invalid) :- fact_answer(Prop, _, invalid), not valued(Prop, _),
+    not fact_answer(Prop, _, unresolved).
+fact(Prop, missing) :- fact_answer(Prop, _, missing), not valued(Prop, _),
+    not fact_answer(Prop, _, unresolved), not fact_answer(Prop, _, invalid).
+
+%*! fact_value(Prop, Value)
+
+`Value` is one of the combined values of `Prop`: a value of an answer that has values. Answers
+without values are ignored.
+*%
+fact_value(Prop, Value) :- valued(Prop, Source), fact_answer_value(Prop, Source, Value).
 
 %## Hierarchies
 

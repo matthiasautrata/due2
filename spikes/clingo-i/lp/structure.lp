@@ -26,13 +26,14 @@
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
 %   `function/1`, `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `timing_predicate/1`,
-%   `term_kind/2`, `voc/2`, `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2` (driver).
+%   `term_kind/2`, `voc/2`, `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2`,
+%   `policy_texts/1` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
 %   `structure_node/1`, `states_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
 %   `family/1`, `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
 %   `assignee/2`, `action_term/1`, `action_of/2`, `has_action_value/1`, `atom/1`,
 %   `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`, `atom_effect/2`,
-%   `atom_party/3`; the duties (`root_obligation/1`, `pre_rule/2`, `duty_node/1`,
+%   `atom_party/3`; the duties (`obliges/2`, `root_obligation/1`, `pre_rule/2`, `duty_node/1`,
 %   `duty_stated/3`, `duty_states/2`, `duty_value/3`, `has_duty_value/2`, `duty_rel/2`,
 %   `inherits/1`, `duty_states_party/1`, `states_bearer/1`, `bearer_value/3`, `own_bearer/2`,
 %   `has_own_bearer/1`, `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`,
@@ -45,8 +46,9 @@
 
 % A policy is a node typed by a policy class, or by a class that a selected module declares
 % `rdfs:subClassOf` one. Only declared, direct edges count (odrl-compound-to-atomic-normalization.md
-% §3). No policy is `reject("NoPolicy", none)`, and more than one is `reject("MultiplePolicies",
-% P)`.
+% §3). The vector carries one text per policy, and the policies of all texts are one corpus
+% (due2-workflows.md §4, *Several policies are one corpus*). No policy is `reject("NoPolicy",
+% none)`, and more policies than texts is `reject("MultiplePolicies", P)`.
 
 %*! policy_type(Cls)
 
@@ -59,7 +61,7 @@ policy_type(Cls) :- subclass(Cls, Super), policy_class(Super).
 %*! policy(P)
 
 Node `P` is a policy: the policy graph types it with a policy type. An admissible vector has
-exactly one.
+exactly one per policy text.
 *%
 policy(P) :- type(P, Cls), policy_type(Cls).
 
@@ -78,7 +80,12 @@ due2-diagnostics.md.
 into an `error` reply, because `interpret` receives only admissible policies.
 *%
 reject("NoPolicy", none) :- not some_policy.
-reject("MultiplePolicies", P) :- policy(P), policy(Q), P != Q.
+% W1 rejects a text with two policies (due2-workflows.md §4). The texts share one graph here, so
+% the rule counts: more policies than texts means some text has two. It is a check on the
+% vector, not W1's: two policies in one text beside a text with none is not caught, and neither
+% is the second text's `NoPolicy`. tools/check_corpus.py checks each file of a case alone. The
+% rule names every policy node.
+reject("MultiplePolicies", P) :- policy(P), policy_texts(N), #count { Q : policy(Q) } > N.
 
 %*! rule(R)
 
@@ -86,11 +93,17 @@ Node `R` is a rule of the policy: a permission or a prohibition.
 *%
 rule(R) :- policy(P), has_rule(P, R, _).
 
+%*! obliges(P, Duty)
+
+Policy `P` states `odrl:obligation Duty`.
+*%
+obliges(P, Duty) :- policy(P), triple(P, Pred, Duty), voc(obligation, Pred).
+
 %*! root_obligation(Duty)
 
-Node `Duty` is a root obligation: the policy states `odrl:obligation Duty`.
+Node `Duty` is a root obligation: some policy states `odrl:obligation Duty`.
 *%
-root_obligation(Duty) :- policy(P), triple(P, Pred, Duty), voc(obligation, Pred).
+root_obligation(Duty) :- obliges(_, Duty).
 
 %*! pre_rule(R, Duty)
 
@@ -381,12 +394,12 @@ states nothing for the family, each value the policy states. An inherited party 
 belongs to the parent atom (`inh_bearer/3`).
 *%
 duty_value(Duty, Fam, Term) :- duty_stated(Duty, Fam, Term).
-duty_value(Duty, action, A) :- root_obligation(Duty), not duty_states(Duty, action), policy(P),
+duty_value(Duty, action, A) :- obliges(P, Duty), not duty_states(Duty, action),
     stated(P, action, A).
-duty_value(Duty, relation, T) :- root_obligation(Duty), not duty_states(Duty, relation), policy(P),
+duty_value(Duty, relation, T) :- obliges(P, Duty), not duty_states(Duty, relation),
     stated(P, target, T).
-duty_value(Duty, F, Party) :- root_obligation(Duty), function(F), not duty_states(Duty, F),
-    policy(P), stated(P, F, Party).
+duty_value(Duty, F, Party) :- obliges(P, Duty), function(F), not duty_states(Duty, F),
+    stated(P, F, Party).
 
 %*! has_duty_value(Duty, Fam)
 

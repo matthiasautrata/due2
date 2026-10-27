@@ -11,10 +11,9 @@
 %
 % - **Consumes:** `decl/4`, `layer_rank/2`, `source_kind/2`, `context_property/2`,
 %   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2`,
-%   `concept_scheme/2`, `declared_in_scheme/2`, `closure/3` (lift.lp);
-%   `request_param/2`, `request_param_set/1`, `fact/2`, `fact_value/2`,
-%   `request_party/2`, `sotw_effective_at/1`, `request_at/1`, `evidence/4`,
-%   `evidence_param/3`, `value/3` (driver); `left/2`, `c_operator/2`, `op/2`, `right/2`,
+%   `concept_scheme/2`, `declared_in_scheme/2`, `closure/3`, `fact/2`, `fact_value/2`
+%   (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
+%   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3` (driver); `left/2`, `c_operator/2`, `op/2`, `right/2`,
 %   `node_tree/2` (constraint.lp); `duty_node/1` (structure.lp); `evaluates/2` (compare.lp).
 % - **Provides:** `used/1`, `declares/2`, `where_key/1`, `type_key/1`, `module_differs/1`,
 %   `where_rank/3`, `owner_rank/2`, `bdecl/3`, `owned/3`, `retyped/1`, `src/2`, `prop/2`,

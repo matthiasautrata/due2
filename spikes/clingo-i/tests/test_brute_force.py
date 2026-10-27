@@ -73,7 +73,7 @@ from hypothesis import Phase, assume, example, given, seed, settings
 from hypothesis import strategies as st
 
 from clingo_i.interpret import CHAIN, SOLVE_2, Interpreter, load_programs
-from clingo_i.json_types import Json, Obj
+from clingo_i.json_types import Json, Obj, as_list
 from tests.conftest import DUTY_INIT, INIT, PREFIXES, vector
 
 EX = "https://example.org/"
@@ -1211,7 +1211,8 @@ def duty_cases(draw: st.DrawFn) -> Duties:
 
 def render_duties(dc: Duties) -> Obj:
     v = render(dc.case)
-    policy = str(v["policy"])
+    (policy,) = as_list(v["policies"], "policies")
+    assert isinstance(policy, str)
     head = "ex:p a odrl:Set ;"
     assert policy.count(head) == 1
     lines = [policy.replace(head, head + " odrl:profile dprod: ;")]
@@ -1235,7 +1236,9 @@ def render_duties(dc: Duties) -> Obj:
     if dc.obligation is not None:
         lines.append("ex:p odrl:obligation ex:ob .")
         duty("ob", "delete", dc.obligation, "ex:a")
-    v["policy"] = "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n" + "\n".join(lines) + "\n"
+    v["policies"] = [
+        "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n" + "\n".join(lines) + "\n"
+    ]
     sotw = v["sotw"]
     assert isinstance(sotw, dict)
     sotw["evidence"] = evidence

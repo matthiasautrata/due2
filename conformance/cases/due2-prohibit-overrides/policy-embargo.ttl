@@ -1,0 +1,20 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# The second policy of due2-prohibit-overrides: an embargo, with conflict prohibit. It has no
+# permission, so its prohibition survives within it whenever it applies.
+
+ex:embargoPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:prohibition ex:embargo .
+
+ex:embargo a odrl:Prohibition ;
+    odrl:action odrl:read ; odrl:target ex:Report ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:reportStatus ; odrl:operator odrl:eq ; odrl:rightOperand ex:Embargoed ] .
+
+ex:reportStatus a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:reportStatus .

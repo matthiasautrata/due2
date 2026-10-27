@@ -19,7 +19,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from clingo import Control, Function, MessageCode, Model, String, Symbol, SymbolType
+from clingo import Control, Function, MessageCode, Model, Number, String, Symbol, SymbolType
 
 from clingo_i import flatten, values
 from clingo_i.json_types import Json, Obj, as_list, as_obj, as_str
@@ -146,7 +146,7 @@ class Interpreter:
         """The output for one vector (DESIGN.md § Output).
 
         Args:
-            vector: A corpus vector: `prefixes`, `policy` (Turtle), `request`, and `sotw`.
+            vector: A corpus vector: `prefixes`, `policies` (Turtle texts), `request`, and `sotw`.
 
         Returns:
             `verdict`, `frontier`, `obligations`, `exact`, `verdict_basis`, `eliminated`,
@@ -229,9 +229,12 @@ class Interpreter:
                 not admissible (`UnrecognisedProfile`).
         """
         prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
-        graph = flatten.parse(as_str(vector["policy"], "policy"))
+        # The policies are one corpus (due2-workflows.md §4, *Several policies are one corpus*).
+        texts = as_list(vector["policies"], "policies")
+        graph = flatten.parse(*(as_str(t, "policies") for t in texts))
 
-        facts = flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
+        facts = [Function("policy_texts", [Number(len(texts))])]
+        facts += flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
         # A path's layer: `core`, or `module(Iri)` for the profile whose module it is part of
         # (decisions/0014 #3). A file in both the core and a profile is core.
         layers: dict[str, Symbol] = {path: Function("core") for path in self._core}

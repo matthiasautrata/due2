@@ -18,6 +18,8 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
   several files is one layer; a file in both is `core` (`interpret.py`). Read by lift.lp.
 - `pred_ns/2`, `pred_ns(P, NS)`: each policy predicate. `NS` is `P` up to and including its
   last `#` or `/`. Read by lift.lp.
+- `policy_texts/1`, `policy_texts(N)`: the number of Turtle texts in the vector's `policies`,
+  one per policy; their triples are all `triple/3` (`interpret.py`). Read by structure.lp.
 - `selected_profile/1`, `selected_profile(Iri)`: each `odrl:profile` value that names a shipped
   profile. Read by lift.lp.
 
@@ -40,10 +42,13 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 **SOTW** (due2-workflows.md §3.3).
 
 - `sotw_effective_at/1`: `effective_at`. Read by lift.lp, operand.lp (`clock`), and duty.lp.
-- `fact/2`, `fact(Prop, Status)`: each element of `facts`. `Status` is one of `resolved`,
-  `missing`, `invalid`, `conflict`, `unresolved`. Read by operand.lp.
-- `fact_value/2`, `fact_value(Prop, Value)`: each value of a `facts` element. Read by lift.lp
-  and operand.lp.
+- `fact_answer/3`, `fact_answer(Prop, Source, Status)`: each answer of a `facts` element.
+  An element is one answer, which names no source, or a list of answers, each naming its
+  `source` (`conformance/README.md`). `Source` is the expanded `source`, or `unnamed` for an
+  answer that names none. `Status` is one of `resolved`, `missing`, `invalid`, `conflict`,
+  `unresolved`. Read by lift.lp, which combines the answers of each property.
+- `fact_answer_value/3`, `fact_answer_value(Prop, Source, Value)`: each value of an answer.
+  Read by lift.lp.
 - `evidence/4`, `evidence(E, OccurredAt, Actor, Action)`: each `evidence` record, `E` its
   `id`. Read by lift.lp, operand.lp (`actionTime` in `wit(E)`), and duty.lp.
 - `evidence_object/2`, `evidence_issuer/2`: its optional `object` and `issuer`. Read by
@@ -64,8 +69,9 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 relative deadline.
 
 A field the case format does not define, a missing required field (`action`; an evidence
-record's `id`, `occurred_at`, `actor`, `action`), a duplicate evidence `id`, or an unknown
-status is a `ValueError`, which the reply reports as an `error`: the vector is malformed, and
+record's `id`, `occurred_at`, `actor`, `action`; a listed fact answer's `source`), a duplicate
+evidence `id`, two answers for one property from one source, or an unknown status is a
+`ValueError`, which the reply reports as an `error`: the vector is malformed, and
 nothing is guessed.
 
 **Terms.**
@@ -81,7 +87,7 @@ nothing is guessed.
   `Scope` is `"policy"` or the module's path, so blank nodes from different graphs never meet.
 - **Input names** are expanded with the vector's prefixes, the same way the harness expands
   them. A name is a string or `{"@id": …}`. `reference` is not a name, and stays as given.
-- **Input values** (`params`, `fact_value`, an evidence record's `params`) are `{"@id": …}`,
+- **Input values** (`params`, a fact answer's `values`, an evidence record's `params`) are `{"@id": …}`,
   read as its IRI; `{"@value": …, "@type": …}`, read as `lit` with the type expanded;
   `{"@value": …}`, read as `xsd:string`; or `{"@value": …, "@language": …}`. A bare string is
   an error, because it is ambiguous between a name and a string.
@@ -123,15 +129,19 @@ def _exact_literals() -> Generator[None]:
         rdflib.NORMALIZE_LITERALS = saved
 
 
-def parse(text: str) -> ReadOnlyGraphAggregate:
-    """The Turtle `text` as a graph, lexical forms as written, with canonical blank node labels.
+def parse(*texts: str) -> ReadOnlyGraphAggregate:
+    """The union of the Turtle `texts` as one graph, with canonical blank node labels.
 
-    The labels come from `rdflib.compare.to_canonical_graph`, so they do not depend on the
-    labels the parser chose, and the facts do not depend on serialisation order.
+    Lexical forms are kept as written. Each text is a policy of the corpus evaluated together (due2-workflows.md §4, *Several
+    policies are one corpus*). A named node two of them state is one node of the union, and
+    each parse mints fresh blank nodes, so blank nodes of different texts never meet. The labels
+    come from `rdflib.compare.to_canonical_graph`, so they do not depend on the labels the
+    parser chose, and the facts do not depend on serialisation order.
     """
     with _exact_literals():
         graph = Graph()
-        graph.parse(data=text, format="turtle")
+        for text in texts:
+            graph.parse(data=text, format="turtle")
         return to_canonical_graph(graph)
 
 
@@ -314,8 +324,8 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
     """The SOTW's facts (due2-workflows.md §3.3).
 
     Raises:
-        ValueError: An unknown fact status, a duplicate evidence id, or a closure entry that is
-            not `[relation, narrower, broader]`.
+        ValueError: An unknown fact status, two answers for one property from one source, a
+            duplicate evidence id, or a closure entry that is not `[relation, narrower, broader]`.
     """
     fields(sotw, "sotw", (), ("effective_at", "facts", "evidence", "activation", "closure"))
     out: list[Symbol] = []
@@ -324,15 +334,23 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
             Function("sotw_effective_at", [instant(sotw["effective_at"], "sotw.effective_at")])
         )
     for key, f in as_obj(sotw.get("facts") or {}, "sotw.facts").items():
-        what = f"sotw.facts.{key}"
-        obj = fields(f, what, ("status",), ("values",))
-        status = as_str(obj["status"], f"{what}.status")
-        if status not in STATUSES:
-            raise ValueError(f"{what}: unknown status {status!r}")
         prop = String(expand(key, prefixes))
-        out.append(Function("fact", [prop, Function(status)]))
-        for x in as_list(obj.get("values") or [], f"{what}.values"):
-            out.append(Function("fact_value", [prop, value(x, prefixes, f"{what}.values")]))
+        answers = [(f, ())] if isinstance(f, dict) else [(a, ("source",)) for a in as_list(f, key)]
+        sources: set[Symbol] = set()
+        for i, (raw, named) in enumerate(answers):
+            what = f"sotw.facts.{key}" + (f"[{i}]" if named else "")
+            obj = fields(raw, what, ("status", *named), ("values",))
+            status = as_str(obj["status"], f"{what}.status")
+            if status not in STATUSES:
+                raise ValueError(f"{what}: unknown status {status!r}")
+            src = name(obj["source"], prefixes, f"{what}.source") if named else Function("unnamed")
+            if src in sources:
+                raise ValueError(f"{what}: a second answer from source {src}")
+            sources.add(src)
+            out.append(Function("fact_answer", [prop, src, Function(status)]))
+            for x in as_list(obj.get("values") or [], f"{what}.values"):
+                v = value(x, prefixes, f"{what}.values")
+                out.append(Function("fact_answer_value", [prop, src, v]))
     seen: set[Symbol] = set()
     for i, raw in enumerate(as_list(sotw.get("evidence") or [], "sotw.evidence")):
         what = f"sotw.evidence[{i}]"

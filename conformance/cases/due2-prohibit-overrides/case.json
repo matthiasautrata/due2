@@ -1,0 +1,245 @@
+{
+  "case": "due2-prohibit-overrides",
+  "source": "due2-native: two policies as one corpus, decided by prohibit-overrides (due2-workflows.md §4, §6.2; decisions/0036, decisions/0045)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Shows several policies per case at work: the case has two policy files, policy.ttl and policy-embargo.ttl, which are one corpus (conformance/README.md). Within ex:licence, conflict perm lets ex:readLicensed eliminate ex:noInternal; across the policies, any surviving T prohibition eliminates every candidate (prohibit-overrides). Scenario 1 shows that a prohibition eliminated within its own policy does not override across policies, and scenario 3 that both rules apply in one evaluation. A reader that applies one policy's conflict strategy to the whole corpus gets scenario 1 or 2 wrong, whichever policy it picks.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "an internal report: the licence's own strategy decides",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:Report",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:reportClass": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Internal"
+              }
+            ]
+          },
+          "ex:reportStatus": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Released"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readLicensed",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [
+          {
+            "ref": "ex:noInternal",
+            "by": "ex:readLicensed",
+            "rule": "perm"
+          }
+        ],
+        "unknown_parts": [],
+        "why": "ex:noInternal is T, but ex:licence's conflict is perm, so ex:readLicensed eliminates it within the licence (due2-workflows.md §6.2). ex:embargo is F, so no prohibition survives to override across policies: Permit."
+      }
+    },
+    {
+      "name": "an embargoed report: prohibit-overrides across policies",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:Report",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:reportClass": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Public"
+              }
+            ]
+          },
+          "ex:reportStatus": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Embargoed"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:embargo",
+            "role": "prohibition"
+          }
+        ],
+        "eliminated": [
+          {
+            "ref": "ex:readLicensed",
+            "by": "ex:embargo",
+            "rule": "prohibit-overrides"
+          }
+        ],
+        "unknown_parts": [],
+        "why": "ex:embargo is T and survives within ex:embargoPolicy, which has no candidate. Across policies, a surviving T prohibition eliminates every candidate, ex:readLicensed among them, whatever the licence's own strategy (due2-workflows.md §6.2): Deny."
+      }
+    },
+    {
+      "name": "an internal, embargoed report: both rules apply",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:Report",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:reportClass": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Internal"
+              }
+            ]
+          },
+          "ex:reportStatus": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Embargoed"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Deny",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:embargo",
+            "role": "prohibition"
+          }
+        ],
+        "eliminated": [
+          {
+            "ref": "ex:noInternal",
+            "by": "ex:readLicensed",
+            "rule": "perm"
+          },
+          {
+            "ref": "ex:readLicensed",
+            "by": "ex:embargo",
+            "rule": "prohibit-overrides"
+          }
+        ],
+        "unknown_parts": [],
+        "why": "Within the licence, ex:readLicensed eliminates ex:noInternal under perm; across policies, the surviving ex:embargo eliminates ex:readLicensed under prohibit-overrides (due2-workflows.md §6.2). Both eliminations are recorded, and no candidate is left: Deny."
+      }
+    },
+    {
+      "name": "the report's status is unknown",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:Report",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Analyst"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:reportClass": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:Public"
+              }
+            ]
+          },
+          "ex:reportStatus": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:embargo",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "Deny",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:embargo",
+            "input": "ex:reportStatus",
+            "status": "unresolved"
+          }
+        ],
+        "why": "ex:reportStatus is unresolved, so ex:embargo is U, and a U prohibition eliminates nothing (due2-workflows.md §6.2). ex:readLicensed applies; completed T, the embargo overrides it, and completed F, it permits: Indeterminate, Deny..Permit."
+      }
+    }
+  ]
+}

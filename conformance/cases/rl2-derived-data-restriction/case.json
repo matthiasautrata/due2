@@ -3,7 +3,7 @@
   "source": "RL2 conformance/usecases/derived-data-restriction.md",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Direct translation. The asset-scoped fact asset.assessment.nonReconstructing becomes one state property, ex:targetAssessedNonReconstructing, which the assembler resolves for the requested target. RL2 requires the fact to be attributed to the vendor-approved assessment process; in due2 the orchestrator records a fact only from a source registered for the property (due2-platform.md §2.4), and a property whose answers all fail it is missing. The case format gives sotw.facts no source field, so no scenario tests it. RL2's prose names five outcomes (true, false, missing, invalid, conflicting); each is a scenario. due2 agrees with all of them. Scenario 6 is added.",
+  "notes": "Direct translation. The asset-scoped fact asset.assessment.nonReconstructing becomes one state property, ex:targetAssessedNonReconstructing, which the assembler resolves for the requested target. RL2 requires the fact to be attributed to the vendor-approved assessment process; in due2 the orchestrator records a fact only from a source registered for the property (due2-platform.md §2.4), and a property whose answers all fail it is missing. The filter runs before evaluation, so a SOTW holds only admitted answers, and no scenario can test it. RL2's prose names five outcomes (true, false, missing, invalid, conflicting); each is a scenario. due2 agrees with all of them. Scenario 6 is added.",
   "prefixes": { "ex": "https://example.org/" },
   "scenarios": [
     {

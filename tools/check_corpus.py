@@ -5,7 +5,7 @@ Checks what can be checked without an evaluator:
     (odrl-compound-to-atomic-normalization.md §3, due2-profiles.md §2-§8);
   * every left operand has a binding and every operator is admitted
     (due2-profiles.md §3-§4);
-  * case.json is well formed and consistent with the policy and its bindings
+  * case.json is well formed and consistent with the case's policies and their bindings
     (conformance/README.md).
 
 Usage:
@@ -26,7 +26,7 @@ import sys
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import rdflib
 from harness.xsd_time import TIMEZONE, date_ok, datetime_ok, duration_kinds, instant_ok
@@ -1300,28 +1300,53 @@ def check_vendored(path: Path, reports: list[Report]) -> None:
         x.diagnostics = []
 
 
+def source_name(answer: dict[str, Any]) -> str | None:
+    """The `source` an answer of `sotw.facts` names, unexpanded, or None if it names none.
+
+    A name is a string or `{"@id": ...}`, as the driver reads it (clingo-i's flatten.py).
+    """
+    x: Any = answer.get("source")
+    if isinstance(x, dict):
+        x = cast(dict[str, Any], x).get("@id")
+    return x if isinstance(x, str) else None
+
+
+def case_policies(case_dir: Path) -> list[Path]:
+    """The policy files of a case: `policy.ttl`, then any `policy-<name>.ttl`, sorted.
+
+    Each holds one policy, and together they are one corpus (conformance/README.md;
+    due2-workflows.md §4, *Several policies are one corpus*).
+    """
+    return [case_dir / "policy.ttl", *sorted(case_dir.glob("policy-*.ttl"))]
+
+
 def check_case(case_dir: Path) -> list[Report]:
-    policy_path = case_dir / "policy.ttl"
     case_path = case_dir / "case.json"
     reports: list[Report] = []
-    if not policy_path.exists():
+    if not (case_dir / "policy.ttl").exists():
         r = Report(case_dir.name)
         r.err("policy.ttl missing")
         return [r]
-    results = check_file(policy_path, [], named=True)
-    if len(results) != 1:
-        r = Report(case_dir.name)
-        r.diag(
-            "MultiplePolicies", f"policy.ttl must contain exactly one policy, found {len(results)}"
-        )
-        reports.append(r)
-    for r, _, _ in results:
-        r.name = f"{case_dir.name}"
-        reports.append(r)
+    used: Used = {}
+    g = Graph()
+    for path in case_policies(case_dir):
+        results = check_file(path, [], named=True)
+        if len(results) != 1:
+            r = Report(case_dir.name)
+            r.diag(
+                "MultiplePolicies",
+                f"{path.name} must contain exactly one policy, found {len(results)}",
+            )
+            reports.append(r)
+        for x, u, xg in results:
+            x.name = f"{case_dir.name}" + ("" if path.name == "policy.ttl" else f" :: {path.name}")
+            reports.append(x)
+            used |= u
+            g += xg
     if not case_path.exists():
         reports[0].err("case.json missing")
         return reports
-    r, used, g = results[0]
+    r = reports[0]
     try:
         case = json.loads(case_path.read_text())
     except json.JSONDecodeError as e:
@@ -1334,6 +1359,8 @@ def check_case(case_dir: Path) -> list[Report]:
     if not isinstance(case.get("odrl22_valid", True), bool):
         r.err("case.json: odrl22_valid must be true or false")
     if negative:
+        if len(case_policies(case_dir)) > 1:
+            r.err("a negative case has one policy file: W1 normalises one policy (workflows 4)")
         check_rejection(case, reports, r)
         return reports
     if case.get("odrl22_valid", True) is False:
@@ -1378,14 +1405,32 @@ def check_case(case_dir: Path) -> list[Report]:
                 f"{tag}: sotw.effective_at is not an xsd:dateTime instant: {sotw['effective_at']!r}"
             )
         for k, fact in sotw.get("facts", {}).items():
-            if expand(k, prefixes) not in state_props:
-                r.warn(f"{tag}: SOTW fact {k} is read by no bound operand")
-            st = fact.get("status", "resolved")
-            n = len(fact.get("values", []))
             prop_iri = expand(k, prefixes)
-            ok = {"resolved": n >= 1 or prop_iri in set_props, "conflict": n >= 2}.get(st, n == 0)
-            if st not in ("resolved", "missing", "invalid", "conflict", "unresolved") or not ok:
-                r.err(f"{tag}: fact {k} has status {st} with {n} values")
+            if prop_iri not in state_props:
+                r.warn(f"{tag}: SOTW fact {k} is read by no bound operand")
+            # One answer that names no source, or a list of answers from distinct sources
+            # (conformance/README.md, workflows 3.3 *Several sources*).
+            listed = isinstance(fact, list)
+            answers = cast(list[Any], fact if listed else [fact])
+            if not all(isinstance(a, dict) for a in answers):
+                r.err(f"{tag}: fact {k} has an answer that is not an object")
+                continue
+            answers = cast(list[dict[str, Any]], answers)
+            if listed:
+                if not answers:
+                    r.err(f"{tag}: fact {k} lists no answer")
+                names = [source_name(a) for a in answers]
+                sources = [expand(x, prefixes) for x in names if x is not None]
+                if len(sources) != len(answers) or len(set(sources)) != len(sources):
+                    r.err(f"{tag}: the answers for fact {k} must name distinct sources")
+            for a in answers:
+                st = a.get("status", "resolved")
+                n = len(a.get("values", []))
+                ok = {"resolved": n >= 1 or prop_iri in set_props, "conflict": n >= 2}.get(
+                    st, n == 0
+                )
+                if st not in ("resolved", "missing", "invalid", "conflict", "unresolved") or not ok:
+                    r.err(f"{tag}: fact {k} has status {st} with {n} values")
         for ev in sotw.get("evidence", []):
             for k in ("id", "occurred_at", "actor", "action"):
                 if k not in ev:
@@ -1409,10 +1454,12 @@ def check_case(case_dir: Path) -> list[Report]:
         for alt in exp.get("frontier", []):
             for d in alt:
                 if expand(d, prefixes) not in rules:
-                    r.err(f"{tag}: frontier duty {d} is not a typed node in policy.ttl")
+                    r.err(f"{tag}: frontier duty {d} is not a typed node of the case's policies")
         for ob in exp.get("obligations", []):
             if expand(ob.get("duty", ""), prefixes) not in rules:
-                r.err(f"{tag}: obligation {ob.get('duty')} is not a typed node in policy.ttl")
+                r.err(
+                    f"{tag}: obligation {ob.get('duty')} is not a typed node of the case's policies"
+                )
             if ob.get("status") not in ("fulfilled", "outstanding", "violated", "unknown"):
                 r.err(
                     f"{tag}: obligation status {ob.get('status')!r} is not one of fulfilled, outstanding, violated, unknown"
@@ -1481,7 +1528,7 @@ def check_unknown_parts(
     tag: str, exp: dict[str, Any], g: Graph, pfx: dict[str, str], props: set[str], r: Report
 ) -> None:
     """expected.unknown_parts (conformance/README.md, workflows 3.5, decisions/0016): shape,
-    that each ref is a rule or duty of policy.ttl, and that a target or party input is missing.
+    that each ref is a rule or duty of the case's policies, and that a target or party input is missing.
 
     An input that is not the property of an operand the policy reads, `props`, is the target
     or a party function. A request field is never unresolved (due2-profiles.md 3), and the
@@ -1502,7 +1549,7 @@ def check_unknown_parts(
                 f"{tag}: unknown part status {u['status']!r} is not one of {sorted(PART_STATUSES)}"
             )
         if expand(u["ref"], pfx) not in rules | duties:
-            r.err(f"{tag}: unknown part {u['ref']} is no rule or duty of policy.ttl")
+            r.err(f"{tag}: unknown part {u['ref']} is no rule or duty of the case's policies")
         if expand(u["input"], pfx) not in props and u["status"] != "missing":
             r.err(f"{tag}: the request field {u['input']} can only be missing (profiles 3)")
 
@@ -1543,7 +1590,7 @@ def check_explanation(
                 r.err(f"{tag}: verdict_basis role {role!r} is not one of {sorted(kinds)}")
                 continue
             if ref not in kinds[role]:
-                r.err(f"{tag}: verdict_basis {b['ref']} is no {role} of policy.ttl")
+                r.err(f"{tag}: verdict_basis {b['ref']} is no {role} of the case's policies")
             if verdict in BASIS_ROLES and role not in BASIS_ROLES[verdict]:
                 r.err(f"{tag}: role {role} does not fit {verdict} (workflows 6.4)")
             by_role.setdefault(role, set()).add(ref)

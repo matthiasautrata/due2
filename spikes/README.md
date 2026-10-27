@@ -61,11 +61,11 @@ The harness starts `command` once per test run and talks JSON lines over stdin a
 One vector per positive scenario in `conformance/cases/` (negative cases wait for W1). Input:
 
 ```json
-{"case": "...", "scenario": "...", "policy": "<policy.ttl text>", "prefixes": {"odrl": "..."},
+{"case": "...", "scenario": "...", "policies": ["<policy.ttl text>", "..."], "prefixes": {"odrl": "..."},
  "request": {...}, "sotw": {...}}
 ```
 
-`request` and `sotw` are exactly as in `case.json` (`conformance/README.md`). Output:
+`policies` holds the text of each of the case's policy files, `policy.ttl` first and the others in file-name order; together they are one corpus (`due2-workflows.md` §4, *Several policies are one corpus*). `request` and `sotw` are exactly as in `case.json` (`conformance/README.md`). Output:
 
 ```json
 {"verdict": "Pending",

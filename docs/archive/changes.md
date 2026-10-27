@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.55** (2026-10-26, #92): §6.4 states how due2's reading of a void policy departs from ODRL 2.2, why each half holds, and what it gives up. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.54** (2026-10-26, `decisions/0048`): a world-edge answer is one source's, with a status, in the new relation `closure_answer`, and an `unresolved` answer makes a hierarchy comparison `U`, not `F` (§3.3, §3.5, §7.1). `Reads` gains `read_evidence_edges` and `read_witness_edges`, so the edges above evidence values are planned. The read limit is decided: a plan over `max_reads` is refused before a case is created (§3.3; §9 #9 resolved). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.53** (2026-10-26, `decisions/0047`): the corpus carries each constraint's operand binding, as fields of `constraint` and the relation `constraint_scheme` (§3.1, §4, §5.4). `Reads`, the output of `plan`, is four relations, and world modules are named by the kind of hierarchy they hold (§3.3). Earlier changes are in `docs/archive/changes.md`.

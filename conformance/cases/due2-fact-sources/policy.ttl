@@ -1,0 +1,21 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: one state property answered by two sources (due2-workflows.md §3.3, *Several
+# sources*). The permission applies to a client in the EU; the scenarios vary what each source
+# says about the client's region.
+
+ex:reportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readForEU .
+
+ex:readForEU a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action odrl:read ; odrl:target ex:ClientReport ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:clientRegion ; odrl:operator odrl:eq ; odrl:rightOperand ex:EU ] .
+
+ex:clientRegion a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:clientRegion .

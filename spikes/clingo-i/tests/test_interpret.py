@@ -591,6 +591,82 @@ def test_state_read(interpreter: Interpreter, fact: Obj | None, expected: str) -
     assert outcome(interpreter.reply(vector(pol, sotw={"facts": facts}))) == expected
 
 
+def answer(source: str, status: str, *values: str) -> Obj:
+    """One source's answer for a state fact (conformance/README.md, `sotw.facts`)."""
+    return {"source": source, "status": status, "values": [iri(v) for v in values]}
+
+
+# lift.lp, *Several sources*: the answers with values decide, and the others are ignored; with
+# none, unresolved comes before invalid, and invalid before missing. A verdict row says the
+# combination is resolved; a status row is the unknown part's status, the combined one. Without
+# the guards that order the statuses, two answers without values give two `fact` statuses, and
+# the reply has no output (the invalid and unresolved row fails).
+@pytest.mark.parametrize(
+    ("answers", "expected"),
+    [
+        ([answer("ex:s1", "resolved", "ex:v")], "Permit"),
+        ([answer("ex:s1", "resolved", "ex:v"), answer("ex:s2", "resolved", "ex:v")], "Permit"),
+        ([answer("ex:s1", "resolved", "ex:v"), answer("ex:s2", "resolved", "ex:w")], "conflict"),
+        ([answer("ex:s1", "conflict", "ex:v", "ex:w"), answer("ex:s2", "resolved", "ex:v")],
+         "conflict"),
+        ([answer("ex:s1", "resolved", "ex:v"), answer("ex:s2", "unresolved")], "Permit"),
+        ([answer("ex:s1", "resolved", "ex:w"), answer("ex:s2", "invalid")], "NotApplicable"),
+        ([answer("ex:s1", "missing"), answer("ex:s2", "unresolved")], "unresolved"),
+        ([answer("ex:s1", "invalid"), answer("ex:s2", "unresolved")], "unresolved"),
+        ([answer("ex:s1", "missing"), answer("ex:s2", "invalid")], "invalid"),
+        ([answer("ex:s1", "missing"), answer("ex:s2", "missing")], "missing"),
+    ],
+)  # fmt: skip
+def test_several_sources(interpreter: Interpreter, answers: list[Json], expected: str) -> None:
+    pol = constrained(leaf("eq", "ex:v"), bound("x", "stateSource"))
+    reply = interpreter.reply(vector(pol, sotw={"facts": {"ex:x": answers}}))
+    if expected in ("Permit", "NotApplicable"):
+        assert outcome(reply) == expected
+    else:
+        assert unknown_parts(reply) == [("ex:r", "ex:x", expected)]
+
+
+# A resolved answer for a set-valued operand with no members has values, the empty set
+# (due2-workflows.md §3.3, *Several sources*). So it differs from an answer with a member, and
+# agrees with another empty one. A combination that counts a resolved answer as having values
+# only when it lists one fails both rows.
+@pytest.mark.parametrize(
+    ("answers", "expected"),
+    [
+        ([answer("ex:s1", "resolved"), answer("ex:s2", "resolved", "ex:v")], "conflict"),
+        ([answer("ex:s1", "resolved"), answer("ex:s2", "resolved")], "NotApplicable"),
+    ],
+)
+def test_several_sources_set(interpreter: Interpreter, answers: list[Json], expected: str) -> None:
+    card = bound("x", "stateSource", " ; due2:cardinality due2:set")
+    pol = constrained(leaf("isAllOf", "ex:v, ex:w"), card)
+    reply = interpreter.reply(vector(pol, sotw={"facts": {"ex:x": answers}}))
+    if expected == "NotApplicable":
+        assert outcome(reply) == expected
+    else:
+        assert unknown_parts(reply) == [("ex:r", "ex:x", expected)]
+
+
+# The texts of `policies` are one corpus, one policy each (due2-workflows.md §4, *Several
+# policies are one corpus*). A second policy in its own text is admitted; the same policy added
+# to the first text is `MultiplePolicies` (structure.lp). A rule that allowed one policy in all,
+# rather than one per text, rejects the second policy in its own text too.
+@pytest.mark.parametrize("own_text", [True, False])
+def test_multiple_policies(interpreter: Interpreter, own_text: bool) -> None:
+    first = constrained(leaf("eq", "ex:v"), bound("x"))
+    second = (
+        CONSTRAINT_PREFIXES
+        + "ex:q a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:r .\n"
+    )
+    v = vector(first)
+    v["policies"] = [first, second] if own_text else [first + second]
+    reply = interpreter.reply(v)
+    if own_text:
+        assert "error" not in reply, reply
+    else:
+        assert "error" in reply and "MultiplePolicies" in str(reply["error"]), reply
+
+
 @pytest.mark.parametrize(
     ("constraint", "binding", "params", "expected"),
     [

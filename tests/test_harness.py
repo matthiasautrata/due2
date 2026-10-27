@@ -172,7 +172,7 @@ def test_vector_inputs_are_self_contained(vectors: list[Vector], init: Obj) -> N
         assert set(v.input) == {
             "case",
             "scenario",
-            "policy",
+            "policies",
             "prefixes",
             "request",
             "sotw",

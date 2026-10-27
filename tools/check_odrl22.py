@@ -298,6 +298,19 @@ def expects_invalid(path: Path) -> bool:
         return False
 
 
+def policy_files(case_dirs: list[Path]) -> list[Path]:
+    """The policy files of the case directories: `policy.ttl` and any `policy-<name>.ttl`.
+
+    The files are those of conformance/README.md. A directory without `policy.ttl` is no case.
+    """
+    return [
+        f
+        for d in case_dirs
+        if (d / "policy.ttl").exists()
+        for f in (d / "policy.ttl", *sorted(d.glob("policy-*.ttl")))
+    ]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -309,20 +322,11 @@ def main() -> int:
 
     targets: list[Path] = []
     if args.all:
-        targets += [
-            p / "policy.ttl"
-            for p in sorted((ROOT / "conformance" / "cases").iterdir())
-            if (p / "policy.ttl").exists()
-        ]
+        targets += policy_files(sorted((ROOT / "conformance" / "cases").iterdir()))
         targets += sorted((ROOT / "profiles" / "vendor" / "dprod" / "examples").glob("*.ttl"))
     for p in args.paths:
         if p.is_dir():
-            if (p / "policy.ttl").exists():
-                targets.append(p / "policy.ttl")
-            else:
-                targets += [
-                    x / "policy.ttl" for x in sorted(p.iterdir()) if (x / "policy.ttl").exists()
-                ]
+            targets += policy_files([p] if (p / "policy.ttl").exists() else sorted(p.iterdir()))
         else:
             targets.append(p)
     if not targets:

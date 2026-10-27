@@ -2,7 +2,7 @@
 
 One vector per positive scenario (conformance/README.md). Negative cases wait for W1
 (issue #9) and are not vectors here. The profile modules go to a backend once, in the
-init message, so a vector carries only its policy and scenario.
+init message, so a vector carries only its policies and scenario.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from check_corpus import CORE, MODULES  # the profile registry, kept in one place
+from check_corpus import CORE, MODULES, case_policies  # the registry, kept in one place
 
 from harness.json_types import Json, Obj, as_list, as_obj, as_str, loads
 
@@ -57,7 +57,7 @@ def interpret_vectors(cases: Path = CASES) -> list[Vector]:
         prefixes.update(
             {k: as_str(v, "prefix") for k, v in as_obj(case.get("prefixes", {}), "").items()}
         )
-        policy = (case_dir / "policy.ttl").read_text()
+        policies: list[Json] = [p.read_text() for p in case_policies(case_dir)]
         seen: set[str] = set()
         for raw in as_list(case["scenarios"], f"{case_dir.name}.scenarios"):
             s = as_obj(raw, case_dir.name)
@@ -73,7 +73,7 @@ def interpret_vectors(cases: Path = CASES) -> list[Vector]:
                     input={
                         "case": case_dir.name,
                         "scenario": name,
-                        "policy": policy,
+                        "policies": policies,
                         "prefixes": prefix_json,
                         "request": s["request"],
                         "sotw": s["sotw"],

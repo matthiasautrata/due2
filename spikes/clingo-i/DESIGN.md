@@ -72,7 +72,7 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 | `Rg` | a range |
 | `Rel` | an order relation: `lt`, `eq`, `gt`, or `u` |
 
-Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, `Actor` (an evidence record's actor), `Issuer`, `Ref` (a request's `reference`), `Start` (the instant a duty's instance was first owed), `Np` (a rank inside an aggregate), and `Vp`, `Vc`, `Vk`, `Vw` (the truth value of a part, a node, a check, or a witness inside an aggregate).
+Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, `Actor` (an evidence record's actor), `Issuer`, `Ref` (a request's `reference`), `Source` (a source of a fact's answer, or `unnamed` for a fact given as one answer), `Other` (a second source, compared with `Source`), `Start` (the instant a duty's instance was first owed), `Np` (a rank inside an aggregate), and `Vp`, `Vc`, `Vk`, `Vw` (the truth value of a part, a node, a check, or a witness inside an aggregate).
 
 ## Layout
 
@@ -82,7 +82,7 @@ clingo_i/flatten.py    the driver: Turtle and JSON to facts; no semantics
 clingo_i/values.py     the driver's value table: value spaces, positions, and instant-plus-duration sums
 clingo_i/interpret.py  the three solves, the declines, and the reply
 clingo_i/json_types.py the JSON value type
-lp/lift.lp             triples to relations that name no IRI; the hierarchies; detects what the spike does not read
+lp/lift.lp             triples to relations that name no IRI; several sources' answers to one fact; the hierarchies; detects what the spike does not read
 lp/structure.lp        the policy, its conflict strategy, interiorisation, action terms, and expansion into atoms and duty atoms
 lp/kleene.lp           truth values and their ranks
 lp/constraint.lp       the authored constraint trees, and their static checks
@@ -106,7 +106,7 @@ tests/                 the spike's own tests (`TESTS.md`)
 ## Data flow
 
 1. **Init.** The driver parses every module once and keeps its facts.
-2. **Flatten** (`flatten.py`). The policy graph becomes `triple/3`. The core modules, and the modules of each profile the policy's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `module(Iri)`, the module of the profile `Iri`. The request and the SOTW become facts (`flatten.py`). Then `values.py` places every RDF literal in those facts (`values.py`).
+2. **Flatten** (`flatten.py`). The vector's policy texts are parsed into one graph, which becomes `triple/3`, so the policies are one corpus (`due2-workflows.md` §4, *Several policies are one corpus*). The core modules, and the modules of each profile the policy's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `module(Iri)`, the module of the profile `Iri`. The request and the SOTW become facts (`flatten.py`). Then `values.py` places every RDF literal in those facts (`values.py`).
 3. **Solve 1:** facts, and `lift.lp` to `duty.lp` (the first eight files). The program has no choice rule and is stratified, so it has exactly one model. It is read in this order, and the first hit decides:
    1. any `unsupported(Feature)`: the vector is declined, naming the smallest such feature in code-point order, so the same vector always gives the same reason;
    2. any `reject(Code, Node)`: an `error` reply, because `interpret` receives only admissible policies;

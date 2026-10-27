@@ -1,0 +1,26 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: two policies are one corpus, and prohibit-overrides decides between them
+# (due2-workflows.md §4 and §6.2). This licence resolves its own conflicts with perm: its
+# permission overrides its prohibition on internal reports. The other policy is in
+# policy-embargo.ttl.
+
+ex:licence a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:perm ;
+    odrl:permission ex:readLicensed ;
+    odrl:prohibition ex:noInternal .
+
+ex:readLicensed a odrl:Permission ;
+    odrl:assignee ex:Analyst ; odrl:action odrl:read ; odrl:target ex:Report .
+
+ex:noInternal a odrl:Prohibition ;
+    odrl:action odrl:read ; odrl:target ex:Report ;
+    odrl:constraint [ a odrl:Constraint ;
+        odrl:leftOperand ex:reportClass ; odrl:operator odrl:eq ; odrl:rightOperand ex:Internal ] .
+
+ex:reportClass a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:reportClass .
