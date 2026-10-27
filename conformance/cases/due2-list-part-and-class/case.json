@@ -1,0 +1,427 @@
+{
+  "case": "due2-list-part-and-class",
+  "source": "due2-native: hasPart and isA with a set right operand, written as an RDF list and as repeated values (decisions/0005, decisions/0013)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Closes the gap of #32: no case exercised hasPart or isA with a list, or a partOf closure longer than reflexivity under either. ex:exportListed and ex:exportRepeated state one hasPart constraint, ex:auditListed and ex:auditRepeated one isA constraint, each as odrl:rightOperand ( ... ) and as repeated values; both forms are one right operand, the set of the values (due2-profiles.md §4, decisions/0013), so each scenario of one form has a twin with the same answer. hasPart holds when every right value is part of some left value under the typed partOf closure, and isA when the left value is an instance of every listed class (decisions/0005). ex:SalesQ1 reaches ex:SalesData in two hops through the asset collection ex:SalesFY26. The class hierarchy is in the policy file; a role's rdf:type edge is world data, so it is in sotw.closure. W1 warns ContestedOperatorReading on all four constraints, in either form: on hasPart for its set-valued left operand and its set right operand, on isA for its set right operand. The case format records no warnings; tools/check_corpus.py emits them.",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "role": "https://example.org/role#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  },
+  "scenarios": [
+    {
+      "name": "list: hasPart, the package holds both parts",
+      "request": {
+        "reference": "req-1a",
+        "action": "odrl:distribute",
+        "target": "ex:ListedExport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "ex:package": [
+            {
+              "@id": "ex:SalesData"
+            },
+            {
+              "@id": "ex:HRData"
+            }
+          ]
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:exportListed",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "ex:SalesQ1 is part of ex:SalesData through ex:SalesFY26, and ex:HRSummary is part of ex:HRData, so every value of {ex:SalesQ1, ex:HRSummary} is part of some package value: hasPart is T and ex:exportListed applies. Nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "list: hasPart, the package lacks the HR summary",
+      "request": {
+        "reference": "req-2a",
+        "action": "odrl:distribute",
+        "target": "ex:ListedExport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "ex:package": [
+            {
+              "@id": "ex:SalesData"
+            }
+          ]
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "ex:HRSummary is part of no value of the package {ex:SalesData}, so hasPart is F and ex:exportListed does not apply; no other rule targets ex:ListedExport."
+      }
+    },
+    {
+      "name": "list: isA, an audit analyst",
+      "request": {
+        "reference": "req-3a",
+        "action": "odrl:read",
+        "target": "ex:ListedAuditLog",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRole": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:DanaRole"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "rdf:type",
+            "ex:DanaRole",
+            "role:AuditAnalyst"
+          ]
+        ]
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:auditListed",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "ex:DanaRole is typed role:AuditAnalyst, a subclass of both role:Analyst and role:Auditor, so it is an instance of every listed class: isA is T and ex:auditListed applies. Nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "list: isA, an analyst only",
+      "request": {
+        "reference": "req-4a",
+        "action": "odrl:read",
+        "target": "ex:ListedAuditLog",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRole": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:EvanRole"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "rdf:type",
+            "ex:EvanRole",
+            "role:Analyst"
+          ]
+        ]
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "ex:EvanRole is typed role:Analyst, and no recorded edge makes it a role:Auditor, so isA is F and ex:auditListed does not apply; no other rule targets ex:ListedAuditLog."
+      }
+    },
+    {
+      "name": "repeated values: hasPart, the package holds both parts",
+      "request": {
+        "reference": "req-1b",
+        "action": "odrl:distribute",
+        "target": "ex:RepeatedExport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "ex:package": [
+            {
+              "@id": "ex:SalesData"
+            },
+            {
+              "@id": "ex:HRData"
+            }
+          ]
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:exportRepeated",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "ex:SalesQ1 is part of ex:SalesData through ex:SalesFY26, and ex:HRSummary is part of ex:HRData, so every value of {ex:SalesQ1, ex:HRSummary} is part of some package value: hasPart is T and ex:exportRepeated applies. Nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "repeated values: hasPart, the package lacks the HR summary",
+      "request": {
+        "reference": "req-2b",
+        "action": "odrl:distribute",
+        "target": "ex:RepeatedExport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {
+          "ex:package": [
+            {
+              "@id": "ex:SalesData"
+            }
+          ]
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "ex:HRSummary is part of no value of the package {ex:SalesData}, so hasPart is F and ex:exportRepeated does not apply; no other rule targets ex:RepeatedExport."
+      }
+    },
+    {
+      "name": "repeated values: isA, an audit analyst",
+      "request": {
+        "reference": "req-3b",
+        "action": "odrl:read",
+        "target": "ex:RepeatedAuditLog",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRole": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:DanaRole"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "rdf:type",
+            "ex:DanaRole",
+            "role:AuditAnalyst"
+          ]
+        ]
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:auditRepeated",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "why": "ex:DanaRole is typed role:AuditAnalyst, a subclass of both role:Analyst and role:Auditor, so it is an instance of every listed class: isA is T and ex:auditRepeated applies. Nothing prohibits, so Permit."
+      }
+    },
+    {
+      "name": "repeated values: isA, an analyst only",
+      "request": {
+        "reference": "req-4b",
+        "action": "odrl:read",
+        "target": "ex:RepeatedAuditLog",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRole": {
+            "status": "resolved",
+            "values": [
+              {
+                "@id": "ex:EvanRole"
+              }
+            ]
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "rdf:type",
+            "ex:EvanRole",
+            "role:Analyst"
+          ]
+        ]
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "why": "ex:EvanRole is typed role:Analyst, and no recorded edge makes it a role:Auditor, so isA is F and ex:auditRepeated does not apply; no other rule targets ex:RepeatedAuditLog."
+      }
+    },
+    {
+      "name": "list: hasPart, the package is not given",
+      "request": {
+        "reference": "req-5a",
+        "action": "odrl:distribute",
+        "target": "ex:ListedExport",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:exportListed",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "why": "The request names no package, so ex:package is missing, hasPart is U, and ex:exportListed is U. Completing it T gives Permit and F gives NotApplicable, so Indeterminate."
+      }
+    },
+    {
+      "name": "list: isA, the role is unresolved",
+      "request": {
+        "reference": "req-5b",
+        "action": "odrl:read",
+        "target": "ex:ListedAuditLog",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:Dana"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {
+          "ex:requesterRole": {
+            "status": "unresolved",
+            "values": []
+          }
+        },
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:auditListed",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "why": "The requester's role is unresolved, so isA is U and ex:auditListed is U. Completing it T gives Permit and F gives NotApplicable, so Indeterminate."
+      }
+    }
+  ]
+}

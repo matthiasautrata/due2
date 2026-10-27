@@ -1,0 +1,82 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:    <https://example.org/> .
+@prefix role:  <https://example.org/role#> .
+
+# due2-native: hasPart and isA with a set right operand (decisions/0005,
+# due2-profiles.md §4), each written as an RDF list and as repeated values
+# (decisions/0013). The listed and repeated permissions of one operator differ
+# only in the form and the target, so each scenario of one form has a twin.
+
+ex:exportPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:exportListed, ex:exportRepeated, ex:auditListed, ex:auditRepeated .
+
+# hasPart: every listed value is part of some value of the exported package.
+ex:exportListed a odrl:Permission ;
+    odrl:action odrl:distribute ;
+    odrl:target ex:ListedExport ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:package ;
+        odrl:operator odrl:hasPart ;
+        odrl:rightOperand ( ex:SalesQ1 ex:HRSummary )
+    ] .
+
+ex:exportRepeated a odrl:Permission ;
+    odrl:action odrl:distribute ;
+    odrl:target ex:RepeatedExport ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:package ;
+        odrl:operator odrl:hasPart ;
+        odrl:rightOperand ex:SalesQ1, ex:HRSummary
+    ] .
+
+# isA: the requester's role is an instance of every listed class.
+ex:auditListed a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:ListedAuditLog ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:role ;
+        odrl:operator odrl:isA ;
+        odrl:rightOperand ( role:Analyst role:Auditor )
+    ] .
+
+ex:auditRepeated a odrl:Permission ;
+    odrl:action odrl:read ;
+    odrl:target ex:RepeatedAuditLog ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:role ;
+        odrl:operator odrl:isA ;
+        odrl:rightOperand role:Analyst, role:Auditor
+    ] .
+
+# The asset hierarchy: ex:SalesQ1 is two partOf hops below ex:SalesData.
+ex:SalesData a odrl:AssetCollection .
+ex:SalesFY26 a odrl:AssetCollection ; odrl:partOf ex:SalesData .
+ex:SalesQ1 odrl:partOf ex:SalesFY26 .
+ex:HRData a odrl:AssetCollection .
+ex:HRSummary odrl:partOf ex:HRData .
+
+# The class hierarchy. A role's rdf:type edge is world data, in sotw.closure.
+role:Role a rdfs:Class .
+role:Analyst a rdfs:Class ; rdfs:subClassOf role:Role .
+role:Auditor a rdfs:Class ; rdfs:subClassOf role:Role .
+role:AuditAnalyst a rdfs:Class ; rdfs:subClassOf role:Analyst, role:Auditor .
+
+# The datasets the exported package holds, named in the request.
+ex:package a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:package ;
+    due2:cardinality due2:set .
+
+# The requester's role, an instance IRI held by the state source.
+ex:role a odrl:LeftOperand ;
+    dprod:operandSource dprod:stateSource ;
+    dprod:operandProperty ex:requesterRole .
