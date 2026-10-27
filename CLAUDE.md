@@ -2,7 +2,7 @@
 
 due2 is an ODRL 2.2 policy evaluation runtime: three-valued (Kleene) evaluation, five verdicts (`Permit`, `Deny`, `Pending` with a frontier of duty routes, `NotApplicable`, `Indeterminate`), and replayable decisions. This repository holds the specification, the conformance corpus, and the checkers. **There is no evaluator yet.** Every expected verdict is hand-derived.
 
-Start with `README.md` (layout, verify commands, status), then `docs/design/due2-architecture.md` §0 (reading order). Documents live under `docs/{spec,design,correctness,decisions}/` and cite each other by bare file name. `docs/briefings/` holds dated snapshots that are not updated after their date, so cite them for history only.
+Start with `README.md` (layout, verify commands, status), then `docs/design/due2-overview.md` (the big picture) and `docs/design/due2-architecture.md` §0 (reading order). Documents live under `docs/{spec,design,correctness,decisions}/` and cite each other by bare file name. `docs/briefings/` holds dated snapshots that are not updated after their date, so cite them for history only.
 
 ## Rules that are easy to break
 

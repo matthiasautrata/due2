@@ -2,7 +2,7 @@
 
 due2 is the specification of a runtime for evaluating ODRL 2.2 policies. ODRL is the W3C language for saying who may, must, or must not do what with an asset. Given a policy, an access request, and a frozen snapshot of the state of the world (SOTW), due2 is to answer with one of five verdicts: `Permit`, `Deny`, `Pending` (permitted once listed duties are done, with every alternative route), `NotApplicable`, or `Indeterminate`. Evaluation is three-valued (Kleene logic). A fact that is missing, invalid, or in conflict is unknown, never false, and the verdict is `Indeterminate` exactly when settling the unknowns could change it (`decisions/0011`). Every decision is to carry the reasons that produced it, so that it can be replayed (`decisions/0010`).
 
-This repository holds the specification, a conformance corpus with hand-derived expected verdicts, the checkers that keep both consistent, and one spike that runs the corpus. There is no production evaluator yet. Start with `docs/design/due2-architecture.md` §0, which gives the reading order and a glossary.
+This repository holds the specification, a conformance corpus with hand-derived expected verdicts, the checkers that keep both consistent, and one spike that runs the corpus. There is no production evaluator yet. Start with `docs/design/due2-overview.md`: what due2 is, why, how an evaluation works, and how to use the semantics program as an oracle beside another evaluator. `docs/design/due2-architecture.md` §0 then gives the reading order and a glossary.
 
 This repository is the only copy of due2's artefacts: change them here and commit.
 
@@ -19,6 +19,7 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | `docs/spec/odrl-compound-to-atomic-normalization.md` | Normalisation stage 1 |
 | `docs/spec/due2-diagnostics.md` | The diagnostic registry: every code W1 rejects or warns with, its stage, and its defining section |
 | **`docs/design/`** | **What due2 is, why, and the alternatives weighed** |
+| `docs/design/due2-overview.md` | The first document to read: what due2 is, why, how it works, and clingo-i as an oracle for another evaluator |
 | `docs/design/due2-architecture.md` | What due2 is and why; reading order and glossary (§0) |
 | `docs/design/due2-platform.md` | The components around the evaluator, their interfaces, the use cases they serve, and the migration from a predecessor system; all open |
 | `docs/design/references.md` | The annotated bibliography: what was read, why, what was learned, and where it is used |
