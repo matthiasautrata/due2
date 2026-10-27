@@ -54,3 +54,5 @@
 
 - A policy needs a definite verdict that only a completion over a hierarchy part gives.
 - A fact's values or a case's evidence fan out to more answers than a source can serve.
+
+**Note (2026-10-27, #150):** item 3's two party functions can be `U` for one record: its `e.actor ⊑ bearer` and its `e.issuer ⊑ attester` comparisons each read an `unresolved` answer. That is two `unknown_part` rows for one atom, predicate, kind, and `ref`, which the key `(atom_id, predicate, kind, ref)` did not allow. `due2-workflows.md` v0.58 adds `input` to the key, so the part has one row per party function that makes it `U`. Every other part reads one input, so its rows are unchanged.

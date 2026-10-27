@@ -147,6 +147,23 @@ def test_a_key_is_compared_by_value(schemas: Schemas) -> None:
     assert any("two tuples with key" in p for p in problems), problems
 
 
+def test_a_part_has_one_unknown_row_per_input(schemas: Schemas) -> None:
+    """Guards the key of `unknown_part` (due2-workflows.md §3.5, §5.3): one evidence record
+    whose bearer and attester comparisons both read an `unresolved` answer has two rows,
+    which differ only in `input`. Without `input` in the key, the pair is rejected and the
+    trace cannot name both inputs. A second status for one input is still rejected."""
+    part: Obj = {"atom_id": "ex:d", "predicate": "fulfilled", "kind": "evidence", "ref": "ex:e"}
+    rows: list[Json] = [
+        {**part, "input": "odrl:assignee", "status": "unresolved"},
+        {**part, "input": "due2:attester", "status": "unresolved"},
+    ]
+    trace: Obj = {"verdict": [VERDICT], "unknown_part": rows}
+    assert check_collection(trace, "Trace", "Expected", schemas, "t") == []
+    trace["unknown_part"] = [*rows, {**part, "input": "due2:attester", "status": "missing"}]
+    problems = check_collection(trace, "Trace", "Expected", schemas, "t")
+    assert any("two tuples with key" in p for p in problems), problems
+
+
 def _chain(n: int) -> Obj:
     """A corpus of one Permit root and `n` Oblige atoms, each the child of the one before."""
     target = "http://www.w3.org/ns/odrl/2/target"

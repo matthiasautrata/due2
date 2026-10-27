@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.57** (2026-10-26, `decisions/0049`): §3.1 adds `constraint.operand_unit`, the binding's unit; §3.5, §5.4, and §6.4 make a constraint that states a unit its binding does not declare `U` with status `misfit`, opaque. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.56** (2026-10-26, #1): §9 row 7, cases with several policies, is resolved by the case-format extension. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.55** (2026-10-26, #92): §6.4 states how due2's reading of a void policy departs from ODRL 2.2, why each half holds, and what it gives up. Earlier changes are in `docs/archive/changes.md`.
