@@ -14,6 +14,7 @@ Sorting into canonical order and computing collection ids belong to the runner o
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import cast
 
@@ -81,8 +82,9 @@ class Schemas:
             c: Draft202012Validator({"$ref": f"{base}#/$defs/{c}"}, registry=registry)
             for c in self.relations
         }
+        # A partial trace: `DecideOutput` also requires `evaluation`, which the harness computes.
         self.validators["Expected"] = Draft202012Validator(
-            {"$ref": f"{as_str(evaluator['$id'], '$id')}#/$defs/DecideOutput"}, registry=registry
+            {"$ref": f"{base}#/$defs/Trace", "required": ["verdict"]}, registry=registry
         )
 
     def key(self, collection: str, relation: str) -> list[str]:
@@ -152,8 +154,9 @@ def check_collection(
     due2-workflows.md §2), and an `xsd:dateTime` whose shape the schema accepts but which names
     no instant.
 
-    `validator` names the schema: a collection, or `"Expected"`, the trace as `decide`'s
-    output, which must contain `verdict`. `collection` names the relations and keys."""
+    `validator` names the schema: a collection, or `"Expected"`, a scenario's expected trace,
+    which must contain `verdict` and never states `evaluation` (conformance/README.md).
+    `collection` names the relations and keys."""
     problems = [
         f"{where}: {'/'.join(map(str, e.absolute_path)) or '(top)'}: {e.message}"
         # jsonschema's stubs leave iter_errors's overloads partly untyped.
@@ -167,7 +170,9 @@ def check_collection(
         for t in tuples:
             if not isinstance(t, dict):
                 continue
-            k = repr([t.get(f) for f in key])
+            # By value: JSON object member order is not significant, so `repr` would tell two
+            # equal `Instant` objects apart.
+            k = json.dumps([t.get(f) for f in key], sort_keys=True)
             if k in seen and seen[k] != t:
                 problems.append(f"{where}.{rel}: two tuples with key {k}")
             seen[k] = t
@@ -214,20 +219,33 @@ def check_invariants(corpus: Obj, where: str) -> list[str]:
         children.setdefault(parent, []).append(child)
         if effect.get(child) != "Oblige":
             problems.append(f"{where}: edge child {child} is not an Oblige atom")
-    # Depth-first search: a node met again while still on the path closes a cycle.
-    state: dict[str, int] = {}  # 1 on the current path, 2 done
-
-    def visit(node: str) -> bool:
-        state[node] = 1
-        for c in children.get(node, []):
-            if state.get(c) == 1 or (c not in state and visit(c)):
-                return True
-        state[node] = 2
-        return False
-
-    if any(n not in state and visit(n) for n in list(children)):
+    if _has_cycle(children):
         problems.append(f"{where}: edge has a cycle")
     return problems
+
+
+def _has_cycle(children: dict[str, list[str]]) -> bool:
+    """Whether the edges close a cycle. A depth-first search with an explicit stack, so a deep
+    chain does not reach Python's recursion limit: a node met again while still on the path
+    closes a cycle."""
+    state: dict[str, int] = {}  # 1 on the current path, 2 done
+    for start, first in children.items():
+        if start in state:
+            continue
+        state[start] = 1
+        stack = [(start, iter(first))]
+        while stack:
+            node, rest = stack[-1]
+            child = next(rest, None)
+            if child is None:
+                state[node] = 2
+                stack.pop()
+            elif state.get(child) == 1:
+                return True
+            elif child not in state:
+                state[child] = 1
+                stack.append((child, iter(children.get(child, []))))
+    return False
 
 
 def _check_tags(holder: Obj, where: str) -> list[str]:

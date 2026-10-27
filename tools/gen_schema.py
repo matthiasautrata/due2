@@ -29,7 +29,7 @@ DIAGNOSTICS = ROOT / "docs" / "spec" / "due2-diagnostics.md"
 SCHEMA = ROOT / "schema"
 # MAJOR.MINOR, by the rule of due2-platform.md §2.10: MINOR when every document valid under the
 # previous version stays valid, MAJOR otherwise. MAJOR is part of every $id.
-VERSION = "1.0"
+VERSION = "2.0"
 BASE = f"https://w3id.org/due2/schema/{VERSION.split('.')[0]}/"
 
 # Collection → the due2-workflows.md §3.N whose relation block declares it, and the first
@@ -319,7 +319,7 @@ def evaluator_schema() -> Obj:
             "PlanInput": call("Corpus", "Request"),
             "PlanOutput": ref("Reads"),
             "DecideInput": call("Corpus", "Request", "Sotw"),
-            "DecideOutput": {**ref("Trace"), "required": ["verdict"]},
+            "DecideOutput": {**ref("Trace"), "required": ["evaluation", "verdict"]},
         },
     }
 

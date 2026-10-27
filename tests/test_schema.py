@@ -17,8 +17,8 @@ from typing import cast
 
 import pytest
 from gen_schema import SCHEMA, generate
-from harness.json_types import Obj
-from harness.vectors import VECTORS, Schemas, check_vector_file
+from harness.json_types import Json, Obj
+from harness.vectors import VECTORS, Schemas, check_collection, check_invariants, check_vector_file
 from jsonschema import Draft202012Validator
 from referencing import Registry
 from referencing.jsonschema import DRAFT202012, Schema
@@ -112,6 +112,66 @@ def test_the_fixture_is_valid(schemas: Schemas) -> None:
     """The baseline of the mutations below: without it, a mutation could be rejected for a
     fault the fixture already had."""
     assert check_vector_file(FIXTURE, schemas) == []
+
+
+DIGEST = "sha256:" + "0" * 64
+VERDICT: Obj = {"value": "Permit", "frontier_complete": True, "exact": True}
+
+
+def test_a_decision_names_its_inputs() -> None:
+    """Guards `DecideOutput` against a trace that does not say what it was decided from:
+    `evaluation` holds the three input ids (decisions/0041, item 2), and a replay compares
+    them. Without `evaluation` in `required`, an evaluator could omit it and still be valid."""
+    evaluation: list[Json] = [{"corpus_id": DIGEST, "request_id": DIGEST, "sotw_id": DIGEST}]
+    assert _errors("evaluator.schema.json", "DecideOutput", {"verdict": [VERDICT]}) != []
+    doc: Obj = {"evaluation": evaluation, "verdict": [VERDICT]}
+    assert _errors("evaluator.schema.json", "DecideOutput", doc) == []
+
+
+def test_a_key_is_compared_by_value(schemas: Schemas) -> None:
+    """Guards set semantics (due2-workflows.md §2) when a key holds an object: JSON member
+    order is not significant, so two `instance` tuples whose `occurrence` differs only in
+    member order share a key. Without it, a key built with `repr` tells them apart, and two
+    statuses for one instance pass."""
+    at = "2026-06-01T00:00:00Z"
+    trace: Obj = {
+        "verdict": [VERDICT],
+        "instance": [
+            {"atom_id": "ex:d", "occurrence": {"v": at, "t": "xsd:dateTime"},
+             "status": "fulfilled", "passed": True},
+            {"atom_id": "ex:d", "occurrence": {"t": "xsd:dateTime", "v": at},
+             "status": "violated", "passed": True},
+        ],
+    }  # fmt: skip
+    problems = check_collection(trace, "Trace", "Expected", schemas, "t")
+    assert any("two tuples with key" in p for p in problems), problems
+
+
+def _chain(n: int) -> Obj:
+    """A corpus of one Permit root and `n` Oblige atoms, each the child of the one before."""
+    target = "http://www.w3.org/ns/odrl/2/target"
+    atoms: list[Json] = [
+        {"atom_id": f"ex:a{i}", "policy_id": "ex:p", "effect": "Oblige" if i else "Permit",
+         "action": "odrl:use", "relation": target, "relation_value": "ex:t"}
+        for i in range(n + 1)
+    ]  # fmt: skip
+    edges: list[Json] = [{"parent_id": f"ex:a{i}", "child_id": f"ex:a{i + 1}"} for i in range(n)]
+    return {
+        "policy": [{"policy_id": "ex:p", "conflict": "perm", "version": "ex:pv1"}],
+        "atom": atoms,
+        "edge": edges,
+        "root": [{"atom_id": "ex:a0", "policy_id": "ex:p"}],
+    }
+
+
+def test_a_deep_chain_is_checked() -> None:
+    """Guards the cycle check against depth: a chain longer than Python's recursion limit,
+    1000, is checked, and one back edge is a cycle. Without it, a recursive search raises
+    `RecursionError` on a valid corpus."""
+    corpus = _chain(1100)
+    assert check_invariants(corpus, "c") == []
+    cast(list[Obj], corpus["edge"]).append({"parent_id": "ex:a1100", "child_id": "ex:a1"})
+    assert "c: edge has a cycle" in check_invariants(corpus, "c")
 
 
 def _corpus(doc: Obj) -> Obj:
