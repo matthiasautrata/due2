@@ -13,7 +13,7 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 - **Constraint node.** A node of an authored constraint tree: a *root* (a rule's `odrl:constraint` value or an action term's `odrl:refinement` value), a *leaf* (it has an `odrl:leftOperand`), or a *connective* node (`odrl:and`, `odrl:or`, `odrl:xone`, `dprod:not`). Its *members* are the nodes the connective combines.
 - **Action term.** The value of `odrl:action`: an action IRI, or a node whose `rdf:value` is the action and which carries the refinements (IM 2.2 §2.5).
 - **Layer.** Where a binding is declared: the policy graph, a selected profile module, or a core module (`due2-profiles.md` §2).
-- **Misfit.** A comparison whose two values do not fit the operator: an IRI against a literal, or literals of two value spaces. A misfit is `u`, never `f`.
+- **Misfit.** A comparison whose two values do not fit the operator: an IRI against a literal, or literals of two value spaces. A leaf that states a unit its binding does not declare is a misfit whatever is read (`decisions/0049`). A misfit is `u`, never `f`.
 - **Status.** Why a `u` part is `u` (`due2-profiles.md` §3, `decisions/0016`): `missing` (no value: an absent target, party, request parameter, or context value, a state fact `missing`, or `resolved` with no value for a single-valued operand), `invalid` (a value outside the range), `conflict` (several values for a single-valued operand), `unresolved` (a state fact `unresolved`, or no fact), or `misfit`. A *duty status* is the other sense, and is always qualified: `fulfilled`, `outstanding`, `violated`, or `unknown`, the status of a duty's instance (`due2-workflows.md` §5.3, `duty.lp`).
 - **Paired and opaque.** A `u` leaf whose status is `unresolved` is *paired*: its value exists and fits, so it shares a completion variable with every leaf that makes the same comparison, its complement included. Every other `u` part is *opaque*: a `u` target or party part, and a `u` leaf of any other status. An opaque part stays `u` in every completion (`decisions/0016` #1, #2).
 - **Completion variable.** What a `u` finding reads (`due2-workflows.md` §6.4): `cons(D)` for a class of paired leaves with one key, `D` a leaf that names the class; `fin(I)` for a finding `I` with an opaque part, which completes the finding when the opaque part leaves it `u`; and `ful(Y)` for a `u` `fulfilled(Y)`. The spec calls the variable with a polarity a *literal*. "Literal" alone, in this note, means an RDF literal, `lit(Lex, Datatype)`.
@@ -255,7 +255,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | Reason | File | Why |
 |---|---|---|
 | `action: blank node without rdf:value`, `action: several rdf:value` | `structure.lp` | the action term names no single action |
-| `binding: cardinality`, `binding: range` | `operand.lp` | a cardinality or range the spike cannot read, or two of them |
+| `binding: cardinality`, `binding: range`, `binding: unit` | `operand.lp` | a cardinality, range, or unit the spike cannot read, or two of them |
 | `constraint: cycle`, `constraint: dprod:not with several members`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (`completion.lp`) |
 | `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |

@@ -120,7 +120,7 @@ SET_BASED = {
 # The operators a concept-scheme operand admits (due2-profiles.md §4, decisions/0015 #8).
 CONCEPT_OPERATORS = {ODRL.eq, ODRL.neq, ODRL.isAnyOf, ODRL.isNoneOf}
 # The operators whose left is one value; a set-valued operand takes isAllOf, isPartOf,
-# or hasPart (due2-profiles.md 4, decisions/0025).
+# or hasPart (due2-profiles.md §4, decisions/0025).
 ONE_VALUE = {
     ODRL.eq,
     ODRL.neq,
@@ -296,7 +296,7 @@ def check_duty_timing(g: Graph, rule: Node, kind: Node, r: Report) -> None:
 
 
 WHERE_ATTRS = (DPROD.operandSource, DPROD.operandProperty)
-TYPE_ATTRS = (RDFS.range, DUE2.cardinality, DUE2.allowedOperator)
+TYPE_ATTRS = (RDFS.range, DUE2.unit, DUE2.cardinality, DUE2.allowedOperator)
 DEFAULTS: dict[Node, frozenset[Node]] = {DUE2.cardinality: frozenset({DUE2.one})}
 # Derived XSD datatypes, by the primitive whose kind they have (XSD 1.1 Part 2 §3.3-3.4).
 DERIVED: dict[Node, Node] = {
@@ -347,6 +347,7 @@ class Binding:
     source: frozenset[Node]
     prop: frozenset[Node]
     range: frozenset[Node]
+    unit: frozenset[Node]
     card: Node
     allowed: frozenset[Node]
 
@@ -359,8 +360,8 @@ class Bindings:
     The modules are one layer without order: each is kept as its own graph, so
     that two which state an attribute of one operand differently are a
     `ConflictingProfileDeclaration`, not a merge. The source and property come
-    from the highest layer that states them. The range, cardinality, and allowed
-    operators come from the lowest layer that declares the operand, its owner,
+    from the highest layer that states them. The range, unit, cardinality, and
+    allowed operators come from the lowest layer that declares the operand, its owner,
     and a higher layer that restates one with another value is a
     `RetypedOperand`. An omitted allowed-operator list defaults to every core
     operator; the checker does not narrow it by operator signatures, so any
@@ -426,7 +427,10 @@ class Bindings:
                         f"the operand's type (due2-profiles.md 2, decisions/0014 #2)",
                     )
         (card,) = typed[DUE2.cardinality] if len(typed[DUE2.cardinality]) == 1 else (DUE2.one,)
-        b = Binding(where[0], where[1], typed[RDFS.range], card, typed[DUE2.allowedOperator])
+        b = Binding(
+            where[0], where[1], typed[RDFS.range], typed[DUE2.unit], card,
+            typed[DUE2.allowedOperator],
+        )  # fmt: skip
         self._check_range(g, op, b, r)
         return b
 
@@ -656,6 +660,21 @@ def check_constraint(
         r.diag(
             "OperatorTypeMismatch",
             f"{q(g, c)}: operator {q(g, operator)} not allowed for {q(g, op)}",
+        )
+    # A unit is the binding's (decisions/0049): another is a mismatch, and one the
+    # binding does not declare is admitted with a warning, and is U whatever is read.
+    units = frozenset(g.objects(c, ODRL.unit))
+    if units and not bnd.unit:
+        r.diag(
+            "UncheckedUnit",
+            f"{q(g, c)}: unit {', '.join(q(g, u) for u in units)} on {q(g, op)}, whose binding "
+            f"declares none (due2-profiles.md §3 Units)",
+        )
+    elif units - bnd.unit:
+        r.diag(
+            "OperatorTypeMismatch",
+            f"{q(g, c)}: unit {', '.join(q(g, u) for u in units - bnd.unit)} is not "
+            f"{q(g, op)}'s declared unit (due2-profiles.md §3 Units)",
         )
     check_concepts(g, c, op, operator, rights, bnd, b, r)
     # The right operand's kind against the range's (due2-profiles.md 3 Kinds); a range

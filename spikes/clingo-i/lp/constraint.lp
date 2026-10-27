@@ -145,8 +145,11 @@ right(C, Term) :- right_value(C, List), is_list(List), list_item(List, Term).
 
 %*! unit(C, Iri)
 
-Leaf `C` labels its right operand with the unit `Iri` (`odrl:unit`). It converts nothing
-(compare.lp), and it is part of the completion key (completion.lp).
+Leaf `C` states the unit `Iri` (`odrl:unit`) for its right operand. operand.lp checks it
+against the binding's `due2:unit`: a different unit is `OperatorTypeMismatch`, and a unit the
+binding does not declare is `unchecked_unit/1`, `u` in every world (decisions/0049). Nothing is
+converted. The constraint's own unit, not the binding's, is part of the completion key
+(completion.lp).
 *%
 unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
 

@@ -1,0 +1,182 @@
+{
+  "case": "due2-units",
+  "source": "due2-native: a unit the binding declares, a constraint with no unit, and a unit no binding declares (decisions/0049)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "A value due2 reads carries no unit, so a constraint's odrl:unit is checked against its operand's binding (due2-profiles.md §3, Units). ex:sizeMB declares the megabyte with due2:unit: ex:copy states the same unit and ex:share states none, and both compare the request's value. ex:displayHours declares no unit, so ex:show's hour cannot be checked: W1 admits the policy with the warning UncheckedUnit, and the constraint is U with status misfit whether the request gives 4 or 12. A reader that treats the unit as a label gives Permit on 4 and NotApplicable on 12, definite answers that the data cannot support. The negative half, a constraint in another unit than its binding's, is due2-unit-mismatch.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "copy 80 MB",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:reproduce",
+        "target": "ex:Dataset",
+        "at": "2026-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:sizeMB": {
+            "@value": "80",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "unknown_parts": [],
+        "why": "ex:copy's unit is ex:sizeMB's declared unit, so the values compare: 80 ≤ 100, and ex:copy applies."
+      }
+    },
+    {
+      "name": "copy 120 MB",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:reproduce",
+        "target": "ex:Dataset",
+        "at": "2026-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:sizeMB": {
+            "@value": "120",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "unknown_parts": [],
+        "why": "The units agree and 120 > 100, so ex:copy's constraint is F and no rule applies."
+      }
+    },
+    {
+      "name": "share 40 MB",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:distribute",
+        "target": "ex:Dataset",
+        "at": "2026-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:sizeMB": {
+            "@value": "40",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "unknown_parts": [],
+        "why": "ex:share's constraint states no unit, so it is read in the binding's, the megabyte: 40 ≤ 50, and ex:share applies."
+      }
+    },
+    {
+      "name": "show 4 hours",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:display",
+        "target": "ex:Dataset",
+        "at": "2026-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:displayHours": {
+            "@value": "4",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:show",
+            "input": "ex:displayHours",
+            "status": "misfit"
+          }
+        ],
+        "why": "ex:show's constraint states the hour, but ex:displayHours declares no unit, so nothing says what unit 4 is in: the constraint is U (misfit), and ex:show applies in one completion and not in the other. Indeterminate, NotApplicable..Permit."
+      }
+    },
+    {
+      "name": "show 12 hours",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:display",
+        "target": "ex:Dataset",
+        "at": "2026-01-01T00:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:displayHours": {
+            "@value": "12",
+            "@type": "xsd:integer"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-01-01T00:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:show",
+            "input": "ex:displayHours",
+            "status": "misfit"
+          }
+        ],
+        "why": "As for 4: an unchecked unit makes the constraint U whatever value is read, so 12 does not make it F. Indeterminate, NotApplicable..Permit."
+      }
+    }
+  ]
+}

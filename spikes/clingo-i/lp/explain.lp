@@ -26,8 +26,8 @@
 %
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
 %   `conflict/2`, `pre/2`, `obligation/1` (structure.lp); `holds/2` (applies.lp); `conn/2`,
-%   `member/2`, `leaf/1`, `left/2` (constraint.lp); `prop/2`, `read_ok/2`, `read_status/3`
-%   (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `rank/2` (kleene.lp);
+%   `member/2`, `leaf/1`, `left/2` (constraint.lp); `prop/2`, `read_ok/2`, `read_status/3`,
+%   `unchecked_unit/1` (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `rank/2` (kleene.lp);
 %   `voc/2` (lift.lp);
 %   `witness_cond/2`, `obligation_policy/2`, `instance/1`, `passed/1`, `status/3` (duty.lp);
 %   `duty_item/1`, `finding_atom/2`, `item_root/2`, `leaf_status/2` (completion.lp).
@@ -417,7 +417,8 @@ The witness leaf `C` is `u` in world `wit(E)` with status `S`, as `leaf_status/2
 world `k`: its operand's read status there, or `misfit`.
 *%
 witness_status(E, C, S) :- evaluates(wit(E), C), leaf(C), left(C, Op),
-    read_status(wit(E), Op, S).
+    read_status(wit(E), Op, S), not unchecked_unit(C).
+witness_status(E, C, misfit) :- evaluates(wit(E), C), unchecked_unit(C).
 witness_status(E, C, misfit) :- evaluates(wit(E), C), leaf(C), left(C, Op), read_ok(wit(E), Op),
     crank(wit(E), C, 1).
 

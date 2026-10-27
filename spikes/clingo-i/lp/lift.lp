@@ -88,6 +88,7 @@ voc(nil,         "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil").
 voc(operandSource,   "https://ekgf.org/dprod/spec/develop/operandSource").
 voc(operandProperty, "https://ekgf.org/dprod/spec/develop/operandProperty").
 voc(range,       "http://www.w3.org/2000/01/rdf-schema#range").
+voc(operandUnit, "https://w3id.org/due2/profile#unit").
 voc(cardinality, "https://w3id.org/due2/profile#cardinality").
 voc(allowedOperator, "https://w3id.org/due2/profile#allowedOperator").
 voc(conceptScheme, "https://w3id.org/due2/profile#conceptScheme").
@@ -248,9 +249,10 @@ connective(and; or; xone; negation; andSequence).
 %*! binding_key(Key)
 
 `Key` names one attribute of a left operand's binding: its source, its property, its range, its
-cardinality, or an allowed operator. The attributes are those of due2-profiles.md §3.
+unit (`due2:unit`), its cardinality, or an allowed operator. The attributes are those of
+due2-profiles.md §3.
 *%
-binding_key(operandSource; operandProperty; range; cardinality; allowedOperator).
+binding_key(operandSource; operandProperty; range; operandUnit; cardinality; allowedOperator).
 
 %*! source_kind(Iri, Src)
 

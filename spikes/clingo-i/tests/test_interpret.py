@@ -713,11 +713,43 @@ def test_refinement(interpreter: Interpreter) -> None:
         assert outcome(interpreter.reply(v)) == expected
 
 
-def test_unit_labels_without_converting(interpreter: Interpreter) -> None:
-    # odrl:unit joins the completion key only; the comparison reads the values alone.
-    c = "[ odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand 5 ; odrl:unit ex:EUR ]"
-    v = vector(constrained(c, bound("x")), request={"params": {"ex:x": typed("5", "integer")}})
-    assert outcome(interpreter.reply(v)) == "Permit"
+EUR = " ; due2:unit ex:EUR"
+
+
+def unit(operator: str, right: str, iri: str) -> str:
+    return leaf(operator, right)[:-1] + f"; odrl:unit {iri} ]"
+
+
+# decisions/0049: a binding's due2:unit is the unit of every value read for the operand. A
+# constraint in that unit, or in none, compares the values; a constraint in another unit is
+# OperatorTypeMismatch; a constraint with a unit on a binding without one is u whatever is read,
+# with status misfit. Without the unchecked rows the label-only reading (a definite Permit on 5,
+# NotApplicable on 6) passes; without the USD row a differing unit is ignored; without the first
+# two rows rejecting or blanking every unit passes.
+@pytest.mark.parametrize(
+    ("constraint", "binding", "value", "expected", "status"),
+    [
+        (unit("eq", "5", "ex:EUR"), EUR, "5", "Permit", None),
+        (unit("eq", "5", "ex:EUR"), EUR, "6", "NotApplicable", None),
+        (leaf("eq", "5"), EUR, "5", "Permit", None),
+        (unit("eq", "5", "ex:EUR"), "", "5", "Indeterminate", "misfit"),
+        (unit("eq", "5", "ex:EUR"), "", "6", "Indeterminate", "misfit"),
+        (unit("eq", "5", "ex:USD"), EUR, "5", "error", None),
+    ],
+)  # fmt: skip
+def test_units(
+    interpreter: Interpreter,
+    constraint: str,
+    binding: str,
+    value: str,
+    expected: str,
+    status: str | None,
+) -> None:
+    pol = constrained(constraint, bound("x", extra=binding))
+    reply = interpreter.reply(vector(pol, request={"params": {"ex:x": typed(value, "integer")}}))
+    assert outcome(reply) == expected
+    if expected != "error":
+        assert unknown_parts(reply) == ([] if status is None else [("ex:r", "ex:x", status)])
 
 
 # Each layer declares ex:x's property: the policy reads ex:fromPolicy, each profile the property
@@ -1012,6 +1044,8 @@ def test_distinct_or_idempotent_members_admitted(interpreter: Interpreter, const
         (leaf("eq", "( ex:v )"), "", "constraint: list on a scalar operator"),
         (leaf("eq", "ex:v"), " ; due2:cardinality due2:many", "binding: cardinality"),
         (leaf("eq", "ex:v"), " ; rdfs:range xsd:integer, xsd:string", "binding: range"),
+        (leaf("eq", "ex:v"), " ; due2:unit ex:EUR, ex:USD", "binding: unit"),
+        (leaf("eq", "ex:v"), ' ; due2:unit "EUR"', "binding: unit"),
     ],
 )  # fmt: skip
 def test_constraint_declines(
@@ -1065,13 +1099,16 @@ def test_datatypes_differ_without_a_range(interpreter: Interpreter) -> None:
 RDF_PREFIX = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
 
 
-def two_rules(c1: str, c2: str, kind: str = "Permission", refine: bool = False) -> str:
+def two_rules(
+    c1: str, c2: str, kind: str = "Permission", refine: bool = False, x_extra: str = ""
+) -> str:
     """Rules ex:r1 under `c1` and ex:r2 under `c2`, both of `kind`, reading ex:x and ex:y.
 
     Both operands read the state, and a vector with no fact for them leaves them
     `unresolved`, so their leaves are paired (completion.lp).
 
-    With `refine`, `c2` refines ex:r2's action instead of constraining the rule.
+    With `refine`, `c2` refines ex:r2's action instead of constraining the rule. `x_extra` is
+    appended to ex:x's binding.
     """
     link = kind.lower()
     r2 = f"ex:r2 a odrl:{kind} ; odrl:target ex:a ;" + (
@@ -1086,13 +1123,9 @@ def two_rules(c1: str, c2: str, kind: str = "Permission", refine: bool = False) 
         + f"ex:r1 a odrl:{kind} ; odrl:action odrl:use ; odrl:target ex:a ;"
         + f" odrl:constraint {c1} .\n"
         + r2
-        + bound("x", "stateSource")
+        + bound("x", "stateSource", x_extra)
         + bound("y", "stateSource")
     )
-
-
-def unit(operator: str, right: str, iri: str) -> str:
-    return leaf(operator, right)[:-1] + f"; odrl:unit {iri} ]"
 
 
 # With no fact for ex:x, every leaf is u and unresolved. Two leaves are one variable when every
@@ -1109,13 +1142,10 @@ def unit(operator: str, right: str, iri: str) -> str:
         (leaf("lteq", "5"), leaf("gt", "5"), False, "Permit"),
         # A set right operand is a set: its order and repetition do not matter.
         (leaf("isAnyOf", "ex:v, ex:w"), leaf("isNoneOf", "( ex:w ex:v )"), False, "Permit"),
-        (unit("eq", "5", "ex:EUR"), unit("neq", "5", "ex:EUR"), False, "Permit"),
         # ex:y reads another property, so another value.
         (leaf("eq", "5"), leaf("neq", "5").replace("ex:x", "ex:y"), False, "Indeterminate"),
         (leaf("eq", "5"), leaf("neq", "6"), False, "Indeterminate"),
         (leaf("eq", "5"), leaf("lt", "5"), False, "Indeterminate"),
-        (leaf("eq", "5"), unit("neq", "5", "ex:EUR"), False, "Indeterminate"),
-        (unit("eq", "5", "ex:EUR"), unit("neq", "5", "ex:USD"), False, "Indeterminate"),
         # Right operands compare as terms, so 5 and 5.0 are two variables (completion.lp).
         (leaf("eq", "5"), leaf("neq", "5.0"), False, "Indeterminate"),
         (leaf("isAnyOf", "ex:v, ex:w"), leaf("isNoneOf", "ex:v"), False, "Indeterminate"),
@@ -1127,6 +1157,25 @@ def test_completion_key(
     interpreter: Interpreter, c1: str, c2: str, refine: bool, expected: str
 ) -> None:
     pol = two_rules(c1, c2, refine=refine)
+    assert outcome(interpreter.reply(vector(pol))) == expected
+
+
+# The constraint's own unit is part of the key, and W1 does not fill it from the binding
+# (decisions/0049 #4), so a leaf without a unit and one with the binding's unit are two
+# variables. An unchecked unit is opaque, so it is never paired. Without the last row a misfit
+# leaf would be paired with its complement, a Permit no arriving value can produce.
+@pytest.mark.parametrize(
+    ("c1", "c2", "binding", "expected"),
+    [
+        (unit("eq", "5", "ex:EUR"), unit("neq", "5", "ex:EUR"), EUR, "Permit"),
+        (leaf("eq", "5"), unit("neq", "5", "ex:EUR"), EUR, "Indeterminate"),
+        (unit("eq", "5", "ex:EUR"), unit("neq", "5", "ex:EUR"), "", "Indeterminate"),
+    ],
+)
+def test_completion_key_units(
+    interpreter: Interpreter, c1: str, c2: str, binding: str, expected: str
+) -> None:
+    pol = two_rules(c1, c2, x_extra=binding)
     assert outcome(interpreter.reply(vector(pol))) == expected
 
 

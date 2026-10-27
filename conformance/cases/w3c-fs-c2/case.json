@@ -3,7 +3,7 @@
   "source": "W3C ODRL CG formal-semantics examples C2 (C21, C22, C23)",
   "classification": "odrl-core",
   "needs": [],
-  "notes": "Translated from the W3C ODRL CG formal-semantics examples (w3c/odrl@1db8e6b, folder C Evaluation of Conditions (Duties)/C2). The CG's evaluatedAction/Target/Party become the request; requestParameters describing sotw:CurrentXSDDateTime become request.at and effective_at (odrl:dateTime is the action time in due2-core). The CG reports a controlState: Inactive is Deny under its default 'close' behaviour, where due2 says NotApplicable and leaves the default to the enforcement point. Timezone-less instants are read as UTC (due2 instants are UTC, workflows §2). Upstream defect: every CG request in C1/C2 names ex:party/billie1, but the policy's assignee is ex:party/billie, and the CG's expected reports treat the request as matching (C12, C23 Permit). The translation uses ex:party/billie; read literally, every C scenario would be NotApplicable. The duty's own constraint (Sunday) is a guard: it reads the request, so it decides whether the duty is owed (workflows §5.2, `owed`). The CG agrees: C21 reports the duty Inactive and the permission Active. Guards stay on the duty (decisions/0003), so the policy is one permission atom and one duty atom. 2025-07-29 is a Tuesday, 2025-08-03 a Sunday; the weekday is a request parameter the assembler derives from request.at (due2-profiles.md §3, one hop). Scenarios 4-5 are added and cover an unknown guard. It is uniform — a positive occurrence only lowers the verdict — so the two extreme completions decide (k = 0). Until decisions/0003 this case was the motivating case for canonical literals, because hoisting split the guard into complementary atoms; that role has passed to due2-xone-unknown. odrl:payAmount needs no binding in the policy: due2-core binds it to the witness source, so the CG's policy is used as written (due2-profiles.md §9 #6).",
+  "notes": "Translated from the W3C ODRL CG formal-semantics examples (w3c/odrl@1db8e6b, folder C Evaluation of Conditions (Duties)/C2). The CG's evaluatedAction/Target/Party become the request; requestParameters describing sotw:CurrentXSDDateTime become request.at and effective_at (odrl:dateTime is the action time in due2-core). The CG reports a controlState: Inactive is Deny under its default 'close' behaviour, where due2 says NotApplicable and leaves the default to the enforcement point. Timezone-less instants are read as UTC (due2 instants are UTC, workflows §2). Upstream defect: every CG request in C1/C2 names ex:party/billie1, but the policy's assignee is ex:party/billie, and the CG's expected reports treat the request as matching (C12, C23 Permit). The translation uses ex:party/billie; read literally, every C scenario would be NotApplicable. The duty's own constraint (Sunday) is a guard: it reads the request, so it decides whether the duty is owed (workflows §5.2, `owed`). The CG agrees: C21 reports the duty Inactive and the permission Active. Guards stay on the duty (decisions/0003), so the policy is one permission atom and one duty atom. 2025-07-29 is a Tuesday, 2025-08-03 a Sunday; the weekday is a request parameter the assembler derives from request.at (due2-profiles.md §3, one hop). Scenarios 4-5 are added and cover an unknown guard. It is uniform — a positive occurrence only lowers the verdict — so the two extreme completions decide (k = 0). Until decisions/0003 this case was the motivating case for canonical literals, because hoisting split the guard into complementary atoms; that role has passed to due2-xone-unknown. odrl:payAmount needs no binding in the policy: due2-core binds it to the witness source, so the CG's policy is used as written (due2-profiles.md §9 #6). The CG's refinement states odrl:unit Euro, a unit due2-core's odrl:payAmount does not declare (currencies vary), so W1 admits the policy with the warning UncheckedUnit and the witness condition is U with status misfit whatever amount a payment states (decisions/0049): a value with no stated unit cannot be checked against 5.00 EUR. A scenario whose duty a payment would fulfil is therefore Indeterminate between Pending and Permit where the CG answers Permit. A policy that needs the amount checked binds an operand of its own that declares due2:unit.",
   "prefixes": {
     "ex": "http://example.com/",
     "exo": "https://ex.org/"
@@ -115,10 +115,21 @@
         "closure": []
       },
       "expected": {
-        "verdict": "Permit",
+        "verdict": "Indeterminate",
         "frontier": [],
         "obligations": [],
-        "why": "The duty is owed and ev-pay (2025-07-23, before effective_at, 5.00 EUR, by the bearer) fulfils it: not open, ready."
+        "verdict_range": {
+          "low": "Pending",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:condition/1",
+            "input": "odrl:payAmount",
+            "status": "misfit"
+          }
+        ],
+        "why": "The guard is T, so the duty is owed. ev-pay is a timely compensate by the bearer, but the refinement's unit Euro is one odrl:payAmount's binding does not declare, so the payAmount condition is U (misfit) and fulfilled is U: Permit where the payment counts, Pending where it does not. Indeterminate, Pending..Permit."
       },
       "w3c_expected": "Active, Permit"
     },
@@ -155,10 +166,26 @@
         "closure": []
       },
       "expected": {
-        "verdict": "Permit",
+        "verdict": "Indeterminate",
         "frontier": [],
         "obligations": [],
-        "why": "The weekday is missing, so the duty's owed is U; but ev-pay fulfils it, so its open value (owed ∧ ¬fulfilled) is F either way, and the candidate is ready. Permit, exact — as the authored policy does for any weekday."
+        "verdict_range": {
+          "low": "Pending",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:condition/1",
+            "input": "exo:dayOfWeek",
+            "status": "missing"
+          },
+          {
+            "ref": "ex:condition/1",
+            "input": "odrl:payAmount",
+            "status": "misfit"
+          }
+        ],
+        "why": "The weekday is missing, so owed is U, and the unchecked unit makes fulfilled U, so open (owed ∧ ¬fulfilled) is U: completing it F gives a ready candidate (Permit), T a pending one (Pending). Indeterminate, Pending..Permit."
       }
     },
     {

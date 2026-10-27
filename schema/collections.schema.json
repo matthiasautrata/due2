@@ -259,6 +259,9 @@
               "range": {
                 "$ref": "#/$defs/Id"
               },
+              "operand_unit": {
+                "$ref": "#/$defs/Id"
+              },
               "cardinality": {
                 "enum": [
                   "one",
@@ -531,7 +534,8 @@
                 "enum": [
                   "AnonymousEntity",
                   "ContestedOperatorReading",
-                  "IgnoredPredicate"
+                  "IgnoredPredicate",
+                  "UncheckedUnit"
                 ]
               },
               "ref": {
@@ -1590,7 +1594,8 @@
                 "enum": [
                   "AnonymousEntity",
                   "ContestedOperatorReading",
-                  "IgnoredPredicate"
+                  "IgnoredPredicate",
+                  "UncheckedUnit"
                 ]
               },
               "ref": {

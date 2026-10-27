@@ -8,10 +8,12 @@
 
 # Source: w3c/odrl@1db8e6b formal-semantics/examples/B Evaluation of Refinements/B1 (W3C Software and Document License),
 # translated from JSON-LD. Changes: typed; conflict declared;
-# odrl:resolution bound to the request (the request names it; CG examples do not).
+# odrl:resolution bound to the request (the request names it; CG examples do not),
+# with its unit, so the refinement's odrl:unit is checked (decisions/0049); the
+# due2 core profile declared, for due2:unit.
 
 <http://example.com/policy/B1> a odrl:Set ;
-    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
     odrl:conflict odrl:prohibit ;
     odrl:permission ex:rule\/B1 .
 
@@ -32,4 +34,5 @@ ex:refinement\/B1 a odrl:Constraint ;
 odrl:resolution a odrl:LeftOperand ;
     dprod:operandSource dprod:requestSource ;
     dprod:operandProperty odrl:resolution ;
-    rdfs:range xsd:integer .
+    rdfs:range xsd:integer ;
+    due2:unit <http://dbpedia.org/resource/Dots_per_inch> .

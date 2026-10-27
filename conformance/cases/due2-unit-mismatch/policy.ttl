@@ -1,0 +1,32 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# A negative case: valid ODRL 2.2, rejected by due2. ex:sizeMB declares its
+# unit, the megabyte, but the constraint states the gigabyte. due2 converts no
+# unit, so the two IRIs differ and W1 rejects the constraint (decisions/0049 #2).
+
+ex:datasetPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:copy .
+
+ex:copy a odrl:Permission ;
+    odrl:action odrl:reproduce ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:sizeMB ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "1"^^xsd:integer ;
+        odrl:unit <http://dbpedia.org/resource/Gigabyte>
+    ] .
+
+ex:sizeMB a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:sizeMB ;
+    rdfs:range xsd:integer ;
+    due2:unit <http://dbpedia.org/resource/Megabyte> .

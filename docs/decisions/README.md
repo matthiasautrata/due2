@@ -56,3 +56,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0046](0046-platform-calls-are-explicit.md) | Publication is its own workflow, and a case changes only by explicit calls | 2026-10-26 | In force |
 | [0047](0047-bindings-in-the-corpus-and-reads.md) | The corpus carries operand bindings, and `Reads` is four relations | 2026-10-26 | In force, with a note: `Reads` gains two relations (`decisions/0048`) |
 | [0048](0048-world-answers-have-a-source-and-a-status.md) | A world-edge answer has a source and a status, evidence edges are planned, and a plan over the read limit is refused | 2026-10-26 | In force |
+| [0049](0049-a-unit-belongs-to-the-binding.md) | A unit belongs to the operand's binding, and a unit no binding declares makes the comparison unknown | 2026-10-26 | In force |

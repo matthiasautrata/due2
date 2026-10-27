@@ -1,0 +1,60 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:    <https://example.org/> .
+
+# Authored for due2 (decisions/0049). ex:sizeMB declares its unit, the
+# megabyte, so a constraint in that unit (ex:copy) and a constraint with no unit
+# (ex:share) compare the values. ex:displayHours declares no unit, so ex:show's
+# constraint, which states the hour, cannot be checked: W1 warns UncheckedUnit,
+# and the constraint is U whatever the request gives.
+
+ex:datasetPolicy a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:copy, ex:share, ex:show .
+
+ex:copy a odrl:Permission ;
+    odrl:action odrl:reproduce ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:sizeMB ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "100"^^xsd:integer ;
+        odrl:unit <http://dbpedia.org/resource/Megabyte>
+    ] .
+
+ex:share a odrl:Permission ;
+    odrl:action odrl:distribute ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:sizeMB ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "50"^^xsd:integer
+    ] .
+
+ex:show a odrl:Permission ;
+    odrl:action odrl:display ;
+    odrl:target ex:Dataset ;
+    odrl:constraint [
+        a odrl:Constraint ;
+        odrl:leftOperand ex:displayHours ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand "8"^^xsd:integer ;
+        odrl:unit <http://dbpedia.org/resource/Hour>
+    ] .
+
+ex:sizeMB a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:sizeMB ;
+    rdfs:range xsd:integer ;
+    due2:unit <http://dbpedia.org/resource/Megabyte> .
+
+ex:displayHours a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ;
+    dprod:operandProperty ex:displayHours ;
+    rdfs:range xsd:integer .

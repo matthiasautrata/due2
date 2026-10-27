@@ -13,6 +13,8 @@
 # atoms; with guards on the duty (decisions/0003) it is one permission atom and
 # nine duty atoms, and each guard moves the verdict one way only, so unknown
 # guards are uniform: k = 0, two extreme completions, exact.
+# The refinements state no odrl:unit: due2-core's odrl:payAmount declares no unit,
+# and a unit it does not declare would make every payment U (decisions/0049).
 
 <http://example.com/policy:CD> a odrl:Agreement ;
     odrl:profile <https://ekgf.org/dprod/spec/develop/>, <https://w3id.org/due2/profile#> ;
@@ -39,7 +41,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "5.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "5.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled1 ; odrl:operator odrl:eq ;
@@ -50,7 +52,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "6.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "6.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled2 ; odrl:operator odrl:eq ;
@@ -61,7 +63,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "7.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "7.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled3 ; odrl:operator odrl:eq ;
@@ -72,7 +74,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "8.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "8.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled4 ; odrl:operator odrl:eq ;
@@ -83,7 +85,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "9.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "9.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled5 ; odrl:operator odrl:eq ;
@@ -94,7 +96,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "10.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "10.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled6 ; odrl:operator odrl:eq ;
@@ -105,7 +107,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "11.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "11.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled7 ; odrl:operator odrl:eq ;
@@ -116,7 +118,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "12.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "12.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled8 ; odrl:operator odrl:eq ;
@@ -127,7 +129,7 @@
         rdf:value odrl:compensate ;
         odrl:refinement [ a odrl:Constraint ;
             odrl:leftOperand odrl:payAmount ; odrl:operator odrl:eq ;
-            odrl:rightOperand "13.00"^^xsd:decimal ; odrl:unit <http://dbpedia.org/resource/Euro> ]
+            odrl:rightOperand "13.00"^^xsd:decimal ]
     ] ;
     odrl:constraint [ a odrl:Constraint ;
         odrl:leftOperand ex:moduleEnabled9 ; odrl:operator odrl:eq ;

@@ -1,0 +1,17 @@
+{
+  "case": "due2-unit-mismatch",
+  "source": "due2-native: a constraint whose odrl:unit is not its binding's due2:unit (decisions/0049)",
+  "classification": "odrl-core",
+  "needs": [],
+  "odrl22_valid": true,
+  "notes": "The policy is valid ODRL 2.2 and passes odrl22-shape.ttl; the rejection is due2's. Units are compared as IRIs, and due2 converts nothing (decisions/0049 #1), so 1 gigabyte against a value read in megabytes would compare 1 with the megabyte count: a definite verdict on the wrong scale. A policy that means one gigabyte writes 1000 in the binding's unit, or omits odrl:unit.",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "expected_rejection": {
+    "codes": [
+      "OperatorTypeMismatch"
+    ],
+    "why": "ex:sizeMB declares the unit Megabyte, and the constraint states Gigabyte. A constraint's unit must be its binding's, so W1 rejects the policy in stage 2 (due2-profiles.md §3, decisions/0049 #2)."
+  }
+}

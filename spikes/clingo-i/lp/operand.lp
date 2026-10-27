@@ -13,28 +13,31 @@
 %   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2`,
 %   `concept_scheme/2`, `declared_in_scheme/2`, `closure/3`, `fact/2`, `fact_value/2`
 %   (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
-%   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3` (driver); `left/2`, `c_operator/2`, `op/2`, `right/2`,
-%   `node_tree/2` (constraint.lp); `duty_node/1` (structure.lp); `evaluates/2` (compare.lp).
+%   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3`
+%   (driver); `left/2`, `c_operator/2`, `op/2`, `right/2`, `unit/2`, `node_tree/2`
+%   (constraint.lp); `duty_node/1` (structure.lp); `evaluates/2`
+%   (compare.lp).
 % - **Provides:** `used/1`, `declares/2`, `where_key/1`, `type_key/1`, `module_differs/1`,
 %   `where_rank/3`, `owner_rank/2`, `bdecl/3`, `owned/3`, `retyped/1`, `src/2`, `prop/2`,
 %   `card/2`, `has_range/1`, `range_kind/2`, `has_range_kind/1`, `prop_range_kind/2`,
 %   `allowed/2`, `has_allowed/1`, `single_left/1`, `scheme/2`, `has_scheme/1`,
 %   `concept_operator/1`, `declared_concept/2`, `read_concept/2`, `candidate_value/2`,
 %   `conforms/2`, `read_world/1`, `read_in/2`, `read_value/3`, `read_resolved/2`,
-%   `nonconforming/2`, `card_ok/2`, `read_ok/2`, `read_u/2`, `read_status/3`; extends
+%   `nonconforming/2`, `card_ok/2`, `read_ok/2`, `read_u/2`, `read_status/3`,
+%   `unchecked_unit/1`; extends
 %   `reject/2` (structure.lp) and `unsupported/1` (lift.lp).
 
 %## Binding
 
 % A left operand is bound when a leaf uses it (`used/1`), under decisions/0014 #1–#3. A layer
 % *declares* an operand when it states any of its binding attributes: source, property, range,
-% cardinality, or allowed operators (`declares/2`). The binding is assembled from the layers in two
-% parts:
+% unit, cardinality, or allowed operators (`declares/2`). The binding is assembled from the layers
+% in two parts:
 %
 % - **Where it reads.** The source and the property each come from the highest layer that states
 %   them (`where_rank/3`). A policy may rebind a baseline operand, as `due2-rebound-pay-amount`
 %   rebinds `odrl:payAmount` to the request.
-% - **Its type.** The range, cardinality, and allowed operators come from the lowest declaring
+% - **Its type.** The range, unit, cardinality, and allowed operators come from the lowest declaring
 %   layer, the operand's *owner* (`owner_rank/2`). An attribute the owner omits has its default, and
 %   the default counts as stated: `owned(Op, cardinality, due2:one)` when the owner gives no
 %   cardinality. A higher layer that states a type attribute with other values than the owner's,
@@ -87,10 +90,10 @@ where_key(operandSource; operandProperty).
 
 %*! type_key(Key)
 
-`Key` is a type attribute: the range, the cardinality, or the allowed operators. Only the
-lowest declaring layer states it (decisions/0014 #1).
+`Key` is a type attribute: the range, the unit, the cardinality, or the allowed operators. Only
+the lowest declaring layer states it (decisions/0014 #1, decisions/0049 #1).
 *%
-type_key(range; cardinality; allowedOperator).
+type_key(range; operandUnit; cardinality; allowedOperator).
 
 %*! module_differs(Op)
 
@@ -130,7 +133,7 @@ bdecl(Op, Key, Value) :- owner_rank(Op, N), type_key(Key), decl(L, Op, Key, Valu
 %*! owned(Op, Key, Value)
 
 `Op`'s type attribute `Key` has `Value`, as the owner states it, or as the default fills it in:
-`due2:one` for a cardinality the owner omits. An omitted range or operator list has no value,
+`due2:one` for a cardinality the owner omits. An omitted range, unit, or operator list has no value,
 which is the default (due2-profiles.md §3 Defaults).
 *%
 owned(Op, Key, Value) :- bdecl(Op, Key, Value), type_key(Key).
@@ -265,6 +268,26 @@ reject("OperatorTypeMismatch", C) :- left(C, Op), has_allowed(Op), c_operator(C,
 reject("OperatorTypeMismatch", C) :- left(C, Op), right(C, V), not conforms(V, Op).
 reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, isA).
 reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, O), single_left(O).
+
+%## Units
+
+% A binding's `due2:unit` is a type attribute (`operandUnit`, *Binding*). A leaf's `odrl:unit`
+% (`unit/2`, constraint.lp) must be that IRI, or the leaf is `reject("OperatorTypeMismatch", C)`.
+% A leaf that states a unit on an operand whose binding declares none is admitted, and is `u`
+% whatever is read (compare.lp), with status `misfit` (completion.lp): nothing says what unit
+% the read value is in (due2-profiles.md §3 Units, decisions/0049). W1 also warns with
+% `UncheckedUnit`; the spike reports no warnings. Two units, or one that is not an IRI, decline
+% as `binding: unit`.
+
+%*! unchecked_unit(C)
+
+Leaf `C` states a unit that its operand's binding does not declare: the binding declares no unit.
+*%
+unchecked_unit(C) :- unit(C, _), left(C, Op), not owned(Op, operandUnit, _).
+reject("OperatorTypeMismatch", C) :- unit(C, Iri), left(C, Op), owned(Op, operandUnit, Iri2),
+    Iri != Iri2.
+unsupported("binding: unit") :- bdecl(Op, operandUnit, U), bdecl(Op, operandUnit, U2), U != U2.
+unsupported("binding: unit") :- bdecl(Op, operandUnit, U), not kind(U, iri).
 
 %## Concept schemes
 

@@ -16,8 +16,8 @@
 %
 % - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
 %   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `op/2`,
-%   `right/2` (constraint.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`
-%   (operand.lp); `witness_only/1` (duty.lp).
+%   `right/2` (constraint.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`,
+%   `unchecked_unit/1` (operand.lp); `witness_only/1` (duty.lp).
 % - **Provides:** `cpair/4`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
 %   `above/2`, `ceqr/4`, `ordered/1`,
 %   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
@@ -31,20 +31,21 @@
 % *Equality*, *Concepts*, *Order*, and *Hierarchies* read only the two values, so they carry no
 % world.
 %
-% `odrl:unit` labels a right operand (`unit/2`, constraint.lp), and the completion key includes it
-% (completion.lp). It converts nothing, and what a unit means for a comparison is open (#67), so a
-% leaf compares the values alone: `5` with unit `ex:EUR` equals a read `5`
-% (`test_unit_labels_without_converting`).
+% A leaf whose unit its binding does not declare (`unchecked_unit/1`, operand.lp) has rank 1
+% whatever is read, and gives no pairs: nothing says what unit the read value is in
+% (decisions/0049 #3). A unit the binding declares is the unit of every read value, so a leaf
+% that states it, or states none, compares the values alone (`test_units`).
 
 %*! cpair(W, C, Lv, Rv)
 
 In world `W`, leaf `C` compares the read value `Lv` with the right operand value `Rv`. A `u`
-read gives no pairs: the leaf is `u` whatever its values.
+read, or a unit the binding does not declare, gives no pairs: the leaf is `u` whatever its
+values.
 *%
 % Gated on `evaluates/2`: an operand that a rule leaf and a witness leaf share (`due2:actionTime`)
 % is read in both worlds, and only the witness leaf is evaluated in `wit(E)`.
 cpair(W, C, Lv, Rv) :- evaluates(W, C), left(C, Op), read_ok(W, Op), read_value(W, Op, Lv),
-    right(C, Rv).
+    right(C, Rv), not unchecked_unit(C).
 
 %*! pair(Lv, Rv)
 
@@ -266,27 +267,30 @@ In world `W`, node `C` has rank `N`. World `k` is the Kleene world: the ranks be
 completion, under strong Kleene logic. A witness world `wit(E)` gives the nodes of a duty's
 witness conditions their ranks against the evidence `E` (duty.lp). completion.lp adds the ranks
 of the completion worlds `c` and `flip`. In a world that reads, a leaf whose read is `u` has
-rank 1. Otherwise its operator decides (due2-profiles.md §4): `eq` and the order operators
-compare the one read value with the one right value; `isAnyOf` is the greatest `eq` over the
-right values, and `isNoneOf` its negation; `isAllOf` is the least, over right values, of
-`any_eq`; `isPartOf` and `hasPart` are the least of `any_le`, and an empty read set holds
-vacuously; `isA` is the least over the listed classes. Each `eq`, on a concept-scheme operand,
-is `⊑` (`ceqr/4`).
+rank 1, and so does a leaf whose unit its binding does not declare. Otherwise its operator
+decides (due2-profiles.md §4): `eq` and the order operators compare the one read value with the
+one right value; `isAnyOf` is the greatest `eq` over the right values, and `isNoneOf` its
+negation; `isAllOf` is the least, over right values, of `any_eq`; `isPartOf` and `hasPart` are
+the least of `any_le`, and an empty read set holds vacuously; `isA` is the least over the listed
+classes. Each `eq`, on a concept-scheme operand, is `⊑` (`ceqr/4`).
 *%
 crank(W, C, 1) :- evaluates(W, C), leaf(C), left(C, Op), read_u(W, Op).
+crank(W, C, 1) :- evaluates(W, C), unchecked_unit(C).
+% The aggregate rules below would give such a leaf, with no pairs, the aggregate's start value,
+% a second rank, so they exclude it.
 crank(W, C, N) :- op(C, eq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N).
 crank(W, C, 2 - N) :- op(C, neq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N).
 crank(W, C, N) :- op(C, O), cpair(W, C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
 crank(W, C, N) :- op(C, isAnyOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
+    not unchecked_unit(C), N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
 crank(W, C, 2 - N) :- op(C, isNoneOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
+    not unchecked_unit(C), N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
 crank(W, C, N) :- op(C, isAllOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    N = #min { 2; M, Rv : any_eq(W, C, Rv, M) }.
+    not unchecked_unit(C), N = #min { 2; M, Rv : any_eq(W, C, Rv, M) }.
 crank(W, C, N) :- op(C, O), O = (isPartOf; hasPart), evaluates(W, C), left(C, Op),
-    read_ok(W, Op), N = #min { 2; M, Lo : any_le(W, C, Lo, M) }.
+    read_ok(W, Op), not unchecked_unit(C), N = #min { 2; M, Lo : any_le(W, C, Lo, M) }.
 crank(W, C, N) :- op(C, isA), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    N = #min { 2; M, Lv, Cls : cpair(W, C, Lv, Cls), isar(Lv, Cls, M) }.
+    not unchecked_unit(C), N = #min { 2; M, Lv, Cls : cpair(W, C, Lv, Cls), isar(Lv, Cls, M) }.
 
 %## Connectives
 

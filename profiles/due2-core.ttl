@@ -24,6 +24,11 @@ due2:set a due2:Cardinality .
 due2:allowedOperator a owl:ObjectProperty ;
     rdfs:domain odrl:LeftOperand ; rdfs:range odrl:Operator .
 
+# --- Operand bindings: unit (due2-profiles.md §3 Units, decisions/0049) ---
+due2:unit a owl:ObjectProperty ;
+    rdfs:domain odrl:LeftOperand ;
+    rdfs:comment "The unit, by IRI, of every value read for the operand. A constraint's odrl:unit must be this IRI; a constraint that states a unit on an operand with none is U (due2-profiles.md §3)." .
+
 # --- Operand bindings: concept schemes (§4, decisions/0015) ---
 due2:conceptScheme a owl:ObjectProperty ;
     rdfs:domain odrl:LeftOperand ; rdfs:range skos:ConceptScheme ;
@@ -84,7 +89,8 @@ odrl:recipient
 # (due2-profiles.md §3, §9 #6 resolved 2026-10-11). Outside a duty it is
 # rejected (WitnessOutsideDuty); a policy that means the requested amount
 # rebinds the source to dprod:requestSource and keeps this range, which this
-# layer owns (§2 Layers, decisions/0014).
+# layer owns (§2 Layers, decisions/0014). It declares no due2:unit, because
+# currencies vary, so a refinement that states odrl:unit is U (decisions/0049).
 odrl:payAmount
     dprod:operandSource due2:witnessSource ;
     dprod:operandProperty odrl:payAmount ;
