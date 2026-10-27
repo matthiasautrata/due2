@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.18 (2026-10-26)
+**Status:** Draft v0.19 (2026-10-26)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.18** (2026-10-26, `decisions/0036` amendment, #132): `IdentityConflict` across policies is found when a policy is published, not when corpora are combined (§1). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.19** (2026-10-26, #53): the warning `IgnoredPredicate`, for a predicate on a structure node that no loaded vocabulary or the annotation allowlist covers (§3). Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table, and the one the policy store emits when it publishes a policy's corpus (`IdentityConflict` across policies). Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -55,6 +55,7 @@ A diagnostic is `(code, severity, ref, message)`:
 | `RuleReferenceCycle` | error | 1 | A cycle of `duty`, `consequence`, `remedy` edges. | `odrl-compound-to-atomic-normalization.md` §6.3 |
 | `LimitExceeded` | error | 1 | Input triples or generated rules over the invocation's limit. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 |
 | `AnonymousEntity` | warning | 1 | A blank-node target or assignee with no `odrl:uid` and no refinement: no request can name it, so its Rule is never `T`, and `U` on a request without a target or assignee. Also raised when the Rule names other targets. The ref names the node and its Rule. | `odrl-compound-to-atomic-normalization.md` §3 |
+| `IgnoredPredicate` | warning | 1 | A predicate on a Policy, a Rule, a Constraint, or a LogicalConstraint in no loaded vocabulary namespace and not on the annotation allowlist: preserved, never evaluated. The ref names the node and the predicate. *Unchecked.* | `odrl-compound-to-atomic-normalization.md` §3 (#53) |
 | `MalformedConstraint` | error | 2 | A constraint without exactly one `leftOperand` and one `operator`, or without a `rightOperand`; more than one `rightOperand` value on an operator that is not set-based; a set right operand that mixes a list with other values, gives two lists, or is the empty list; a logical constraint with more than one operand property, or with the empty list as an operand value, or whose list names one node twice; logical constraints whose members form a cycle; or an `odrl:xone` with two members, neither a logical constraint, that have the same left operand, operator, unit, and right operand values. | ODRL IM §2.5.1, §2.5.2; `due2-profiles.md` §4 (`decisions/0013` and its amendment), §5 (`decisions/0017`, `decisions/0022`) |
 | `UnsupportedOperator` | error | 2 | An operator outside the core registry. | `due2-profiles.md` §4 |
 | `UnboundLeftOperand` | error | 2 | A left operand with no single binding. | `due2-profiles.md` §3 |

@@ -530,7 +530,8 @@
               "code": {
                 "enum": [
                   "AnonymousEntity",
-                  "ContestedOperatorReading"
+                  "ContestedOperatorReading",
+                  "IgnoredPredicate"
                 ]
               },
               "ref": {
@@ -1588,7 +1589,8 @@
               "code": {
                 "enum": [
                   "AnonymousEntity",
-                  "ContestedOperatorReading"
+                  "ContestedOperatorReading",
+                  "IgnoredPredicate"
                 ]
               },
               "ref": {

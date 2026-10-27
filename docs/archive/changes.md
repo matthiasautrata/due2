@@ -163,6 +163,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.18** (2026-10-26, `decisions/0036` amendment, #132): `IdentityConflict` across policies is found when a policy is published, not when corpora are combined (§1). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.17** (2026-10-26, `decisions/0036`, #130): `IdentityConflict` covers two policies normalised together whose corpora say different things of one node, found by the union, a step after stage 2 (§1).
 
 **Changes in v0.16** (2026-10-25, #126): `MalformedConstraint` covers logical constraints whose members form a cycle.
@@ -248,6 +250,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.26 (2026-10-26, `decisions/0039`, #136): §7 names the lineage relation of each record, records the triple that reaches an anonymous node, and drops the inbound role, which `N(P0)` and the corpus carry. Earlier changes are in `docs/archive/changes.md`.
 
 Changes in 0.25 (2026-10-26, `decisions/0038`, #107): every id that no author chose is minted, not computed from content (§5.2). `source_digest` and invariant 10 (*Locality*) are dropped, values are no longer ordered for expansion (§6.3), and W1 is deterministic up to the renaming of minted ids (§8, invariant 6).
 

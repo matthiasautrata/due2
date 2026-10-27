@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.26  
+Version: 0.27  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.26 (2026-10-26, `decisions/0039`, #136): §7 names the lineage relation of each record, records the triple that reaches an anonymous node, and drops the inbound role, which `N(P0)` and the corpus carry. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.27 (2026-10-26, #53): §3 warns with `IgnoredPredicate` about a predicate on a Policy, Rule, Constraint, or LogicalConstraint that no loaded vocabulary or the annotation allowlist covers. Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until a corpus has been produced under it. From then on, any change to admitted input or to the output bumps it.
 
@@ -94,6 +94,8 @@ The baseline recognizes these ODRL Common Vocabulary axes:
 - function predicates: `odrl:assignee`, `odrl:assigner`, `odrl:attributedParty`, `odrl:attributingParty`, `odrl:compensatedParty`, `odrl:compensatingParty`, `odrl:consentedParty`, `odrl:consentingParty`, `odrl:contractedParty`, `odrl:contractingParty`, `odrl:informedParty`, `odrl:informingParty`, `odrl:trackedParty`, and `odrl:trackingParty`.
 
 Other predicates are preserved as annotations but MUST NOT introduce additional relation, function, inheritance, or expansion semantics. Such semantics require a future versioned profile. A Rule edge, `odrl:constraint`, or `odrl:refinement` outside the place this section gives it is not an annotation: it is rejected as above.
+
+An annotation that its author may have meant as a constraint is warned about. A predicate on a Policy, a Rule, a Constraint, or a LogicalConstraint is ignored when its IRI is in no loaded vocabulary namespace, which are `odrl:`, `due2:`, and those of the selected profile modules (`due2-profiles.md` §2), and is not on the annotation allowlist. The allowlist is `rdf:type`, `rdfs:label`, `rdfs:comment`, every `dct:` and `prov:` term, `skos:prefLabel`, `skos:altLabel`, `skos:hiddenLabel`, `skos:definition`, `skos:note`, and the terms a selected profile declares as metadata (`due2-profiles.md` §8.1). The node keeps the triple as an annotation, and W1 warns with `IgnoredPredicate`, naming the predicate and the node: `dpv:hasLegalBasis` on a Permission reads as a condition but constrains nothing. W1 does not reject, because ODRL admits any further property on these nodes. Two neighbours are unchanged: an unknown term in a loaded namespace is `UnsupportedProfileTerm` (`due2-profiles.md` §2), and a predicate on an Asset, a Party, or a concept is data about the world, never warned about.
 
 The invocation MUST include limits for input triples and generated Rules. Exceeding a limit fails the complete invocation without output.
 
