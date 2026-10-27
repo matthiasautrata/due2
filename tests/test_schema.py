@@ -3,7 +3,8 @@
 The schema is generated from due2-workflows.md §3 by `tools/gen_schema.py`; these tests
 guard that the committed schema is that output, that it is valid JSON Schema, and that
 the vector-file checks of `harness.vectors` reject what conformance/README.md says makes
-a vector file invalid.
+a vector file invalid, and that the normaliser port's `Rejection` (due2-diagnostics.md §1,
+*JSON form*) admits what the negative corpus cases expect and nothing without an error.
 """
 
 from __future__ import annotations
@@ -19,6 +20,10 @@ from gen_schema import SCHEMA, generate
 from harness.json_types import Obj
 from harness.vectors import VECTORS, Schemas, check_vector_file
 from jsonschema import Draft202012Validator
+from referencing import Registry
+from referencing.jsonschema import DRAFT202012, Schema
+
+CASES = Path(__file__).parents[1] / "conformance" / "cases"
 
 FIXTURE = Path(__file__).parent / "fixtures" / "vectors" / "due2-one-permission.json"
 
@@ -38,11 +43,62 @@ def test_committed_schema_is_generated_from_the_spec() -> None:
         )
 
 
-@pytest.mark.parametrize("name", ["collections.schema.json", "evaluator.schema.json"])
+@pytest.mark.parametrize(
+    "name", ["collections.schema.json", "evaluator.schema.json", "normaliser.schema.json"]
+)
 def test_schema_is_valid_json_schema(name: str) -> None:
     """Guards a schema that is not 2020-12 JSON Schema: validators would reject it, or
     silently ignore a misspelt keyword's constraint."""
     Draft202012Validator.check_schema(json.loads((SCHEMA / name).read_text()))
+
+
+def _errors(file: str, definition: str, doc: Obj) -> list[str]:
+    """What `$defs/<definition>` of `schema/<file>` reports of `doc`, every file registered."""
+    docs = [cast(Obj, json.loads(p.read_text())) for p in sorted(SCHEMA.glob("*.schema.json"))]
+    registry = Registry[Schema]().with_resources(
+        (cast(str, d["$id"]), DRAFT202012.create_resource(d)) for d in docs
+    )
+    base = next(cast(str, d["$id"]) for d in docs if cast(str, d["$id"]).endswith("/" + file))
+    validator = Draft202012Validator({"$ref": f"{base}#/$defs/{definition}"}, registry=registry)
+    # jsonschema's stubs leave iter_errors's overloads partly untyped.
+    return [e.message for e in validator.iter_errors(doc)]  # pyright: ignore[reportUnknownMemberType]
+
+
+def _rejection(codes: list[str], severity: str = "error") -> Obj:
+    return {
+        "diagnostics": [
+            {"code": c, "severity": severity, "ref": ["https://example.org/p"], "message": ""}
+            for c in codes
+        ]
+    }
+
+
+def test_every_expected_rejection_is_a_valid_rejection() -> None:
+    """Guards the code list against the registry: a code a negative corpus case expects, but
+    the schema's `Diagnostic.code` lacks, would make W1's correct answer invalid at the port.
+    Without it, a registry row the generator fails to parse goes unnoticed."""
+    expected = [
+        cast(Obj, json.loads(p.read_text())).get("expected_rejection")
+        for p in sorted(CASES.glob("*/case.json"))
+    ]
+    codes = sorted({c for e in expected if e for c in cast(list[str], cast(Obj, e)["codes"])})
+    assert codes
+    assert _errors("normaliser.schema.json", "NormaliseOutput", _rejection(codes)) == []
+
+
+def test_a_rejection_without_an_error_is_invalid() -> None:
+    """Guards the `contains` clause: a run whose diagnostics are all warnings accepted the
+    policy, so its output is a corpus, never a rejection (due2-workflows.md §4). Without it,
+    a normaliser could return warnings alone and no corpus."""
+    warnings_only = _rejection(["AnonymousEntity"], "warning")
+    assert _errors("normaliser.schema.json", "NormaliseOutput", warnings_only) != []
+
+
+def test_an_error_has_only_a_cause() -> None:
+    """Guards the shape of `Error(cause)` (due2-platform.md §1.2): a caller branches on the
+    error, so an error object must not pass for a trace or carry other fields."""
+    assert _errors("collections.schema.json", "Error", {"cause": "contract violated"}) == []
+    assert _errors("collections.schema.json", "Error", {"cause": "x", "verdict": "Deny"}) != []
 
 
 @pytest.mark.parametrize("path", sorted(VECTORS.glob("*.json")), ids=lambda p: p.stem)

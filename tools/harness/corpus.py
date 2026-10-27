@@ -48,38 +48,49 @@ def init_message() -> Obj:
 
 
 def interpret_vectors(cases: Path = CASES) -> list[Vector]:
+    """One vector per positive scenario of every case under `cases`."""
     out: list[Vector] = []
     for case_dir in sorted(p for p in cases.iterdir() if (p / "case.json").is_file()):
-        case = as_obj(loads((case_dir / "case.json").read_text()), case_dir.name)
-        if "expected_rejection" in case:
-            continue
-        prefixes = dict(STANDARD_PREFIXES)
-        prefixes.update(
-            {k: as_str(v, "prefix") for k, v in as_obj(case.get("prefixes", {}), "").items()}
-        )
-        policies: list[Json] = [p.read_text() for p in case_policies(case_dir)]
-        seen: set[str] = set()
-        for raw in as_list(case["scenarios"], f"{case_dir.name}.scenarios"):
-            s = as_obj(raw, case_dir.name)
-            name = as_str(s["name"], "scenario name")
-            if name in seen:
-                raise ValueError(f"{case_dir.name}: duplicate scenario name {name!r}")
-            seen.add(name)
-            vid = f"{case_dir.name}/{name}"
-            prefix_json: dict[str, Json] = dict(prefixes)
-            out.append(
-                Vector(
-                    id=vid,
-                    input={
-                        "case": case_dir.name,
-                        "scenario": name,
-                        "policies": policies,
-                        "prefixes": prefix_json,
-                        "request": s["request"],
-                        "sotw": s["sotw"],
-                    },
-                    expected=as_obj(s["expected"], vid),
-                    prefixes=prefixes,
-                )
+        out.extend(case_vectors(case_dir))
+    return out
+
+
+def case_vectors(case_dir: Path) -> list[Vector]:
+    """One vector per scenario of the case in `case_dir`; none for a negative case.
+
+    A vector's prefixes are `STANDARD_PREFIXES` with the case's own over them.
+    """
+    case = as_obj(loads((case_dir / "case.json").read_text()), case_dir.name)
+    if "expected_rejection" in case:
+        return []
+    prefixes = dict(STANDARD_PREFIXES)
+    prefixes.update(
+        {k: as_str(v, "prefix") for k, v in as_obj(case.get("prefixes", {}), "").items()}
+    )
+    policies: list[Json] = [p.read_text() for p in case_policies(case_dir)]
+    out: list[Vector] = []
+    seen: set[str] = set()
+    for raw in as_list(case["scenarios"], f"{case_dir.name}.scenarios"):
+        s = as_obj(raw, case_dir.name)
+        name = as_str(s["name"], "scenario name")
+        if name in seen:
+            raise ValueError(f"{case_dir.name}: duplicate scenario name {name!r}")
+        seen.add(name)
+        vid = f"{case_dir.name}/{name}"
+        prefix_json: dict[str, Json] = dict(prefixes)
+        out.append(
+            Vector(
+                id=vid,
+                input={
+                    "case": case_dir.name,
+                    "scenario": name,
+                    "policies": policies,
+                    "prefixes": prefix_json,
+                    "request": s["request"],
+                    "sotw": s["sotw"],
+                },
+                expected=as_obj(s["expected"], vid),
+                prefixes=prefixes,
             )
+        )
     return out

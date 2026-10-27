@@ -1,9 +1,9 @@
 # due2 — Platform
 
-**Status:** Draft v0.16. Every section is **[O]**: a map of the components around the evaluator, not a build order. A paragraph marked **[D]** states a decision record. Where a section restates the specification, it cites it, and the specification's marker applies.
+**Status:** Draft v0.17. Every section is **[O]**: a map of the components around the evaluator, not a build order. A paragraph marked **[D]** states a decision record. Where a section restates the specification, it cites it, and the specification's marker applies.
 **Companions:** `due2-architecture.md` (what due2 is and why) · `due2-workflows.md` (the workflows and the data model this document builds on).
 
-**Changes in v0.16** (2026-10-26, `decisions/0048`): a world-edge answer is one source's, with a status, so a catalog that does not answer makes a comparison `U` (§2.4, §2.5; §5 #2 resolved). `submit_evidence` fetches the edges above the evidence's values before it evaluates (§2.6). A plan over `max_reads` is refused before a case is created (§3.1). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.17** (2026-10-27, #147): `Error(cause)` has a JSON form, and the port schema has a version with a compatibility rule (§1.2, §2.10); `normalise` returns its warnings inside the corpus, as its `diagnostic` tuples (§2.8). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -60,7 +60,7 @@ This works only if each port is designed for the remote case, with the in-proces
 - **Coarse calls.** One call per step of a use case, not one per object.
 - **Immutable collections, by value.** Arguments are canonical collections (§1.3), never live object graphs.
 - **Safe retries.** A caller that times out does not know whether its write landed, and retries. A retry must not record an event twice. How the ledger recognises a repeated write is open; it must not add concurrency machinery to the event relation, which `decisions/0008` declined (#98).
-- **Explicit errors.** A call that fails returns `Error(cause)`, as a crashed evaluation does (`due2-workflows.md` §7). A remote call can also fail in transport, and the caller handles that the same way.
+- **Explicit errors.** A call that fails returns `Error(cause)`, as a crashed evaluation does (`due2-workflows.md` §7). A remote call can also fail in transport, and the caller handles that the same way. In JSON an error is `{"cause": text}`. The text is for an operator, so a caller acts on the fact of the error, never on its text. A rejected policy is not an error: W1 returns it as diagnostics (`due2-diagnostics.md` §1).
 
 **Each component works in its own space.** Two components call others: the orchestrator (§2.6), which runs cases, and the publication workflow (§2.11), which publishes policies (`decisions/0046`). Each of the two fetches collections from the stores by id, passes them by value to the components that compute, and records what they return. Every other component answers from what the call carries and from the state it owns. The evaluator therefore receives all three of its inputs by value, so a replay with the same inputs is the same call as the original. The SOTW services and the catalog reach outside systems, which is their own space (§2.4, §2.5). The request GUI and the intelligent services call the orchestrator, and reach the other components only through it; an author's tools call the publication workflow. A component's log serves operations and is never a record: the ledger is the record (§2.2).
 
@@ -281,7 +281,7 @@ Its useful work rests on what the trace already reports. For an `Indeterminate`,
 W1 behind a port: authored policies and their profiles in, a corpus or rejection diagnostics out (`due2-workflows.md` §4, `due2-diagnostics.md`). It runs once per policy version and normaliser version, never per request. It sits beside the policy store, off the request path: the publication workflow runs it as a batch job when a policy or normaliser version is published, and puts its corpus in the store (§2.3, §2.11).
 
 ```text
-normalise(policy, profiles)               -> corpus, lineage, warnings | rejections
+normalise(policy, profiles)               -> corpus, lineage | rejections
 ```
 
 ### 2.9 Explanation
@@ -293,7 +293,7 @@ normalise(policy, profiles)               -> corpus, lineage, warnings | rejecti
 ```text
 explanation(trace)                        -> derivation         # due2-workflows.md §3.7
 render(derivation, audience)              -> text
-explain_policy(corpus, lineage, warnings) -> atoms and constraints per authored rule
+explain_policy(corpus, lineage)          -> atoms and constraints per authored rule
 ```
 
 ### 2.10 Versions and provenance
@@ -303,6 +303,7 @@ Mostly a consequence of §1.3, plus one obligation:
 - **Content ids and immutable collections:** §1.3.
 - **What each evaluation pins:** its SOTW id; its corpus id and the normaliser versions in force are its case's (`due2-workflows.md` §7.1, `decisions/0042`).
 - **Which authored rule each atom came from:** the lineage (`due2-workflows.md` §3.6). An evaluation's corpus names each policy and its version in `policy`, and its case pins the normaliser versions, so `lineage` finds the lineage of each policy it holds.
+- **The port schema's version:** `MAJOR.MINOR`, in each file of `schema/`, with `MAJOR` in its `$id`. A change bumps `MINOR` when every document valid under the previous version stays valid, such as a new optional field, a new keyed relation, or a new `Enum` value, and `MAJOR` otherwise, such as a new singleton relation, which every document must then hold. Every object in the schema is closed, so a reader at an older `MINOR` rejects a document that uses an addition: the reader of a port upgrades before its writer. A collection does not state the version, because its bytes are its id (§1.3); the port's adapter states it (`schema/README.md`).
 - **The obligation — retention:** replay needs every collection the trace's `evaluation` tuple names, the corpus, the request, and the SOTW (§1.3, `due2-workflows.md` §7). A store may therefore not delete a corpus or profile version that any retained evaluation references, nor the lineage of a policy in such a corpus.
 
 ### 2.11 Publication workflow

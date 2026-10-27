@@ -175,6 +175,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.21** (2026-10-26, #145): `InvalidBinding` covers a binding whose owning layer (`due2-profiles.md` §2) states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.20** (2026-10-26, `decisions/0049`): the warning `UncheckedUnit`, for a constraint that states a unit its binding does not declare; `OperatorTypeMismatch` covers a unit other than the binding's, and `RetypedOperand` a restated unit. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.19** (2026-10-26, #53): the warning `IgnoredPredicate`, for a predicate on a structure node that no loaded vocabulary or the annotation allowlist covers (§3). Earlier changes are in `docs/archive/changes.md`.
@@ -238,6 +240,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **History:** v0.4–v0.6 are in git; the substantive amendments are recorded in `decisions/0001`–`0003`.
 
 ## `due2-platform.md`
+
+**Changes in v0.16** (2026-10-26, `decisions/0048`): a world-edge answer is one source's, with a status, so a catalog that does not answer makes a comparison `U` (§2.4, §2.5; §5 #2 resolved). `submit_evidence` fetches the edges above the evidence's values before it evaluates (§2.6). A plan over `max_reads` is refused before a case is created (§3.1). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.15** (2026-10-26, `decisions/0047`): §3.1 step 7 fetches the edges above a state property's values once its facts are recorded, and the loop's end argument covers them. §2.4: a world-edge answer is for any entity a comparison names, not only the request's. Earlier changes are in `docs/archive/changes.md`.
 

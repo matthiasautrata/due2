@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.21 (2026-10-26)
+**Status:** Draft v0.22 (2026-10-27)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.21** (2026-10-26, #145): `InvalidBinding` covers a binding whose owning layer (`due2-profiles.md` §2) states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.22** (2026-10-27, #147): §1 states a diagnostic's JSON form, which the port schema checks (`schema/README.md`). Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table, and the one the policy store emits when it publishes a policy's corpus (`IdentityConflict` across policies). Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -15,6 +15,8 @@ A diagnostic is `(code, severity, ref, message)`:
 - **severity** — `error` rejects the policy: W1 returns its diagnostics and no corpus, no lineage, no partial output (`due2-workflows.md` §4). `warning` accepts it: the policy is normalised as written, and the warning is carried into the corpus (`due2-workflows.md` §3.1 `diagnostic`) and from there into the trace of every case that evaluates the policy (`due2-workflows.md` §3.5).
 - **ref** — the node the diagnostic is about: the policy, rule, constraint, or asset/party node, by IRI or by its stage-1 skolem IRI. `RuleReferenceCycle` refs the cycle, every rule and edge in order (`odrl-compound-to-atomic-normalization.md` §6.3), and a `MalformedConstraint` for a cycle of logical constraints refs every constraint on it in order (`due2-profiles.md` §5).
 - **message** — free text for the author. Not compared by tests.
+
+**JSON form.** A port that returns diagnostics, W1's or the policy store's, writes each as an object `{"code", "severity", "ref", "message"}`. `ref` is a non-empty list of IRIs, in the order above, so a diagnostic about one node lists one. A rejection is the list of the run's diagnostics, at least one of them an `error` (`schema/README.md`).
 
 **Stage.** W1 reports every error of the first stage that has one, and no later stage runs. Stage 1 is the input profile, identity, and atomic expansion (`odrl-compound-to-atomic-normalization.md`); stage 2 is constraints, operand bindings, and duty timing (`due2-profiles.md`; `due2-workflows.md` §4). *Publish* follows stage 2 and is not part of W1: the policy store compares a policy that both stages accept with the published policies when it is asked to publish its corpus (`put_corpus`, `due2-platform.md` §2.3), and its one error is `IdentityConflict` (`due2-workflows.md` §4, *Several policies are one corpus*). Evaluation never meets it. So the set of error codes for a rejected policy is deterministic, and a negative corpus case states it exactly (`conformance/README.md`).
 

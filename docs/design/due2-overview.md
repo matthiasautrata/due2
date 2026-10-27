@@ -77,8 +77,8 @@ The case's `why` fields give the full derivations. `due2-architecture.md` §0 wa
 | Correctness | Which check guards which risk, and the engineering discipline | `docs/correctness/` |
 | Conformance corpus | Cases of ODRL policies with scenarios (request and SOTW) and hand-derived expected answers, some translated from other evaluators' suites | `conformance/` |
 | Checkers | Admissibility of a policy (`tools/check_corpus.py`), ODRL 2.2 validity (`tools/check_odrl22.py`), the completion algorithm against brute force (`tools/check_completion.py`) | `tools/` |
-| Evaluator port schema | `plan` and `decide` inputs and outputs in JSON Schema, generated from `due2-workflows.md` §3 | `schema/` |
-| clingo-i | The semantics program: reads an authored ODRL policy, a request, and a SOTW, and answers as due2 would | `spikes/clingo-i/` |
+| Port schema | `plan` and `decide` inputs and outputs, `normalise`'s output, diagnostics, and errors in JSON Schema, generated from the specification | `schema/` |
+| clingo-i | The semantics program: reads an authored ODRL policy, a request, and a SOTW, and answers as due2 would; `tools/oracle.py` asks it from the command line | `spikes/clingo-i/`, `tools/oracle.py` |
 | Formal models | Alloy models of the specification's central claims | `formal/alloy/` |
 
 `README.md` § Status says which of these parts are complete and what comes next.
@@ -99,37 +99,21 @@ To compare another evaluator with it, translate that evaluator's inputs into due
 
 **2. Check admissibility first.** `uv run python tools/check_corpus.py <policy.ttl>` checks, without evaluating, that a policy is within the admitted profile and that every operand is bound; `tools/check_odrl22.py` checks ODRL 2.2 validity. A policy that fails names a construct due2 does not accept, which is itself a finding about that policy (`due2-platform.md` §4, *Order*). The corpus's negative cases, the policies W1 must reject, are not run against clingo-i (`spikes/README.md` § `interpret`), so the checkers, not clingo-i, are the gate for admissibility.
 
-**3. Ask clingo-i.** clingo-i speaks a JSON-lines protocol over stdin and stdout (`spikes/README.md` § Protocol): one `init` message carrying the profile modules, then one `interpret` request per scenario, each answered by an output, an `error` (the policy is rejected, or the input is malformed: `spikes/clingo-i/DESIGN.md` § Errors), or `unsupported` (a declined feature, named). The input and output fields are in `spikes/README.md` § `interpret`. The repository's own harness drives it this way, and a caller can reuse it. Run from the repository root with `PYTHONPATH=tools uv run python`, this asks the scenario of the example table's first row:
+**3. Ask clingo-i.** `tools/oracle.py` asks clingo-i for one or more scenarios and prints one JSON line per reply. From the repository root, this asks every scenario of the example, or one of them by name:
 
-```python
-import json
-from pathlib import Path
-from harness.backend import Session, load_spike
-from harness.corpus import STANDARD_PREFIXES, init_message
-
-case_dir = Path("conformance/cases/dprod-audit-logs")
-case = json.loads((case_dir / "case.json").read_text())
-scenario = case["scenarios"][2]  # "read without stating the purpose"
-
-session = Session(load_spike(Path("spikes/clingo-i")), init_message())
-try:
-    reply = session.call(
-        "interpret",
-        f"{case['case']}/{scenario['name']}",
-        {
-            "case": case["case"],
-            "scenario": scenario["name"],
-            "policies": [(case_dir / "policy.ttl").read_text()],
-            "prefixes": {**STANDARD_PREFIXES, **case["prefixes"]},  # every prefix the input uses
-            "request": scenario["request"],
-            "sotw": scenario["sotw"],
-        },
-    )
-finally:
-    session.close()
-# One of reply.output, reply.error, reply.unsupported is set; reply.ms is the call's wall time.
-print(reply.output)  # verdict Indeterminate, verdict_range NotApplicable..Permit, ...
+```bash
+uv run python tools/oracle.py conformance/cases/dprod-audit-logs
+uv run python tools/oracle.py conformance/cases/dprod-audit-logs --scenario "read without stating the purpose"
 ```
+
+For the second, it prints the scenario, the call's wall time in milliseconds, and the output: verdict `Indeterminate`, `verdict_range` from `NotApplicable` to `Permit`, and the rest of the trace. A reply is an output, an `error` (the policy is rejected, or the input is malformed: `spikes/clingo-i/DESIGN.md` § Errors), or `unsupported` (a declined feature, named), and the output's fields are in `spikes/README.md` § `interpret`. The exit status is 0 when every reply is an output and 1 otherwise. A scenario that is not part of a corpus case, such as one translated from another evaluator's inputs, is asked with `--policy`: the policies are Turtle files evaluated together as one corpus, and each further argument is a JSON file holding one object with `request` and `sotw`, the fields of a `case.json` scenario, and optionally `name` (by default the file's path) and `prefixes` (as a case's); `-` reads such objects from stdin, one per line, through one running clingo-i:
+
+```bash
+uv run python tools/oracle.py --policy policy.ttl scenario.json
+my-translator | uv run python tools/oracle.py --policy a.ttl --policy b.ttl -
+```
+
+Behind the CLI, the harness drives clingo-i with a JSON-lines protocol on stdin and stdout (`spikes/README.md` § Protocol): one `init` message carrying the profile modules, then one `interpret` request per scenario. A Python caller can drive it directly with the harness's `Session`, as `tools/oracle.py` does.
 
 Write names in `request` and `sotw` as absolute IRIs, or declare every prefix they use in `prefixes`. A name whose prefix is undeclared would match no policy term, so clingo-i answers it with an `error` that names the field and the prefix (#146).
 
@@ -162,9 +146,9 @@ clingo-i does not emit `frontier_complete` (#103), and has no inexact fallback, 
 | Interface | Defined in | Standing |
 |---|---|---|
 | Corpus, request, SOTW, reads, trace, lineage: the relations | `due2-workflows.md` §3 | [D] |
-| Their JSON form, and the `plan` and `decide` inputs and outputs | `schema/`, `decisions/0007` | Generated from the relations |
-| W1 rejections and warnings | `due2-diagnostics.md` | [D] codes and shape; no JSON Schema |
-| A crash (`Error(cause)`) | `due2-workflows.md` §7 | [D] meaning; no JSON Schema |
+| Their JSON form, and the `plan` and `decide` inputs and outputs | `schema/`, `decisions/0007` | Generated from the relations; version `1.0`, with a compatibility rule (`schema/README.md`) |
+| W1 rejections and warnings | `due2-diagnostics.md` §1, `schema/normaliser.schema.json` | [D] codes and shape; JSON form generated |
+| A crash or failed call (`Error(cause)`) | `due2-workflows.md` §7, `due2-platform.md` §1.2 | [D] meaning; JSON form generated |
 | The case format | `conformance/README.md` | Checked by `tools/check_corpus.py` |
 | The spike protocol: `interpret` | `spikes/README.md` | Implemented by clingo-i |
 | The spike protocol: `decide`, on relation-level vectors | `spikes/README.md`, `conformance/README.md` | Specified; vectors are #37 |
