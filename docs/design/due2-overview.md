@@ -109,24 +109,29 @@ from harness.corpus import STANDARD_PREFIXES, init_message
 
 case_dir = Path("conformance/cases/dprod-audit-logs")
 case = json.loads((case_dir / "case.json").read_text())
-scenario = case["scenarios"][2]                  # "read without stating the purpose"
+scenario = case["scenarios"][2]  # "read without stating the purpose"
 
 session = Session(load_spike(Path("spikes/clingo-i")), init_message())
 try:
-    reply = session.call("interpret", f"{case['case']}/{scenario['name']}", {
-        "case": case["case"], "scenario": scenario["name"],
-        "policies": [(case_dir / "policy.ttl").read_text()],
-        "prefixes": {**STANDARD_PREFIXES, **case["prefixes"]},  # every prefix the input uses
-        "request": scenario["request"],
-        "sotw": scenario["sotw"],
-    })
+    reply = session.call(
+        "interpret",
+        f"{case['case']}/{scenario['name']}",
+        {
+            "case": case["case"],
+            "scenario": scenario["name"],
+            "policies": [(case_dir / "policy.ttl").read_text()],
+            "prefixes": {**STANDARD_PREFIXES, **case["prefixes"]},  # every prefix the input uses
+            "request": scenario["request"],
+            "sotw": scenario["sotw"],
+        },
+    )
 finally:
     session.close()
 # One of reply.output, reply.error, reply.unsupported is set; reply.ms is the call's wall time.
-print(reply.output)   # verdict Indeterminate, verdict_range NotApplicable..Permit, ...
+print(reply.output)  # verdict Indeterminate, verdict_range NotApplicable..Permit, ...
 ```
 
-Write names in `request` and `sotw` as absolute IRIs, or declare every prefix they use in `prefixes`. clingo-i passes a name whose prefix is undeclared through unexpanded, so it matches no policy term, and the answer is a definite verdict, typically `NotApplicable`, not an error (#146).
+Write names in `request` and `sotw` as absolute IRIs, or declare every prefix they use in `prefixes`. A name whose prefix is undeclared would match no policy term, so clingo-i answers it with an `error` that names the field and the prefix (#146).
 
 The backend's stderr goes to `spikes/clingo-i/.stderr.log`. A call takes tens of milliseconds, by the median in `spikes/clingo-i/scorecard.json`, which suits an offline or shadow comparison.
 

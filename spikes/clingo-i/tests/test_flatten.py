@@ -481,6 +481,25 @@ def sections(**changes: Obj) -> Obj:
             {"sotw": {"closure": [["odrl:partOf", "ex:a"]]}},
             "expected [relation, narrower, broader]",
         ),
+        # #146: a name with an undeclared prefix, or none, equals no policy term, so it would
+        # have made a part F where the caller meant a term. Without the check, each passes.
+        ({"request": {"target": "asset:x"}}, "request.target: undeclared prefix 'asset'"),
+        ({"request": {"action": "read"}}, "request.action: 'read' is neither an IRI"),
+        ({"request": {"parties": {"zz:assignee": "ex:a"}}}, "request.parties: undeclared prefix"),
+        ({"request": {"parties": {"odrl:assignee": "agent:a"}}}, "undeclared prefix 'agent'"),
+        ({"request": {"params": {"zz:n": {"@value": "1"}}}}, "request.params: undeclared prefix"),
+        (
+            {"request": {"params": {"ex:n": {"@value": "1", "@type": "zz:int"}}}},
+            "request.params.ex:n.@type: undeclared prefix 'zz'",
+        ),
+        (
+            {"sotw": {"facts": {"zz:x": {"status": "missing"}}}},
+            "sotw.facts: undeclared prefix 'zz'",
+        ),
+        (
+            {"sotw": {"activation": {"zz:d": "2026-01-01T00:00:00Z"}}},
+            "sotw.activation: undeclared prefix 'zz'",
+        ),
     ],
 )
 def test_malformed_input(changes: dict[str, Obj], message: str) -> None:

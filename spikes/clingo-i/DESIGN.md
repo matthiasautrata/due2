@@ -285,7 +285,7 @@ These are an `error` reply, not a decline:
 
 - an unknown `odrl:profile` (`UnrecognisedProfile`);
 - a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, `MissingTarget`, `TargetAndOutput`, `RuleReferenceCycle`, `InvalidTiming`, and `TimingOutsideDuty` (`structure.lp`); `UnsupportedConstruct` and `ReplacedPolicy` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); and `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, `WitnessOutsideDuty`, and `OperatorTypeMismatch` (`operand.lp`); and `MixedDutyConstraint` (`duty.lp`). Each is defined in `due2-diagnostics.md`;
-- a malformed vector (`flatten.py`);
+- a malformed vector (`flatten.py`), among them a name in `request` or `sotw` whose prefix is undeclared, or that has none: it would equal no policy term and make a part `F` (#146);
 - an unsatisfiable program.
 
 `interpret` receives only admissible policies from well-formed vectors, so each of these is a defect, in the vector or in the spike.

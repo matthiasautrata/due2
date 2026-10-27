@@ -86,7 +86,7 @@ nothing is guessed.
   (`rdflib.compare.to_canonical_graph`), so it does not depend on the labels the parser chose.
   `Scope` is `"policy"` or the module's path, so blank nodes from different graphs never meet.
 - **Input names** are expanded with the vector's prefixes, the same way the harness expands
-  them. A name is a string or `{"@id": …}`. `reference` is not a name, and stays as given.
+  them. A name whose prefix is undeclared, or that has none, is an error (#146). A name is a string or `{"@id": …}`. `reference` is not a name, and stays as given. An evidence `id` is a key, not a name: it is expanded when its prefix is declared and otherwise kept as given.
 - **Input values** (`params`, a fact answer's `values`, an evidence record's `params`) are `{"@id": …}`,
   read as its IRI; `{"@value": …, "@type": …}`, read as `lit` with the type expanded;
   `{"@value": …}`, read as `xsd:string`; or `{"@value": …, "@language": …}`. A bare string is
@@ -201,16 +201,26 @@ def profiles(graph: ReadOnlyGraphAggregate) -> list[str]:
 # --- the input (due2-workflows.md §3.2 to §3.4, conformance/README.md) ---
 
 
-def expand(name: str, prefixes: dict[str, str]) -> str:
+def expand(name: str, prefixes: dict[str, str], what: str) -> str:
     """A compact name `pfx:local` expanded with `prefixes`, as the harness expands it.
 
-    An absolute IRI, or a name whose prefix is not declared, is returned as given. The rule is
-    the one of tools/harness/compare.py, so the driver and the harness read a name alike.
+    An absolute `http`, `https`, or `urn` IRI is returned as given; an IRI of another scheme is
+    written with its scheme declared as a prefix. The rule is the one of tools/harness/compare.py,
+    so the driver and the harness read a name alike, except that a name the harness would pass
+    through unexpanded is an error here: such a name equals no policy term, so it would make a
+    part `F` where the caller meant a term (#146).
+
+    Raises:
+        ValueError: The name has no prefix, or its prefix is not declared.
     """
     if name.startswith(("http://", "https://", "urn:")):
         return name
     pfx, sep, local = name.partition(":")
-    return prefixes[pfx] + local if sep and pfx in prefixes else name
+    if not sep:
+        raise ValueError(f"{what}: {name!r} is neither an IRI nor a prefixed name")
+    if pfx not in prefixes:
+        raise ValueError(f"{what}: undeclared prefix {pfx!r} in {name!r}")
+    return prefixes[pfx] + local
 
 
 def fields(value: Json, what: str, required: tuple[str, ...], optional: tuple[str, ...]) -> Obj:
@@ -240,7 +250,21 @@ def name(value: Json, prefixes: dict[str, str], what: str) -> Symbol:
     """A name, a string or `{"@id": …}`, expanded to an IRI string."""
     if isinstance(value, dict):
         value = fields(value, what, ("@id",), ())["@id"]
-    return String(expand(as_str(value, what), prefixes))
+    return String(expand(as_str(value, what), prefixes, what))
+
+
+def evidence_id(value: Json, prefixes: dict[str, str], what: str) -> Symbol:
+    """An evidence id: expanded like a name when its prefix is declared, else kept as given.
+
+    An evidence id is a key, not a term (`due2-workflows.md` §3.3): it is compared only with
+    other evidence ids, and the harness reads it by the same rule, so an id such as `ev-1`
+    cannot make a part `F` and is not an error.
+    """
+    s = as_str(value, what)
+    try:
+        return String(expand(s, prefixes, what))
+    except ValueError:
+        return String(s)
 
 
 def value(v: Json, prefixes: dict[str, str], what: str) -> Symbol:
@@ -264,7 +288,7 @@ def value(v: Json, prefixes: dict[str, str], what: str) -> Symbol:
         lang = as_str(obj["@language"], f"{what}.@language")
         return Function("lit", [String(lex), String(str(RDF.langString)), String(lang)])
     datatype = (
-        expand(as_str(obj["@type"], f"{what}.@type"), prefixes)
+        expand(as_str(obj["@type"], f"{what}.@type"), prefixes, f"{what}.@type")
         if "@type" in obj
         else str(XSD.string)
     )
@@ -304,13 +328,13 @@ def request_facts(request: Obj, prefixes: dict[str, str]) -> list[Symbol]:
     if "at" in request:
         out.append(Function("request_at", [instant(request["at"], "request.at")]))
     for key, v in as_obj(request.get("parties") or {}, "request.parties").items():
-        function = String(expand(key, prefixes))
+        function = String(expand(key, prefixes, "request.parties"))
         for x in _values(v):
             out.append(
                 Function("request_party", [function, name(x, prefixes, f"request.parties.{key}")])
             )
     for key, v in as_obj(request.get("params") or {}, "request.params").items():
-        param = String(expand(key, prefixes))
+        param = String(expand(key, prefixes, "request.params"))
         if isinstance(v, list):
             out.append(Function("request_param_set", [param]))
         for x in _values(v):
@@ -334,7 +358,7 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
             Function("sotw_effective_at", [instant(sotw["effective_at"], "sotw.effective_at")])
         )
     for key, f in as_obj(sotw.get("facts") or {}, "sotw.facts").items():
-        prop = String(expand(key, prefixes))
+        prop = String(expand(key, prefixes, "sotw.facts"))
         answers = [(f, ())] if isinstance(f, dict) else [(a, ("source",)) for a in as_list(f, key)]
         sources: set[Symbol] = set()
         for i, (raw, named) in enumerate(answers):
@@ -360,7 +384,7 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
             ("id", "occurred_at", "actor", "action"),
             ("object", "issuer", "discharges", "params"),
         )
-        e = name(ev["id"], prefixes, f"{what}.id")
+        e = evidence_id(ev["id"], prefixes, f"{what}.id")
         if e in seen:
             raise ValueError(f"{what}: duplicate evidence id {e}")
         seen.add(e)
@@ -391,14 +415,18 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
                 )
             )
         for key, x in as_obj(ev.get("params") or {}, f"{what}.params").items():
-            param = String(expand(key, prefixes))
+            param = String(expand(key, prefixes, f"{what}.params"))
             out.append(
                 Function("evidence_param", [e, param, value(x, prefixes, f"{what}.params.{key}")])
             )
     for key, at in as_obj(sotw.get("activation") or {}, "sotw.activation").items():
         out.append(
             Function(
-                "activation", [String(expand(key, prefixes)), instant(at, f"sotw.activation.{key}")]
+                "activation",
+                [
+                    String(expand(key, prefixes, "sotw.activation")),
+                    instant(at, f"sotw.activation.{key}"),
+                ],
             )
         )
     for i, raw in enumerate(as_list(sotw.get("closure") or [], "sotw.closure")):
