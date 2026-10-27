@@ -3,7 +3,7 @@
 % The integrity constraints over every earlier file. They are why a deleted rule fails loudly
 % (TESTS.md): without its rule, some item has no value, some read no outcome, or some
 % world no verdict, so the solve has no model and the reply is an `error`, never a verdict.
-% Solve 1 does not load this file: its declines and rejections name what is wrong, where a
+% Solves 0 and 1 do not load this file: its declines and rejections name what is wrong, where a
 % failed constraint would only say that something is. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `rank/2`, `two_valued/1` (kleene.lp); `read_in/2`, `read_ok/2`, `read_u/2`,

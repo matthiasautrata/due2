@@ -1,7 +1,7 @@
-%# structure.lp: the policy, its conflict strategy, its atoms, and its duty atoms
+%# structure.lp: the policy, its atoms, and its duty atoms
 %
-% Finds the one policy, its conflict strategy, and the rules' values after interiorisation, and
-% expands each rule into atoms: one per action, target, and assignee
+% Finds the one policy, checks its stated conflict strategy, finds the rules' values after
+% interiorisation, and expands each rule into atoms: one per action, target, and assignee
 % (odrl-compound-to-atomic-normalization.md §3, §6.2, §6.3). Each precondition duty and root
 % obligation is expanded the same way into duty atoms, one per action, relation value, and
 % bearer, with the edges that tie a permission atom to its preconditions. The atom relations are
@@ -12,7 +12,7 @@
 %
 % | Relation | due2-workflows.md §3.1 counterpart |
 % |---|---|
-% | `policy(P)`, `conflict(P, Strat)` | `policy(policy_id \| conflict, …)` |
+% | `policy(P)`, and `conflict(P, Strat)` from bind.lp | `policy(policy_id \| conflict, …)` |
 % | `atom(X)`, `atom_effect(X, Eff)`, `atom_rule(X, R)`, `atom_action(X, A)`, `atom_target(X, T)` | `atom(atom_id \| effect, action, relation, relation_value, source_rule)` |
 % | `atom_policy(X, P)` | `root(atom_id, policy_id)`: one tuple for each policy that states the atom (`decisions/0036`) |
 % | `atom_party(X, F, Party)` | `atom_party`, match keys only |
@@ -24,13 +24,13 @@
 % | `reject(Code, Node)` | a W1 rejection (`due2-diagnostics.md`) |
 %
 % - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
-%   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `profile_conflict/1`,
-%   `function/1`, `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `timing_predicate/1`,
+%   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `function/1`,
+%   `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `timing_predicate/1`,
 %   `term_kind/2`, `voc/2`, `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2`,
 %   `policy_texts/1` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
-%   `structure_node/1`, `states_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
-%   `family/1`, `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
+%   `structure_node/1`, `states_conflict/1`, `family/1`,
+%   `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
 %   `assignee/2`, `action_term/1`, `action_of/2`, `has_action_value/1`, `atom/1`,
 %   `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`, `atom_effect/2`,
 %   `atom_party/3`; the duties (`obliges/2`, `root_obligation/1`, `pre_rule/2`, `duty_node/1`,
@@ -76,14 +76,14 @@ some_policy :- policy(_).
 
 The policy is not admissible: a W1 rejection `Code`, found at `Node`. The codes are in
 due2-diagnostics.md.
-`Node` is the sentinel `none` for `"NoPolicy"`, which has no node. Solve 1 turns any `reject`
-into an `error` reply, because `interpret` receives only admissible policies.
+`Node` is the sentinel `none` for `"NoPolicy"`, which has no node. The driver turns any
+`reject` into an `error` reply, because `interpret` receives only admissible policies.
 *%
 reject("NoPolicy", none) :- not some_policy.
-% W1 rejects a text with two policies (due2-workflows.md §4). The texts share one graph here, so
-% the rule counts: more policies than texts means some text has two. It is a check on the
-% vector, not W1's: two policies in one text beside a text with none is not caught, and neither
-% is the second text's `NoPolicy`. tools/check_corpus.py checks each file of a case alone. The
+% W1 rejects a text with two policies (due2-workflows.md §4). Solve 0 sees one text, with
+% `policy_texts(1)`, so there the rule is W1's check, as `NoPolicy` above is. Over the corpus
+% (solve 1) it adds no new rejection: every policy is stated by some text, so more policies
+% than texts means some text states two, and that text's solve 0 has rejected it already. The
 % rule names every policy node.
 reject("MultiplePolicies", P) :- policy(P), policy_texts(N), #count { Q : policy(Q) } > N.
 
@@ -138,41 +138,18 @@ structure_node(Node) :- duty_node(Node).
 
 %## The conflict strategy
 
-% The strategy is the policy's own `odrl:conflict` if it states one; otherwise the selected
-% profile's default; otherwise `invalid` (odrl-compound-to-atomic-normalization.md §3). Two
-% stated values, or a value outside the three, is `reject("InvalidConflict", P)`. Two selected
-% profiles with different defaults is `unsupported`, because the normalisation does not say which
-% wins.
+% bind.lp gives each policy its strategy (`conflict/2`), from the profiles of its own text. Two
+% stated values, or a value outside the three, is `reject("InvalidConflict", P)`.
 
 %*! states_conflict(P)
 
 Policy `P` states an `odrl:conflict`, valid or not.
 *%
 states_conflict(P) :- stated_conflict_iri(P, _).
-% A policy that states an invalid value gets no conflict/2 below, and is rejected here.
+% A policy that states an invalid value gets no conflict/2, and is rejected here.
 reject("InvalidConflict", P) :- stated_conflict_iri(P, Iri), policy(P), not conflict_value(Iri, _).
 reject("InvalidConflict", P) :- stated_conflict(P, Strat), stated_conflict(P, Strat2), policy(P),
     Strat != Strat2.
-% odrl-compound-to-atomic-normalization.md §3 does not say which of two profile defaults wins, so
-% the vector is declined rather than guessed.
-unsupported("profile-conflict-defaults") :- profile_conflict(Strat), profile_conflict(Strat2),
-    Strat != Strat2.
-
-%*! some_profile_conflict
-
-Some selected profile sets a default conflict strategy.
-*%
-some_profile_conflict :- profile_conflict(_).
-
-%*! conflict(P, Strat)
-
-Policy `P` resolves its conflicts with strategy `Strat`: `prohibit`, `perm`, or `invalid`. That is
-its own `odrl:conflict` if it states one, otherwise the selected profile's default, otherwise
-`invalid` (odrl-compound-to-atomic-normalization.md §3).
-*%
-conflict(P, Strat) :- policy(P), stated_conflict(P, Strat).
-conflict(P, Strat) :- policy(P), not states_conflict(P), profile_conflict(Strat).
-conflict(P, invalid) :- policy(P), not states_conflict(P), not some_profile_conflict.
 
 %## Interiorisation
 

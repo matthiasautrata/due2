@@ -650,13 +650,15 @@ def test_several_sources_set(interpreter: Interpreter, answers: list[Json], expe
 # The texts of `policies` are one corpus, one policy each (due2-workflows.md §4, *Several
 # policies are one corpus*). A second policy in its own text is admitted; the same policy added
 # to the first text is `MultiplePolicies` (structure.lp). A rule that allowed one policy in all,
-# rather than one per text, rejects the second policy in its own text too.
+# rather than one per text, rejects the second policy in its own text too. Each text is
+# normalised alone, so the second describes its own rule.
 @pytest.mark.parametrize("own_text", [True, False])
 def test_multiple_policies(interpreter: Interpreter, own_text: bool) -> None:
     first = constrained(leaf("eq", "ex:v"), bound("x"))
     second = (
         CONSTRAINT_PREFIXES
-        + "ex:q a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:r .\n"
+        + "ex:q a odrl:Set ; odrl:conflict odrl:prohibit ; odrl:permission ex:rq .\n"
+        + "ex:rq odrl:action odrl:use ; odrl:target ex:b .\n"
     )
     v = vector(first)
     v["policies"] = [first, second] if own_text else [first + second]
@@ -814,6 +816,113 @@ def test_profile_module_spans_files() -> None:
     pol = constrained(leaf("eq", "ex:v")) + f"ex:p odrl:profile <{PROF}> .\n"
     v = vector(pol, request={"action": "odrl:use", "params": {"ex:y": iri("ex:v")}})
     assert outcome(Interpreter(init).reply(v)) == "Permit"
+
+
+# W1 normalises each policy alone, with its own profiles' layers (due2-workflows.md §4, *Several
+# policies are one corpus*), so a profile that policy Q names reaches neither the conflict default
+# nor the bindings of policy P, which names none (#149). Each profile states one thing that would
+# change P's reply if it leaked: a conflict default, a binding of ex:x, a unit for ex:x, or a
+# concept scheme for ex:x.
+LEAKS = {
+    "conflict": f"<{PROF}conflict> odrl:conflict odrl:prohibit .\n",
+    "binding": bound("x"),
+    "unit": bound("x", extra=EUR),
+    "scheme": "ex:x due2:conceptScheme ex:S .\n",
+}
+LEAK_MODULES: Obj = {"core.ttl": CONSTRAINT_PREFIXES}
+for _name, _text in LEAKS.items():
+    LEAK_MODULES[f"{_name}.ttl"] = CONSTRAINT_PREFIXES + _text
+LEAK_INIT: Obj = {
+    "modules": LEAK_MODULES,
+    "core": ["core.ttl"],
+    "profiles": {f"{PROF}{name}": [f"{name}.ttl"] for name in LEAKS},
+}
+
+
+def naming(profile: str, constraint: str = "") -> str:
+    """Policy ex:q, which names `PROF<profile>` and states no conflict: one permission, ex:rq,
+    on ex:b, with the constraint `constraint` if one is given."""
+    on = f" ; odrl:constraint {constraint}" if constraint else ""
+    return (
+        CONSTRAINT_PREFIXES
+        + f"ex:q a odrl:Set ; odrl:profile <{PROF}{profile}> ; odrl:permission ex:rq .\n"
+        + f"ex:rq a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:b{on} .\n"
+    )
+
+
+# P alone gives the expected reply in each row, and Q's profile would change it:
+#
+# - P permits and prohibits use of ex:a and states no conflict, so it is `invalid` and void
+#   (NotApplicable); Q's `prohibit` default would make it Deny.
+# - P's ex:x has no binding of its own, so P is UnboundLeftOperand; Q's module would bind it.
+# - P's leaf states a unit that P's binding does not declare, so it is u with status misfit;
+#   Q's module would own ex:x's type and declare the unit.
+# - P's ex:v is not a concept; Q's scheme would make the leaf an OperatorTypeMismatch.
+CONFLICTED = (
+    CONSTRAINT_PREFIXES
+    + "ex:p a odrl:Set ; odrl:permission ex:r ; odrl:prohibition ex:f .\n"
+    + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a .\n"
+    + "ex:f a odrl:Prohibition ; odrl:action odrl:use ; odrl:target ex:a .\n"
+)
+LEAK_CASES = [
+    ("conflict", CONFLICTED, iri("ex:v"), "NotApplicable"),
+    ("binding", constrained(leaf("eq", "ex:v")), iri("ex:v"), "error"),
+    ("unit", constrained(unit("eq", "5", "ex:EUR"), bound("x")), typed("5", "integer"),
+     "Indeterminate"),
+    ("scheme", constrained(leaf("eq", "ex:v"), bound("x")), iri("ex:v"), "Permit"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize("q_first", [False, True], ids=["p-first", "q-first"])
+@pytest.mark.parametrize(
+    ("profile", "p", "value", "expected"), LEAK_CASES, ids=[c[0] for c in LEAK_CASES]
+)
+def test_profile_stays_with_its_policy(
+    profile: str, p: str, value: Obj, expected: str, q_first: bool
+) -> None:
+    interpreter = Interpreter(LEAK_INIT)
+    v = vector(p, request={"action": "odrl:use", "params": {"ex:x": value}})
+    alone = interpreter.reply(v)
+    v["policies"] = [naming(profile), p] if q_first else [p, naming(profile)]
+    joint = interpreter.reply(v)
+    assert outcome(alone) == expected, alone
+    assert outcome(joint) == expected, joint
+    if expected == "error":
+        assert "UnboundLeftOperand" in str(joint["error"]), joint
+    if profile == "unit":
+        assert unknown_parts(joint) == [("ex:r", "ex:x", "misfit")]
+
+
+# The controls: a profile still reaches the policy that names it. Q's `prohibit` default resolves
+# Q's own conflict, and Q's module binds Q's own ex:x leaf.
+def test_profile_reaches_its_own_policy() -> None:
+    interpreter = Interpreter(LEAK_INIT)
+    q = naming("conflict").replace("ex:rq .", "ex:rq ; odrl:prohibition ex:fq .")
+    q += "ex:fq a odrl:Prohibition ; odrl:action odrl:use ; odrl:target ex:b .\n"
+    v = vector(q, request={"action": "odrl:use", "target": "ex:b"})
+    assert outcome(interpreter.reply(v)) == "Deny"
+    v = vector(request={"action": "odrl:use", "target": "ex:b", "params": {"ex:x": iri("ex:v")}})
+    v["policies"] = [
+        naming("binding", leaf("eq", "ex:v")),
+        constrained(leaf("eq", "ex:w"), bound("x")),
+    ]
+    assert outcome(interpreter.reply(v)) == "Permit"
+
+
+# A named node is one node of the corpus (due2-workflows.md §4). A leaf that two texts share is one
+# leaf if their layers bind its operand alike; bound differently, it is IdentityConflict, the error
+# the policy store gives at publish (due2-diagnostics.md).
+@pytest.mark.parametrize(("q_property", "expected"), [("x", "Permit"), ("y", "error")])
+def test_shared_leaf_binds_alike(q_property: str, expected: str) -> None:
+    shared = "ex:c .\nex:c odrl:leftOperand ex:x ; odrl:operator odrl:eq ; odrl:rightOperand ex:v"
+    p = constrained(shared, bound("x"))
+    q = naming("conflict", shared) + bound("x").replace("ex:x .", f"ex:{q_property} .")
+    v = vector(p, request={"action": "odrl:use", "params": {"ex:x": iri("ex:v")}})
+    v["policies"] = [p, q]
+    reply = Interpreter(LEAK_INIT).reply(v)
+    assert outcome(reply) == expected, reply
+    if expected == "error":
+        assert "IdentityConflict at https://example.org/c" in str(reply["error"]), reply
 
 
 # The core owns ex:x's type: a decimal range, and the default cardinality. A policy may restate

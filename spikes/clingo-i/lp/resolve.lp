@@ -8,7 +8,7 @@
 % "unknown". Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `completed/3`, `world/1` (completion.lp); `atom_effect/2`, `atom_policy/2`,
-%   `conflict/2`, `pre/2` (structure.lp); `passed/1` (duty.lp).
+%   `pre/2` (structure.lp); `conflict/2` (bind.lp); `passed/1` (duty.lp).
 % - **Provides:** `applying/2`, `permitting/2`, `violated/2`, `closed/2`, `candidate/2`,
 %   `outstanding/3`, `forbidding/2`, `has_candidate/2`, `has_forbidding/2`,
 %   `entry_eliminated/3`, `entry_kept/2`, `eliminated/2`, `deny/1`, `survives/2`,

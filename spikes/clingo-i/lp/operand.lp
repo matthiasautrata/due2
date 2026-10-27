@@ -1,236 +1,24 @@
-%# operand.lp: each left operand's binding, and what it reads
+%# operand.lp: what each left operand's binding admits, and what it reads
 %
-% Binds each left operand a constraint uses, through the layers of due2-profiles.md §2
-% (decisions/0014), and reads its values in each world that evaluates it: in world `k` from the
-% request, the SOTW, or the context (due2-profiles.md §3), and in world `wit(E)` from the
-% evidence `E` as well (due2-workflows.md §5.3). A read is `ok`, with its values, or `u`: its
-% source could not answer, gave the wrong number of values, or gave a value outside the range. A
-% `u` read makes its constraint `u`, never `f` (ways-of-working.md §5.1). A binding that is not
-% admissible gets a `reject`.
-% Variable letters: DESIGN.md § Vocabulary.
+% Checks each leaf against its operand's binding, which bind.lp assembles (due2-profiles.md §3),
+% and reads the operand's values in each world that evaluates it: in world `k` from the request,
+% the SOTW, or the context, and in world `wit(E)` from the evidence `E` as well
+% (due2-workflows.md §5.3). A read is `ok`, with its values, or `u`: its source could not answer,
+% gave the wrong number of values, or gave a value outside the range. A `u` read makes its
+% constraint `u`, never `f` (ways-of-working.md §5.1). A leaf the binding does not admit gets a
+% `reject`. Variable letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `decl/4`, `layer_rank/2`, `source_kind/2`, `context_property/2`,
-%   `cardinality_value/2`, `kind/2`, `term_kind/2`, `admits_kind/2`, `voc/2`,
-%   `concept_scheme/2`, `declared_in_scheme/2`, `closure/3`, `fact/2`, `fact_value/2`
-%   (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
+% - **Consumes:** `voc/2`, `context_property/2`, `kind/2`, `term_kind/2`,
+%   `declared_in_scheme/2`, `closure/3`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
 %   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3`
-%   (driver); `left/2`, `c_operator/2`, `op/2`, `right/2`, `unit/2`, `node_tree/2`
-%   (constraint.lp); `duty_node/1` (structure.lp); `evaluates/2`
-%   (compare.lp).
-% - **Provides:** `used/1`, `declares/2`, `where_key/1`, `type_key/1`, `module_differs/1`,
-%   `where_rank/3`, `owner_rank/2`, `bdecl/3`, `owned/3`, `retyped/1`, `src/2`, `prop/2`,
-%   `card/2`, `has_range/1`, `range_kind/2`, `has_range_kind/1`, `prop_range_kind/2`,
-%   `allowed/2`, `has_allowed/1`, `single_left/1`, `scheme/2`, `has_scheme/1`,
+%   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`, `owned/3`,
+%   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`,
+%   `scheme/2` (bind.lp); `evaluates/2` (compare.lp).
+% - **Provides:** `has_range_kind/1`, `has_allowed/1`, `single_left/1`, `has_scheme/1`,
 %   `concept_operator/1`, `declared_concept/2`, `read_concept/2`, `candidate_value/2`,
 %   `conforms/2`, `read_world/1`, `read_in/2`, `read_value/3`, `read_resolved/2`,
 %   `nonconforming/2`, `card_ok/2`, `read_ok/2`, `read_u/2`, `read_status/3`,
-%   `unchecked_unit/1`; extends
-%   `reject/2` (structure.lp) and `unsupported/1` (lift.lp).
-
-%## Binding
-
-% A left operand is bound when a leaf uses it (`used/1`), under decisions/0014 #1–#3. A layer
-% *declares* an operand when it states any of its binding attributes: source, property, range,
-% unit, cardinality, or allowed operators (`declares/2`). The binding is assembled from the layers
-% in two parts:
-%
-% - **Where it reads.** The source and the property each come from the highest layer that states
-%   them (`where_rank/3`). A policy may rebind a baseline operand, as `due2-rebound-pay-amount`
-%   rebinds `odrl:payAmount` to the request.
-% - **Its type.** The range, unit, cardinality, and allowed operators come from the lowest declaring
-%   layer, the operand's *owner* (`owner_rank/2`). An attribute the owner omits has its default, and
-%   the default counts as stated: `owned(Op, cardinality, due2:one)` when the owner gives no
-%   cardinality. A higher layer that states a type attribute with other values than the owner's,
-%   defaults included, is `reject("RetypedOperand", C)` (`retyped/1`).
-%
-% `bdecl(Op, Key, Value)` is the assembled binding. Two profile modules that state one attribute of
-% an operand with different values are `reject("ConflictingProfileDeclaration", C)`
-% (`module_differs/1`): the modules have no order, so neither wins, and such an operand gets no
-% binding and no `UnboundLeftOperand`. Modules that agree are one declaration.
-% `tools/check_corpus.py` resolves bindings by the same rules (`Bindings`).
-%
-% The binding gives:
-%
-% - `src(Op, Src)` and `prop(Op, Prop)`, exactly one each, or `reject("UnboundLeftOperand", C)`. A
-%   source outside the four, a property that is not an IRI, or a context property that is not a
-%   built-in is `reject("InvalidBinding", C)`. The `witness` source is read only in a duty's
-%   conditions, so a leaf on it in a tree of any other structure node is
-%   `reject("WitnessOutsideDuty", C)`. `node_tree/2` (constraint.lp) gives each node's trees: its
-%   constraint roots, and the refinement roots of the action terms it states. A tree shared by a
-%   duty and a rule is in both, and so is rejected.
-% - `card(Op, K)`: `set` if the binding states `due2:set`, otherwise `one`. Another cardinality,
-%   or two, is `reject("InvalidBinding", C)`.
-% - `range_kind(Op, K)`: the kind the owner's range admits (`admits_kind/2`). `rdfs:Resource` admits
-%   every kind, so it has no `range_kind`. Two ranges, or a literal one, are
-%   `reject("InvalidBinding", C)`. A blank-node range, such as an OWL class expression, declines as
-%   `binding: range`: due2 admits it, and the spike does not read it.
-% - `prop_range_kind(Op, K)`: the kind of the `rdfs:range` that some layer states for the property
-%   `Op` reads. When no value has both kinds, the binding is `reject("OperandRangeMismatch", C)`
-%   (decisions/0014 #5): every value the property gives would fail the range. Two kinds that differ
-%   have no value in common, except that `literal` shares its values with every kind but `iri`. An
-%   operand that reads itself, such as `odrl:payAmount`, is not compared with itself.
-
-%*! used(Op)
-
-A constraint the program evaluates has left operand `Op`.
-*%
-used(Op) :- left(_, Op).
-
-%*! declares(Layer, Op)
-
-Layer `Layer` declares the used operand `Op`: it states one of its binding attributes
-(`binding_key/1`).
-*%
-declares(Layer, Op) :- used(Op), decl(Layer, Op, _, _).
-
-%*! where_key(Key)
-
-`Key` says where `Op` reads: its source or its property. A higher layer may restate it.
-*%
-where_key(operandSource; operandProperty).
-
-%*! type_key(Key)
-
-`Key` is a type attribute: the range, the unit, the cardinality, or the allowed operators. Only
-the lowest declaring layer states it (decisions/0014 #1, decisions/0049 #1).
-*%
-type_key(range; operandUnit; cardinality; allowedOperator).
-
-%*! module_differs(Op)
-
-Two selected profile modules state one attribute of `Op` with different values. The modules
-have no order, so neither wins: that is `ConflictingProfileDeclaration` (decisions/0014 #3).
-*%
-module_differs(Op) :- used(Op), decl(module(P), Op, Key, V), decl(module(P2), Op, Key, _),
-    P != P2, not decl(module(P2), Op, Key, V).
-reject("ConflictingProfileDeclaration", C) :- left(C, Op), module_differs(Op).
-
-%*! where_rank(Op, Key, N)
-
-`N` is the least rank of a layer that states `Op`'s source or property `Key`: the highest layer
-that states it gives it (decisions/0014 #2).
-*%
-where_rank(Op, Key, N) :- used(Op), where_key(Key), decl(_, Op, Key, _), not module_differs(Op),
-    N = #min { M : decl(L, Op, Key, _), layer_rank(L, M) }.
-
-%*! owner_rank(Op, N)
-
-`N` is the rank of the lowest layer that declares `Op`, the layer that owns its type
-(decisions/0014 #1).
-*%
-owner_rank(Op, N) :- declares(_, Op), not module_differs(Op),
-    N = #max { M : declares(L, Op), layer_rank(L, M) }.
-
-%*! bdecl(Op, Key, Value)
-
-`Op`'s binding has `Value` for attribute `Key`: its source and property from the highest layer
-that states each, its type attributes from the owner. An attribute the owner omits has none here,
-and its default is read where it is used (`card/2`, `has_allowed/1`, `conforms/2`).
-*%
-bdecl(Op, Key, Value) :- where_rank(Op, Key, N), decl(L, Op, Key, Value), layer_rank(L, N).
-bdecl(Op, Key, Value) :- owner_rank(Op, N), type_key(Key), decl(L, Op, Key, Value),
-    layer_rank(L, N).
-
-%*! owned(Op, Key, Value)
-
-`Op`'s type attribute `Key` has `Value`, as the owner states it, or as the default fills it in:
-`due2:one` for a cardinality the owner omits. An omitted range, unit, or operator list has no value,
-which is the default (due2-profiles.md §3 Defaults).
-*%
-owned(Op, Key, Value) :- bdecl(Op, Key, Value), type_key(Key).
-owned(Op, cardinality, Iri) :- owner_rank(Op, _), not bdecl(Op, cardinality, _),
-    cardinality_value(Iri, one).
-
-%*! retyped(Op)
-
-A layer above the owner states a type attribute of `Op` with other values than the owner's, a
-default included: that is `RetypedOperand` (decisions/0014 #2). An omitted operator list is
-every core operator, and the spike does not compute that list, so any operator list a higher
-layer states over an omitted one counts.
-*%
-retyped(Op) :- owner_rank(Op, N), decl(L, Op, Key, V), type_key(Key), layer_rank(L, M), M < N,
-    not owned(Op, Key, V).
-retyped(Op) :- owner_rank(Op, N), owned(Op, Key, V), decl(L, Op, Key, _), layer_rank(L, M),
-    M < N, not decl(L, Op, Key, V).
-reject("RetypedOperand", C) :- left(C, Op), retyped(Op).
-
-% Exactly one source and one property (due2-profiles.md §3).
-% A conflicted operand is rejected for the conflict alone.
-reject("UnboundLeftOperand", C) :- left(C, Op), not module_differs(Op),
-    #count { Src : bdecl(Op, operandSource, Src) } != 1.
-reject("UnboundLeftOperand", C) :- left(C, Op), not module_differs(Op),
-    #count { Prop : bdecl(Op, operandProperty, Prop) } != 1.
-% A closed source, an IRI property, and a built-in context property.
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandSource, Src), not source_kind(Src, _).
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandProperty, Prop), not kind(Prop, iri).
-reject("InvalidBinding", C) :- left(C, Op), src(Op, context), prop(Op, Prop),
-    not context_property(Prop, _).
-% The witness is read inside a duty's constraints and the refinements of its actions only
-% (due2-workflows.md §5.2): a tree shared with a policy or a rule is rejected.
-reject("WitnessOutsideDuty", C) :- left(C, Op), src(Op, witness), node_tree(Node, C),
-    not duty_node(Node).
-
-%*! src(Op, Src)
-
-`Op` reads source `Src`: `request`, `state`, `context`, or `witness`.
-*%
-src(Op, Src) :- bdecl(Op, operandSource, Iri), source_kind(Iri, Src).
-
-%*! prop(Op, Prop)
-
-`Op` reads property `Prop` of its source.
-*%
-prop(Op, Prop) :- bdecl(Op, operandProperty, Prop).
-
-%*! card(Op, K)
-
-`Op` has cardinality `K`: `one`, unless its binding states `due2:set`. That is the default of
-due2-profiles.md §3.
-*%
-card(Op, set) :- bdecl(Op, cardinality, Iri), cardinality_value(Iri, set).
-card(Op, one) :- used(Op), not card(Op, set).
-% One cardinality, `due2:one` or `due2:set` (due2-profiles.md §3, Checks at normalisation).
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, cardinality, Iri),
-    not cardinality_value(Iri, _).
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, cardinality, Iri),
-    bdecl(Op, cardinality, Iri2), Iri != Iri2.
-
-%*! has_range(Op)
-
-`Op`'s binding states a range.
-*%
-has_range(Op) :- bdecl(Op, range, _).
-
-%*! range_kind(Op, K)
-
-`Op`'s range admits values of kind `K` (`admits_kind/2`).
-*%
-range_kind(Op, K) :- bdecl(Op, range, Rg), admits_kind(Rg, K).
-% One range, not a literal (due2-profiles.md §3, Checks at normalisation).
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, range, Rg), bdecl(Op, range, Rg2), Rg != Rg2.
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, range, Rg), kind(Rg, lit).
-unsupported("binding: range") :- bdecl(Op, range, Rg), kind(Rg, blank).
-
-%*! has_range_kind(Op)
-
-`Op`'s range has a kind. `rdfs:Resource` has none, so it admits every term.
-*%
-has_range_kind(Op) :- range_kind(Op, _).
-
-%*! prop_range_kind(Op, K)
-
-The property `Op` reads has a range, stated in some layer, that admits kind `K`. An operand that
-reads itself, such as `odrl:payAmount`, has its own range as its property's, so it is left out.
-*%
-prop_range_kind(Op, K) :- prop(Op, Prop), Prop != Op, decl(_, Prop, range, Rg),
-    admits_kind(Rg, K).
-
-% The binding's range and the property's are of different kinds (decisions/0014 #5). `literal`
-% admits a literal of every kind, so it meets every kind but `iri`: a literal is never an IRI.
-reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, K), prop_range_kind(Op, K2),
-    K != K2, K != literal, K2 != literal.
-reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, literal), prop_range_kind(Op, iri).
-reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, iri), prop_range_kind(Op, literal).
+%   `unchecked_unit/1`; extends `reject/2` (structure.lp).
 
 %## Operator checks
 
@@ -244,12 +32,6 @@ reject("OperandRangeMismatch", C) :- left(C, Op), range_kind(Op, iri), prop_rang
 % `isA` over a set-valued operand is `reject("OperatorTypeMismatch", C)`, and so is an operator of
 % one left value over one (`single_left/1`: `eq`, `neq`, the order operators, `isAnyOf`, `isNoneOf`;
 % decisions/0025).
-
-%*! allowed(Op, Iri)
-
-`Op`'s binding allows the operator `Iri`.
-*%
-allowed(Op, Iri) :- bdecl(Op, allowedOperator, Iri).
 
 %*! has_allowed(Op)
 
@@ -281,8 +63,8 @@ reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, O), singl
 % A leaf that states a unit on an operand whose binding declares none is admitted, and is `u`
 % whatever is read (compare.lp), with status `misfit` (completion.lp): nothing says what unit
 % the read value is in (due2-profiles.md §3 Units, decisions/0049). W1 also warns with
-% `UncheckedUnit`; the spike reports no warnings. Two units, or one that is not an IRI, are
-% `reject("InvalidBinding", C)` (due2-profiles.md §3, Checks at normalisation).
+% `UncheckedUnit`; the spike reports no warnings. bind.lp rejects two units, or one that is not an
+% IRI.
 
 %*! unchecked_unit(C)
 
@@ -291,9 +73,6 @@ Leaf `C` states a unit that its operand's binding does not declare: the binding 
 unchecked_unit(C) :- unit(C, _), left(C, Op), not owned(Op, operandUnit, _).
 reject("OperatorTypeMismatch", C) :- unit(C, Iri), left(C, Op), owned(Op, operandUnit, Iri2),
     Iri != Iri2.
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandUnit, U), bdecl(Op, operandUnit, U2),
-    U != U2.
-reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandUnit, U), not kind(U, iri).
 
 %## Concept schemes
 
@@ -308,13 +87,6 @@ reject("InvalidBinding", C) :- left(C, Op), bdecl(Op, operandUnit, U), not kind(
 % - a scheme on a datatype range is `reject("InvalidBinding", C)`.
 %
 % A literal is not a concept, so a literal right operand is not checked.
-
-%*! scheme(Op, S)
-
-`Op` compares concepts of the SKOS concept scheme `S`: some layer states `Op due2:conceptScheme S`.
-The schemes are the union over the layers (decisions/0015 #6).
-*%
-scheme(Op, S) :- used(Op), concept_scheme(Op, S).
 
 %*! has_scheme(Op)
 
@@ -365,6 +137,12 @@ reject("InvalidBinding", C) :- left(C, Op), has_scheme(Op), range_kind(Op, K), K
 % number does not, nor an `xsd:double`, which has no exact equality (due2-profiles.md §4).
 % `rdfs:Literal` takes any literal. A right operand value that does not conform is
 % `reject("OperatorTypeMismatch", C)`.
+
+%*! has_range_kind(Op)
+
+`Op`'s range has a kind. `rdfs:Resource` has none, so it admits every term.
+*%
+has_range_kind(Op) :- range_kind(Op, _).
 
 %*! candidate_value(Op, Term)
 

@@ -16,8 +16,8 @@
 %   (kleene.lp); `duty_atom/1`, `rule/1`, `policy/1`, `atom/1`, `atom_policy/2`, `pre/2`,
 %   `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`, `duty_deadline/2`,
 %   `deadline_kind/2`, `duty_scope/2`, `attester/2`, `has_attester/1` (structure.lp);
-%   `top_constraint/2`, `top_refinement/2`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `node_tree/2` (constraint.lp); `src/2`, `prop/2`
-%   (operand.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
+%   `top_constraint/2`, `top_refinement/2`, `conn/2`, `member/2`, `leaf/1`, `node_tree/2`
+%   (constraint.lp); `left/2`, `src/2`, `prop/2` (bind.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
 %   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`,
 %   `evidence_discharges/3`, `activation/2`, `sotw_effective_at/1`,
 %   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver); `le_k/3` (lift.lp).

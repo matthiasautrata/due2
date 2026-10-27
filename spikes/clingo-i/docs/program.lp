@@ -1,7 +1,9 @@
 %# The semantics program
 %
 % The files of `lp/`, in the order `clingo_i/interpret.py` loads them (`PROGRAM_FILES`).
-% Solve 1 loads lift.lp to duty.lp, solve 2 every file but pivot.lp, and solve 3 all of them.
+% Solve 0 loads lift.lp to duty.lp, bind.lp included, once for each policy text. The solves over
+% the corpus leave bind.lp out and read its relations as facts: solve 1 loads lift.lp to duty.lp,
+% solve 2 every file but pivot.lp, and solve 3 all of them.
 % This file is only the documentation's entry point: the interpreter loads the files directly,
 % and `tests/test_docs.py` checks that the two lists agree.
 
@@ -9,6 +11,7 @@
 #include "../lp/structure.lp".
 #include "../lp/kleene.lp".
 #include "../lp/constraint.lp".
+#include "../lp/bind.lp".
 #include "../lp/operand.lp".
 #include "../lp/compare.lp".
 #include "../lp/applies.lp".

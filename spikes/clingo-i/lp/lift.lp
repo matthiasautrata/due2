@@ -7,7 +7,7 @@
 % § Vocabulary.
 %
 % - **Consumes:** the driver's facts (flatten.py): the graphs (`triple/3`,
-%   `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
+%   `module/4`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
 %   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`, `fact_answer/3`,
 %   `fact_answer_value/3`, `evidence/4`, `evidence_param/3`, `activation/2`,
 %   `sotw_closure/3`), and the driver's own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`,
@@ -20,10 +20,9 @@
 %   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`,
 %   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
 %   `subclass/2`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`, `stated_conflict/2`,
-%   `profile_conflict/1`, `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`,
-%   `decl/4`, `layer_rank/2`, `concept_scheme/2`); the combined facts (`valued/2`, `differs/1`,
-%   `fact/2`, `fact_value/2`); the kinds (`declared_datatype/1`,
-%   `datatype/1`, `dt_kind/2`, `term_kind/2`, `admits_kind/2`, `range_iri/1`); the hierarchies
+%   `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`); the combined facts
+%   (`valued/2`, `differs/1`, `fact/2`, `fact_value/2`); the kinds (`declared_datatype/1`,
+%   `datatype/1`, `dt_kind/2`, `term_kind/2`); the hierarchies
 %   (`closure_key/1`, `closure/3`, `declared_in_scheme/2`, `coll_kind/2`, `node_kind/2`,
 %   `le_k/3`); the declines (`policy_predicate/1`, `family_predicate/1`, `anywhere_predicate/1`,
 %   `timing_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`, `closure_relation/1`,
@@ -401,17 +400,12 @@ derived_from("http://www.w3.org/2001/XMLSchema#yearMonthDuration", "http://www.w
 %## The lifted policy
 
 % The lifted policy is `type/2`, `subclass/2` (declared, direct edges from the selected modules),
-% `has_rule/3`, `stated/3` (the value a policy or rule node states for a family),
-% `stated_conflict/2`, and `profile_conflict/1`.
+% `has_rule/3`, `stated/3` (the value a policy or rule node states for a family), and
+% `stated_conflict/2`.
 %
 % Terms and lists: `term/1` collects every term of the graphs and of the inputs the constraints
 % read, and `kind/2` gives each its shape: `iri`, `lit`, or `blank`. `list_cell/2`, `list_item/2`,
 % and `is_list/1` read RDF lists of the policy graph; `rdf:nil` is the empty list.
-%
-% Bindings: `decl(Layer, Op, Key, Value)` is one attribute of a binding stated in one layer:
-% `policy` for the policy graph, `module(Iri)` for the files of a selected profile, or `core`.
-% `layer_rank/2` orders the layers of due2-profiles.md §2 from the top: the policy 0, every profile
-% module 1, the core 2. The profile modules share a rank because they have no order.
 
 %*! type(Node, Cls)
 
@@ -456,13 +450,6 @@ stated_conflict_iri(P, Iri) :- triple(P, Pred, Iri), voc(conflict, Pred).
 Node `P` states the valid conflict strategy `Strat`.
 *%
 stated_conflict(P, Strat) :- stated_conflict_iri(P, Iri), conflict_value(Iri, Strat).
-
-%*! profile_conflict(Strat)
-
-A selected profile resource sets the default conflict strategy `Strat`. See due2-profiles.md §8.1.
-*%
-profile_conflict(Strat) :- selected_profile(Prof), module(_, Prof, Pred, Iri), voc(conflict, Pred),
-    conflict_value(Iri, Strat).
 
 %*! kind(Term, K)
 
@@ -514,43 +501,12 @@ list_item(Head, Item) :- list_cell(Head, Cell), triple(Cell, Pred, Item), voc(fi
 is_list(Node) :- list_cell(Node, Node).
 is_list(Node) :- voc(nil, Node).
 
-%*! decl(Layer, Op, Key, Value)
-
-Layer `Layer` states `Value` for attribute `Key` of `Op`, a left operand or a property
-(`binding_key/1`). `Layer` is `policy` for the policy graph, `module(Prof)` for the files of
-selected profile `Prof`'s module, or `core` for the baseline (`layer/2`).
-*%
-decl(policy, Op, Key, Value) :- triple(Op, Pred, Value), voc(Key, Pred), binding_key(Key).
-decl(Layer, Op, Key, Value) :- module(Path, Op, Pred, Value), voc(Key, Pred), binding_key(Key),
-    layer(Path, Layer).
-
-%*! layer_rank(Layer, N)
-
-Layer `Layer` has rank `N`, highest first: the policy graph 0, every selected profile module 1,
-and the baseline 2. The layers of due2-profiles.md §2; the modules share one rank, because they
-have no order.
-*%
-layer_rank(policy, 0).
-layer_rank(Layer, 1) :- layer(_, Layer), Layer = module(_).
-layer_rank(core, 2).
-
-%*! concept_scheme(Op, S)
-
-Some layer states `Op due2:conceptScheme S`: the policy graph, a selected module, or the
-baseline. An operand's schemes are the union over its layers, not a type attribute
-(decisions/0015 #6), so this is not a `decl/4` attribute: a layer that states only a scheme
-does not own the operand's type.
-*%
-concept_scheme(Op, S) :- triple(Op, Pred, S), voc(conceptScheme, Pred).
-concept_scheme(Op, S) :- module(_, Op, Pred, S), voc(conceptScheme, Pred).
-
 %## Kinds
 
 % `dt_kind(Dt, K)` gives a datatype's kind (due2-profiles.md §3 *Kinds*): `numeric` for every XSD
 % numeric type, the primitive for a derived XSD type, and the datatype itself otherwise.
-% `term_kind(Term, K)` gives a term's kind, `iri` for an IRI. `admits_kind(Rg, K)` gives the kind a
-% stated range admits: `literal` for `rdfs:Literal`, none for `rdfs:Resource`, and `iri` for a
-% class.
+% `term_kind(Term, K)` gives a term's kind, `iri` for an IRI. bind.lp gives the kind a stated
+% range admits (`admits_kind/2`).
 
 %*! declared_datatype(Dt)
 
@@ -590,25 +546,6 @@ has no kind.
 term_kind(Term, iri) :- kind(Term, iri).
 term_kind(Term, K) :- term(Term), Term = lit(_, Dt), dt_kind(Dt, K).
 term_kind(Term, K) :- term(Term), Term = lit(_, Dt, _), dt_kind(Dt, K).
-
-%*! admits_kind(Rg, K)
-
-The range `Rg` admits values of kind `K`: a datatype range its datatype's kind, and a class range
-`iri`. Both are the kinds of due2-profiles.md §3. `rdfs:Literal` gets `literal`, which admits a literal of any
-kind; `rdfs:Resource` admits every term, so it has no kind. Defined for the IRI ranges that a
-layer states (`decl/4`), of an operand or of the property an operand reads.
-*%
-admits_kind(Rg, K) :- range_iri(Rg), xsd_datatype(Rg), dt_kind(Rg, K).
-admits_kind(Rg, K) :- range_iri(Rg), declared_datatype(Rg), dt_kind(Rg, K).
-admits_kind(Rg, literal) :- range_iri(Rg), any_literal(Rg).
-admits_kind(Rg, iri) :- range_iri(Rg), not xsd_datatype(Rg), not declared_datatype(Rg),
-    not any_literal(Rg), not any_resource(Rg).
-
-%*! range_iri(Rg)
-
-Some layer states the IRI `Rg` as a range.
-*%
-range_iri(Rg) :- decl(_, _, range, Rg), kind(Rg, iri).
 
 %## Several sources
 
@@ -666,8 +603,8 @@ fact_value(Prop, Value) :- valued(Prop, Source), fact_answer_value(Prop, Source,
 % `skos:broader`, or `skos:inScheme` edge from the policy, a selected module, or the SOTW closure. A
 % `skos:narrower` triple is the inverse `broader` edge, and `skos:topConceptOf` and the inverse
 % `skos:hasTopConcept` are `inScheme` edges (decisions/0015 #5, #8); `declared_in_scheme/2` holds
-% the memberships of the policy and the modules alone. `concept_scheme(Op, S)` holds each
-% `due2:conceptScheme` a layer states, a union rather than a binding attribute (decisions/0015 #6).
+% the memberships of the policy and the modules alone. bind.lp reads each
+% `due2:conceptScheme` a layer states (`concept_scheme/2`).
 % The edges are closed-world: an undeclared edge does not hold (due2-profiles.md §6).
 %
 % `coll_kind/2` types a collection (`odrl:AssetCollection` is `asset`, `odrl:PartyCollection` is
@@ -841,7 +778,7 @@ annotated(Pred) :- pred_ns(Pred, NS), annotation_ns(NS).
 
 The vector uses `Feature`, which the spike does not read, so solve 1 declines it, naming the
 smallest `Feature`. Here `Feature` is a predicate IRI, or a reason for a hierarchy the
-spike does not trust (`"odrl:partOf: …"`). structure.lp, constraint.lp, and operand.lp add
+spike does not trust (`"odrl:partOf: …"`). structure.lp, constraint.lp, and bind.lp add
 reasons of their own, listed in DESIGN.md § Declines.
 *%
 % Neither consumed nor annotated, and either in a vocabulary namespace or on the policy or a

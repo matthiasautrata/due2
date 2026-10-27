@@ -17,9 +17,9 @@
 % hold a second completion beside the first. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `operator/2` (lift.lp); `atom/1`, `atom_party/3` (structure.lp);
-%   `scope/2`, `member/2`, `leaf/1`, `left/2`, `op/2`, `right/2`, `unit/2` (constraint.lp);
-%   `src/2`, `prop/2`, `has_scheme/1`, `read_ok/2`, `read_status/3`, `unchecked_unit/1`
-%   (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `holds/2`, `part_of/2`,
+%   `scope/2`, `member/2`, `leaf/1`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`,
+%   `src/2`, `prop/2` (bind.lp); `has_scheme/1`, `read_ok/2`, `read_status/3`,
+%   `unchecked_unit/1` (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `holds/2`, `part_of/2`,
 %   `atom_constraint/2` (applies.lp);
 %   `rank/2` (kleene.lp); `pre/2`, `obligation/1` (structure.lp); `guard/2`, `policy_match/2`,
 %   `instance/1` (duty.lp).
@@ -158,7 +158,7 @@ opaque_item(I) :- opened(I, C), opaque_leaf(C).
 % | Component | Relation | Note |
 % |---|---|---|
 % | scope | `scope/2` (constraint.lp) | `rule` or `action` |
-% | binding | `src/2`, `prop/2` (operand.lp) | where the operand reads, not its IRI: two operands bound to one property read one value |
+% | binding | `src/2`, `prop/2` (bind.lp) | where the operand reads, not its IRI: two operands bound to one property read one value |
 % | positive operator | `op_literal(O, Base, Pol)` | a complement asserts its `Base`, `neg` |
 % | right operand values | `leaf_attr(C, right(Term))` | a set of terms |
 % | units | `leaf_attr(C, unit(Iri))` | a set |

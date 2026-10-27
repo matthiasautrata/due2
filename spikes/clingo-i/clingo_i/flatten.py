@@ -9,19 +9,22 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 
 **Graphs.**
 
-- `triple/3`, `triple(S, P, O)`: each policy triple. Read by lift.lp, structure.lp, and
-  constraint.lp.
+- `triple/3`, `triple(S, P, O)`: each policy triple. Read by lift.lp, structure.lp,
+  constraint.lp, and bind.lp.
 - `module/4`, `module(Path, S, P, O)`: each triple of a selected module, `Path` the module's
-  path. Its blank nodes are scoped by `Path`. Read by lift.lp.
+  path. Its blank nodes are scoped by `Path`. Read by lift.lp and bind.lp.
 - `layer/2`, `layer(Path, core | module(Iri))`: each selected module file, `core` for a core
   file and `module(Iri)` for a file of the selected profile `Iri`, so a profile whose module is
-  several files is one layer; a file in both is `core` (`interpret.py`). Read by lift.lp.
+  several files is one layer; a file in both is `core` (`interpret.py`). Read by bind.lp.
 - `pred_ns/2`, `pred_ns(P, NS)`: each policy predicate. `NS` is `P` up to and including its
   last `#` or `/`. Read by lift.lp.
-- `policy_texts/1`, `policy_texts(N)`: the number of Turtle texts in the vector's `policies`,
-  one per policy; their triples are all `triple/3` (`interpret.py`). Read by structure.lp.
+- `policy_texts/1`, `policy_texts(N)`: the number of Turtle texts in the solve, one per policy:
+  1 in solve 0, and the vector's count over the corpus, whose triples are all `triple/3`
+  (`interpret.py`). Read by structure.lp.
+- `text_id/1`, `text_id(Text)`: the one policy text of solve 0, named by its text id, a hash of
+  the text (`interpret.py`). Read by bind.lp.
 - `selected_profile/1`, `selected_profile(Iri)`: each `odrl:profile` value that names a shipped
-  profile. Read by lift.lp.
+  profile. Read by lift.lp and bind.lp.
 
 **Request** (due2-workflows.md §3.2).
 
@@ -84,7 +87,8 @@ nothing is guessed.
   `lit(Lex, rdf:langString, Tag)`.
 - **Blank nodes** are `b(Scope, Label)`. The label is rdflib's canonical one
   (`rdflib.compare.to_canonical_graph`), so it does not depend on the labels the parser chose.
-  `Scope` is `"policy"` or the module's path, so blank nodes from different graphs never meet.
+  `Scope` is the policy text's `text_id` or the module's path, so blank nodes from different
+  graphs never meet.
 - **Input names** are expanded with the vector's prefixes, the same way the harness expands
   them. A name whose prefix is undeclared, or that has none, is an error (#146). A name is a string or `{"@id": …}`. `reference` is not a name, and stays as given. An evidence `id` is a key, not a name: it is expanded when its prefix is declared and otherwise kept as given.
 - **Input values** (`params`, a fact answer's `values`, an evidence record's `params`) are `{"@id": …}`,
@@ -129,19 +133,17 @@ def _exact_literals() -> Generator[None]:
         rdflib.NORMALIZE_LITERALS = saved
 
 
-def parse(*texts: str) -> ReadOnlyGraphAggregate:
-    """The union of the Turtle `texts` as one graph, with canonical blank node labels.
+def parse(text: str) -> ReadOnlyGraphAggregate:
+    """The Turtle `text` as a graph, with canonical blank node labels.
 
-    Lexical forms are kept as written. Each text is a policy of the corpus evaluated together (due2-workflows.md §4, *Several
-    policies are one corpus*). A named node two of them state is one node of the union, and
-    each parse mints fresh blank nodes, so blank nodes of different texts never meet. The labels
-    come from `rdflib.compare.to_canonical_graph`, so they do not depend on the labels the
-    parser chose, and the facts do not depend on serialisation order.
+    Lexical forms are kept as written. The labels come from `rdflib.compare.to_canonical_graph`,
+    so they do not depend on the labels the parser chose, and the facts do not depend on
+    serialisation order. A vector's texts are parsed one at a time; `policy_facts` scopes each
+    text's blank nodes by its text id, so blank nodes of different texts never meet.
     """
     with _exact_literals():
         graph = Graph()
-        for text in texts:
-            graph.parse(data=text, format="turtle")
+        graph.parse(data=text, format="turtle")
         return to_canonical_graph(graph)
 
 
@@ -174,13 +176,13 @@ def render(facts: Iterable[Symbol]) -> str:
     return "\n".join(f"{f}." for f in facts)
 
 
-def policy_facts(graph: ReadOnlyGraphAggregate) -> list[Symbol]:
+def policy_facts(graph: ReadOnlyGraphAggregate, scope: str = "policy") -> list[Symbol]:
     """The policy graph: one `triple(S, P, O)` and one `pred_ns` per triple, blank nodes scoped
-    `"policy"`."""
+    by `scope`, the text's `text_id` in a vector."""
     out: list[Symbol] = []
     for s, p, o in graph:
-        out.append(Function("triple", [term(s, "policy"), term(p, "policy"), term(o, "policy")]))
-        out.append(Function("pred_ns", [term(p, "policy"), String(namespace(str(p)))]))
+        out.append(Function("triple", [term(s, scope), term(p, scope), term(o, scope)]))
+        out.append(Function("pred_ns", [term(p, scope), String(namespace(str(p)))]))
     return out
 
 

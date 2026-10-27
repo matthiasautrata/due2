@@ -30,7 +30,8 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 - **World.** An index that lets one answer set hold more than one completion. World `c` is the completion the answer set chose, and world `flip` (solve 3 only) is `c` with one variable negated. These two are the *completion worlds*. The node ranks also carry the *Kleene world* `k`: the ranks before completion, under strong Kleene logic, with the operands read from the request and the SOTW. A *witness world* `wit(E)`, one per piece of evidence `E`, reads a duty's witness conditions from `E` (`duty.lp`). `world/1` lists the completion worlds only.
 - **Pivot.** The variable `flip` negates. A variable is *pivotal* when flipping it alone changes some completion's verdict (`decisions/0011` #1).
 - **Remover.** In an elimination row, the atom that removes the other (`due2-workflows.md` §3.5).
-- **Solve 1, 2, 3.** The three clingo runs of § Data flow. *Cautious* enumeration keeps the atoms true in every answer set, and *brave* the atoms true in some.
+- **Text id.** The name of one policy text of a vector: the first 12 hexadecimal digits of the SHA-256 hash of the text (`interpret.py`). It scopes the text's blank nodes and its left operands, `o(Iri, Text)`. Identical texts have one text id, so they are one text.
+- **Solve 0, 1, 2, 3.** The clingo runs of § Data flow: solve 0 once for each policy text, then solves 1 to 3 over the corpus. *Cautious* enumeration keeps the atoms true in every answer set, and *brave* the atoms true in some.
 - **Decline.** A reply of kind `unsupported`, naming the feature the spike does not read (§ Declines). A *rejection* is a W1 diagnostic (`due2-diagnostics.md`): the policy is not admissible, and the reply is an `error`.
 
 **Variable letters.** Every file uses one kind per letter:
@@ -62,7 +63,7 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 | `C`, `D`, `D2` | a constraint node; `D` is a member of `C` |
 | `O` | a core operator, such as `eq` or `isPartOf` |
 | `NT`, `NU` | the number of an `xone`'s members that are `t`, and that are `u` |
-| `Op` | a left operand |
+| `Op` | a left operand, `o(Iri, Text)`: its IRI, and the text id of the policy text that binds it |
 | `Lv`, `Rv` | a read value and a right operand value |
 | `Lo`, `Hi` | the narrower and the broader end of a hierarchy edge |
 | `K` | a kind: of term (`iri`, `lit`, `blank`), collection or node (`asset`, `party`), connective, cardinality (`one`, `set`), range, deadline (`absolute`, `relative`), or check of the witness test (`actor`, `deadline`, …) |
@@ -72,7 +73,7 @@ The spec defines most terms: atom, part, finding, candidate, outstanding set, op
 | `Rg` | a range |
 | `Rel` | an order relation: `lt`, `eq`, `gt`, or `u` |
 
-Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, `Actor` (an evidence record's actor), `Issuer`, `Ref` (a request's `reference`), `Source` (a source of a fact's answer, or `unnamed` for a fact given as one answer), `Other` (a second source, compared with `Source`), `Start` (the instant a duty's instance was first owed), `Np` (a rank inside an aggregate), and `Vp`, `Vc`, `Vk`, `Vw` (the truth value of a part, a node, a check, or a witness inside an aggregate).
+Longer names are spelled out where they occur: `Term` (an RDF term, an action term among them), `List`, `Head`, `Cell`, `Item` (of an RDF list), `Layer`, `Path`, `Text` (a text id), `Key`, `Value`, `Node`, `Owner` (the rule or duty a constraint root belongs to), `Pred`, `Iri`, `Lit` (an RDF literal), `Cls`, `Sup`, `Mid`, `Fam` (a family: action, target, or a function), `Asked` (the request's target or party), `Input` (what an unknown part reads), `Prof`, `Actor` (an evidence record's actor), `Issuer`, `Ref` (a request's `reference`), `Source` (a source of a fact's answer, or `unnamed` for a fact given as one answer), `Other` (a second source, compared with `Source`), `Start` (the instant a duty's instance was first owed), `Np` (a rank inside an aggregate), and `Vp`, `Vc`, `Vk`, `Vw` (the truth value of a part, a node, a check, or a witness inside an aggregate).
 
 ## Layout
 
@@ -80,13 +81,14 @@ Longer names are spelled out where they occur: `Term` (an RDF term, an action te
 main.py                the protocol loop (spikes/README.md § Protocol)
 clingo_i/flatten.py    the driver: Turtle and JSON to facts; no semantics
 clingo_i/values.py     the driver's value table: value spaces, positions, and instant-plus-duration sums
-clingo_i/interpret.py  the three solves, the declines, and the reply
+clingo_i/interpret.py  the four solves, the declines, and the reply
 clingo_i/json_types.py the JSON value type
 lp/lift.lp             triples to relations that name no IRI; several sources' answers to one fact; the hierarchies; detects what the spike does not read
-lp/structure.lp        the policy, its conflict strategy, interiorisation, action terms, and expansion into atoms and duty atoms
+lp/structure.lp        the policy, interiorisation, action terms, and expansion into atoms and duty atoms
 lp/kleene.lp           truth values and their ranks
 lp/constraint.lp       the authored constraint trees, and their static checks
-lp/operand.lp          each left operand's binding, and what it reads
+lp/bind.lp             solve 0 only: what each policy text's own layers decide, its conflict strategy and its operands' bindings
+lp/operand.lp          what each left operand's binding admits, and what it reads
 lp/compare.lp          the operators, and the Kleene value of every constraint node
 lp/applies.lp          the parts of an atom, and its finding
 lp/duty.lp             a duty's guards and witness conditions, its findings, and its duty status
@@ -99,27 +101,28 @@ docs/                  the generated reference: program.lp includes lp/ for clin
 tests/                 the spike's own tests (`TESTS.md`)
 ```
 
-`lift.lp` is the only file that names an IRI. Every file after it reads relations named after the spec's. The files load in the order above (`PROGRAM_FILES` in `interpret.py`), and each file's header names the files whose relations it reads.
+`lift.lp` is the only file that names an IRI. Every file after it reads relations named after the spec's. The files load in the order above (`PROGRAM_FILES` in `interpret.py`), `bind.lp` in solve 0 only, and each file's header names the files whose relations it reads.
 
 **The generated reference.** `uv run --group docs mkdocs build --strict` builds `site/` (not committed): one page per `lp/` relation, with its doc block, a predicate table, and a dependency graph (clindocs), and one page for the Python modules (mkdocstrings). It is the place to look up one relation. `tests/test_docs.py` keeps it complete (`TESTS.md`).
 
 ## Data flow
 
 1. **Init.** The driver parses every module once and keeps its facts.
-2. **Flatten** (`flatten.py`). The vector's policy texts are parsed into one graph, which becomes `triple/3`, so the policies are one corpus (`due2-workflows.md` §4, *Several policies are one corpus*). The core modules, and the modules of each profile the policy's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `module(Iri)`, the module of the profile `Iri`. The request and the SOTW become facts (`flatten.py`). Then `values.py` places every RDF literal in those facts (`values.py`).
-3. **Solve 1:** facts, and `lift.lp` to `duty.lp` (the first eight files). The program has no choice rule and is stratified, so it has exactly one model. It is read in this order, and the first hit decides:
+2. **Flatten** (`flatten.py`). Each of the vector's policy texts is parsed alone and becomes `triple/3`, its blank nodes scoped by its text id, a hash of the text. The corpus is the union of the texts' triples (`due2-workflows.md` §4, *Several policies are one corpus*). The core modules, and the modules of each profile a text's `odrl:profile` selects, become `module/4`, and `interpret.py` adds `layer/2` for each, naming it `core` or `module(Iri)`, the module of the profile `Iri`. The request and the SOTW become facts (`flatten.py`). Then `values.py` places every RDF literal in those facts (`values.py`).
+3. **Solve 0**, once for each policy text: that text's facts and its own profiles' layers, and `lift.lp` to `bind.lp` (`SOLVE_0`). W1 normalises each policy alone (`due2-workflows.md` §4), so a profile binds only the policy that names it: its conflict default, its operands' bindings, units, and schemes. `bind.lp` keys each left operand by its text, `o(Iri, Text)`. The driver copies each model's binding relations (`INTERFACE`), `conflict/2`, and its `reject` and `unsupported` atoms (`RAISED`) into the corpus facts; solve 1 derives the other declines again, over the corpus. A leaf that two texts state with different binding relations, or a policy that two texts give different conflict strategies, is an `IdentityConflict` rejection, the error the policy store raises when it publishes a corpus (`due2-diagnostics.md`). These are the only differences the spike checks: two texts that say different things of any other shared node are not rejected.
+4. **Solve 1:** the corpus facts, and `lift.lp` to `duty.lp` without `bind.lp` (`SOLVE_1`). For a single text it is not run, and solve 0's model is read instead. Solve 1 would load the same files but `bind.lp`, over the same triples, inputs, and layers, and read as facts the relations that solve 0's `bind.lp` derived from them, so it would derive the same atoms (`_corpus`). The program has no choice rule and is stratified, so it has exactly one model. It is read in this order, and the first hit decides:
    1. any `unsupported(Feature)`: the vector is declined, naming the smallest such feature in code-point order, so the same vector always gives the same reason;
    2. any `reject(Code, Node)`: an `error` reply, because `interpret` receives only admissible policies;
    3. any `unsupported_input(Field)`: declined, naming the smallest input field;
    4. any `unsupported_value(Reason)`: declined, naming the smallest reason (`values.py`).
 
-   Solve 1 does not load `integrity.lp`. A decline or a rejection names what is wrong, and a failed integrity constraint would only say that something is.
-4. **Solve 2:** every file but `pivot.lp`, in cautious mode, over the one world `c`. More than `VARIABLE_CAP`, 64, completion variables declines the vector as `variable-cap` (`correctness-strategy.md` §3 records why 64). `interpret.py` counts the `var/1` atoms of the first model, which `completion.lp` shows: the variables are the same in every model, but grounding leaves `var/1` atoms that no model makes true, so a count of the ground atoms would be too high (`test_variable_cap`). No model at all is an `error`: an integrity constraint failed, so the program is wrong. Otherwise, from the atoms true in every model:
+   Solves 0 and 1 do not load `integrity.lp`. A decline or a rejection names what is wrong, and a failed integrity constraint would only say that something is.
+5. **Solve 2:** every file but `bind.lp` and `pivot.lp`, in cautious mode, over the one world `c`. More than `VARIABLE_CAP`, 64, completion variables declines the vector as `variable-cap` (`correctness-strategy.md` §3 records why 64). `interpret.py` counts the `var/1` atoms of the first model, which `completion.lp` shows: the variables are the same in every model, but grounding leaves `var/1` atoms that no model makes true, so a count of the ground atoms would be too high (`test_variable_cap`). No model at all is an `error`: an integrity constraint failed, so the program is wrong. Otherwise, from the atoms true in every model:
    - the verdict is the one `verdict(c, Verdict)`, or `Indeterminate` if no verdict holds in every completion;
    - `basis(c, X, Role)` gives a definite verdict's basis;
    - `elim(X, P, Y, Strat)` gives `eliminated`. It reads no world, so it is the same in every model.
-5. **Solve 3**, for an `Indeterminate` only: every file, in brave mode. Each model is a completion `c`, one `pivot(L)`, and the world `flip`, such that `c` and `flip` have different verdicts. The atoms true in some model give the `unknown(X)` atoms, and every `verdict(c, Verdict)` that occurs gives the range (`pivot.lp`, *The range is exact*).
-6. **Reply** (§ Output).
+6. **Solve 3**, for an `Indeterminate` only: every file but `bind.lp`, in brave mode. Each model is a completion `c`, one `pivot(L)`, and the world `flip`, such that `c` and `flip` have different verdicts. The atoms true in some model give the `unknown(X)` atoms, and every `verdict(c, Verdict)` that occurs gives the range (`pivot.lp`, *The range is exact*).
+7. **Reply** (§ Output).
 
 ## Worked example
 
@@ -136,7 +139,7 @@ ex:forbid a odrl:Prohibition ; odrl:action odrl:use ; odrl:target ex:b .
 
 The core module declares `odrl:play odrl:includedIn odrl:use`. The request asks for action `odrl:play` by assignee `ex:alice`, and names no target.
 
-**Solve 1.** Nothing is unsupported, and nothing is rejected. `structure.lp` finds the policy `ex:p`, its strategy `prohibit`, and two atoms:
+**Solve 0.** There is one policy text, so solve 1 is not run. Nothing is unsupported, and nothing is rejected. `structure.lp` finds the policy `ex:p`, `bind.lp` its strategy `prohibit`, and `structure.lp` two atoms:
 
 - `a(ex:perm, odrl:use, ex:a, ex:alice)`, a `permit`;
 - `a(ex:forbid, odrl:use, ex:b, none)`, a `forbid`. `none` is the sentinel for a rule with no assignee.
@@ -255,7 +258,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | Reason | File | Why |
 |---|---|---|
 | `action: blank node without rdf:value`, `action: several rdf:value` | `structure.lp` | the action term names no single action |
-| `binding: range` | `operand.lp` | a blank-node range, such as an OWL class expression, which due2 admits and the spike does not read |
+| `binding: range` | `bind.lp` | a blank-node range, such as an OWL class expression, which due2 admits and the spike does not read |
 | `constraint: cycle`, `constraint: dprod:not with several members`, `constraint: leaf with a connective`, `constraint: list on a scalar operator`, `constraint: two connectives` | `constraint.lp` | no reading, or none the spec settles |
 | `constraint: node in two scopes` | `constraint.lp` | one node would need two completion variables (`completion.lp`) |
 | `duty: also a permission or prohibition` | `structure.lp` | a rule read as a duty, which the spec gives no reading |
@@ -265,7 +268,7 @@ Elsewhere, on asset, party, and action nodes, a predicate from another vocabular
 | `duty: parent with two bearers` | `structure.lp` | a parent atom that passes two bearers to an inheriting duty |
 | `duty: instance scope` | `structure.lp` | a `due2:instanceScope` other than `due2:member` or `due2:grant`, or two; no diagnostic covers it |
 | `odrl:partOf: cross-kind edge`, `odrl:partOf: untyped collection` | `lift.lp` | a hierarchy the spike does not trust |
-| `profile-conflict-defaults` | `structure.lp` | two profile defaults, and no rule for which wins |
+| `profile-conflict-defaults` | `bind.lp` | two profile defaults in one text, and no rule for which wins |
 | `recurrence` | `structure.lp` | a duty's `dprod:recurrence` needs occurrences, which the spike does not compute (`decisions/0009` #7) |
 
 **In the input** (`lift.lp`). The driver flattens every field, and `unsupported_input(Field)` names each field the program does not read:
@@ -284,7 +287,7 @@ The `flatten.py` docstring names the file that reads each other field. An empty 
 These are an `error` reply, not a decline:
 
 - an unknown `odrl:profile` (`UnrecognisedProfile`);
-- a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, `MissingTarget`, `TargetAndOutput`, `RuleReferenceCycle`, `InvalidTiming`, and `TimingOutsideDuty` (`structure.lp`); `UnsupportedConstruct` and `ReplacedPolicy` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); and `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, `WitnessOutsideDuty`, and `OperatorTypeMismatch` (`operand.lp`); and `MixedDutyConstraint` (`duty.lp`). Each is defined in `due2-diagnostics.md`;
+- a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, `MissingTarget`, `TargetAndOutput`, `RuleReferenceCycle`, `InvalidTiming`, and `TimingOutsideDuty` (`structure.lp`); `UnsupportedConstruct` and `ReplacedPolicy` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, and `WitnessOutsideDuty` (`bind.lp`); `OperatorTypeMismatch`, and `InvalidBinding` for a right operand outside the operand's scheme (`operand.lp`); `MixedDutyConstraint` (`duty.lp`); and `IdentityConflict` (`interpret.py`, after solve 0). Each is defined in `due2-diagnostics.md`;
 - a malformed vector (`flatten.py`), among them a name in `request` or `sotw` whose prefix is undeclared, or that has none: it would equal no policy term and make a part `F` (#146);
 - an unsatisfiable program.
 

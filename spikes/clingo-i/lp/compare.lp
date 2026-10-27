@@ -15,8 +15,8 @@
 % node item its truth value, `holds(c(C), V)`, its rank in world `k`.
 %
 % - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
-%   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `left/2`, `op/2`,
-%   `right/2` (constraint.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`,
+%   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `op/2`, `right/2`
+%   (constraint.lp); `left/2` (bind.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`,
 %   `unchecked_unit/1` (operand.lp); `witness_only/1` (duty.lp).
 % - **Provides:** `cpair/4`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
 %   `above/2`, `ceqr/4`, `ordered/1`,

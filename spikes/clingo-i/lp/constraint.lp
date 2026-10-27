@@ -12,8 +12,8 @@
 %   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `off_shape/1`, `stated/3`
 %   (lift.lp); `rule/1`, `duty_node/1`, `action_term/1` (structure.lp).
 % - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
-%   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left/2`, `c_operator/2`, `op/2`,
-%   `right_value/2`, `right/2`, `unit/2`; extends `reject/2` (structure.lp) and
+%   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left_iri/2`, `c_operator/2`,
+%   `op/2`, `right_value/2`, `right/2`, `unit/2`; extends `reject/2` (structure.lp) and
 %   `unsupported/1` (lift.lp).
 
 %## The roots
@@ -50,8 +50,9 @@ top_refinement(Term, C) :- top_value(refinement, Term, List), is_list(List), lis
 
 %## The nodes
 
-% `cnode(C)` is a root or a member. A node with an `odrl:leftOperand` is a `leaf(C)`, with `left(C,
-% Op)`, `op(C, O)` (its core operator), and `right(C, Term)` (its right operand values). A node with
+% `cnode(C)` is a root or a member. A node with an `odrl:leftOperand` is a `leaf(C)`, with
+% `left_iri(C, Iri)` (its left operand, which bind.lp binds), `op(C, O)` (its core operator), and
+% `right(C, Term)` (its right operand values). A node with
 % a connective predicate is `conn(C, K)`, with `member(C, D)`. Members, like the right operand
 % values of a set-based operator, may be one RDF list or repeated values, and both are the same set
 % (decisions/0013).
@@ -111,11 +112,12 @@ Node `C` compares a left operand: it has an `odrl:leftOperand`.
 *%
 leaf(C) :- cnode(C), triple(C, Pred, _), voc(leftOperand, Pred).
 
-%*! left(C, Op)
+%*! left_iri(C, Iri)
 
-Leaf `C` has left operand `Op`.
+Leaf `C` names the left operand `Iri`. bind.lp binds it in the layers of the text that states `C`,
+as `left/2`.
 *%
-left(C, Op) :- leaf(C), triple(C, Pred, Op), voc(leftOperand, Pred).
+left_iri(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(leftOperand, Pred).
 
 %*! c_operator(C, Iri)
 
@@ -170,7 +172,7 @@ unit(C, Iri) :- leaf(C), triple(C, Pred, Iri), voc(unit, Pred).
 % - `FloatingPointOperand`: an `xsd:double` or `xsd:float` right operand.
 % - `MixedDuration`: an `xsd:duration` right operand with both year-month and day-time components.
 reject("MalformedConstraint", C) :- cnode(C), not leaf(C), not conn(C, _).
-reject("MalformedConstraint", C) :- leaf(C), #count { Op : left(C, Op) } != 1.
+reject("MalformedConstraint", C) :- leaf(C), #count { Iri : left_iri(C, Iri) } != 1.
 reject("MalformedConstraint", C) :- leaf(C), #count { Iri : c_operator(C, Iri) } != 1.
 reject("MalformedConstraint", C) :- leaf(C), not right_value(C, _).
 reject("MalformedConstraint", C) :- op(C, O), not set_based(O),
@@ -191,7 +193,7 @@ reject("MalformedConstraint", C) :- conn(C, K), triple(C, Pred, List), voc(K, Pr
     triple(Cell, F, D), triple(Cell2, F, D), voc(first, F).
 reject("MalformedConstraint", C) :- conn(C, xone), member(C, D), member(C, D2), D < D2,
     leaf(D), leaf(D2),
-    left(D, Op) : left(D2, Op); left(D2, Op) : left(D, Op);
+    left_iri(D, Iri) : left_iri(D2, Iri); left_iri(D2, Iri) : left_iri(D, Iri);
     c_operator(D, Iri) : c_operator(D2, Iri); c_operator(D2, Iri) : c_operator(D, Iri);
     unit(D, Iri) : unit(D2, Iri); unit(D2, Iri) : unit(D, Iri);
     right(D, Term) : right(D2, Term); right(D2, Term) : right(D, Term).

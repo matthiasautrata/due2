@@ -1,11 +1,14 @@
-"""The interpret task: three solves, the declines, and the reply.
+"""The interpret task: four solves, the declines, and the reply.
 
 `Interpreter.reply` takes one vector (`conformance/README.md`) and returns the reply of
 `spikes/README.md` § `interpret`: an output, a decline, or an error. The driver flattens the
 vector to facts (`clingo_i.flatten`, `clingo_i.values`), and the program in `lp/` decides
-everything else, in three solves (DESIGN.md § Data flow):
+everything else, in four solves (DESIGN.md § Data flow):
 
-1. the declines and rejections, over `lift.lp` to `duty.lp`;
+0. for each policy text alone, with its own profiles, the bindings and conflict strategies
+   (`bind.lp`), and that text's declines and rejections;
+1. over the corpus of several texts, the declines and rejections, over `lift.lp` to
+   `duty.lp` but `bind.lp`; for one text, solve 0's model stands in for it (`_corpus`);
 2. every completion of the unknown variables, cautious: the verdict, the basis, the
    eliminations, the listed frontier, the obligations, and the unknown parts;
 3. for an `Indeterminate` only, every completion and one flipped variable, brave: the
@@ -16,7 +19,9 @@ A definite verdict is one that holds in every completion, so the reply is exact.
 
 from __future__ import annotations
 
+import hashlib
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 
 from clingo import Control, Function, MessageCode, Model, Number, String, Symbol, SymbolType
@@ -31,6 +36,7 @@ PROGRAM_FILES = (
     "structure.lp",
     "kleene.lp",
     "constraint.lp",
+    "bind.lp",
     "operand.lp",
     "compare.lp",
     "applies.lp",
@@ -41,13 +47,25 @@ PROGRAM_FILES = (
     "explain.lp",
     "pivot.lp",
 )
-SOLVE_1 = PROGRAM_FILES[:8]  # lift.lp to duty.lp: no choice, so one model
-SOLVE_2 = PROGRAM_FILES[:-1]  # all but pivot.lp
+SOLVE_0 = PROGRAM_FILES[:9]  # lift.lp to duty.lp with bind.lp: no choice, so one model
+# The solves over the corpus read bind.lp's relations as facts (`INTERFACE`).
+CORPUS = tuple(f for f in PROGRAM_FILES if f != "bind.lp")
+SOLVE_1 = CORPUS[:8]  # lift.lp to duty.lp: no choice, so one model
+SOLVE_2 = CORPUS[:-1]  # all but pivot.lp
+# What bind.lp decides for one text and the later files read, each keyed by an operand
+# `o(Iri, Text)`. `conflict/2`, keyed by a policy, is copied apart (`_combine`).
+INTERFACE = (
+    ("left", 2), ("src", 2), ("prop", 2), ("card", 2), ("has_range", 1), ("range_kind", 2),
+    ("allowed", 2), ("owned", 3), ("scheme", 2),
+)  # fmt: skip
+RAISED = (("reject", 2), ("unsupported", 1))
+# Read after the rejections, in order.
+DECLINES = ("unsupported_input", "unsupported_value")
+# What the driver reads of solves 0 and 1.
+STRUCTURE = (*INTERFACE, ("conflict", 2), *RAISED, *((d, 1) for d in DECLINES))
 CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
 VARIABLE_CAP = 64  # correctness-strategy.md §3, set by measurement (journal, #48)
 ODRL_TARGET = "http://www.w3.org/ns/odrl/2/target"
-# Read after the rejections, in order.
-DECLINES = ("unsupported_input", "unsupported_value")
 
 
 def load_programs() -> dict[str, str]:
@@ -109,6 +127,58 @@ def _frontier(shown: list[Symbol]) -> list[Json]:
     return [list(a) for a in routes]
 
 
+def _combine(bound: dict[str, list[Symbol]]) -> list[Symbol]:
+    """bind.lp's relations of each text (`bound`, solve 0's model by text id), as corpus facts.
+
+    A leaf that several texts state keeps the operand of the first text in sorted text id, and
+    each later text's must bind alike: the same `INTERFACE` relations with the operand left
+    out. A policy that several texts state must get one strategy. Either difference is
+    `reject("IdentityConflict", C)`, since the texts describe one node differently
+    (due2-diagnostics.md). Every text's `RAISED` atoms are kept, so solve 1 raises them in its
+    order; its other declines (`DECLINES`) solve 1 derives again, over the corpus.
+    """
+    out: list[Symbol] = []
+    keep: dict[Symbol, Symbol] = {}  # leaf to its operand
+    seen: dict[Symbol, frozenset[tuple[str, str]]] = {}  # leaf or policy to its signature
+    for atoms in bound.values():
+        rows = [a for a in atoms if any(a.match(n, k) for n, k in INTERFACE)]
+        out += [a for a in atoms if any(a.match(n, k) for n, k in RAISED)]
+        named = [(a.arguments[0], a.arguments[1]) for a in rows if a.match("left", 2)]
+        for leaf, op in named:
+            sig = _signature(rows, op)
+            if leaf not in keep:
+                keep[leaf], seen[leaf] = op, sig
+            elif seen[leaf] != sig:
+                out.append(_identity_conflict(leaf))
+        strategies: dict[Symbol, set[str]] = {}
+        for a in atoms:
+            if a.match("conflict", 2):
+                strategies.setdefault(a.arguments[0], set()).add(str(a.arguments[1]))
+        for policy, strats in strategies.items():
+            sig = frozenset(("conflict", s) for s in strats)
+            if seen.setdefault(policy, sig) != sig:
+                out.append(_identity_conflict(policy))
+            out += [Function("conflict", [policy, Function(s)]) for s in strats]
+        kept = {op for leaf, op in named if keep[leaf] == op}
+        out += [a for a in rows if a.arguments[0] in kept and not a.match("left", 2)]
+    out += [Function("left", [leaf, op]) for leaf, op in keep.items()]
+    return sorted(set(out))
+
+
+def _signature(rows: Iterable[Symbol], op: Symbol) -> frozenset[tuple[str, str]]:
+    """What `rows` say of the operand `op`, with `op` left out, so two texts' rows compare."""
+    return frozenset(
+        (a.name, ", ".join(map(str, a.arguments[1:])))
+        for a in rows
+        if a.arguments[0] == op and not a.match("left", 2)
+    )
+
+
+def _identity_conflict(node: Symbol) -> Symbol:
+    """`reject("IdentityConflict", Node)`."""
+    return Function("reject", [String("IdentityConflict"), node])
+
+
 class Interpreter:
     """One harness session: the modules, parsed once, and the program.
 
@@ -159,8 +229,8 @@ class Interpreter:
                 naming a profile with no module (`UnrecognisedProfile`).
             RuntimeError: The program has no model, so it is wrong.
         """
-        text = self.facts(vector)
-        self._structure(text)
+        text, atoms = self._corpus(vector)
+        self._structure(atoms)
         shown = self._solve(text, SOLVE_2, "cautious")
         verdicts = [_text(s.arguments[1]) for s in shown if s.match("verdict", 2)]
         verdict = verdicts[0] if len(verdicts) == 1 else "Indeterminate"
@@ -180,7 +250,7 @@ class Interpreter:
         }
         reached: set[str] = set()
         if verdict == "Indeterminate":
-            pivots = self._solve(text, PROGRAM_FILES, "brave")
+            pivots = self._solve(text, CORPUS, "brave")
             basis = {(_rule(s.arguments[0]), "unknown") for s in pivots if s.match("unknown", 1)}
             reached = {
                 _text(s.arguments[1])
@@ -222,23 +292,68 @@ class Interpreter:
         return out
 
     def facts(self, vector: Obj) -> str:
-        """The vector as the program's input facts (flatten.py), one per line.
+        """The vector as the input facts of the solves over the corpus, one per line.
+
+        Raises:
+            ValueError: The vector is malformed, or names a profile with no module, which is
+                not admissible (`UnrecognisedProfile`).
+        """
+        return self._corpus(vector)[0]
+
+    def _corpus(self, vector: Obj) -> tuple[str, list[Symbol]]:
+        """The facts of the solves over the corpus, and the model whose declines and
+        rejections the driver raises (`_structure`).
+
+        Each policy text is bound alone, in its own layers (solve 0): W1 normalises each policy
+        by itself (due2-workflows.md §4, *Several policies are one corpus*), so one policy's
+        profile does not reach another's operands or conflict strategy. The corpus facts are
+        the union of the texts' facts, with every profile's layers, and bind.lp's relations
+        (`INTERFACE`) and rejections copied in. A named leaf or policy that two texts state
+        must get the same binding, or strategy, from each: otherwise it is an
+        `IdentityConflict` (due2-diagnostics.md).
+
+        With one text, solve 1 is not run, and solve 0's model is returned. Solve 1 would load
+        the same files but `bind.lp`, over the same triples, inputs, and layers, with bind.lp's
+        relations given as facts that solve 0 derived from those same inputs, so its model
+        would hold the same atoms of `STRUCTURE`. Identical texts share a hash, so they count
+        as one text here.
 
         Raises:
             ValueError: The vector is malformed, or names a profile with no module, which is
                 not admissible (`UnrecognisedProfile`).
         """
         prefixes = {k: as_str(v, k) for k, v in as_obj(vector["prefixes"], "prefixes").items()}
-        # The policies are one corpus (due2-workflows.md §4, *Several policies are one corpus*).
-        texts = as_list(vector["policies"], "policies")
-        graph = flatten.parse(*(as_str(t, "policies") for t in texts))
+        texts = [as_str(t, "policies") for t in as_list(vector["policies"], "policies")]
+        # A text is named by its hash, which scopes its blank nodes and its operands.
+        named = {hashlib.sha256(t.encode()).hexdigest()[:12]: t for t in texts}
+        inputs = flatten.input_facts(vector, prefixes)
+        graphs = {tid: flatten.parse(named[tid]) for tid in sorted(named)}
+        triples = {tid: flatten.policy_facts(g, tid) for tid, g in graphs.items()}
+        bound: dict[str, list[Symbol]] = {}
+        for tid, graph in graphs.items():
+            facts = [Function("policy_texts", [Number(1)]), Function("text_id", [String(tid)])]
+            facts += triples[tid] + inputs + self._layers(flatten.profiles(graph))
+            bound[tid] = self._model(self._render(facts), SOLVE_0)
+        facts = [Function("policy_texts", [Number(len(named))])]
+        facts += [f for tid in graphs for f in triples[tid]] + inputs
+        facts += self._layers(sorted({i for g in graphs.values() for i in flatten.profiles(g)}))
+        facts += _combine(bound)
+        rendered = self._render(facts)
+        if len(bound) == 1:
+            return rendered, next(iter(bound.values()))
+        return rendered, self._model(rendered, SOLVE_1)
 
-        facts = [Function("policy_texts", [Number(len(texts))])]
-        facts += flatten.policy_facts(graph) + flatten.input_facts(vector, prefixes)
+    def _layers(self, profiles: list[str]) -> list[Symbol]:
+        """The modules of the core and of the selected `profiles`, each file with its layer.
+
+        Raises:
+            ValueError: A profile has no module, which is not admissible (`UnrecognisedProfile`).
+        """
         # A path's layer: `core`, or `module(Iri)` for the profile whose module it is part of
         # (decisions/0014 #3). A file in both the core and a profile is core.
         layers: dict[str, Symbol] = {path: Function("core") for path in self._core}
-        for iri in flatten.profiles(graph):
+        facts: list[Symbol] = []
+        for iri in profiles:
             if iri not in self._profiles:
                 # IM 2.2 §3.2: a processor that does not recognise a profile stops.
                 raise ValueError(f"not admissible: UnrecognisedProfile at {iri}")
@@ -248,28 +363,44 @@ class Interpreter:
         for path in sorted(layers):
             facts.extend(self._modules[path])
             facts.append(Function("layer", [String(path), layers[path]]))
+        return facts
+
+    def _render(self, facts: list[Symbol]) -> str:
+        """`facts` and their value table as program text (flatten.py, values.py)."""
         return flatten.render(facts + values.value_facts(values.literals(facts)))
 
     def _program(self, files: tuple[str, ...]) -> str:
         """The text of `files`, joined in the given order."""
         return "\n".join(self._programs[f] for f in files)
 
-    def _structure(self, facts: str) -> None:
-        """Solve 1: raise on the first decline or rejection, in the order of DESIGN.md § Data flow.
+    def _model(self, facts: str, files: tuple[str, ...]) -> list[Symbol]:
+        """The `STRUCTURE` atoms of the one model of `facts` under `files` (solves 0 and 1).
 
-        The program is stratified, so it has one model. Within each kind the smallest name wins,
-        so the same vector always gives the same reason.
+        These files make no choice and are stratified, so the program has at most one model.
+
+        Raises:
+            RuntimeError: No model: a constraint of `files` failed.
         """
+        shows = "\n".join(f"#show {n}/{k}." for n, k in STRUCTURE)
         ctl = Control([], logger=_log)
-        ctl.add("base", [], facts + "\n" + self._program(SOLVE_1))
+        ctl.add("base", [], "\n".join((facts, self._program(files), shows)))
         ctl.ground([("base", [])])
         atoms: list[Symbol] = []
 
         def on_model(model: Model) -> None:
-            atoms.extend(model.symbols(atoms=True))
+            atoms.extend(model.symbols(shown=True))
 
         if not ctl.solve(on_model=on_model).satisfiable:
             raise RuntimeError("structure program has no model")
+        return atoms
+
+    def _structure(self, atoms: list[Symbol]) -> None:
+        """Raise on the first decline or rejection of `atoms`, solve 1's model (or solve 0's,
+        for one text), in the order of DESIGN.md § Data flow.
+
+        Within each kind the smallest name wins, so the same vector always gives the same
+        reason.
+        """
         unsupported = sorted(_text(a.arguments[0]) for a in atoms if a.match("unsupported", 1))
         if unsupported:
             raise Declined(unsupported[0])
