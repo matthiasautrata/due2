@@ -1,9 +1,9 @@
 # due2 — Workflows and Reference Data Model
 
-**Status:** Draft v0.58
+**Status:** Draft v0.59
 **Companions:** `due2-architecture.md` (what due2 is and why) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1, normative) · `due2-diagnostics.md` (every W1 diagnostic) · `ways-of-working.md` (how it is built).
 
-**Changes in v0.58** (2026-10-27, #150): §3.5 adds `input` to the key of `unknown_part`, so a part that reads two inputs, such as an evidence record whose bearer and attester comparisons are both `U`, has one row per input that makes it `U` (§5.3, `decisions/0048`). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.59** (2026-10-27, #148): §3.1 and §3.5 give `diagnostic` an optional `detail`, the second thing a warning names, so an `AnonymousEntity` keeps its Rule and an `IgnoredPredicate` its predicate (`due2-diagnostics.md` §1). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -98,7 +98,7 @@ edge              (parent_id, child_id)
 root              (atom_id, policy_id)
 duty              (atom_id | source_duty, scope: Enum, deadline?: Term, recurrence?: String)
 closure           (relation, narrower, broader)
-diagnostic        (policy_id, code: Enum, ref)
+diagnostic        (policy_id, code: Enum, ref, detail?)
 ```
 
 | Field | Meaning |
@@ -129,7 +129,7 @@ diagnostic        (policy_id, code: Enum, ref)
 | `duty.atom_id` | A duty atom stands for one rule of stage 1 under one binding. It keeps stage 1's id (`atom.atom_id`) when stage 2 binds nothing into it: no inherited party role and no parameter value (§4). One that stage 2 binds gets a minted id, and its binding, the party roles it inherited, is read from its `atom_party` tuples and the lineage (§3.6, `atom_rule`). Stage 2 makes one atom for each rule and binding, whatever parent or policy states it. So a named duty bound identically in two places is one atom, found again by its duty and its binding when a later policy states it (§4, *Several policies are one corpus*), and one bound differently in two places, such as with the inherited assignees Alice and Bob, is two atoms. **[D]** (`decisions/0032`, amendment of 2026-10-25; `decisions/0038`) |
 | `duty.deadline` | The authored duty's timing, projected by W1 stage 2 onto every atom it instantiates: an `xsd:dateTime` term with a timezone (absolute) or an `xsd:duration` term (relative to the instance's activation). W2 resolves it per instance (§5.3). |
 | `duty.recurrence` | An RFC 5545 RRULE string; the duty is owed once per occurrence. W2 derives the instances (§5.3). |
-| `diagnostic` | A warning W1 accepted the policy with: its code (`due2-diagnostics.md` §3) and the node it is about. Only warnings appear, because an error leaves no corpus (§4). W2 and W3 never read it; it is in the corpus so that the corpus digest, and with it the evaluation id, records the reading the policy was normalised under. |
+| `diagnostic` | A warning W1 accepted the policy with: its code (`due2-diagnostics.md` §3), the node it is about, and, for a warning that names a second thing, that thing as `detail`: an `AnonymousEntity` node's Rule, or an `IgnoredPredicate`'s predicate. `ref` and `detail` are, in order, the items of the warning's `ref` list in its JSON form (`due2-diagnostics.md` §1). A node with two ignored predicates has two tuples. Only warnings appear, because an error leaves no corpus (§4). W2 and W3 never read it; it is in the corpus so that the corpus digest, and with it the evaluation id, records the reading the policy was normalised under. |
 
 Derived, not stored:
 
@@ -262,7 +262,7 @@ dominated      (alt_id: Count, by_alt: Count)
 verdict        (| value: Enum, frontier_complete: Flag, exact: Flag)
 verdict_basis  (atom_id, role: Enum)
 verdict_range  (| low: Enum, high: Enum)
-diagnostic     (policy_id, code: Enum, ref)
+diagnostic     (policy_id, code: Enum, ref, detail?)
 ```
 
 | Relation | Computed by | Meaning |

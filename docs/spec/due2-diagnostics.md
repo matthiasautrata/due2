@@ -1,9 +1,9 @@
 # due2 — Diagnostic Registry
 
-**Status:** Draft v0.22 (2026-10-27)
+**Status:** Draft v0.23 (2026-10-27)
 **Companions:** `due2-workflows.md` (§3.1 `diagnostic`, §3.5, §4) · `odrl-compound-to-atomic-normalization.md` · `due2-profiles.md` · `conformance/README.md` (negative cases)
 
-**Changes in v0.22** (2026-10-27, #147): §1 states a diagnostic's JSON form, which the port schema checks (`schema/README.md`). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.23** (2026-10-27, #148): §1 says which warnings name two things, and how the corpus relation `diagnostic` holds the second. Earlier changes are in `docs/archive/changes.md`.
 
 Every diagnostic W1 can emit, in one table, and the one the policy store emits when it publishes a policy's corpus (`IdentityConflict` across policies). Each row is defined in the section it cites; this registry gives the defining section a code and does not restate the rule. A rejection that a spec states without a code gets its code here.
 
@@ -13,7 +13,7 @@ A diagnostic is `(code, severity, ref, message)`:
 
 - **code** — a name from §3. A new rejection or warning lands as a spec edit in the defining section plus a row here, in the same commit.
 - **severity** — `error` rejects the policy: W1 returns its diagnostics and no corpus, no lineage, no partial output (`due2-workflows.md` §4). `warning` accepts it: the policy is normalised as written, and the warning is carried into the corpus (`due2-workflows.md` §3.1 `diagnostic`) and from there into the trace of every case that evaluates the policy (`due2-workflows.md` §3.5).
-- **ref** — the node the diagnostic is about: the policy, rule, constraint, or asset/party node, by IRI or by its stage-1 skolem IRI. `RuleReferenceCycle` refs the cycle, every rule and edge in order (`odrl-compound-to-atomic-normalization.md` §6.3), and a `MalformedConstraint` for a cycle of logical constraints refs every constraint on it in order (`due2-profiles.md` §5).
+- **ref** — the node the diagnostic is about: the policy, rule, constraint, or asset/party node, by IRI or by its stage-1 skolem IRI. `RuleReferenceCycle` refs the cycle, every rule and edge in order (`odrl-compound-to-atomic-normalization.md` §6.3), and a `MalformedConstraint` for a cycle of logical constraints refs every constraint on it in order (`due2-profiles.md` §5). Two warnings name two things: `AnonymousEntity` the node and its Rule, and `IgnoredPredicate` the node and the predicate. A warning is carried in the corpus relation `diagnostic`, whose `ref` is the first and whose optional `detail` is the second (`due2-workflows.md` §3.1), so a warning names at most two things. An error leaves no corpus, so an error's ref has no such limit.
 - **message** — free text for the author. Not compared by tests.
 
 **JSON form.** A port that returns diagnostics, W1's or the policy store's, writes each as an object `{"code", "severity", "ref", "message"}`. `ref` is a non-empty list of IRIs, in the order above, so a diagnostic about one node lists one. A rejection is the list of the run's diagnostics, at least one of them an `error` (`schema/README.md`).

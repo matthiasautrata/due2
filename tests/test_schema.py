@@ -164,6 +164,22 @@ def test_a_part_has_one_unknown_row_per_input(schemas: Schemas) -> None:
     assert any("two tuples with key" in p for p in problems), problems
 
 
+def test_a_warning_keeps_its_second_name(schemas: Schemas) -> None:
+    """Guards `diagnostic.detail` (due2-workflows.md §3.1, due2-diagnostics.md §1): one node
+    with two ignored predicates is two warnings, which differ only in the predicate. Without
+    `detail`, the corpus holds the node alone, and the second warning is lost or repeats the
+    first. A warning that names one thing has no `detail`."""
+    warning: Obj = {"policy_id": "ex:p", "code": "IgnoredPredicate", "ref": "ex:perm"}
+    corpus: Obj = {
+        "diagnostic": [
+            {**warning, "detail": "http://www.w3.org/ns/dpv#hasLegalBasis"},
+            {**warning, "detail": "http://example.com/ns#reviewedBy"},
+            {"policy_id": "ex:p", "code": "AnonymousEntity", "ref": "ex:anon", "detail": "ex:perm"},
+        ]
+    }
+    assert check_collection(corpus, "Corpus", "Corpus", schemas, "c") == []
+
+
 def _chain(n: int) -> Obj:
     """A corpus of one Permit root and `n` Oblige atoms, each the child of the one before."""
     target = "http://www.w3.org/ns/odrl/2/target"

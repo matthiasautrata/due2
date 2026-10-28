@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.58** (2026-10-27, #150): §3.5 adds `input` to the key of `unknown_part`, so a part that reads two inputs, such as an evidence record whose bearer and attester comparisons are both `U`, has one row per input that makes it `U` (§5.3, `decisions/0048`). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.57** (2026-10-26, `decisions/0049`): §3.1 adds `constraint.operand_unit`, the binding's unit; §3.5, §5.4, and §6.4 make a constraint that states a unit its binding does not declare `U` with status `misfit`, opaque. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.56** (2026-10-26, #1): §9 row 7, cases with several policies, is resolved by the case-format extension. Earlier changes are in `docs/archive/changes.md`.
@@ -177,6 +179,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-diagnostics.md`
 
+**Changes in v0.22** (2026-10-27, #147): §1 states a diagnostic's JSON form, which the port schema checks (`schema/README.md`). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.21** (2026-10-26, #145): `InvalidBinding` covers a binding whose owning layer (`due2-profiles.md` §2) states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.20** (2026-10-26, `decisions/0049`): the warning `UncheckedUnit`, for a constraint that states a unit its binding does not declare; `OperatorTypeMismatch` covers a unit other than the binding's, and `RetypedOperand` a restated unit. Earlier changes are in `docs/archive/changes.md`.
@@ -272,6 +276,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.27 (2026-10-26, #53): §3 warns with `IgnoredPredicate` about a predicate on a Policy, Rule, Constraint, or LogicalConstraint that no loaded vocabulary or the annotation allowlist covers. Earlier changes are in `docs/archive/changes.md`.
 
 Changes in 0.26 (2026-10-26, `decisions/0039`, #136): §7 names the lineage relation of each record, records the triple that reaches an anonymous node, and drops the inbound role, which `N(P0)` and the corpus carry. Earlier changes are in `docs/archive/changes.md`.
 
