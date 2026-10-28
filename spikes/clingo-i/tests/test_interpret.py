@@ -925,6 +925,38 @@ def test_shared_leaf_binds_alike(q_property: str, expected: str) -> None:
         assert "IdentityConflict at https://example.org/c" in str(reply["error"]), reply
 
 
+# W1 sees one policy and no SOTW (due2-workflows.md §4), so a decline that reads the SOTW is the
+# corpus's. The world puts ex:alice in ex:team, which only P types, and Q never names ex:team.
+# When solve 0 saw the SOTW, Q's solve found the edge without the type and declined it as an
+# untyped collection, and the corpus kept Q's decline. With ex:team typed in no text, the corpus
+# still declines it.
+@pytest.mark.parametrize("q_first", [False, True], ids=["p-first", "q-first"])
+@pytest.mark.parametrize(
+    ("typed_in_p", "expected"),
+    [(True, "Permit"), (False, "odrl:partOf: untyped collection")],
+    ids=["typed", "untyped"],
+)
+def test_world_edge_is_read_over_the_corpus(
+    interpreter: Interpreter, typed_in_p: bool, expected: str, q_first: bool
+) -> None:
+    p = (
+        CONSTRAINT_PREFIXES
+        + "ex:p a odrl:Set ; odrl:permission ex:r .\n"
+        + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + " odrl:assignee ex:team .\n"
+        + ("ex:team a odrl:PartyCollection .\n" if typed_in_p else "")
+    )
+    q = (
+        CONSTRAINT_PREFIXES
+        + "ex:q a odrl:Set ; odrl:permission ex:rq .\n"
+        + "ex:rq a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:b .\n"
+    )
+    edge: Json = [ODRL + "partOf", EX + "alice", EX + "team"]
+    v = vector(p, request={"action": "odrl:use"}, sotw={"closure": [edge]})
+    v["policies"] = [q, p] if q_first else [p, q]
+    assert outcome(interpreter.reply(v)) == expected
+
+
 # The core owns ex:x's type: a decimal range, and the default cardinality. A policy may restate
 # where ex:x reads, or a type attribute with the owner's value, but no other type (decisions/0014
 # #1-#2). The default counts as stated: without the `set` row, a check that compared stated

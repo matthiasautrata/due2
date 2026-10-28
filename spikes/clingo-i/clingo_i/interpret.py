@@ -6,7 +6,8 @@ vector to facts (`clingo_i.flatten`, `clingo_i.values`), and the program in `lp/
 everything else, in four solves (DESIGN.md § Data flow):
 
 0. for each policy text alone, with its own profiles, the bindings and conflict strategies
-   (`bind.lp`), and that text's declines and rejections;
+   (`bind.lp`), and that text's declines and rejections, without the request and the SOTW
+   when there are several texts;
 1. over the corpus of several texts, the declines and rejections, over `lift.lp` to
    `duty.lp` but `bind.lp`; for one text, solve 0's model stands in for it (`_corpus`);
 2. every completion of the unknown variables, cautious: the verdict, the basis, the
@@ -306,17 +307,20 @@ class Interpreter:
 
         Each policy text is bound alone, in its own layers (solve 0): W1 normalises each policy
         by itself (due2-workflows.md §4, *Several policies are one corpus*), so one policy's
-        profile does not reach another's operands or conflict strategy. The corpus facts are
-        the union of the texts' facts, with every profile's layers, and bind.lp's relations
+        profile does not reach another's operands or conflict strategy. W1 sees neither the
+        request nor the SOTW, so with several texts solve 0 gets neither. A decline that reads
+        them, such as a world `odrl:partOf` edge into a collection that only another text
+        types, is solve 1's, over the whole corpus. The corpus facts are the union of the
+        texts' facts, with every profile's layers, the inputs, and bind.lp's relations
         (`INTERFACE`) and rejections copied in. A named leaf or policy that two texts state
         must get the same binding, or strategy, from each: otherwise it is an
         `IdentityConflict` (due2-diagnostics.md).
 
-        With one text, solve 1 is not run, and solve 0's model is returned. Solve 1 would load
-        the same files but `bind.lp`, over the same triples, inputs, and layers, with bind.lp's
-        relations given as facts that solve 0 derived from those same inputs, so its model
-        would hold the same atoms of `STRUCTURE`. Identical texts share a hash, so they count
-        as one text here.
+        With one text, that text is the corpus, so solve 0 gets the inputs too, solve 1 is not
+        run, and solve 0's model is returned. Solve 1 would load the same files but `bind.lp`,
+        over the same triples, inputs, and layers, with bind.lp's relations given as facts
+        that solve 0 derived from those same inputs, so its model would hold the same atoms of
+        `STRUCTURE`. Identical texts share a hash, so they count as one text here.
 
         Raises:
             ValueError: The vector is malformed, or names a profile with no module, which is
@@ -329,10 +333,11 @@ class Interpreter:
         inputs = flatten.input_facts(vector, prefixes)
         graphs = {tid: flatten.parse(named[tid]) for tid in sorted(named)}
         triples = {tid: flatten.policy_facts(g, tid) for tid, g in graphs.items()}
+        alone = inputs if len(named) == 1 else []
         bound: dict[str, list[Symbol]] = {}
         for tid, graph in graphs.items():
             facts = [Function("policy_texts", [Number(1)]), Function("text_id", [String(tid)])]
-            facts += triples[tid] + inputs + self._layers(flatten.profiles(graph))
+            facts += triples[tid] + alone + self._layers(flatten.profiles(graph))
             bound[tid] = self._model(self._render(facts), SOLVE_0)
         facts = [Function("policy_texts", [Number(len(named))])]
         facts += [f for tid in graphs for f in triples[tid]] + inputs
