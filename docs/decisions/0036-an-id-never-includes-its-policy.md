@@ -1,6 +1,6 @@
 # 0036 — An id never includes its policy, and an atom roots each policy that states it
 
-**Status:** Decided, 2026-10-26 (the owner, on #130); amended 2026-10-26 (the owner, on #132); note 2026-10-26 (`decisions/0037`)
+**Status:** Decided, 2026-10-26 (the owner, on #130); amended 2026-10-26 (the owner, on #132); note 2026-10-26 (`decisions/0037`); superseded in part 2026-10-28 (`decisions/0050`)
 **Context documents:** `due2-workflows.md` §3.1, §3.5, §4, §5.1, §5.2, §6.2, §8 (L2) · `odrl-compound-to-atomic-normalization.md` §5.1, §5.2 · `due2-diagnostics.md` §3 · `due2-platform.md` §2.3 · `decisions/0028` · `decisions/0032` · `spikes/clingo-i/lp/duty.lp` · issues #130, #107, #131
 
 ## Question
@@ -107,3 +107,7 @@ Decision item 2 says that a `root` tuple says the atom "roots an Atomic Policy o
 Item 1's table gives three rows ids computed from content: an expanded rule (`atomic_rule_uid`), a duty with added roles or parameter values (`duty-atom`), and an anonymous node (its place and content). Each is now minted once, and so is the open row, a disjunct atom or a derived constraint. A named node still keeps its authored identity, and two anonymous nodes are still distinct however alike they are, so the "pay 100 EUR" example and its rejected alternative stand.
 
 The agreement check of the amendment compares corpora up to the renaming of minted ids. When a corpus agrees, `put_corpus` renames the ids it minted for a published node's parts to the published ones, so a node that two policies state, with its parts, is one individual (`due2-workflows.md` §4).
+
+## Note (2026-10-28, a policy is its own data space, `decisions/0050`)
+
+Three items change. Item 3's entries extend from `Permit` and `Forbid` atoms to every atom, and W2 gives each entry its own findings, read in its policy's data space. Item 4 is replaced: a root obligation's entry in a policy is in force when that policy matches, so the disjunction over root policies is gone and each entry is reported on its own. Item 5's union keeps each policy's `closure` apart, because `closure` gains `policy_id`. The ids, the agreement check, and one witness for a duty that several policies oblige stand. *Why this holds* assumed that copies of a shared rule read one hierarchy. With findings per entry, each entry reads what a copy in its own policy would read. The consequence that clingo-i keeps one policy per atom (#131) is overtaken as well: #152 brings clingo-i to entries.

@@ -1,6 +1,6 @@
 # 0048 — A world-edge answer has a source and a status, evidence edges are planned, and a plan over the read limit is refused
 
-**Status:** Decided, 2026-10-26 (the owner, in the triage of open issues on that date)
+**Status:** Decided, 2026-10-26 (the owner, in the triage of open issues on that date); notes 2026-10-27 (#150), 2026-10-28 (`decisions/0050`)
 **Context documents:** `due2-workflows.md` §3.3, §3.5, §6.4, §7.1, §9 · `due2-platform.md` §2.4, §2.5, §2.6, §3.1 · `due2-profiles.md` §4, §6 · `decisions/0016` · `decisions/0040` · `decisions/0043` · `decisions/0047` · issues #34, #95, #142, #143
 
 ## Question
@@ -56,3 +56,5 @@
 - A fact's values or a case's evidence fan out to more answers than a source can serve.
 
 **Note (2026-10-27, #150):** item 3's two party functions can be `U` for one record: its `e.actor ⊑ bearer` and its `e.issuer ⊑ attester` comparisons each read an `unresolved` answer. That is two `unknown_part` rows for one atom, predicate, kind, and `ref`, which the key `(atom_id, predicate, kind, ref)` did not allow. `due2-workflows.md` v0.58 adds `input` to the key, so the part has one row per party function that makes it `U`. Every other part reads one input, so its rows are unchanged.
+
+**Note (2026-10-28, `decisions/0050`):** in item 2, "the corpus's `closure`" is the `closure` of the policy whose entry makes the comparison. In *Any module counts*, "W2 reads one hierarchy" is one hierarchy per policy: the union of every world module's edges with that policy's own.

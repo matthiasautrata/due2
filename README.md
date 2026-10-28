@@ -14,7 +14,7 @@ This repository is the only copy of due2's artefacts: change them here and commi
 | `.claude/skills/technical-writing/` | The procedure, templates, and review checklist for writing any prose, docstring, or ASP doc block (`ways-of-working.md` §15) |
 | `.github/` | CI (`workflows/verify.yml` runs § Verify), issue forms (`corpus`, `open-decision`, `work-item`, and a disagreement between an implementation and a hand-derived verdict, `correctness-strategy.md` §6), the pull-request template, and Dependabot |
 | **`docs/spec/`** | **Normative semantics** |
-| `docs/spec/due2-workflows.md` | The three workflows and the reference data model, language-independent; laws L1–L10; the trace as explanation (§3.7) |
+| `docs/spec/due2-workflows.md` | The three workflows and the reference data model, language-independent; laws L1–L11; the trace as explanation (§3.7) |
 | `docs/spec/due2-profiles.md` | Profiles and the operand registry: how ODRL extensions are declared and evaluated, and DPROD Contracts compatibility |
 | `docs/spec/odrl-compound-to-atomic-normalization.md` | Normalisation stage 1 |
 | `docs/spec/due2-diagnostics.md` | The diagnostic registry: every code W1 rejects or warns with, its stage, and its defining section |

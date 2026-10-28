@@ -21,7 +21,7 @@ Each verdict comes with the obligations in force and their status (fulfilled, ou
 Three properties shape the design. The first is what sets due2 apart from every external evaluator whose suite the corpus translates (`conformance/external/README.md`); the other two make a decision auditable.
 
 - **Unknown is never false.** Evaluation is three-valued: true, false, or unknown (Kleene logic). A fact that is missing, invalid, in conflict, or unresolved makes the parts that read it unknown, and the unknown survives to the verdict. An evaluator that read a missing purpose as "not compliance" would decide on a reason that is not in the data. due2 says `Indeterminate` and names the missing purpose (`due2-workflows.md` §6.4, `decisions/0011`).
-- **The answer explains itself.** The trace records every atom's finding and the reads behind it, and the explanation is the part of the trace the verdict depends on (`decisions/0010`). A verdict whose reasons cannot be reconstructed is not auditable.
+- **The answer explains itself.** The trace records every entry's finding and the reads behind it, and the explanation is the part of the trace the verdict depends on (`decisions/0010`). A verdict whose reasons cannot be reconstructed is not auditable.
 - **A decision can be replayed.** The policy, request, and SOTW are values with content digests, and evaluation is a pure function of them, so a recorded decision can be re-run and must give the same trace (`decisions/0007`, `due2-workflows.md` §7).
 
 The example below shows the first property on a real policy.
@@ -33,7 +33,7 @@ An evaluation has three workflows (`due2-workflows.md` §1):
 | Workflow | Takes | Gives | When |
 |---|---|---|---|
 | **W1 normalise** | an ODRL policy (Turtle) and its profiles | a *corpus*: the policy flattened into *atoms*, each one rule narrowed to one action, one target, one party per function, and a conjunction of constraints; or a rejection naming what is malformed | once per policy version, offline |
-| **W2 evaluate** | the corpus, the request, the SOTW | one three-valued *finding* per atom: does it apply, is it in force, is it fulfilled | per request; each atom on its own |
+| **W2 evaluate** | the corpus, the request, the SOTW | one three-valued *finding* per entry, an atom in one of its policies: does it apply, is it in force, is it fulfilled | per request; each entry on its own, in its policy's data space |
 | **W3 resolve** | the findings | the verdict, the frontier, and the obligations | per request; reads nothing but the findings |
 
 Before W2, a `plan` step reads the corpus and the request and says which facts the SOTW must hold, so the caller fetches only those. The evaluator's interface is two pure functions (`due2-platform.md` §2.1):
@@ -71,7 +71,7 @@ The case's `why` fields give the full derivations. `due2-architecture.md` §0 wa
 
 | Part | What it is | Where |
 |---|---|---|
-| Specification | The semantics of W1–W3, the data model, the laws an implementation must satisfy (L1–L10), profiles, and every diagnostic | `docs/spec/` |
+| Specification | The semantics of W1–W3, the data model, the laws an implementation must satisfy (L1–L11), profiles, and every diagnostic | `docs/spec/` |
 | Design | This overview, the architecture and its reasons, the platform around the evaluator, and the bibliography | `docs/design/` |
 | Decisions | One record per settled question the specification depends on | `docs/decisions/README.md` |
 | Correctness | Which check guards which risk, and the engineering discipline | `docs/correctness/` |

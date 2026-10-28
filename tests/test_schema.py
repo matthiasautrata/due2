@@ -137,9 +137,9 @@ def test_a_key_is_compared_by_value(schemas: Schemas) -> None:
     trace: Obj = {
         "verdict": [VERDICT],
         "instance": [
-            {"atom_id": "ex:d", "occurrence": {"v": at, "t": "xsd:dateTime"},
+            {"atom_id": "ex:d", "policy_id": "ex:p", "occurrence": {"v": at, "t": "xsd:dateTime"},
              "status": "fulfilled", "passed": True},
-            {"atom_id": "ex:d", "occurrence": {"t": "xsd:dateTime", "v": at},
+            {"atom_id": "ex:d", "policy_id": "ex:p", "occurrence": {"t": "xsd:dateTime", "v": at},
              "status": "violated", "passed": True},
         ],
     }  # fmt: skip
@@ -152,7 +152,10 @@ def test_a_part_has_one_unknown_row_per_input(schemas: Schemas) -> None:
     whose bearer and attester comparisons both read an `unresolved` answer has two rows,
     which differ only in `input`. Without `input` in the key, the pair is rejected and the
     trace cannot name both inputs. A second status for one input is still rejected."""
-    part: Obj = {"atom_id": "ex:d", "predicate": "fulfilled", "kind": "evidence", "ref": "ex:e"}
+    part: Obj = {
+        "atom_id": "ex:d", "policy_id": "ex:p", "predicate": "fulfilled", "kind": "evidence",
+        "ref": "ex:e",
+    }  # fmt: skip
     rows: list[Json] = [
         {**part, "input": "odrl:assignee", "status": "unresolved"},
         {**part, "input": "due2:attester", "status": "unresolved"},
@@ -162,6 +165,27 @@ def test_a_part_has_one_unknown_row_per_input(schemas: Schemas) -> None:
     trace["unknown_part"] = [*rows, {**part, "input": "due2:attester", "status": "missing"}]
     problems = check_collection(trace, "Trace", "Expected", schemas, "t")
     assert any("two tuples with key" in p for p in problems), problems
+
+
+def test_an_atom_has_a_finding_in_each_policy(schemas: Schemas) -> None:
+    """Guards the entry key (due2-workflows.md §3.1, §3.5; decisions/0050): a permission that
+    two policies state is read in each policy's data space, so its two findings may differ.
+    Without `policy_id` in the key of `finding`, the pair is rejected and one policy's
+    reading overwrites the other's. The corpus side holds one edge in two policies' `closure`
+    for the same reason. A second truth for one entry is still rejected."""
+    finding: Obj = {"atom_id": "ex:perm", "predicate": "applies"}
+    rows: list[Json] = [
+        {**finding, "policy_id": "ex:p", "truth": "T"},
+        {**finding, "policy_id": "ex:q", "truth": "F"},
+    ]
+    trace: Obj = {"verdict": [VERDICT], "finding": rows}
+    assert check_collection(trace, "Trace", "Expected", schemas, "t") == []
+    trace["finding"] = [*rows, {**finding, "policy_id": "ex:q", "truth": "U"}]
+    problems = check_collection(trace, "Trace", "Expected", schemas, "t")
+    assert any("two tuples with key" in p for p in problems), problems
+    edge: Obj = {"relation": "odrl:includedIn", "narrower": "ex:copy", "broader": "odrl:use"}
+    corpus: Obj = {"closure": [{**edge, "policy_id": "ex:p"}, {**edge, "policy_id": "ex:q"}]}
+    assert check_collection(corpus, "Corpus", "Corpus", schemas, "c") == []
 
 
 def test_a_warning_keeps_its_second_name(schemas: Schemas) -> None:

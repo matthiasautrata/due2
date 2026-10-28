@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.59** (2026-10-27, #148): §3.1 and §3.5 give `diagnostic` an optional `detail`, the second thing a warning names, so an `AnonymousEntity` keeps its Rule and an `IgnoredPredicate` its predicate (`due2-diagnostics.md` §1). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.58** (2026-10-27, #150): §3.5 adds `input` to the key of `unknown_part`, so a part that reads two inputs, such as an evidence record whose bearer and attester comparisons are both `U`, has one row per input that makes it `U` (§5.3, `decisions/0048`). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.57** (2026-10-26, `decisions/0049`): §3.1 adds `constraint.operand_unit`, the binding's unit; §3.5, §5.4, and §6.4 make a constraint that states a unit its binding does not declare `U` with status `misfit`, opaque. Earlier changes are in `docs/archive/changes.md`.
@@ -143,6 +145,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-profiles.md`
 
+**Changes in v0.28** (2026-10-26, #145): §3 rejects with `InvalidBinding` a binding whose owning layer (§2) states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.27** (2026-10-26, `decisions/0049`): §2, §3: a binding may declare its operand's unit, `due2:unit`, a type attribute; a constraint whose `odrl:unit` differs from it is rejected, and one that states a unit its binding does not declare is admitted with `UncheckedUnit` and is `U`; the baseline's `odrl:payAmount` declares no unit. §4 says how a unit affects a comparison. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.26** (2026-10-26, `decisions/0048`): §4, §6: a hierarchy comparison is `U`, not `F`, when a world-edge answer for its narrower side is `unresolved` and the recorded edges do not make it `T`. Earlier changes are in `docs/archive/changes.md`.
@@ -276,6 +280,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.3** (2026-10-24, #83): edited for a cold reader: terms defined, the case workflow called the orchestrator throughout, the worked example marked as an illustration, and repetitions cut. §2.5 states what the specification says about a failed hierarchy lookup. No design changes.
 
 ## `odrl-compound-to-atomic-normalization.md`
+
+Changes in 0.28 (2026-10-27, #148): §3 names an `IgnoredPredicate`'s node before its predicate, the order of `due2-diagnostics.md` §1. Earlier changes are in `docs/archive/changes.md`.
 
 Changes in 0.27 (2026-10-26, #53): §3 warns with `IgnoredPredicate` about a predicate on a Policy, Rule, Constraint, or LogicalConstraint that no loaded vocabulary or the annotation allowlist covers. Earlier changes are in `docs/archive/changes.md`.
 

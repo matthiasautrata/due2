@@ -1,11 +1,11 @@
 # ODRL Compound-to-Atomic Normalization
 
 Status: Implementation-ready contract  
-Version: 0.28  
+Version: 0.29  
 Profile: `https://w3id.org/due2/odrl-normalization/v1`, version `1`  
 Companion: `due2-workflows.md` — this specification is stage 1 of W1  
 
-Changes in 0.28 (2026-10-27, #148): §3 names an `IgnoredPredicate`'s node before its predicate, the order of `due2-diagnostics.md` §1. Earlier changes are in `docs/archive/changes.md`.
+Changes in 0.29 (2026-10-28, #152): §1 evaluates several policies by gathering each policy's entries in its own data space (`decisions/0050`). Earlier changes are in `docs/archive/changes.md`.
 
 The profile version stays `1` until a corpus has been produced under it. From then on, any change to admitted input or to the output bumps it.
 
@@ -27,7 +27,7 @@ For the supported profile:
 Den(P0) ≅ Den(N(P0))
 ```
 
-where `Den` is the denotation of §8.1 and `≅` is the bijection the lineage records. Every due2 evaluation depends on a Policy only through its denotation (`due2-workflows.md` §4), so this implies `Eval(P0, C) = EvalSet(N(P0), C)` for every evaluator context `C`. Policies `P1 … Pn` evaluated together are evaluated over the union of `N(P1) … N(Pn)`.
+where `Den` is the denotation of §8.1 and `≅` is the bijection the lineage records. Every due2 evaluation depends on a Policy only through its denotation (`due2-workflows.md` §4), so this implies `Eval(P0, C) = EvalSet(N(P0), C)` for every evaluator context `C`. Policies `P1 … Pn` evaluated together are evaluated over the union of `N(P1) … N(Pn)`, which keeps each policy's hierarchy edges under that policy. `EvalSet` gathers each policy's entries, its atoms read in its own data space, and folds them, so no policy reads another's tuples (`due2-workflows.md` §3.3, `decisions/0050`).
 
 `EvalSet` consumes complete inputs: the whole `N(P0)`, or the union of the corpora of several policies, which agree on every node they share (`due2-workflows.md` §4, *Several policies are one corpus*). It is not defined over part of one, or over corpora that disagree.
 

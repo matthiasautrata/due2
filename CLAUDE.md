@@ -30,7 +30,7 @@ Start with `README.md` (layout, verify commands, status), then `docs/design/due2
 | When an atom applies; guards (`owed`) vs witness conditions | `due2-workflows.md` §5.2 |
 | Fulfilment, deadlines, recurrence, instances | `due2-workflows.md` §5.3 |
 | Candidates, conflict, frontier, verdict, completion over literals | `due2-workflows.md` §6 (§6.4 has the monotonicity proof) |
-| Laws L1–L10 (property-test targets) | `due2-workflows.md` §8 |
+| Laws L1–L11 (property-test targets) | `due2-workflows.md` §8 |
 | What explains a verdict; what a trace must let a reader re-derive | `due2-workflows.md` §3.7, L10 (`decisions/0010`) |
 | Which `U` atoms an `Indeterminate` names; its `verdict_range` | `due2-workflows.md` §6.4 (`decisions/0011`) |
 | Normalisation stage 1 (normative) | `odrl-compound-to-atomic-normalization.md` |
