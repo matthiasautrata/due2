@@ -906,7 +906,10 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
                 "opaque_leaf(C) :- leaf_status(C, S), S != unresolved.",
                 "opaque_leaf(C) :- leaf_status(C, S), S != unresolved, S != missing.",
             ),
-            ("open(C), leaf_status(C, unresolved), scope", "open(C), not opaque_leaf(C), scope"),
+            (
+                "opened(_, C), leaf_status(C, unresolved), scope",
+                "opened(_, C), not opaque_leaf(C), scope",
+            ),
         ],
     ),
     # One variable for every opaque finding: their completions become correlated.
@@ -999,8 +1002,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "crank(W, C, 2 - N) :- leaf_lit(C, L, neg)",
-                "crank(W, C, N) :- leaf_lit(C, L, neg)",
+                "crank(W, C, 2 - N) :- open(C), leaf_lit(C, L, neg)",
+                "crank(W, C, N) :- open(C), leaf_lit(C, L, neg)",
             )
         ],
     ),
@@ -1601,7 +1604,7 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     "fulfilled-share-a-variable": (
         "completion.lp",
         [
-            ("var(ful(Y)) :- u_item(fulfilled(Y)).", "var(ful(0)) :- u_item(fulfilled(Y))."),
+            ("var(ful(Y)) :- u_item(fulfilled(Y)),", "var(ful(0)) :- u_item(fulfilled(Y)),"),
             ("reads(fulfilled(Y), ful(Y))", "reads(fulfilled(Y), ful(0))"),
             ("assigned(W, ful(Y), V).", "assigned(W, ful(0), V)."),
         ],

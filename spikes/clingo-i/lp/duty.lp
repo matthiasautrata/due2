@@ -481,11 +481,12 @@ holds(check(Y, E, discharges), f) :- witness_pair(Y, E), keyed(Y), not discharge
 % deadline it cannot place against `effective_at`, so a duty whose deadline has no position, or a
 % vector with a deadline and no `effective_at`, declines as `duty: deadline not comparable`.
 %
-% A `u` duty finding, `owed`, `in_force`, or `fulfilled`, is completed like an atom's
-% (completion.lp), and the reply names the inputs that made it `u` (explain.lp). One `u` has no such
-% input: the `effective` check of evidence when the SOTW has no `effective_at`. `effective_at` is
-% not a field an `unknown_part` row can name (due2-workflows.md §3.5), so the reply could not say
-% what was unknown, and the vector declines as `duty: evidence without effective_at`.
+% A precondition's `u` `owed` or `fulfilled` is completed like an atom's; an obligation's findings
+% move no verdict, so they are not (completion.lp, *Findings*). For every `u` duty finding, the
+% reply names the inputs that made it `u` (explain.lp). One `u` has no such input: the `effective`
+% check of evidence when the SOTW has no `effective_at`. `effective_at` is not a field an
+% `unknown_part` row can name (due2-workflows.md §3.5), so the reply could not say what was unknown,
+% and the vector declines as `duty: evidence without effective_at`.
 
 % Each pair is an item: the witness test conjoined with the witness conditions in world wit(E).
 % The seven checks are always in the set, so the #min always has a value.

@@ -246,17 +246,17 @@ basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X).
 % node reads differs from world `k`, so every open node keeps rank 1, and the finding's conjunction
 % stays `u`. Call a variable's value *lenient* when it makes its finding the one that permits more:
 % `applies` `t` for a permission and `f` for a prohibition, `owed` `f`, `fulfilled` `t`; and
-% *strict* when it is the other value. An obligation's `in_force` moves no verdict
-% (decisions/0045), so either value of it will do. Let `L` be the completion with every variable
-% lenient, and `S` the one with every variable strict. Every completion `C` lies between them,
-% finding by finding: a permission applies in `C` if it does in `S`, and a prohibition applies in
-% `C` only if it does in `S`; a precondition is owed in `C` only if it is in `S`, and fulfilled in
-% `C` if it is in `S`. So a permission that applies in `S` is closed in `C`, or waits on a duty
-% there, only if it is so in `S`. And a permission that is a candidate in `C` is one in `L`: it
-% applies in `L`, since a permission that applies anywhere applies in `L`, and it is not closed in
-% `L`, since a precondition owed and violated in `L` is owed and violated in every completion. These
-% are facts about findings, not about verdicts, which are not monotone in them: under `invalid`, a
-% permission that applies can void the policy. The two cases use only these facts.
+% *strict* when it is the other value. An obligation's findings read no `fin` or `ful` variable
+% (completion.lp, *Findings*). Let `L` be the completion with every variable lenient, and `S` the
+% one with every variable strict. Every completion `C` lies between them, finding by finding: a
+% permission applies in `C` if it does in `S`, and a prohibition applies in `C` only if it does in
+% `S`; a precondition is owed in `C` only if it is in `S`, and fulfilled in `C` if it is in `S`. So
+% a permission that applies in `S` is closed in `C`, or waits on a duty there, only if it is so in
+% `S`. And a permission that is a candidate in `C` is one in `L`: it applies in `L`, since a
+% permission that applies anywhere applies in `L`, and it is not closed in `L`, since a precondition
+% owed and violated in `L` is owed and violated in every completion. These are facts about findings,
+% not about verdicts, which are not monotone in them: under `invalid`, a permission that applies can
+% void the policy. The two cases use only these facts.
 %
 % - **A definite `Permit`.** `S` permits, so some candidate `X` survives in `S` and is ready. `X`'s
 %   finding is `t`, since strict makes a `u` permission `f`. In `C`, `X` applies, it is not closed

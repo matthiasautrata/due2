@@ -909,16 +909,49 @@ def guarded_obligation() -> str:
     )
 
 
-def test_unknown_in_force_is_reported_and_completed(duty_interpreter: Interpreter) -> None:
+def test_unknown_in_force_is_reported_not_completed(duty_interpreter: Interpreter) -> None:
     # A missing guard fact makes in_force u: the row is unknown, whatever the instance status
     # (due2-workflows.md §6.1), and its part is reported. An obligation never touches the
-    # verdict (decisions/0045), so it is Permit, and ex:o is not in role unknown. Without the
-    # completion of in_force, integrity.lp's one value per world would fail the solve.
+    # verdict (decisions/0045), so it is Permit, and ex:o is not in role unknown. in_force is
+    # not completed, so a row read from a completion world would be missing.
     out = output(duty_interpreter, guarded_obligation(), profile=True, sotw=MISSING_G)
     assert refs(out, "obligations") == {("ex:o", "unknown")}
     assert refs(out, "unknown_parts") == {("ex:o", "ex:g", "missing")}
     assert out["verdict"] == "Permit"
     assert ("ex:o", "unknown") not in refs(out, "verdict_basis")
+
+
+@pytest.mark.parametrize("facts", [{}, {"ex:g": {"status": "missing"}}])
+def test_obligation_findings_have_no_variable_of_their_own(
+    duty_interpreter: Interpreter, facts: Obj
+) -> None:
+    # An unresolved guard would give in_force a paired variable, and a missing one fin(in_force);
+    # with no subject, fulfilled is u and would read ful(Y). None reaches the verdict
+    # (decisions/0045), so none is a variable (completion.lp, Findings), and none counts toward
+    # the variable cap. Each case had two variables when completion took every duty finding.
+    evidence = PAID | {"action": "odrl:delete", "object": "ex:a"}
+    found = findings(
+        duty_interpreter, guarded_obligation(), profile=True,
+        sotw={"evidence": [evidence], "facts": facts}, request={"parties": {}},
+    )  # fmt: skip
+    assert value_of(found, f"in_force({O})") == "u"
+    assert value_of(found, f"fulfilled({O})") == "u"
+    assert pick(found, "var") == set()
+
+
+def test_obligation_reads_a_shared_variable(duty_interpreter: Interpreter) -> None:
+    # ex:perm and ex:o's guard make one comparison on the unresolved ex:g, so they read one
+    # variable, which is pivotal: ex:perm applies in one completion and not the other. ex:o's u
+    # part reads it, so ex:o is named unknown too (due2-workflows.md §6.4, decisions/0011 #1).
+    # An in_force that read no variable at all would drop that row.
+    body = guarded_obligation().replace(
+        "ex:perm a odrl:Permission ; odrl:action odrl:use .",
+        f"ex:perm a odrl:Permission ; odrl:action odrl:use ; odrl:constraint {leaf('g')} .",
+    )
+    assert len(pick(findings(duty_interpreter, body, profile=True), "var")) == 1
+    out = output(duty_interpreter, body, profile=True)
+    assert out["verdict_range"] == {"low": "NotApplicable", "high": "Permit"}
+    assert {("ex:perm", "unknown"), ("ex:o", "unknown")} <= refs(out, "verdict_basis")
 
 
 def test_missing_target_leaves_rule_and_obligation_unknown(duty_interpreter: Interpreter) -> None:
