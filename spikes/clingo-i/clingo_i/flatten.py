@@ -9,26 +9,34 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 
 **Graphs.**
 
-- `triple/3`, `triple(S, P, O)`: each policy triple. Read by lift.lp, structure.lp,
-  constraint.lp, and bind.lp.
+- `triple/3`, `triple(S, P, O)`: each policy triple. Over the corpus, a text's triple about an
+  IRI that the text does not reach is left out; one with a blank subject is always kept
+  (`interpret.py`). Read by lift.lp,
+  structure.lp, constraint.lp, and bind.lp.
 - `text_triple/4`, `text_triple(Text, S, P, O)`: each policy triple with the text that states it,
   named by its text id, so that lift.lp reads each policy's hierarchy edges from its own texts
   (decisions/0050). Read by lift.lp.
 - `module/4`, `module(Path, S, P, O)`: each triple of a selected module, `Path` the module's
   path. Its blank nodes are scoped by `Path`. Read by lift.lp and bind.lp.
 - `layer/2`, `layer(Path, core | module(Iri))`: each selected module file, `core` for a core
-  file and `module(Iri)` for a file of the selected profile `Iri`, so a profile whose module is
-  several files is one layer; a file in both is `core` (`interpret.py`). Read by lift.lp and
-  bind.lp.
+  file and `module(Iri)` for each selected profile `Iri` it is a file of, so a profile whose
+  module is several files is one layer; a file in the core and a profile is `core` only
+  (`interpret.py`). Read by bind.lp.
+- `text_layer/2`, `text_layer(Text, Path)`: each module file in the layers of the policy text
+  `Text`: the core and the files of the profiles it selects. Read by lift.lp: per node through
+  `described/2` (which the driver gives as facts over the corpus), per policy through
+  `policy_text/2`, and per operand's text in `declared_in_scheme/3`.
+- `text_profile/2`, `text_profile(Text, Iri)`: each profile the policy text `Text` selects.
+  Read by lift.lp.
 - `pred_ns/2`, `pred_ns(P, NS)`: each policy predicate. `NS` is `P` up to and including its
   last `#` or `/`. Read by lift.lp.
 - `policy_texts/1`, `policy_texts(N)`: the number of Turtle texts in the solve, one per policy:
   1 in solve 0, and the vector's count over the corpus, whose triples are all `triple/3`
   (`interpret.py`). Read by structure.lp.
 - `text_id/1`, `text_id(Text)`: the one policy text of solve 0, named by its text id, a hash of
-  the text (`interpret.py`). Read by bind.lp.
+  the text (`interpret.py`). Read by lift.lp and bind.lp.
 - `selected_profile/1`, `selected_profile(Iri)`: each `odrl:profile` value that names a shipped
-  profile. Read by lift.lp and bind.lp.
+  profile. Read by bind.lp.
 
 **Request** (due2-workflows.md §3.2).
 

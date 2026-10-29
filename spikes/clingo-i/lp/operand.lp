@@ -9,7 +9,7 @@
 % `reject`. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `voc/2`, `context_property/2`, `kind/2`, `term_kind/2`,
-%   `declared_in_scheme/2`, `closure/4`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
+%   `declared_in_scheme/3`, `closure/4`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
 %   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3`
 %   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`, `owned/3`,
 %   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`,
@@ -98,9 +98,10 @@ concept_operator(eq; neq; isAnyOf; isNoneOf).
 %*! declared_concept(Op, V)
 
 The IRI right operand `V` of a constraint on `Op` is in one of `Op`'s schemes, by a membership
-the policy or a selected module declares.
+that `Op`'s own text, or a module in its layers, declares.
 *%
-declared_concept(Op, V) :- left(C, Op), right(C, V), scheme(Op, S), declared_in_scheme(V, S).
+declared_concept(Op, V) :- left(C, Op), Op = o(_, Text), right(C, V), scheme(Op, S),
+    declared_in_scheme(Text, V, S).
 
 %*! read_concept(P, Op, V)
 

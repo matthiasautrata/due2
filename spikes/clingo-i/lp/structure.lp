@@ -23,12 +23,12 @@
 % | `obligation(Y)` | `root` |
 % | `reject(Code, Node)` | a W1 rejection (`due2-diagnostics.md`) |
 %
-% - **Consumes:** `type/2`, `subclass/2`, `policy_class/1`, `has_rule/3`, `stated/3`,
+% - **Consumes:** `type/2`, `subclass/3`, `policy_class/1`, `has_rule/3`, `stated/3`,
 %   `stated_conflict_iri/2`, `stated_conflict/2`, `conflict_value/2`, `function/1`,
-%   `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `timing_predicate/1`,
+%   `match_key/1`, `bearer_fn/2`, `attester_fn/2`, `timing_predicate/2`,
 %   `term_kind/2`, `voc/2`, `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2`,
 %   `policy_texts/1` (driver).
-% - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
+% - **Provides:** `policy_type/2`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
 %   `structure_node/1`, `family/1`,
 %   `states_family/2`, `rule_value/3`, `has_match_value/1`,
 %   `assignee/2`, `action_term/1`, `action_of/2`, `has_action_value/1`, `atom/1`,
@@ -50,20 +50,21 @@
 % (due2-workflows.md §4, *Several policies are one corpus*). No policy is `reject("NoPolicy",
 % none)`, and more policies than texts is `reject("MultiplePolicies", P)`.
 
-%*! policy_type(Cls)
+%*! policy_type(Node, Cls)
 
-`Cls` types a policy: a policy class, or a class a selected module declares a direct
-`rdfs:subClassOf` of one. See odrl-compound-to-atomic-normalization.md §3.
+`Cls` types `Node` as a policy: `Node` has type `Cls`, and `Cls` is a policy class, or a class that
+a module of `Node`'s own text declares a direct `rdfs:subClassOf` of one (`subclass/3`). See
+odrl-compound-to-atomic-normalization.md §3.
 *%
-policy_type(Cls) :- policy_class(Cls).
-policy_type(Cls) :- subclass(Cls, Super), policy_class(Super).
+policy_type(Node, Cls) :- type(Node, Cls), policy_class(Cls).
+policy_type(Node, Cls) :- subclass(Node, Cls, Super), policy_class(Super).
 
 %*! policy(P)
 
 Node `P` is a policy: the policy graph types it with a policy type. An admissible vector has
 exactly one per policy text.
 *%
-policy(P) :- type(P, Cls), policy_type(Cls).
+policy(P) :- policy_type(P, _).
 
 %*! some_policy
 
@@ -310,7 +311,7 @@ atom_party(a(R, A, T, Party), F, Party) :- atom(a(R, A, T, Party)), rule_value(R
 % stated `odrl:output` fills the relation family, so a root obligation that states one does not
 % take the policy's target. An inheriting duty is `inherits/1`.
 %
-% The bearer is the party of a function that plays the bearer role (`bearer_fn/1`):
+% The bearer is the party of a function that plays the bearer role (`bearer_fn/2`):
 % `odrl:assignee`, or `dprod:subjectOfDuty` under DPROD. For each role, a value the duty states
 % beats one interiorised from the policy level (due2-workflows.md §4, stage 2), so a root
 % obligation that states `dprod:subjectOfDuty` is not also borne by the policy-level
@@ -318,7 +319,7 @@ atom_party(a(R, A, T, Party), F, Party) :- atom(a(R, A, T, Party)), rule_value(R
 % bearer of its parent atom (`inh_bearer/3`). With none, the bearer is `none`: the request
 % subject.
 %
-% The attester is the party of a function that plays the attester role (`attester_fn/1`):
+% The attester is the party of a function that plays the attester role (`attester_fn/2`):
 % `due2:attestingParty`. It is one of the duty's own values (`attester/2`), and the spike declines
 % an attester the duty would inherit.
 %
@@ -388,9 +389,9 @@ duty_states_party(Duty) :- duty_value(Duty, F, _), function(F).
 
 %*! states_bearer(Duty)
 
-`Duty` itself states a value for a function that plays the bearer role (`bearer_fn/1`).
+`Duty` itself states a value for a function that plays the bearer role (`bearer_fn/2`).
 *%
-states_bearer(Duty) :- duty_stated(Duty, F, _), bearer_fn(F).
+states_bearer(Duty) :- duty_stated(Duty, F, _), bearer_fn(Duty, F).
 
 %*! bearer_value(Duty, F, Party)
 
@@ -402,8 +403,9 @@ policy level.
 % obligation that states dprod:subjectOfDuty still receives the policy-level odrl:assignee. For
 % each role, a value the rule states beats an interiorised one (due2-workflows.md §4, stage 2),
 % so the interiorised assignee is not a bearer.
-bearer_value(Duty, F, Party) :- duty_stated(Duty, F, Party), bearer_fn(F).
-bearer_value(Duty, F, Party) :- duty_value(Duty, F, Party), bearer_fn(F), not states_bearer(Duty).
+bearer_value(Duty, F, Party) :- duty_stated(Duty, F, Party), bearer_fn(Duty, F).
+bearer_value(Duty, F, Party) :- duty_value(Duty, F, Party), bearer_fn(Duty, F),
+    not states_bearer(Duty).
 % Two bearer functions that disagree, both stated or both from the policy level, name two
 % bearers for one performance, a case the spec does not settle.
 unsupported("duty: bearer from two functions") :- bearer_value(Duty, F, Party),
@@ -418,10 +420,11 @@ own_bearer(Duty, Party) :- bearer_value(Duty, _, Party).
 %*! parent_bearer(X, Party)
 
 `Party` is a bearer the permission atom `X` passes to a duty that inherits from it: its party for a
-match key that plays the bearer role, or its rule's value for a carried function that does.
+match key that plays the bearer role, or its rule's value for a carried function that does. The
+role is the one the texts that describe the rule give.
 *%
-parent_bearer(X, Party) :- atom_party(X, F, Party), bearer_fn(F).
-parent_bearer(X, Party) :- atom(X), atom_rule(X, R), rule_value(R, F, Party), bearer_fn(F),
+parent_bearer(X, Party) :- atom_party(X, F, Party), atom_rule(X, R), bearer_fn(R, F).
+parent_bearer(X, Party) :- atom(X), atom_rule(X, R), rule_value(R, F, Party), bearer_fn(R, F),
     not match_key(F).
 unsupported("duty: parent with two bearers") :- parent_bearer(X, Party), parent_bearer(X, Party2),
     Party != Party2, atom_rule(X, R), pre_rule(R, Duty), inherits(Duty).
@@ -448,16 +451,16 @@ duty_bearer(Duty, Party) :- inh_bearer(_, Duty, Party).
 %*! attester(Duty, Party)
 
 `Party` is an attester of `Duty`: a value of its own for a function that plays the attester role
-(`attester_fn/1`), such as `due2:attestingParty`. Only evidence whose issuer is at or below an
+(`attester_fn/2`), such as `due2:attestingParty`. Only evidence whose issuer is at or below an
 attester counts for the duty (due2-workflows.md §5.3). The attester is not in the duty atom's id:
 it filters the evidence and names no performer.
 *%
-attester(Duty, Party) :- duty_value(Duty, F, Party), attester_fn(F).
+attester(Duty, Party) :- duty_value(Duty, F, Party), attester_fn(Duty, F).
 % due2-profiles.md §6 has an inheriting duty take its parent's attester as it takes any other
 % party. A duty with two parents could then take two attesters for one atom, so the spike
 % declines an attester it would have to inherit rather than pick a reading.
 unsupported("duty: inherited attester") :- inherits(Duty), pre_rule(R, Duty), rule_value(R, F, _),
-    attester_fn(F).
+    attester_fn(Duty, F).
 
 %*! duty_atom(Y)
 
@@ -541,17 +544,16 @@ duty_relation(a(Duty, A, T, Party), T) :- duty_atom(a(Duty, A, T, Party)), T != 
 `xsd:duration` (due2-diagnostics.md, InvalidTiming).
 *%
 node_deadline(Duty, Lit) :- duty_node(Duty), triple(Duty, Pred, Lit), voc(deadline, Pred),
-    timing_predicate(Pred).
+    timing_predicate(Duty, Pred).
 reject("InvalidTiming", Duty) :- duty_node(Duty), #count { Lit : node_deadline(Duty, Lit) } > 1.
 reject("InvalidTiming", Duty) :- node_deadline(Duty, Lit), not deadline_kind(Lit, _).
 reject("InvalidTiming", Duty) :- node_deadline(Duty, Lit), unplaceable(Lit, R), off_shape(R).
 % Timing belongs to duties (due2-profiles.md §7).
-reject("TimingOutsideDuty", Node) :- triple(Node, Pred, _), timing_predicate(Pred), policy(Node).
-reject("TimingOutsideDuty", Node) :- triple(Node, Pred, _), timing_predicate(Pred), rule(Node).
+reject("TimingOutsideDuty", Node) :- timing_predicate(Node, _), policy(Node).
+reject("TimingOutsideDuty", Node) :- timing_predicate(Node, _), rule(Node).
 % Recurrence needs occurrences, which the spike does not compute (decisions/0009 #7). The whole
 % vector declines, since a duty's instances would otherwise be read without them.
-unsupported("recurrence") :- duty_node(Duty), triple(Duty, Pred, _), voc(recurrence, Pred),
-    timing_predicate(Pred).
+unsupported("recurrence") :- duty_node(Duty), timing_predicate(Duty, Pred), voc(recurrence, Pred).
 
 %*! deadline_kind(Lit, K)
 

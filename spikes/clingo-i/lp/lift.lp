@@ -7,7 +7,8 @@
 % § Vocabulary.
 %
 % - **Consumes:** the driver's facts (flatten.py): the graphs (`triple/3`,
-%   `text_triple/4`, `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request
+%   `text_triple/4`, `module/4`, `text_layer/2`, `text_profile/2`, `pred_ns/2`, `text_id/1`),
+%   the request
 %   (`request_at/1`, `request_param/2`, `request_party/2`, `request_target/1`), the SOTW
 %   (`sotw_effective_at/1`, `fact_answer/3`, `fact_answer_value/3`, `evidence/4`,
 %   `evidence_param/3`, `evidence_issuer/2`, `activation/2`, `sotw_closure/3`), and the driver's
@@ -15,21 +16,22 @@
 %   `duty_node/1`, `pre_rule/2`, `node_deadline/2`, `atom_target/2`, `atom_party/3`, `bearer/2`,
 %   `attester/2`, and `space/2` (structure.lp); `right/2`, `op/2`, and `node_space/2`
 %   (constraint.lp); `cpair/5` (compare.lp).
-% - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
-%   `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `vocab_ns/1`, `annotation/1`,
+% - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`,
+%   `odrl_function/1`, `function/1`, `match_key/1`, `vocab_ns/1`, `annotation/1`,
 %   `annotation_ns/1`, `operator/2`,
 %   `set_based/1`, `connective/1`, `binding_key/1`, `source_kind/2`, `context_property/2`,
 %   `cardinality_value/2`, `xsd_datatype/1`, `numeric_datatype/1`, `any_literal/1`,
-%   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); the lifted relations (`type/2`,
-%   `subclass/2`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`, `stated_conflict/2`,
-%   `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`); the combined facts
+%   `any_resource/1`, `floating_datatype/1`, `derived_from/2`); each text's vocabulary
+%   (`described/2`, `text_role/3`, `bearer_fn/2`, `attester_fn/2`); the lifted relations
+%   (`type/2`, `subclass/3`, `has_rule/3`, `stated/3`, `stated_conflict_iri/2`,
+%   `stated_conflict/2`, `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`); the combined facts
 %   (`valued/2`, `differs/1`, `fact/2`, `fact_value/2`); the kinds (`declared_datatype/1`,
 %   `datatype/1`, `dt_kind/2`, `term_kind/2`); the hierarchies
 %   (`closure_key/1`, `hierarchy_predicate/1`, `policy_text/2`, `policy_layer/2`, `edge/4`,
-%   `closure/4`, `declared_in_scheme/2`, `coll_kind/3`, `node_kind/3`, `le_k/4`, `collection/1`,
+%   `closure/4`, `declared_in_scheme/3`, `coll_kind/3`, `node_kind/3`, `le_k/4`, `collection/1`,
 %   `compares/3`, `part_up/3`, `part_down/3`, `walked/3`); the declines (`policy_predicate/1`,
-%   `family_predicate/1`, `anywhere_predicate/1`, `timing_predicate/1`, `consumed/2`,
-%   `annotated/1`, `unsupported/1`, `closure_relation/1`, `unsupported_input/1`, `compared/1`,
+%   `family_predicate/1`, `anywhere_predicate/1`, `timing_predicate/2`, `consumed/2`,
+%   `reached/1`, `annotated/1`, `unsupported/1`, `closure_relation/1`, `unsupported_input/1`, `compared/1`,
 %   `input_instant/1`, `off_shape/1`, `unsupported_value/1`); extends `reject/2` (structure.lp).
 
 %## Vocabulary
@@ -123,53 +125,80 @@ conflict_value("http://www.w3.org/ns/odrl/2/invalid",  invalid).
 
 %*! policy_class(Cls)
 
-`Cls` is one of the four ODRL policy classes. A subclass a selected module declares also types a
-policy (`policy_type/1`, structure.lp).
+`Cls` is one of the four ODRL policy classes. A subclass a module of the node's own text
+declares also types a policy (`policy_type/2`, structure.lp).
 *%
 policy_class("http://www.w3.org/ns/odrl/2/Policy").
 policy_class("http://www.w3.org/ns/odrl/2/Set").
 policy_class("http://www.w3.org/ns/odrl/2/Offer").
 policy_class("http://www.w3.org/ns/odrl/2/Agreement").
 
+%*! odrl_function(F)
+
+`F` is a function predicate of ODRL itself: a party role in every text, whatever its profiles.
+These are the 14 of odrl-compound-to-atomic-normalization.md §3.
+*%
+odrl_function("http://www.w3.org/ns/odrl/2/assignee").
+odrl_function("http://www.w3.org/ns/odrl/2/assigner").
+odrl_function("http://www.w3.org/ns/odrl/2/attributedParty").
+odrl_function("http://www.w3.org/ns/odrl/2/attributingParty").
+odrl_function("http://www.w3.org/ns/odrl/2/compensatedParty").
+odrl_function("http://www.w3.org/ns/odrl/2/compensatingParty").
+odrl_function("http://www.w3.org/ns/odrl/2/consentedParty").
+odrl_function("http://www.w3.org/ns/odrl/2/consentingParty").
+odrl_function("http://www.w3.org/ns/odrl/2/contractedParty").
+odrl_function("http://www.w3.org/ns/odrl/2/contractingParty").
+odrl_function("http://www.w3.org/ns/odrl/2/informedParty").
+odrl_function("http://www.w3.org/ns/odrl/2/informingParty").
+odrl_function("http://www.w3.org/ns/odrl/2/trackedParty").
+odrl_function("http://www.w3.org/ns/odrl/2/trackingParty").
+
 %*! function(F)
 
-`F` is a function predicate: a party role. These are the 14 of
-odrl-compound-to-atomic-normalization.md §3, and each property a selected module gives a role with
-`due2:playsRole`, as profiles/dprod.ttl gives `dprod:subjectOfDuty` (due2-profiles.md §6). Each is
-a family a rule can inherit from its policy.
+`F` is a function predicate in some text: one of the 14 (`odrl_function/1`), or a property a
+module gives a role with `due2:playsRole`. DPROD's module, for one, gives `dprod:subjectOfDuty`
+the bearer role (due2-profiles.md §6). Each is a family a rule can inherit from its policy. It is a domain only:
+whether `F` is a function at a node depends on the layers of the texts that describe the node
+(`stated/3`, `text_role/3`).
 *%
-function("http://www.w3.org/ns/odrl/2/assignee").
-function("http://www.w3.org/ns/odrl/2/assigner").
-function("http://www.w3.org/ns/odrl/2/attributedParty").
-function("http://www.w3.org/ns/odrl/2/attributingParty").
-function("http://www.w3.org/ns/odrl/2/compensatedParty").
-function("http://www.w3.org/ns/odrl/2/compensatingParty").
-function("http://www.w3.org/ns/odrl/2/consentedParty").
-function("http://www.w3.org/ns/odrl/2/consentingParty").
-function("http://www.w3.org/ns/odrl/2/contractedParty").
-function("http://www.w3.org/ns/odrl/2/contractingParty").
-function("http://www.w3.org/ns/odrl/2/informedParty").
-function("http://www.w3.org/ns/odrl/2/informingParty").
-function("http://www.w3.org/ns/odrl/2/trackedParty").
-function("http://www.w3.org/ns/odrl/2/trackingParty").
+function(F) :- odrl_function(F).
 function(F) :- module(_, F, Pred, _), voc(playsRole, Pred).
 
-%*! bearer_fn(F)
+%*! described(Text, Node)
 
-The function `F` plays the bearer role: a selected module states `F due2:playsRole due2:bearer`.
-The baseline gives it to `odrl:assignee`, DPROD to `dprod:subjectOfDuty` (due2-profiles.md §6).
-The bearer of a duty must perform it (due2-workflows.md §5.3).
+The policy text `Text` describes `Node`, so the modules of `Text`'s layers say what `Node`'s
+predicates mean. In solve 0 the one text is the corpus, so it describes every node its
+triples mention. Over the corpus the driver gives them as facts: the union of the nodes each
+text reaches in its solve 0 (`reached/1`) and the subjects of the triples it keeps for that
+text (`interpret.py`). A node that two texts describe reads the layers of both.
 *%
-bearer_fn(F) :- function(F), module(_, F, Pred, Role), voc(playsRole, Pred), voc(bearer, Role).
+described(Text, Node) :- text_id(Text), triple(Node, _, _).
+described(Text, Node) :- text_id(Text), triple(_, _, Node).
 
-%*! attester_fn(F)
+%*! text_role(Text, F, Role)
 
-The function `F` plays the attester role: a selected module states `F due2:playsRole
-due2:attester`. The core profile gives it to `due2:attestingParty` (due2-profiles.md §6). Only
+A module in `Text`'s layers gives the function `F` the role `Role`, with `due2:playsRole`. `F`
+has that role on the nodes `Text` describes (due2-profiles.md §6).
+*%
+text_role(Text, F, Role) :- text_layer(Text, Path), module(Path, F, Pred, Role),
+    voc(playsRole, Pred).
+
+%*! bearer_fn(Node, F)
+
+The function `F` plays the bearer role at `Node`: a text that describes `Node` gives it
+`due2:bearer`. The baseline gives it to `odrl:assignee`, DPROD to `dprod:subjectOfDuty`
+(due2-profiles.md §6). The bearer of a duty must perform it (due2-workflows.md §5.3).
+*%
+bearer_fn(Node, F) :- described(Text, Node), text_role(Text, F, Role), voc(bearer, Role).
+
+%*! attester_fn(Node, F)
+
+The function `F` plays the attester role at `Node`: a text that describes `Node` gives it
+`due2:attester`. The core profile gives it to `due2:attestingParty` (due2-profiles.md §6). Only
 evidence whose issuer is at or below a duty's attester counts for the duty (due2-workflows.md
 §5.3).
 *%
-attester_fn(F) :- function(F), module(_, F, Pred, Role), voc(playsRole, Pred), voc(attester, Role).
+attester_fn(Node, F) :- described(Text, Node), text_role(Text, F, Role), voc(attester, Role).
 
 %*! match_key(F)
 
@@ -180,12 +209,12 @@ match_key("http://www.w3.org/ns/odrl/2/assignee").
 
 %*! vocab_ns(NS)
 
-`NS` is a namespace whose predicates mean something: `odrl:`, `due2:`, and each selected
-profile. An unread predicate in one of them declines the vector.
+`NS` is a namespace whose predicates mean something in every text: `odrl:` and `due2:`. Each
+profile a text selects (`text_profile/2`) is one too, on the nodes that text describes. An
+unread predicate in one of them declines the vector.
 *%
 vocab_ns("http://www.w3.org/ns/odrl/2/").
 vocab_ns("https://w3id.org/due2/profile#").
-vocab_ns(Prof) :- selected_profile(Prof).
 
 %*! annotation(Pred)
 
@@ -401,7 +430,7 @@ derived_from("http://www.w3.org/2001/XMLSchema#yearMonthDuration", "http://www.w
 
 %## The lifted policy
 
-% The lifted policy is `type/2`, `subclass/2` (declared, direct edges from the selected modules),
+% The lifted policy is `type/2`, `subclass/3` (declared, direct edges from the node's own modules),
 % `has_rule/3`, `stated/3` (the value a policy or rule node states for a family), and
 % `stated_conflict/2`.
 %
@@ -415,12 +444,14 @@ The policy graph states `Node rdf:type Cls`.
 *%
 type(Node, Cls) :- triple(Node, Pred, Cls), voc(type, Pred).
 
-%*! subclass(Cls, Super)
+%*! subclass(Node, Cls, Super)
 
-A selected module states `Cls rdfs:subClassOf Super`. Only declared, direct edges: no closure
+`Node` has type `Cls`, and a module in the layers of a text that describes `Node` states
+`Cls rdfs:subClassOf Super`. Only declared, direct edges: no closure
 (odrl-compound-to-atomic-normalization.md §3).
 *%
-subclass(Cls, Super) :- module(_, Cls, Pred, Super), voc(subclass, Pred).
+subclass(Node, Cls, Super) :- type(Node, Cls), described(Text, Node), text_layer(Text, Path),
+    module(Path, Cls, Pred, Super), voc(subclass, Pred).
 
 %*! has_rule(P, R, Eff)
 
@@ -433,13 +464,15 @@ has_rule(P, R, forbid) :- triple(P, Pred, R), voc(prohibition, Pred).
 %*! stated(Node, Fam, Term)
 
 `Node` states `Term` for `Fam`: `action`, `target`, `output`, or a function IRI (then `Term` is a
-party). Any node; structure.lp reads only those of the policy, its rules, and its duties, and
-`output` only on a duty.
+party). A function is one of the 14, or one that a text describing `Node` gives a role
+(`text_role/3`). Any node; structure.lp reads only those of the policy, its rules, and its
+duties, and `output` only on a duty.
 *%
 stated(Node, action, A) :- triple(Node, Pred, A), voc(action, Pred).
 stated(Node, target, T) :- triple(Node, Pred, T), voc(target, Pred).
 stated(Node, output, T) :- triple(Node, Pred, T), voc(output, Pred).
-stated(Node, F, Party) :- triple(Node, F, Party), function(F).
+stated(Node, F, Party) :- triple(Node, F, Party), odrl_function(F).
+stated(Node, F, Party) :- triple(Node, F, Party), described(Text, Node), text_role(Text, F, _).
 
 %*! stated_conflict_iri(P, Iri)
 
@@ -645,19 +678,19 @@ hierarchy_predicate(Pred) :- voc((narrower; topConceptOf; hasTopConcept), Pred).
 
 %*! policy_text(P, Text)
 
-Policy `P` is stated by the policy text `Text`: the text has a triple about `P`. A policy that two
-agreeing texts state is stated by both (due2-workflows.md §4).
+Policy `P` is stated by the policy text `Text`: the text whose solve 0 derives `P`. Over the
+corpus the driver gives these as facts, copied from each text's solve 0, so a text that only
+mentions `P` does not state it. A policy that two agreeing texts state is stated by both
+(due2-workflows.md §4).
 *%
-policy_text(P, Text) :- policy(P), text_triple(Text, P, _, _).
+policy_text(P, Text) :- policy(P), text_id(Text).
 
 %*! policy_layer(P, Path)
 
-The module at `Path` is in policy `P`'s data space: a core module, or a module of a profile that
-`P` names with `odrl:profile`. A profile named by another policy is not in it.
+The module at `Path` is in policy `P`'s data space: a layer of a text that states `P`, so a core
+module or a module of a profile that text names. A profile named by another policy is not in it.
 *%
-policy_layer(P, Path) :- policy(P), layer(Path, core).
-policy_layer(P, Path) :- policy(P), layer(Path, module(Iri)), triple(P, Pred, Iri),
-    voc(profile, Pred).
+policy_layer(P, Path) :- policy_text(P, Text), text_layer(Text, Path).
 
 %*! edge(P, S, Pred, O)
 
@@ -683,19 +716,22 @@ closure(P, broader, Lo, Hi) :- edge(P, Hi, Pred, Lo), voc(narrower, Pred).
 closure(P, inScheme, C, S) :- edge(P, C, Pred, S), voc(topConceptOf, Pred).
 closure(P, inScheme, C, S) :- edge(P, S, Pred, C), voc(hasTopConcept, Pred).
 
-%*! declared_in_scheme(C, S)
+%*! declared_in_scheme(Text, C, S)
 
-A policy text or a selected module states that concept `C` is in scheme `S`: by
+The policy text `Text`, or a module in its layers, states that concept `C` is in scheme `S`: by
 `skos:inScheme`, by its sub-property `skos:topConceptOf`, or by the inverse
 `skos:hasTopConcept` (SKOS Reference S7, S8). Membership is not inherited along `skos:broader`.
 Normalisation checks right operands against these memberships alone, since it does not see the
-SOTW (decisions/0015 #8). It runs in solve 0, on one text and its own layers, so these are that
-text's memberships. `closure(P, inScheme, C, S)` adds the SOTW's.
+SOTW (decisions/0015 #8), and an operand `o(Iri, Text)` reads its own text's
+(`declared_concept/2`, operand.lp). `closure(P, inScheme, C, S)` adds the SOTW's.
 *%
-declared_in_scheme(C, S) :- triple(C, Pred, S), voc((inScheme; topConceptOf), Pred).
-declared_in_scheme(C, S) :- module(_, C, Pred, S), voc((inScheme; topConceptOf), Pred).
-declared_in_scheme(C, S) :- triple(S, Pred, C), voc(hasTopConcept, Pred).
-declared_in_scheme(C, S) :- module(_, S, Pred, C), voc(hasTopConcept, Pred).
+declared_in_scheme(Text, C, S) :- text_triple(Text, C, Pred, S),
+    voc((inScheme; topConceptOf), Pred).
+declared_in_scheme(Text, C, S) :- text_layer(Text, Path), module(Path, C, Pred, S),
+    voc((inScheme; topConceptOf), Pred).
+declared_in_scheme(Text, C, S) :- text_triple(Text, S, Pred, C), voc(hasTopConcept, Pred).
+declared_in_scheme(Text, C, S) :- text_layer(Text, Path), module(Path, S, Pred, C),
+    voc(hasTopConcept, Pred).
 
 %*! coll_kind(P, Node, K)
 
@@ -725,14 +761,14 @@ le_k(P, Lo, Hi, K) :- le_k(P, Lo, Mid, K), closure(P, partOf, Mid, Hi), coll_kin
 
 %*! collection(Node)
 
-Some text, selected module, or SOTW edge types `Node` as an asset or party collection. The
-`odrl:source` and refinement rejections and `consumed/2` read it, since a text is checked
-whatever policy it states.
+A text, a module in the layers of a text that describes `Node`, or a SOTW edge types `Node` as an
+asset or party collection. The `odrl:source` and refinement rejections and `consumed/2` read it,
+since a text is checked whatever policy it states.
 *%
 collection(Node) :- triple(Node, Pred, Cls), voc(type, Pred),
     voc((assetCollection; partyCollection), Cls).
-collection(Node) :- module(_, Node, Pred, Cls), voc(type, Pred),
-    voc((assetCollection; partyCollection), Cls).
+collection(Node) :- described(Text, Node), text_layer(Text, Path), module(Path, Node, Pred, Cls),
+    voc(type, Pred), voc((assetCollection; partyCollection), Cls).
 collection(Node) :- sotw_closure(Pred, Node, Cls), voc(type, Pred),
     voc((assetCollection; partyCollection), Cls).
 
@@ -841,14 +877,14 @@ anywhere_predicate(Key) :- connective(Key).
 anywhere_predicate(Key) :- binding_key(Key).
 anywhere_predicate(conceptScheme; broader; narrower; inScheme; topConceptOf; hasTopConcept).
 
-%*! timing_predicate(Pred)
+%*! timing_predicate(Node, Pred)
 
-`Pred` is `dprod:deadline` or `dprod:recurrence`, and DPROD is a selected profile. The timing
-vocabulary is DPROD's (due2-profiles.md §7): without the profile it is a predicate the spike does
-not read.
+`Node` states `Pred`, which is `dprod:deadline` or `dprod:recurrence`, and a text that describes
+`Node` selects DPROD. The timing vocabulary is DPROD's (due2-profiles.md §7): without the profile
+it is a predicate the spike does not read.
 *%
-timing_predicate(Pred) :- voc((deadline; recurrence), Pred), pred_ns(Pred, NS),
-    selected_profile(NS).
+timing_predicate(Node, Pred) :- triple(Node, Pred, _), voc((deadline; recurrence), Pred),
+    pred_ns(Pred, NS), described(Text, Node), text_profile(Text, NS).
 
 %*! consumed(Node, Pred)
 
@@ -862,17 +898,29 @@ consumed(Node, Pred) :- triple(Node, Pred, _), policy(Node), voc(Key, Pred), pol
 % they hang under a link that is itself declined (odrl:duty on a duty, odrl:refinement) or off
 % the policy, so declining on them would name the family instead of the feature.
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(Key, Pred), family_predicate(Key).
-consumed(Node, Pred) :- triple(Node, Pred, _), function(Pred).
+consumed(Node, Pred) :- stated(Node, Pred, _), function(Pred).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(Key, Pred), anywhere_predicate(Key).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(constraint, Pred), rule(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(constraint, Pred), duty_node(Node).
 consumed(Node, Pred) :- pre_rule(Node, Duty), triple(Node, Pred, Duty), voc(duty, Pred).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc((output; instanceScope), Pred), duty_node(Node).
 % Timing is read on the policy and its rules too, where it is rejected (structure.lp).
-consumed(Node, Pred) :- triple(Node, Pred, _), timing_predicate(Pred), structure_node(Node).
+consumed(Node, Pred) :- timing_predicate(Node, Pred), structure_node(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), action_term(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), collection(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(value, Pred), action_term(Node).
+
+%*! reached(Node)
+
+The text's policies reach `Node`: `Node` is a policy, the object of a triple the spike reads
+(`consumed/2`) on a node they reach, or an item of a list they reach. Solve 0 derives it for its
+one text. The driver keeps a text's triple about an IRI in the corpus only if that text reaches
+the IRI, so that a text that never links to a node says nothing of it (due2-workflows.md §4).
+*%
+reached(P) :- policy(P).
+reached(O) :- reached(S), triple(S, Pred, O), consumed(S, Pred).
+% A list's items, which the structure reads through `list_item/2`, not through a consumed triple.
+reached(Item) :- reached(Head), list_item(Head, Item).
 
 %*! annotated(Pred)
 
@@ -892,6 +940,9 @@ reasons of their own, listed in DESIGN.md § Declines.
 % rule. On other nodes (assets, parties) a foreign predicate is data the spike never reads.
 unsupported(Pred) :- triple(Node, Pred, _), not consumed(Node, Pred), not annotated(Pred),
     pred_ns(Pred, NS), vocab_ns(NS).
+% A profile's namespace is a vocabulary namespace only for the texts that select it.
+unsupported(Pred) :- triple(Node, Pred, _), not consumed(Node, Pred), not annotated(Pred),
+    pred_ns(Pred, NS), described(Text, Node), text_profile(Text, NS).
 unsupported(Pred) :- triple(Node, Pred, _), not consumed(Node, Pred), not annotated(Pred),
     structure_node(Node).
 % rdf:value is read only on an action node (IM 2.2 §2.5): anywhere else it declines.

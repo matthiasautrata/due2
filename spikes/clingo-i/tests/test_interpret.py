@@ -8,7 +8,7 @@ from clingo import Control, Model
 
 from clingo_i.interpret import PROGRAM_FILES, SOLVE_2, VARIABLE_CAP, Interpreter, load_programs
 from clingo_i.json_types import Json, Obj, as_obj
-from tests.conftest import INIT, POLICY, PREFIXES, PROF, vector
+from tests.conftest import DPROD, DUE2, DUTY_INIT, INIT, POLICY, PREFIXES, PROF, vector
 
 ODRL = "http://www.w3.org/ns/odrl/2/"
 EX = "https://example.org/"
@@ -378,7 +378,6 @@ def test_shared_permission_rows_name_the_entry() -> None:
 # --- constraints (due2-profiles.md §3 to §6) ---
 
 XSD = "http://www.w3.org/2001/XMLSchema#"
-DPROD = "https://ekgf.org/dprod/spec/develop/"
 RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 CONSTRAINT_PREFIXES = (
     PREFIXES
@@ -1147,6 +1146,111 @@ def test_shared_duty_entries_fulfilled_apart(
     assert explained(duty_interpreter.reply(v)) == expected
     values = fulfilled_values(duty_interpreter, v)
     assert values == {EX + p: value for p, value in fulfilled.items()}
+
+
+# A profile's vocabulary is read only by the policies that name it (due2-profiles.md §2), a
+# policy's text is only the text that types it, and a text says nothing of a node it never links
+# to (due2-workflows.md §4). Each row is one counterexample (#158): the reply to `alone` must not
+# change when `other` stands beside it, in either order. Before #158 each changed: the corpus
+# solves read every module's party roles, kept one owning profile per module file, and kept every
+# text's triples, and `policy_text/2` held for any text about a policy.
+#
+# - `bearer`: ex:d names ex:bank as informed party and no bearer, so its bearer is the request
+#   subject ex:alice, and ex:bank's payment fulfils nothing: Pending. Q's profile makes
+#   odrl:informedParty a bearer's function, which made ex:bank the bearer and the duty fulfilled.
+# - `module`: profiles a and b include the same file, whose edge puts ex:copy under odrl:use.
+#   P names b, so it permits copying ex:a; Q names a, and the file kept only a's layer.
+# - `offer`: the offer permits use of ex:catalog. The agreement places ex:report1 in ex:catalog
+#   and states the offer's lifecycle status, a triple about the offer that made the agreement's
+#   text one of the offer's texts, and its edge part of the offer's data space.
+# - `member`: ex:c1, a member of ex:c's `odrl:and` list, requires purpose research or teaching,
+#   and the request's is marketing. Q's text gives ex:c1 the right operand marketing too, which
+#   made it `t` and the rule permit while every text's triples were kept. It also guards
+#   `reached/1`'s list rule: without it no text reaches ex:c1, the corpus drops the vector's own
+#   triples about it, and a filter that keeps the triples of nodes no text reaches keeps Q's.
+ROLES = (
+    f"@prefix due2: <{DUE2}> .\n" + PREFIXES + "odrl:informedParty due2:playsRole due2:bearer .\n"
+)
+EDGE = PREFIXES + "ex:copy odrl:includedIn odrl:use .\n"
+FOREIGN_INIT: Obj = {
+    "modules": {**as_obj(DUTY_INIT["modules"], "modules"), "roles.ttl": ROLES, "edge.ttl": EDGE},
+    "core": ["core.ttl"],
+    "profiles": {
+        **as_obj(DUTY_INIT["profiles"], "profiles"),
+        f"{PROF}roles": ["roles.ttl"],
+        f"{PROF}a": ["edge.ttl"],
+        f"{PROF}b": ["edge.ttl"],
+    },
+}
+
+
+def rule_policy(policy: str, target: str, extra: str = "", profile: str = "") -> str:
+    """Policy ex:`policy`, naming `PROF<profile>` if given, which permits use of `target`;
+    the permission ex:r`policy` ends with `extra`."""
+    named = f" ; odrl:profile <{PROF}{profile}>" if profile else ""
+    return (
+        PREFIXES
+        + f"ex:{policy} a odrl:Set{named} ; odrl:permission ex:r{policy} .\n"
+        + f"ex:r{policy} a odrl:Permission ; odrl:action odrl:use ; odrl:target {target}{extra} .\n"
+    )
+
+
+PAYMENT: Obj = {"id": "ex:e1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:bank",
+                "action": "odrl:compensate"}  # fmt: skip
+OFFER = (
+    PREFIXES
+    + "ex:offer a odrl:Offer ; odrl:assigner ex:shop ; odrl:permission ex:ro .\n"
+    + "ex:ro a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:catalog .\n"
+    + "ex:catalog a odrl:AssetCollection .\n"
+)
+AGREEMENT = (
+    PREFIXES
+    + f"@prefix dprod: <{DPROD}> .\n"
+    + "ex:agr a odrl:Agreement ; odrl:assigner ex:shop ; odrl:assignee ex:bob ;"
+    + " odrl:permission ex:ra .\n"
+    + "ex:ra a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:catalog .\n"
+    + "ex:catalog a odrl:AssetCollection .\n"
+    + "ex:report1 odrl:partOf ex:catalog .\n"
+    + "ex:offer dprod:offerLifecycleStatus dprod:Accepted .\n"
+)
+FOREIGN_CASES: dict[str, tuple[str, str, dict[str, Obj], str]] = {
+    "bearer": (
+        rule_policy("p", "ex:a", " ; odrl:duty ex:d")
+        + "ex:d a odrl:Duty ; odrl:action odrl:compensate ; odrl:informedParty ex:bank .\n",
+        rule_policy("q", "ex:b", profile="roles"),
+        {"request": {"action": "odrl:use"}, "sotw": {"evidence": [PAYMENT]}},
+        "Pending",
+    ),
+    "module": (
+        rule_policy("p", "ex:a", profile="b"),
+        rule_policy("q", "ex:z", profile="a"),
+        {"request": {"action": "ex:copy"}},
+        "Permit",
+    ),
+    "offer": (OFFER, AGREEMENT, {"request": {"target": "ex:report1"}}, "NotApplicable"),
+    "member": (
+        constrained(WORKED_CONSTRAINT, bound("purpose"), bound("count")),
+        rule_policy("q", "ex:b") + "ex:c1 odrl:rightOperand ex:marketing .\n",
+        {
+            "request": {
+                "params": {"ex:purpose": iri("ex:marketing"), "ex:count": typed("3", "integer")}
+            }
+        },
+        "NotApplicable",
+    ),
+}
+
+
+@pytest.mark.parametrize("other_first", [False, True], ids=["other-last", "other-first"])
+@pytest.mark.parametrize("case", sorted(FOREIGN_CASES))
+def test_another_text_changes_no_structure(case: str, other_first: bool) -> None:
+    alone, other, sections, expected = FOREIGN_CASES[case]
+    interpreter = Interpreter(FOREIGN_INIT)
+    v = vector(alone, **sections)
+    reply = interpreter.reply(v)
+    assert as_obj(reply.get("output"), "output")["verdict"] == expected, reply
+    v["policies"] = [other, alone] if other_first else [alone, other]
+    assert interpreter.reply(v) == reply
 
 
 # The core owns ex:x's type: a decimal range, and the default cardinality. A policy may restate

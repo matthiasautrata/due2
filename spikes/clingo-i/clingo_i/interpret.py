@@ -59,10 +59,13 @@ INTERFACE = (
     ("allowed", 2), ("owned", 3), ("scheme", 2),
 )  # fmt: skip
 RAISED = (("reject", 2), ("unsupported", 1))
+# What solve 0 tells the corpus of its text: the policy it states, which `_combine` copies,
+# and the nodes it reaches, by which `_corpus` keeps the text's triples.
+HANDOVER = (("policy_text", 2), ("reached", 1))
 # Read after the rejections, in order.
 DECLINES = ("unsupported_input", "unsupported_value")
 # What the driver reads of solves 0 and 1.
-STRUCTURE = (*INTERFACE, ("conflict", 2), *RAISED, *((d, 1) for d in DECLINES))
+STRUCTURE = (*INTERFACE, ("conflict", 2), *RAISED, *((d, 1) for d in DECLINES), *HANDOVER)
 CHAIN = ("Deny", "NotApplicable", "Pending", "Permit")  # due2-workflows.md §6.4
 VARIABLE_CAP = 64  # correctness-strategy.md §3, set by measurement (journal, #48)
 ODRL_TARGET = "http://www.w3.org/ns/odrl/2/target"
@@ -139,7 +142,9 @@ def _combine(bound: dict[str, list[Symbol]]) -> list[Symbol]:
     out. A policy that several texts state must get one strategy. Either difference is
     `reject("IdentityConflict", C)`, since the texts describe one node differently
     (due2-diagnostics.md). Every text's `RAISED` atoms are kept, so solve 1 raises them in its
-    order; its other declines (`DECLINES`) solve 1 derives again, over the corpus.
+    order; its other declines (`DECLINES`) solve 1 derives again, over the corpus. Every
+    text's `policy_text/2` is kept too, so that a policy's text is the one whose solve 0
+    derives it.
     """
     out: list[Symbol] = []
     keep: dict[Symbol, Symbol] = {}  # leaf to its operand
@@ -147,6 +152,7 @@ def _combine(bound: dict[str, list[Symbol]]) -> list[Symbol]:
     for atoms in bound.values():
         rows = [a for a in atoms if any(a.match(n, k) for n, k in INTERFACE)]
         out += [a for a in atoms if any(a.match(n, k) for n, k in RAISED)]
+        out += [a for a in atoms if a.match("policy_text", 2)]
         named = [(a.arguments[0], a.arguments[1]) for a in rows if a.match("left", 2)]
         for leaf, op in named:
             sig = _signature(rows, op)
@@ -321,6 +327,18 @@ class Interpreter:
         must get the same binding, or strategy, from each: otherwise it is an
         `IdentityConflict` (due2-diagnostics.md).
 
+        What one text says must not change another's policy, as it cannot in W1, so the
+        corpus keeps each text's facts apart in two ways. A text's `triple/3` about an IRI is
+        kept only if the text reaches the IRI in its solve 0 (`reached/1`): a text that never
+        links to a node says nothing of it. A triple with a blank subject is always kept,
+        since blank nodes are scoped by their text. `text_triple/4` is kept whole, since each
+        policy reads only its own text's (`edge/4`). And each text's layers are its own
+        (`text_layer/2`, `text_profile/2`), read only on the nodes the text describes
+        (`described/2`): the union of those it reaches and the subjects of its kept triples.
+        So a text's profiles and triples bear only on its own policies' nodes (the L11
+        variants of `test_locality.py`, and `test_another_text_changes_no_structure` in
+        `test_interpret.py`).
+
         With one text, that text is the corpus, so solve 1 is not run, and solve 0's model is
         returned. Solve 1 would load the same files but `bind.lp`,
         over the same triples, inputs, and layers, with bind.lp's relations given as facts
@@ -338,14 +356,31 @@ class Interpreter:
         inputs = flatten.input_facts(vector, prefixes)
         graphs = {tid: flatten.parse(named[tid]) for tid in sorted(named)}
         triples = {tid: flatten.policy_facts(g, tid) for tid, g in graphs.items()}
+        profiles = {tid: flatten.profiles(g) for tid, g in graphs.items()}
         bound: dict[str, list[Symbol]] = {}
-        for tid, graph in graphs.items():
+        for tid in graphs:
             facts = [Function("policy_texts", [Number(1)]), Function("text_id", [String(tid)])]
-            facts += triples[tid] + inputs + self._layers(flatten.profiles(graph))
+            facts += triples[tid] + inputs + self._layers(profiles[tid])
+            facts += self._text_layers(tid, profiles[tid])
             bound[tid] = self._model(self._render(facts), SOLVE_0)
+        reached = {
+            tid: {a.arguments[0] for a in atoms if a.match("reached", 1)}
+            for tid, atoms in bound.items()
+        }
         facts = [Function("policy_texts", [Number(len(named))])]
-        facts += [f for tid in graphs for f in triples[tid]] + inputs
-        facts += self._layers(sorted({i for g in graphs.values() for i in flatten.profiles(g)}))
+        for tid in graphs:
+            facts += self._text_layers(tid, profiles[tid])
+            described = set(reached[tid])
+            for f in triples[tid]:
+                if f.match("triple", 3):
+                    s = f.arguments[0]
+                    if s.match("b", 2) or s in reached[tid]:
+                        facts.append(f)
+                        described.add(s)
+                else:
+                    facts.append(f)
+            facts += [Function("described", [String(tid), n]) for n in sorted(described)]
+        facts += inputs + self._layers(sorted({i for p in profiles.values() for i in p}))
         facts += _combine(bound)
         rendered = self._render(facts)
         if len(bound) == 1:
@@ -358,21 +393,32 @@ class Interpreter:
         Raises:
             ValueError: A profile has no module, which is not admissible (`UnrecognisedProfile`).
         """
-        # A path's layer: `core`, or `module(Iri)` for the profile whose module it is part of
-        # (decisions/0014 #3). A file in both the core and a profile is core.
-        layers: dict[str, Symbol] = {path: Function("core") for path in self._core}
+        # A path's layers: `core`, or `module(Iri)` for each profile whose module it is part
+        # of (decisions/0014 #3). A file in both the core and a profile is core.
+        layers: dict[str, set[Symbol]] = {path: {Function("core")} for path in self._core}
         facts: list[Symbol] = []
         for iri in profiles:
             if iri not in self._profiles:
                 # IM 2.2 §3.2: a processor that does not recognise a profile stops.
                 raise ValueError(f"not admissible: UnrecognisedProfile at {iri}")
             for path in self._profiles[iri]:
-                layers.setdefault(path, Function("module", [String(iri)]))
+                if path not in self._core:
+                    layers.setdefault(path, set()).add(Function("module", [String(iri)]))
             facts.append(Function("selected_profile", [String(iri)]))
         for path in sorted(layers):
             facts.extend(self._modules[path])
-            facts.append(Function("layer", [String(path), layers[path]]))
+            facts += [Function("layer", [String(path), lay]) for lay in sorted(layers[path])]
         return facts
+
+    def _text_layers(self, tid: str, profiles: list[str]) -> list[Symbol]:
+        """The layers of text `tid`, which selects `profiles`: `text_layer/2` for each core
+        file and each file of its profiles, and `text_profile/2` for each profile.
+
+        Call it after `_layers` on the same profiles, which rejects one with no module.
+        """
+        paths = set(self._core).union(*(self._profiles[iri] for iri in profiles))
+        facts = [Function("text_layer", [String(tid), String(p)]) for p in sorted(paths)]
+        return facts + [Function("text_profile", [String(tid), String(i)]) for i in profiles]
 
     def _render(self, facts: list[Symbol]) -> str:
         """`facts` and their value table as program text (flatten.py, values.py)."""
