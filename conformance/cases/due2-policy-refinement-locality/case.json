@@ -1,0 +1,158 @@
+{
+  "case": "due2-policy-refinement-locality",
+  "source": "due2-native: a refinement on a policy-level action is read in its own policy's data space (decisions/0050, #154)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Two policies by different parties, one corpus (conformance/README.md). ex:offer states its one action on the policy, use refined to research purposes, and normalisation gives it to ex:useA (odrl-compound-to-atomic-normalization.md §6.2). ex:partner refines the same way, but on its rule rather than the policy, and its own scheme puts dpv:Marketing below dpv:Research. The refinement is ex:offer's, and the atoms of one policy share its data space, so it is read in ex:offer's data space alone (decisions/0050 #1, #7). Until #154, clingo-i gave a policy-level refinement no data space and read it in every policy, so scenarios 1, 2, and 3 declined as read apart by their policies (clingo-i at 02139b2). Scenario 2 is law L11 (due2-workflows.md §8): ex:offer alone gives the same answer. due2-core binds odrl:purpose to the request (due2-profiles.md §3). Each policy names the due2 profile and states odrl:purpose due2:conceptScheme <scheme>, the scheme its odrl:purpose reads (decisions/0015).",
+  "prefixes": {
+    "ex": "https://example.org/",
+    "dpv": "https://w3id.org/dpv#"
+  },
+  "scenarios": [
+    {
+      "name": "research is below research in the offer's scheme",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:ScientificResearch"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:useA",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "In ex:offer's scheme, dpv:ScientificResearch is below dpv:Research, so the refinement on ex:offer's action is T, and so is every part of ex:useA (due2-workflows.md §5.2): Permit."
+      }
+    },
+    {
+      "name": "the partner's edge does not reach the offer's refinement",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:Marketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:offer's scheme has no edge from dpv:Marketing to dpv:Research; only ex:partner's has, and it is not in ex:offer's data space (decisions/0050 #1). ex:useA's action part is F, and ex:useB's target part is F: NotApplicable."
+      }
+    },
+    {
+      "name": "the partner's edge widens its own refinement",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:b",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "odrl:purpose": {
+            "@id": "dpv:Marketing"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:useB",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "In ex:partner's own scheme dpv:Marketing is below dpv:Research, so ex:useB's refinement is T and every part of ex:useB is T: Permit. ex:useA's target part is F."
+      }
+    },
+    {
+      "name": "no purpose",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:a",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:useA",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "eliminated": [],
+        "unknown_parts": [
+          {
+            "ref": "ex:useA",
+            "input": "odrl:purpose",
+            "status": "missing"
+          }
+        ],
+        "why": "The request gives no purpose, so ex:useA's refinement is U, its part missing (decisions/0016 #2; due2-profiles.md §3, Resolution). The permission is completed alone: Indeterminate, NotApplicable..Permit. ex:useB's target part is F, so its parts are not reported."
+      }
+    }
+  ]
+}

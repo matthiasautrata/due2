@@ -1003,6 +1003,43 @@ def test_policy_reads_only_its_own_edges(
     assert outcome(interpreter.reply(v)) == expected
 
 
+# A refinement on a policy-level action lies in the policy's own tree, and a policy is read in its
+# own data space (`node_space/2`, constraint.lp), so the refinement is read in ex:p alone. ex:x is
+# a state property with no fact, so the refinement is U and ex:p alone is Indeterminate. isA reads
+# a hierarchy, so its completion variable is keyed by policy (decisions/0050 #9). Before #154 no
+# node gave the policy's tree a space, the refinement was read in every policy, and beside ex:q
+# the vector declined as `shared node: a completion variable per policy`. The `rule` rows state the same
+# refined action on ex:p's rule, whose tree always had ex:p's space.
+REFINED_USE = (
+    "[ rdf:value odrl:use ; odrl:refinement"
+    " [ odrl:leftOperand ex:x ; odrl:operator odrl:isA ; odrl:rightOperand ex:c ] ]"
+)
+
+
+@pytest.mark.parametrize("q_first", [False, True], ids=["p-first", "q-first"])
+@pytest.mark.parametrize("on_policy", [True, False], ids=["policy", "rule"])
+def test_policy_refinement_stays_with_its_policy(
+    interpreter: Interpreter, on_policy: bool, q_first: bool
+) -> None:
+    on_p, on_r = (
+        (f" odrl:action {REFINED_USE} ;", "")
+        if on_policy
+        else ("", f" odrl:action {REFINED_USE} ;")
+    )
+    p = (
+        CONSTRAINT_PREFIXES
+        + "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
+        + f"ex:p a odrl:Set ;{on_p} odrl:permission ex:r .\n"
+        + f"ex:r a odrl:Permission ;{on_r} odrl:target ex:a .\n"
+        + bound("x", "stateSource")
+    )
+    q = two_texts("", "odrl:action odrl:use ; odrl:target ex:b")[1]
+    v = vector(p, request={"action": "odrl:use", "target": "ex:a"})
+    assert outcome(interpreter.reply(v)) == "Indeterminate"
+    v["policies"] = [q, p] if q_first else [p, q]
+    assert outcome(interpreter.reply(v)) == "Indeterminate"
+
+
 # A rule that two policies state is one atom with an entry in each (decisions/0050 #4). The
 # program keeps one finding per atom, so where the entries' data spaces read a part apart it
 # declines rather than give both entries one reading. Here ex:p's ex:copy edge makes ex:rq's

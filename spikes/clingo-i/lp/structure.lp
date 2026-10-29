@@ -39,7 +39,7 @@
 %   `has_own_bearer/1`, `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`,
 %   `attester/2`, `has_attester/1`, `duty_atom/1`, `duty_of/2`, `pre/2`, `obligation/1`,
 %   `bearer/2`, `duty_action/2`, `duty_relation/2`); their timing and scope (`node_deadline/2`, `deadline_kind/2`,
-%   `duty_deadline/2`, `duty_scope/2`, `scope_value/1`, `states_scope/1`); the data spaces (`space/2`, `spaced/1`); extends
+%   `duty_deadline/2`, `duty_scope/2`, `scope_value/1`, `states_scope/1`); the data space (`space/2`); extends
 %   `unsupported/1` (lift.lp).
 
 %## The policy
@@ -538,21 +538,14 @@ atom_effect(Y, oblige) :- duty_atom(Y).
 
 Atom or duty atom `X` is read in policy `P`'s data space (decisions/0050 #4): a `Permit` or
 `Forbid` atom in each policy that states its rule, a root obligation in each policy that obliges
-its duty, and a precondition in each space of its permission. A duty atom that reaches none of
-these is read in every policy, so that it is still read where a single policy gives it one.
+its duty, and a precondition in each space of its permission, which every permission atom has
+(`atom_policy/2`). A duty is a root obligation or a
+precondition (`duty_node/1`), and an inheriting duty's atoms take their bearers from its
+permission's atoms (`inh_bearer/3`), so every duty atom has a space.
 *%
 space(X, P) :- atom_policy(X, P).
 space(Y, P) :- obligation(Y), duty_of(Y, Duty), obliges(P, Duty).
 space(Y, P) :- pre(X, Y), space(X, P).
-space(Y, P) :- duty_atom(Y), not spaced(Y), policy(P).
-
-%*! spaced(X)
-
-Atom or duty atom `X` has a data space from one of its policies.
-*%
-spaced(X) :- atom_policy(X, _).
-spaced(Y) :- obligation(Y), duty_of(Y, Duty), obliges(_, Duty).
-spaced(Y) :- pre(X, Y), atom(X).
 
 %*! bearer(Y, Party)
 

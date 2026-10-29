@@ -1,0 +1,35 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix due2:  <https://w3id.org/due2/profile#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dpv:   <https://w3id.org/dpv#> .
+@prefix ex:    <https://example.org/> .
+
+# The second policy of due2-policy-refinement-locality, written by another party.
+# Its own scheme puts dpv:Marketing below dpv:Research. The edge is local to this
+# policy: it widens the partner's own permission, never the offer's.
+
+ex:partner a odrl:Set ;
+    odrl:profile <https://w3id.org/due2/profile#> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:useB .
+
+ex:useB a odrl:Permission ;
+    odrl:target ex:b ;
+    odrl:action [
+        rdf:value odrl:use ;
+        odrl:refinement [
+            a odrl:Constraint ;
+            odrl:leftOperand odrl:purpose ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand dpv:Research
+        ]
+    ] .
+
+odrl:purpose due2:conceptScheme dpv:purposes-classes .
+
+dpv:purposes-classes a skos:ConceptScheme ;
+    skos:hasTopConcept dpv:Research .
+dpv:Marketing a skos:Concept ;
+    skos:broader dpv:Research ;
+    skos:inScheme dpv:purposes-classes .

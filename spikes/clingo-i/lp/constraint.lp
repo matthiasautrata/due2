@@ -9,12 +9,12 @@
 % letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `triple/3`, `voc/2`, `operator/2`, `set_based/1`, `connective/1`,
-%   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `off_shape/1`, `stated/3`
+%   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `off_shape/1`, `stated/3`,
 %   `has_rule/3` (lift.lp); `rule/1`, `duty_node/1`, `action_term/1`, `duty_of/2`, `policy/1`,
 %   `space/2` (structure.lp).
 % - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
 %   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left_iri/2`, `c_operator/2`,
-%   `op/2`, `right_value/2`, `right/2`, `unit/2`, `node_space/2`, `cspace/2`, `has_cspace/1`;
+%   `op/2`, `right_value/2`, `right/2`, `unit/2`, `node_space/2`, `cspace/2`;
 %   extends `reject/2` (structure.lp) and
 %   `unsupported/1` (lift.lp).
 
@@ -110,25 +110,21 @@ node_tree(Node, D) :- node_tree(Node, C), member(C, D).
 
 %*! node_space(Node, P)
 
-The rule or duty `Node` is read in policy `P`'s data space: a rule in each policy that states it,
-and a duty in each data space of its duty atoms, as `space/2` gives them.
+The structure node `Node` is read in policy `P`'s data space: a policy in its own, a rule in each
+policy that states it, and a duty in each data space of its duty atoms, as `space/2` gives them.
+A policy states a refined action that normalisation gives to its rules (`rule_value/3`, structure.lp), so the
+refinement's tree is the policy's (`node_tree/2`) and is read in that policy alone.
 *%
+node_space(P, P) :- policy(P).
 node_space(R, P) :- has_rule(P, R, _).
 node_space(Duty, P) :- duty_of(Y, Duty), space(Y, P).
 
 %*! cspace(C, P)
 
-The constraint node `C` is read in policy `P`'s data space: the space of a rule or duty whose
-tree it lies in (`node_tree/2`). A node with none of those is read in every policy.
+The constraint node `C` is read in policy `P`'s data space: the space of a policy, rule, or duty
+whose tree it lies in (`node_tree/2`). A node in no tree is read in no policy.
 *%
 cspace(C, P) :- node_tree(Node, C), node_space(Node, P).
-cspace(C, P) :- cnode(C), not has_cspace(C), policy(P).
-
-%*! has_cspace(C)
-
-The constraint node `C` lies in a tree of a rule or duty that has a data space.
-*%
-has_cspace(C) :- node_tree(Node, C), node_space(Node, _).
 
 %*! leaf(C)
 
