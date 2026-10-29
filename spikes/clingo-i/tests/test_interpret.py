@@ -1047,6 +1047,52 @@ def test_policy_refinement_stays_with_its_policy(
     assert outcome(interpreter.reply(v)) == "Indeterminate"
 
 
+# A cross-policy row is listed only when it holds in every completion in which its entry is a
+# candidate (due2-workflows.md §3.5, decisions/0052). ex:p states the prohibition ex:forbid and the
+# permission ex:r, under `constraint` on the unresolved ex:x; ex:q states ex:rq, whose finding is
+# t. Under `prohibit`, ex:forbid survives in every completion: it removes ex:r within ex:p and
+# ex:rq across. Under `perm` with `ex:x eq 5`, where ex:x is 5, ex:r removes ex:forbid within ex:p
+# and ex:rq permits; elsewhere ex:forbid denies. ex:rq is a candidate in both, and is removed in
+# one, so no row. Under `perm` with `eq 5 or neq 5`, ex:r applies in every completion, the verdict
+# is Permit, and ex:forbid removes nothing. A rule that read "ex:p does not surely remove
+# ex:forbid", the Kleene world's approximation, listed ex:rq by ex:forbid in both `perm` rows.
+@pytest.mark.parametrize(
+    ("conflict", "constraint", "expected"),
+    [
+        ("prohibit", leaf("eq", "5"),
+         {"verdict": "Deny", "verdict_basis": basis("ex:forbid prohibition"),
+          "eliminated": elims("ex:r ex:forbid prohibit", "ex:rq ex:forbid prohibit-overrides")}),
+        ("perm", leaf("eq", "5"),
+         {"verdict": "Indeterminate", "verdict_basis": basis("ex:r unknown"), "eliminated": [],
+          "verdict_range": {"low": "Deny", "high": "Permit"}}),
+        ("perm", f"[ odrl:or ( {leaf('eq', '5')} {leaf('neq', '5')} ) ]",
+         {"verdict": "Permit", "verdict_basis": basis("ex:r permission", "ex:rq permission"),
+          "eliminated": []}),
+    ],
+    ids=["surviving", "uncertain", "removed-by-cases"],
+)  # fmt: skip
+def test_cross_policy_rows_hold_in_every_completion(
+    interpreter: Interpreter, conflict: str, constraint: str, expected: Obj
+) -> None:
+    p = (
+        CONSTRAINT_PREFIXES
+        + f"ex:p a odrl:Set ; odrl:conflict odrl:{conflict} ;"
+        + " odrl:permission ex:r ; odrl:prohibition ex:forbid .\n"
+        + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + f" odrl:constraint {constraint} .\n"
+        + "ex:forbid a odrl:Prohibition ; odrl:action odrl:use ; odrl:target ex:a .\n"
+        + bound("x", "stateSource")
+    )
+    q = (
+        CONSTRAINT_PREFIXES
+        + "ex:q a odrl:Set ; odrl:permission ex:rq .\n"
+        + "ex:rq a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a .\n"
+    )
+    v = vector(p, sotw={"facts": {"ex:x": {"status": "unresolved"}}})
+    v["policies"] = [p, q]
+    assert explained(interpreter.reply(v)) == expected
+
+
 # A rule that two policies state is one atom with an entry in each, and each entry is read in its
 # own policy's data space (decisions/0050 #4). In the `read-apart` row, ex:p's ex:copy edge makes
 # ex:rq's action part t in ex:p and f in ex:q, so ex:rq's entry in ex:p permits. The risk is one

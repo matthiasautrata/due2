@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.61** (2026-10-29, #159): §3.2 and §3.3 split a request's and an evidence record's parameters into a parameter and its values, so a set-valued operand can read several values, or none (`decisions/0051`). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.60** (2026-10-28, #152): a policy is its own data space (`decisions/0050`). §3.1 keys `closure` by policy and defines an entry, an atom in one of its policies, and a policy's data space; §3.3 reads one hierarchy per policy and keys `activation` by entry; §3.5 keys the W2 trace relations, `alternative`, and `verdict_basis` by entry, and `eliminated` gains `by_policy`; §4's union keeps each policy's `closure` apart; §5 evaluates entries, and a root obligation is in force per entry; §6 folds entries, and §6.4 keys a hierarchy comparison's completion variable by policy; §8 adds L11, locality. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.59** (2026-10-27, #148): §3.1 and §3.5 give `diagnostic` an optional `detail`, the second thing a warning names, so an `AnonymousEntity` keeps its Rule and an `IgnoredPredicate` its predicate (`due2-diagnostics.md` §1). Earlier changes are in `docs/archive/changes.md`.

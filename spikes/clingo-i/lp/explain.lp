@@ -1,8 +1,9 @@
 %# explain.lp: the eliminations, the listed frontier, the obligations, and the unknown parts
 %
-% The reply's `eliminated`, `frontier`, `obligations`, and `unknown_parts`, all read from the
-% findings before completion, in the Kleene world `k`, not from a completion world, so they do
-% not depend on the completion.
+% The reply's `eliminated`, `frontier`, `obligations`, and `unknown_parts`, read from the findings
+% before completion, in the Kleene world `k`, not from a completion world, so they do not depend
+% on the completion. One rule is the exception: a cross-policy elimination is checked against the
+% completion world, and solve 2 keeps it only if every completion does (`override_broken/4`).
 %
 % The `eliminated` rows (due2-workflows.md §3.5, §6.1, §6.2; decisions/0011 #4) name one removed
 % entry, that is, an atom and one policy that states it (due2-workflows.md §6.2, *Entries*), one
@@ -13,7 +14,10 @@
 % completion: a forbid with finding `t`, or a permission with finding `t` that no completion
 % closes. A removed atom is in conflict in some completion: its finding is `t` or `u`, and a
 % permission is not closed. A `u` atom removes nothing (due2-workflows.md §6.2), but it can be
-% removed.
+% removed. Each row holds in every completion in which its removed entry takes part
+% (due2-workflows.md §3.5, decisions/0052). Within a policy that follows, since the remover is in
+% conflict there too. Across policies the forbid must also survive its own policy, and that
+% depends on the completion.
 %
 % The listed frontier is due2-workflows.md §6.3's, from the ready and pending candidates of world
 % `k`: an uncertain candidate enters only through the verdict. The `obligations` rows name each
@@ -26,7 +30,8 @@
 % (due2-workflows.md §3.1, §6.2 *Entries*). The shown rows keep the entry where the reply needs it
 % (`elim/4`, `listed_front/2`, `front_duty/3`), and interpret.py projects them to source rules.
 % Variable letters: DESIGN.md § Vocabulary; in an `elim` row `X` is removed, `P` is the policy of
-% its removed entry, and `Y` removes it. A polarity is `Pol`, `pos` or `neg`.
+% its removed entry, and `Y` removes it, from its entry in policy `Q`. A polarity is `Pol`, `pos`
+% or `neg`.
 %
 % - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_party/3`, `pre/2`,
 %   `space/2` (structure.lp); `conflict/2`, `left/2`, `prop/2` (bind.lp); `holds/2` (applies.lp);
@@ -34,14 +39,14 @@
 %   `unchecked_unit/1` (operand.lp); `crank/4`, `evaluates/3` (compare.lp); `rank/2` (kleene.lp);
 %   `voc/2` (lift.lp); `witness_cond/2`, `obligation_policy/2`, `instance/2`, `passed/1`,
 %   `status/4` (duty.lp); `duty_item/1`, `finding_atom/2`, `item_root/2`, `item_space/2`,
-%   `leaf_status/3` (completion.lp).
+%   `leaf_status/3` (completion.lp); `candidate/3`, `entry_eliminated/3` (resolve.lp).
 % - **Provides:** `may_apply/2`, `surely_applies/2`, `closed_by/3`, `maybe_closed/2`,
 %   `may_candidate/2`, `sure_candidate/2`, `may_contend/2`, `sure_contender/2`,
-%   `elim_within/4`, `void/1`, `elim/4`, `open_k/3`, `uncertain/2`, `conflict_removes/2`,
-%   `candidate_state/3`, `listed/2`, `listed_out/3`, `listed_apart/4`, `listed_dominated/2`,
-%   `listed_front/2`, `front_duty/3`, `obligation_row/2`, `reported/1`, `polar/5`, `flip/2`,
-%   `conj/2`, `disj/2`, `xone_pol/4`, `xone_by/4`, `live/5`, `witness_status/4`,
-%   `unknown_part/3`.
+%   `elim_within/4`, `void/1`, `elim/4`, `may_override/4`, `override_broken/4`, `open_k/3`,
+%   `uncertain/2`, `conflict_removes/2`, `candidate_state/3`, `listed/2`, `listed_out/3`,
+%   `listed_apart/4`, `listed_dominated/2`, `listed_front/2`, `front_duty/3`, `obligation_row/2`,
+%   `reported/1`, `polar/5`, `flip/2`, `conj/2`, `disj/2`, `xone_pol/4`, `xone_by/4`, `live/5`,
+%   `witness_status/4`, `unknown_part/3`.
 
 %## Findings
 
@@ -148,14 +153,37 @@ elim_within(X, P, Y, invalid) :- void(P), may_contend(X, P), sure_contender(Y, P
 Atom `Y` removes the entry of atom `X` in policy `P` under rule `Strat`: `violated_precondition`,
 which removes `X`'s entry in `P` when its precondition is violated there, a strategy of `P`, or
 `"prohibit-overrides"` across policies. Across policies, each entry of a `t` forbid that its
-policy `Q` did not remove removes each candidate entry in every policy other than `Q`
-(due2-workflows.md §6.2 #2). `test_combination_rows_on_facts` runs the cross-policy rule on
-hand-written facts.
+policy `Q` does not surely remove removes each candidate entry in every policy other than `Q`
+(due2-workflows.md §6.2 #2). Each row holds in every completion in which the removed entry takes
+part (due2-workflows.md §3.5): within a policy because its remover is `t`, across policies because
+`override_broken/4` drops a row that some completion breaks. `test_combination_rows_on_facts` runs
+the cross-policy rule on hand-written facts, with no completion world, and
+`test_cross_policy_rows_hold_in_every_completion` runs it on replies.
 *%
 elim(X, P, Y, violated_precondition) :- closed_by(X, P, Y).
 elim(X, P, Y, Strat) :- elim_within(X, P, Y, Strat).
-elim(X, P, Y, "prohibit-overrides") :- may_candidate(X, P), surely_applies(Y, Q),
-    atom_effect(Y, forbid), not elim_within(Y, Q, _, _), P != Q.
+elim(X, P, Y, "prohibit-overrides") :- may_override(X, P, Y, Q), not override_broken(X, P, Y, Q).
+
+%*! may_override(X, P, Y, Q)
+
+The entry of the `t` forbid `Y` in policy `Q`, which `Q` does not surely remove, may remove the
+candidate entry `(X, P)` of another policy by prohibit-overrides. This is world `k`'s reading;
+`override_broken/4` checks it against the completion.
+*%
+may_override(X, P, Y, Q) :- may_candidate(X, P), surely_applies(Y, Q), atom_effect(Y, forbid),
+    not elim_within(Y, Q, _, _), P != Q.
+
+%*! override_broken(X, P, Y, Q)
+
+In this model's completion world, `(X, P)` is a candidate and `Q` removes the forbid entry
+`(Y, Q)`, so `Y` does not remove `X` there.
+*%
+% "Not surely removed" is not "survives": a `u` permission of `Q` under `perm` removes `(Y, Q)` in
+% the completions where it applies. The cautious solve 2 keeps a row only if no completion breaks
+% it, so the reply lists `(X, P)` as removed by `Y` exactly when `(Y, Q)` survives in every
+% completion in which `(X, P)` is a candidate (due2-workflows.md §3.5, decisions/0052).
+override_broken(X, P, Y, Q) :- may_override(X, P, Y, Q), candidate(W, X, P),
+    entry_eliminated(W, Y, Q).
 
 #show elim/4.
 
@@ -217,6 +245,15 @@ candidate_state(X, P, ready) :- may_candidate(X, P), not uncertain(X, P),
 Conflict removes the entry of atom `X` in policy `P` in every completion where it takes part: it
 has an `elim` row other than `violated_precondition`.
 *%
+% A cross-policy row can differ between models, and the listed frontier must not. The frontier
+% is read only under `Pending` (`Interpreter.interpret` in clingo_i/interpret.py), and it lists
+% only ready or pending entries of world `k`: their finding is `t` and no completion closes them,
+% so each is a candidate in every completion. A definite verdict means no completion denies, so
+% no forbid survives in any completion: each `t` forbid entry `(Y, Q)` has `entry_eliminated`
+% everywhere, and `override_broken` holds for each listed entry in every model. The rows of the
+% other entries may vary between models, and those entries are never listed. Without the filter,
+% world `k`'s reading would remove a listed route
+% (`test_route_listed_beside_a_forbid_removed_by_cases`, tests/test_duty.py).
 conflict_removes(X, P) :- elim(X, P, _, Strat), Strat != violated_precondition.
 
 %*! listed(X, P)

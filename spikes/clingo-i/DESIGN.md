@@ -122,7 +122,7 @@ tests/                 the spike's own tests (`TESTS.md`)
 5. **Solve 2:** every file but `bind.lp` and `pivot.lp`, in cautious mode, over the one world `c`. More than `VARIABLE_CAP`, 64, completion variables declines the vector as `variable-cap` (`correctness-strategy.md` §3 records why 64). `interpret.py` counts the `var/1` atoms of the first model, which `completion.lp` shows: the variables are the same in every model, but grounding leaves `var/1` atoms that no model makes true, so a count of the ground atoms would be too high (`test_variable_cap`). No model at all is an `error`: an integrity constraint failed, so the program is wrong. Otherwise, from the atoms true in every model:
    - the verdict is the one `verdict(c, Verdict)`, or `Indeterminate` if no verdict holds in every completion;
    - `basis(c, X, Role)` gives a definite verdict's basis;
-   - `elim(X, P, Y, Strat)` gives `eliminated`. It reads no world, so it is the same in every model.
+   - `elim(X, P, Y, Strat)` gives `eliminated`. A row within a policy reads no world, so it is the same in every model. A cross-policy row is dropped in a model whose world `c` makes its entry a candidate and removes its forbid's entry in its own policy, so the cautious answer keeps only the rows that hold in every completion (`explain.lp`, `override_broken/4`; `decisions/0052`).
 6. **Solve 3**, for an `Indeterminate` only: every file but `bind.lp`, in brave mode. Each model is a completion `c`, one `pivot(L)`, and the world `flip`, such that `c` and `flip` have different verdicts. The atoms true in some model give the `unknown(X)` atoms, and every `verdict(c, Verdict)` that occurs gives the range (`pivot.lp`, *The range is exact*).
 7. **Reply** (§ Output).
 

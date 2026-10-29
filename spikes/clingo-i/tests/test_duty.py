@@ -844,6 +844,37 @@ def test_pending_basis_beyond_the_listed_frontier(duty_interpreter: Interpreter)
     }
 
 
+def test_route_listed_beside_a_forbid_removed_by_cases(duty_interpreter: Interpreter) -> None:
+    # ex:p, under perm, forbids use of ex:a and permits it by ex:r, on `ex:x eq 5 or ex:x neq 5`
+    # with ex:x unresolved, needing ex:d2. ex:r's finding is u, but it applies in every
+    # completion and removes ex:forbid there, so ex:q's ex:rq, needing ex:d, is never removed:
+    # the verdict is Pending, and ex:rq's route is listed (ex:r is uncertain in world k, so its
+    # route is not). Without decisions/0052, a row read from world k, where ex:p does not surely
+    # remove ex:forbid, would remove ex:rq by prohibit-overrides and leave the frontier empty.
+    # [["ex:d"]] is the listed frontier of v0.33; the routes that suffice of due2-workflows.md
+    # §6.3 also list ["ex:d2"] (#103).
+    leaf = "[ odrl:leftOperand ex:x ; odrl:operator odrl:{} ; odrl:rightOperand 5 ]"
+    p = HEAD + (
+        "ex:p a odrl:Set ; odrl:profile dprod: ; odrl:conflict odrl:perm ;\n"
+        + "    odrl:permission ex:r ; odrl:prohibition ex:forbid .\n"
+        + "ex:x dprod:operandSource dprod:stateSource ; dprod:operandProperty ex:x .\n"
+        + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d2 ;\n"
+        + f"    odrl:constraint [ odrl:or ( {leaf.format('eq')} {leaf.format('neq')} ) ] .\n"
+        + "ex:forbid a odrl:Prohibition ; odrl:action odrl:use ; odrl:target ex:a .\n"
+        + "ex:d2 a odrl:Duty ; odrl:action odrl:inform .\n"
+    )
+    q = HEAD + (
+        "ex:q a odrl:Set ; odrl:permission ex:rq .\n"
+        + "ex:rq a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d .\n"
+        + "ex:d a odrl:Duty ; odrl:action odrl:compensate .\n"
+    )
+    v = vector(p)
+    v["policies"] = [p, q]
+    out = duty_interpreter.reply(v).get("output")
+    assert isinstance(out, dict), out
+    assert (out["verdict"], routes(out), out["eliminated"]) == ("Pending", [["ex:d"]], [])
+
+
 OBLIGED = root_obligation(PAST)  # ex:o, in force, its deadline passed with no witness
 
 

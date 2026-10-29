@@ -59,3 +59,4 @@ Throughout the repository, `decisions/0002` #5 means item 5 of that record's dec
 | [0049](0049-a-unit-belongs-to-the-binding.md) | A unit belongs to the operand's binding, and a unit no binding declares makes the comparison unknown | 2026-10-26 | In force |
 | [0050](0050-a-policy-is-its-own-data-space.md) | A policy is its own data space: its findings read only its own corpus, its profiles, and the world | 2026-10-28 | In force |
 | [0051](0051-a-parameter-and-its-values.md) | A request or evidence parameter and its values are two relations | 2026-10-29 | In force |
+| [0052](0052-an-elimination-holds-in-every-completion.md) | An elimination is listed only when it holds in every completion | 2026-10-29 | In force |
