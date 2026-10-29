@@ -721,6 +721,27 @@
             "properties": {
               "name": {
                 "$ref": "#/$defs/Id"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "request_param_value": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "name",
+            "value"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/Id"
               },
               "value": {
                 "$ref": "#/$defs/Term"
@@ -877,6 +898,32 @@
           "x-key": [
             "evidence_id",
             "name"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "evidence_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "name": {
+                "$ref": "#/$defs/Id"
+              }
+            },
+            "required": [
+              "evidence_id",
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "evidence_param_value": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-key": [
+            "evidence_id",
+            "name",
+            "value"
           ],
           "items": {
             "type": "object",

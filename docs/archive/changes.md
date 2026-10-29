@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.60** (2026-10-28, #152): a policy is its own data space (`decisions/0050`). §3.1 keys `closure` by policy and defines an entry, an atom in one of its policies, and a policy's data space; §3.3 reads one hierarchy per policy and keys `activation` by entry; §3.5 keys the W2 trace relations, `alternative`, and `verdict_basis` by entry, and `eliminated` gains `by_policy`; §4's union keeps each policy's `closure` apart; §5 evaluates entries, and a root obligation is in force per entry; §6 folds entries, and §6.4 keys a hierarchy comparison's completion variable by policy; §8 adds L11, locality. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.59** (2026-10-27, #148): §3.1 and §3.5 give `diagnostic` an optional `detail`, the second thing a warning names, so an `AnonymousEntity` keeps its Rule and an `IgnoredPredicate` its predicate (`due2-diagnostics.md` §1). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.58** (2026-10-27, #150): §3.5 adds `input` to the key of `unknown_part`, so a part that reads two inputs, such as an evidence record whose bearer and attester comparisons are both `U`, has one row per input that makes it `U` (§5.3, `decisions/0048`). Earlier changes are in `docs/archive/changes.md`.
@@ -144,6 +146,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Changes in v0.2:** §2.3 (where exhaustiveness actually pays), new §5.1 (absent / unknown / false), §7.1 (semantic-preservation property), §9 (verification retargeted at the normaliser), §10 (rewritten around the two-stage split; Rego/OPA added), §11 (generated-code rule generalised), §13 (register extended). Companion document: `due2-architecture.md`.
 
 ## `due2-profiles.md`
+
+**Changes in v0.29** (2026-10-28, #152): §6 keeps a policy's hierarchy edges, and its profile modules', with that policy alone; §7 records a duty's activation per policy (`decisions/0050`). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.28** (2026-10-26, #145): §3 rejects with `InvalidBinding` a binding whose owning layer (§2) states two ranges, units, or cardinalities, a unit that is not an IRI, a cardinality other than `due2:one` or `due2:set`, or a literal range. Earlier changes are in `docs/archive/changes.md`.
 

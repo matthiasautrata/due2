@@ -9,11 +9,12 @@
 % `reject`. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `voc/2`, `context_property/2`, `kind/2`, `term_kind/2`,
-%   `declared_in_scheme/3`, `closure/4`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
-%   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3`
-%   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`, `owned/3`,
-%   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`,
-%   `scheme/2` (bind.lp); `evaluates/3` (compare.lp).
+%   `declared_in_scheme/3`, `closure/4`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`,
+%   `request_param_set/1`, `request_party/2`, `sotw_effective_at/1`, `request_at/1`,
+%   `evidence/4`, `evidence_param/3`, `evidence_param_set/2`, `value/3` (driver);
+%   `c_operator/2`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`, `owned/3`, `src/2`,
+%   `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`, `scheme/2` (bind.lp);
+%   `evaluates/3` (compare.lp).
 % - **Provides:** `single_left/1`, `has_scheme/1`,
 %   `concept_operator/1`, `declared_concept/2`, `read_concept/3`, `candidate_value/2`,
 %   `conforms/2`, `read_world/1`, `read_in/3`, `read_in/2`, `read_value/3`, `read_resolved/2`,
@@ -173,7 +174,7 @@ conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, literal), kind(T
 % |---|---|---|
 % | `request` | the request has the parameter, or gives it as a list, even an empty one | the parameter's values |
 % | `state` | the SOTW fact has status `resolved` | the fact's values |
-% | `witness`, in `wit(E)` only | the evidence `E` has the parameter | its values |
+% | `witness`, in `wit(E)` only | the evidence `E` has the parameter, or gives it as a list, even an empty one | its values |
 % | `context`, `agent` | the request names an assignee | the assignee |
 % | `context`, `clock` | the SOTW has `effective_at` | that instant |
 % | `context`, `actionTime`, in `k` | the request has `at` | that instant |
@@ -253,8 +254,8 @@ read_value(wit(E), Op, Lit) :- read_in(wit(E), Op), src(Op, context), prop(Op, P
 %*! read_resolved(W, Op)
 
 In world `W`, `Op`'s source answered: the request has the parameter (a list parameter, even an
-empty one), the SOTW fact is `resolved`, the evidence has the parameter, or the context has the
-built-in. Every other status (`missing`, `invalid`, `conflict`, `unresolved`, or no fact at all)
+empty one), the SOTW fact is `resolved`, the evidence has the parameter (a list parameter, even an
+empty one), or the context has the built-in. Every other status (`missing`, `invalid`, `conflict`, `unresolved`, or no fact at all)
 leaves it unresolved.
 *%
 read_resolved(W, Op) :- read_in(W, Op), src(Op, request), prop(Op, Prop), request_param(Prop, _).
@@ -262,6 +263,8 @@ read_resolved(W, Op) :- read_in(W, Op), src(Op, request), prop(Op, Prop), reques
 read_resolved(W, Op) :- read_in(W, Op), src(Op, state), prop(Op, Prop), fact(Prop, resolved).
 read_resolved(wit(E), Op) :- read_in(wit(E), Op), src(Op, witness), prop(Op, Prop),
     evidence_param(E, Prop, _).
+read_resolved(wit(E), Op) :- read_in(wit(E), Op), src(Op, witness), prop(Op, Prop),
+    evidence_param_set(E, Prop).
 read_resolved(W, Op) :- read_in(W, Op), src(Op, context), read_value(W, Op, _).
 
 %*! nonconforming(W, Op, P)

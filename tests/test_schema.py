@@ -204,6 +204,80 @@ def test_a_warning_keeps_its_second_name(schemas: Schemas) -> None:
     assert check_collection(corpus, "Corpus", "Corpus", schemas, "c") == []
 
 
+AT: Json = {"v": "2026-06-01T00:00:00Z", "t": "http://www.w3.org/2001/XMLSchema#dateTime"}
+
+
+def test_a_parameter_has_several_values_or_none(schemas: Schemas) -> None:
+    """Guards the parameter relations (due2-workflows.md §3.2, §3.3; decisions/0051): a
+    set-valued operand reads a parameter with two values, or one with none, which is the empty
+    set, in a request and in an evidence record. Without `request_param_value` and
+    `evidence_param_value`, two values for one parameter are two tuples with one key and are
+    rejected, and the empty set has no row, so it reads as `missing`."""
+    request: Obj = {
+        "request": [{"action": "http://www.w3.org/ns/odrl/2/print", "at": AT}],
+        "request_param": [{"name": "ex:page"}, {"name": "ex:recipient"}],  # ex:recipient: none
+        "request_param_value": [
+            {"name": "ex:page", "value": "ex:page/2"},
+            {"name": "ex:page", "value": "ex:page/3"},
+        ],
+    }
+    assert check_collection(request, "Request", "Request", schemas, "r") == []
+    param: Obj = {"evidence_id": "ex:e", "name": "ex:recipient"}
+    sotw: Obj = {
+        "sotw": [{"effective_at": AT}],
+        "evidence": [{"evidence_id": "ex:e", "occurred_at": AT, "actor": "ex:a", "action": "ex:p"}],
+        "evidence_param": [param, {"evidence_id": "ex:e", "name": "ex:cc"}],  # ex:cc: none
+        "evidence_param_value": [{**param, "value": "ex:b"}, {**param, "value": "ex:c"}],
+    }  # fmt: skip
+    assert check_collection(sotw, "Sotw", "Sotw", schemas, "s") == []
+
+
+def _list_scenarios() -> list[tuple[str, int]]:
+    """Every scenario whose request passes a list for a parameter, by case and index."""
+    found: list[tuple[str, int]] = []
+    for path in sorted(CASES.glob("*/case.json")):
+        scenarios = cast(Obj, json.loads(path.read_text())).get("scenarios") or []
+        for i, scenario in enumerate(cast(list[Json], scenarios)):
+            params = cast(Obj, cast(Obj, scenario).get("request") or {}).get("params") or {}
+            if any(isinstance(v, list) for v in cast(Obj, params).values()):
+                found.append((path.parent.name, i))
+    return found
+
+
+def _port_request(request: Obj, prefixes: dict[str, str]) -> Obj:
+    """The port's `Request` for a scenario's `request` and its parameters, by the mapping in
+    conformance/README.md: one `request_param` per property, one `request_param_value` per
+    value. Values are IRIs only, which is all the list scenarios pass."""
+
+    def iri(name: Json) -> str:
+        prefix, _, local = cast(str, name).partition(":")
+        return prefixes[prefix] + local if prefix in prefixes else cast(str, name)
+
+    at: Obj = {**cast(Obj, AT), "v": request["at"]}
+    params = cast(Obj, request["params"]).items()
+    return {
+        "request": [{"action": iri(request["action"]), "at": at}],
+        "request_param": [{"name": iri(p)} for p, _ in params],
+        "request_param_value": [
+            {"name": iri(p), "value": iri(cast(Obj, v)["@id"])}
+            for p, vs in params
+            for v in cast(list[Json], vs)
+        ],
+    }
+
+
+@pytest.mark.parametrize(("case", "scenario"), _list_scenarios())
+def test_a_list_scenario_maps_to_the_port(case: str, scenario: int, schemas: Schemas) -> None:
+    """Guards that a scenario with a list parameter maps to port tuples (conformance/README.md,
+    decisions/0051). Without `request_param_value`, a scenario that passes two values for one
+    parameter is rejected as two tuples with one key, which clingo-i's suite does not catch,
+    since clingo-i reads `case.json` directly."""
+    doc = cast(Obj, json.loads((CASES / case / "case.json").read_text()))
+    request = cast(Obj, cast(list[Json], doc["scenarios"])[scenario])["request"]
+    port = _port_request(cast(Obj, request), cast(dict[str, str], doc["prefixes"]))
+    assert check_collection(port, "Request", "Request", schemas, case) == []
+
+
 def _chain(n: int) -> Obj:
     """A corpus of one Permit root and `n` Oblige atoms, each the child of the one before."""
     target = "http://www.w3.org/ns/odrl/2/target"

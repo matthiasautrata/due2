@@ -26,7 +26,7 @@ from rdflib.term import Node
 from clingo_i import flatten, values
 from clingo_i.interpret import Interpreter
 from clingo_i.json_types import Json, Obj, as_list, as_obj, as_str
-from tests.conftest import BASE, SPIKE
+from tests.conftest import BASE, SPIKE, vector
 
 ROOT = SPIKE.parents[1]
 TURTLE = sorted(
@@ -184,7 +184,7 @@ def normalise(vector: Obj) -> Obj:
             d = as_obj(e["discharges"], "discharges")
             ev["discharges"] = [norm_name(d["duty"], pfx), d["reference"]]
         params_e = {
-            harness_expand(k, pfx): norm_value(v, pfx)
+            harness_expand(k, pfx): norm_values(v, pfx)
             for k, v in as_obj(e.get("params") or {}, "").items()
         }
         if params_e:
@@ -223,6 +223,16 @@ def lex(s: Symbol) -> str:
     return s.arguments[0].string
 
 
+def unlist(params: dict[str, list[Json]], sets: set[str]) -> Obj:
+    """Each parameter's values as normalise() writes them: a set, possibly empty, when it was
+    given as a list, and otherwise its one value."""
+    assert all(len(v) == 1 for k, v in params.items() if k not in sets)
+    return {
+        k: {"set": canon(params.get(k, []))} if k in sets else params[k][0]
+        for k in params.keys() | sets
+    }
+
+
 def decode(facts: list[Symbol]) -> Obj:
     """The facts read back as normalise() writes the vector."""
     r: Obj = {}
@@ -230,6 +240,8 @@ def decode(facts: list[Symbol]) -> Obj:
     sets: set[str] = set()
     parties: dict[str, list[Json]] = {}
     params: dict[str, list[Json]] = {}
+    ev_sets: set[tuple[str, str]] = set()
+    ev_params: dict[str, dict[str, list[Json]]] = {}
     facts_o: dict[str, dict[str, Obj]] = {}
     evidence: dict[str, Obj] = {}
 
@@ -273,10 +285,11 @@ def decode(facts: list[Symbol]) -> Obj:
                 evidence.setdefault(a[0].string, {})[f.name.removeprefix("evidence_")] = a[1].string
             case "evidence_discharges":
                 evidence.setdefault(a[0].string, {})["discharges"] = [a[1].string, a[2].string]
+            case "evidence_param_set":
+                ev_sets.add((a[0].string, a[1].string))
             case "evidence_param":
-                ps = evidence.setdefault(a[0].string, {}).setdefault("params", {})
-                assert isinstance(ps, dict)
-                ps[a[1].string] = decode_value(a[2])
+                vs = ev_params.setdefault(a[0].string, {}).setdefault(a[1].string, [])
+                vs.append(decode_value(a[2]))
             case "activation":
                 activation[a[0].string] = lex(a[1])
             case "sotw_closure":
@@ -285,9 +298,12 @@ def decode(facts: list[Symbol]) -> Obj:
                 raise AssertionError(f"unknown fact {f}")
     if parties:
         r["parties"] = {k: canon(v) for k, v in parties.items()}
-    if params:
-        r["params"] = {k: {"set": canon(v)} if k in sets else v[0] for k, v in params.items()}
-        assert all(len(v) == 1 for k, v in params.items() if k not in sets)
+    if params or sets:
+        r["params"] = unlist(params, sets)
+    for e, prop in ev_sets:
+        ev_params.setdefault(e, {}).setdefault(prop, [])
+    for e, ps in ev_params.items():
+        evidence[e]["params"] = unlist(ps, {prop for x, prop in ev_sets if x == e})
     for answers in facts_o.values():
         for fo in answers.values():
             fo["values"] = canon(as_list(fo["values"], "values"))
@@ -313,6 +329,30 @@ def prefixes(v: Obj) -> dict[str, str]:
 def test_input_round_trip(vec: Vector) -> None:
     facts = flatten.input_facts(vec.input, prefixes(vec.input))
     assert decode(facts) == normalise(vec.input)
+
+
+LISTED: Obj = {
+    "ex:two": [{"@id": "ex:v"}, {"@id": "ex:w"}],
+    "ex:none": [],
+    "ex:one": [{"@id": "ex:v"}],
+    "ex:bare": {"@id": "ex:v"},
+}
+EVIDENCE: Obj = {
+    "id": "e1",
+    "occurred_at": "2026-05-01T00:00:00Z",
+    "actor": "ex:alice",
+    "action": "odrl:compensate",
+    "params": LISTED,
+}
+
+
+def test_list_params_round_trip() -> None:
+    # The corpus has no empty list and no list in an evidence record's params, so the round trip
+    # above never reads them. Without `request_param_set`, `[]` would read as an absent
+    # parameter, and `["ex:v"]` as the bare value. Without `evidence_param_set`, a list in an
+    # evidence record's params is refused as malformed input.
+    v = vector(request={"params": LISTED}, sotw={"evidence": [EVIDENCE]})
+    assert decode(flatten.input_facts(v, prefixes(v))) == normalise(v)
 
 
 # --- invariance: no order and no blank node label reaches the facts ---

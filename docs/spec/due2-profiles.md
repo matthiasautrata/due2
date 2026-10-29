@@ -1,9 +1,9 @@
 # due2 — Profiles and Operand Registry
 
-**Status:** Draft v0.29
+**Status:** Draft v0.30
 **Companions:** `due2-workflows.md` (what W1–W3 consume and produce) · `odrl-compound-to-atomic-normalization.md` (W1 stage 1) · `due2-architecture.md` (why).
 
-**Changes in v0.29** (2026-10-28, #152): §6 keeps a policy's hierarchy edges, and its profile modules', with that policy alone; §7 records a duty's activation per policy (`decisions/0050`). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.30** (2026-10-29, #159): §3 reads a request or witness parameter's values from `request_param_value` and `evidence_param_value`, and a parameter stated with no values is the empty set for a `set` operand (`decisions/0051`). Earlier changes are in `docs/archive/changes.md`.
 
 Markers as in the companions: **[D]** decided · **[O]** open, alternatives listed · **[F]** blocked on an external unknown.
 
@@ -68,10 +68,10 @@ ex:purpose a odrl:LeftOperand ;
 
 | Source | Reads | due2 data (`due2-workflows.md` §3) |
 |---|---|---|
-| `dprod:requestSource` | a property of the normalised request | `request_param` keyed by the property IRI |
+| `dprod:requestSource` | a property of the normalised request | `request_param` and its `request_param_value`, keyed by the property IRI |
 | `dprod:stateSource` | a property of the normalised world-state node | SOTW `fact` keyed by the property IRI and the answering source |
 | `dprod:contextSource` | a built-in | the table below |
-| `due2:witnessSource` | inside a duty's constraints only: a parameter of the witness (`due2-workflows.md` §5.3) | `evidence_param` keyed by the property IRI |
+| `due2:witnessSource` | inside a duty's constraints only: a parameter of the witness (`due2-workflows.md` §5.3) | `evidence_param` and its `evidence_param_value`, keyed by the property IRI |
 
 | Context property | Value |
 |---|---|
@@ -87,12 +87,14 @@ ex:purpose a odrl:LeftOperand ;
 
 | Values present | Outcome | due2 status |
 |---|---|---|
-| none | `MissingValue` | `missing` |
+| none, for a `one` operand | `MissingValue` | `missing` |
 | one, conforming to `τ` | the value | `resolved` |
 | one, not conforming | `TypeMismatch` | `invalid` |
 | several, cardinality `one` | `MultipleValues` | `conflict` |
 | several, cardinality `set` | the set | `resolved` |
 | source could not answer | — | `unresolved` |
+
+A request or witness parameter stated with no values is the empty set for a `set` operand, so `resolved`, as a state source's `resolved` answer with no values is (`due2-workflows.md` §3.3, *Several sources*), and `missing` for a `one` operand (`due2-workflows.md` §3.2, `decisions/0051`).
 
 `missing`, `invalid`, `conflict`, and `unresolved` make the constraint `U`. They never make it false (`ways-of-working.md` §5.1). Only an `unresolved` value is completed in `due2-workflows.md` §6.4, because only an `unresolved` value is known to exist. A constraint `U` for any other status, or for a value that does not fit its operator, is opaque there: never paired with its complement, so it cannot decide a verdict by cases (`decisions/0016`).
 

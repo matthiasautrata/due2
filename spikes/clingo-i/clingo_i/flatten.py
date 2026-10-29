@@ -70,8 +70,11 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
   duty.lp, and `evidence_issuer/2` by lift.lp too.
 - `evidence_discharges/3`, `evidence_discharges(E, Duty, Ref)`: its optional `discharges`.
   Read by duty.lp.
-- `evidence_param/3`, `evidence_param(E, Prop, Value)`: each of its `params`. Read by lift.lp
-  and operand.lp (`witness`).
+- `evidence_param/3`, `evidence_param(E, Prop, Value)`: each value of its `params`. Read by
+  lift.lp and operand.lp (`witness`).
+- `evidence_param_set/2`, `evidence_param_set(E, Prop)`: a `params` element given as a list, as
+  `request_param_set/1` is for the request; `[]` gives this fact and no `evidence_param/3`.
+  Read by operand.lp.
 - `activation/2`, `activation(Key, Lit)`: each element of `activation`, a duty atom's id or a
   rule IRI, and its instant. duty.lp reads a key that is a duty's IRI, as the case format names an
   activation (`conformance/README.md`, SOTW). Read by lift.lp and duty.lp.
@@ -430,11 +433,16 @@ def sotw_facts(sotw: Obj, prefixes: dict[str, str]) -> list[Symbol]:
                     ],
                 )
             )
-        for key, x in as_obj(ev.get("params") or {}, f"{what}.params").items():
+        for key, v in as_obj(ev.get("params") or {}, f"{what}.params").items():
             param = String(expand(key, prefixes, f"{what}.params"))
-            out.append(
-                Function("evidence_param", [e, param, value(x, prefixes, f"{what}.params.{key}")])
-            )
+            if isinstance(v, list):
+                out.append(Function("evidence_param_set", [e, param]))
+            for x in _values(v):
+                out.append(
+                    Function(
+                        "evidence_param", [e, param, value(x, prefixes, f"{what}.params.{key}")]
+                    )
+                )
     for key, at in as_obj(sotw.get("activation") or {}, "sotw.activation").items():
         out.append(
             Function(

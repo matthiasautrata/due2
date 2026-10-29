@@ -506,6 +506,34 @@ def test_witness_condition_is_read_from_the_evidence(
     assert pick(found, "status") == {f"status(k,{D},{P},{status})"}
 
 
+SET_WITNESS = WITNESS.replace("ex:w .", "ex:w ; due2:cardinality due2:set .")
+PART_OF = "[ odrl:leftOperand ex:w ; odrl:operator odrl:isPartOf ; odrl:rightOperand ex:v, ex:x ]"
+
+
+@pytest.mark.parametrize(
+    ("values", "witness", "status"),
+    [([{"@id": "ex:v"}, {"@id": "ex:x"}], "t", "fulfilled"),
+     ([{"@id": "ex:v"}, {"@id": "ex:bad"}], "f", "outstanding"),
+     ([], "t", "fulfilled")],
+)  # fmt: skip
+def test_set_witness_reads_every_value(
+    duty_interpreter: Interpreter, values: list[Json], witness: str, status: str
+) -> None:
+    # A set-valued witness operand reads every value the evidence gives, and `[]` is the empty
+    # set, which is part of any set (due2-profiles.md §3, §4; decisions/0051). Without the
+    # evidence_param_set/2 rule of read_resolved/2, `[]` would be missing, so the witness u and
+    # the duty unknown.
+    evidence: Obj = {**PAID, "params": {"ex:w": values}}
+    found = findings(
+        duty_interpreter,
+        duty_with(PART_OF, SET_WITNESS),
+        profile=True,
+        sotw={"evidence": [evidence]},
+    )
+    assert value_of(found, f'witness({D},{P},"ex:e1")') == witness
+    assert pick(found, "status") == {f"status(k,{D},{P},{status})"}
+
+
 def test_witness_only_nodes_are_not_world_k_items(duty_interpreter: Interpreter) -> None:
     # The and splits: the guard leaf is a world-k item, the witness leaf is evaluated only in
     # wit(E), and the and itself in no world, since its parts are read apart. Without
