@@ -78,7 +78,7 @@ duty_item(fulfilled(Y, P)) :- instance(Y, P).
 %*! completed_item(I)
 
 `I` has a completed value in every world: `applies(X, P)` for each entry of an atom, and
-`owed(Y, P)` and `fulfilled(Y, P)` for each entry of a precondition. The constraint is in
+`owed(Y, P)` and `fulfilled(Y, P)` for each entry of a precondition. The check is in
 integrity.lp.
 *%
 completed_item(applies(X, P)) :- atom(X), space(X, P).

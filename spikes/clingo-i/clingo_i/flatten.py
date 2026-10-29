@@ -86,6 +86,10 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 `unplaceable/2`, read by lift.lp and constraint.lp; and `plus/3`, read by duty.lp for a
 relative deadline.
 
+**Solve control** (`interpret.py`): `defect_sought/0`, an external that integrity.lp declares
+false and `_solve` sets true for its defect search, which asks for a model with a defect. Read by
+integrity.lp.
+
 A field the case format does not define, a missing required field (`action`; an evidence
 record's `id`, `occurred_at`, `actor`, `action`; a listed fact answer's `source`), a duplicate
 evidence `id`, two answers for one property from one source, or an unknown status is a

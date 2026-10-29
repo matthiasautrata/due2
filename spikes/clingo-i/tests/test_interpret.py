@@ -105,6 +105,69 @@ def test_deleted_rule_fails_loudly(file: str, line: str) -> None:
     assert "error" in reply, reply
 
 
+PARTIAL_DELETIONS = [
+    (
+        "guard",
+        "constraint.lp",
+        "node_space(Duty, P) :- duty_of(Y, Duty), space(Y, P).",
+        "Permit",
+        "guard_value",
+    ),
+    (
+        "completion",
+        "completion.lp",
+        "completed(W, I, V) :- pre_in(W, I, 1), assigned(W, fin(I), V).",
+        "Indeterminate",
+        "completed",
+    ),
+]
+
+
+@pytest.mark.parametrize(("gap", "file", "line", "intact", "check"), PARTIAL_DELETIONS)
+def test_partial_gap_fails_loudly(gap: str, file: str, line: str, intact: str, check: str) -> None:
+    # Each deletion leaves a gap that only some items or completions reach, and `check` is the
+    # integrity.lp check that must name it.
+    # `guard`: ex:d's guard `ex:g eq ex:v` reads ex:other, so ex:d is not owed and ex:r permits.
+    # Without node_space for the duty, the guard has no data space and no value, and owed's #min
+    # skips it, so ex:d is owed and the reply is Pending, unless a defect names the guard.
+    # `completion`: ex:r has an absent assignee, an opaque part, and a constraint on unresolved
+    # ex:x. Without the fin rule, the completions where the leaf is t have no `completed` value;
+    # pruned by a constraint, they would leave only the completions where ex:r is f, and
+    # NotApplicable, unless a defect in any model is an error.
+    profile = (
+        CONSTRAINT_PREFIXES
+        + "ex:p a odrl:Set ; odrl:profile dprod: ; odrl:conflict odrl:prohibit ;"
+    )
+    if gap == "guard":
+        policy = (
+            profile
+            + " odrl:permission ex:r .\n"
+            + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ; odrl:duty ex:d .\n"
+            + "ex:d a odrl:Duty ; odrl:action odrl:compensate ; odrl:constraint "
+            + "[ odrl:leftOperand ex:g ; odrl:operator odrl:eq ; odrl:rightOperand ex:v ] .\n"
+            + bound("g", "stateSource")
+        )
+        fact: Obj = {"status": "resolved", "values": [{"@id": "ex:other"}]}
+        v = vector(policy, sotw={"facts": {"ex:g": fact}})
+    else:
+        policy = (
+            profile
+            + " odrl:permission ex:r .\n"
+            + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+            + f" odrl:assignee ex:alice ; odrl:constraint {leaf('eq', '5')} .\n"
+            + bound("x", "stateSource")
+        )
+        v = vector(
+            policy, request={"parties": {}}, sotw={"facts": {"ex:x": {"status": "unresolved"}}}
+        )
+    assert outcome(Interpreter(DUTY_INIT).reply(v)) == intact
+    programs = load_programs()
+    assert line in programs[file].splitlines(), f"{file} no longer has {line!r}"
+    programs[file] = programs[file].replace(line, "")
+    reply = Interpreter(DUTY_INIT, programs).reply(v)
+    assert f"defect({check}(" in str(reply.get("error")), reply
+
+
 def test_two_effects_fail_loudly() -> None:
     programs = load_programs()
     programs["integrity.lp"] += "\natom_effect(X, forbid) :- atom(X).\n"

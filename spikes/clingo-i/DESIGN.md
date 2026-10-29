@@ -6,6 +6,7 @@ clingo-i is the semantics program of `decisions/0009`. It is a generic clingo pr
 
 The spec defines most terms: atom, part, finding, candidate, outstanding set, open value, entry, alternative, frontier, completion, and verdict (`due2-workflows.md` §3.1, §5.2, §6.1, §6.2, §6.3, §6.4); duty, precondition, root obligation, bearer, guard, witness condition, evidence, instance, witness, and deadline (`due2-workflows.md` §3.1, §3.3, §5.2, §5.3); and left operand, binding, source, and operator (`due2-profiles.md` §2–§5). These are the ones the program adds, or uses in a narrower sense:
 
+- **Defect.** A `defect/1` atom: a check of `integrity.lp` (or `explain.lp`'s candidate-state check) that fails in one model, such as an item with no truth value or two. The **defect search** runs the ground program of solve 2 or 3 again, with the external `defect_sought` true, so that only the models with a defect remain; any model it finds makes the reply an `error`.
 - **Driver.** `flatten.py` and `values.py`: the Python that turns a vector into facts. It is syntactic, and decides nothing.
 - **Duty atom.** A duty node expanded like a rule, to one action term, one relation value, and one bearer: `a(Duty, A, T, Party)`, with the sentinel `none` for a missing relation or bearer (`structure.lp`). It is not an `atom/1`, because it is matched against evidence, not against the request.
 - **Item.** Anything that carries a truth value: a part (`part(X, P, action)`, `part(X, P, target)`, `part(X, P, party(F))`, or `part(X, P, cons(C))`), an atom's finding (`applies(X, P)`), a constraint node (`c(C, P)`), a duty finding (`owed(Y, P)`, `in_force(Y, P)`, `fulfilled(Y, P)`), or a step of the witness test (`check(Y, P, E, K)`, `witness(Y, P, E)`, `duty.lp`). `P` is the policy of the item's entry, and the item is read in `P`'s data space (*Data space*, below), so a node that two policies share has an item in each.
@@ -96,7 +97,7 @@ lp/applies.lp          the parts of an atom, and its finding
 lp/duty.lp             a duty's guards and witness conditions, its findings, and its duty status
 lp/completion.lp       the completion variables, and one completion of them per answer set
 lp/resolve.lp          candidates, conflict, verdict, and basis of one world
-lp/integrity.lp        the shape of each atom, and the integrity constraints that make a gap an error
+lp/integrity.lp        the shape of each atom, and the defects that make a gap an error
 lp/explain.lp          the eliminations, read from the findings
 lp/pivot.lp            solve 3 only: a completion, its flip, and the pivotal variables
 docs/                  the generated reference: program.lp includes lp/ for clindocs; python.md for mkdocstrings
@@ -118,8 +119,8 @@ tests/                 the spike's own tests (`TESTS.md`)
    3. any `unsupported_input(Field)`: declined, naming the smallest input field;
    4. any `unsupported_value(Reason)`: declined, naming the smallest reason (`values.py`).
 
-   Solves 0 and 1 do not load `integrity.lp`. A decline or a rejection names what is wrong, and a failed integrity constraint would only say that something is.
-5. **Solve 2:** every file but `bind.lp` and `pivot.lp`, in cautious mode, over the one world `c`. More than `VARIABLE_CAP`, 64, completion variables declines the vector as `variable-cap` (`correctness-strategy.md` §3 records why 64). `interpret.py` counts the `var/1` atoms of the first model, which `completion.lp` shows: the variables are the same in every model, but grounding leaves `var/1` atoms that no model makes true, so a count of the ground atoms would be too high (`test_variable_cap`). No model at all is an `error`: an integrity constraint failed, so the program is wrong. Otherwise, from the atoms true in every model:
+   Solves 0 and 1 do not load `integrity.lp`. A decline or a rejection names what is wrong, and a defect would only name the relation that lost a value.
+5. **Solve 2:** every file but `bind.lp` and `pivot.lp`, in cautious mode, over the one world `c`. More than `VARIABLE_CAP`, 64, completion variables declines the vector as `variable-cap` (`correctness-strategy.md` §3 records why 64). `interpret.py` counts the `var/1` atoms of the first model, which `completion.lp` shows: the variables are the same in every model, but grounding leaves `var/1` atoms that no model makes true, so a count of the ground atoms would be too high (`test_variable_cap`). No model at all, or any model with a `defect/1` atom, is an `error`, because the program is wrong. The defect search, a second run of the same ground program with `defect_sought` true, finds such a model (`integrity.lp`), since the cautious consequences hide a defect that only some completions have. Solve 3 runs it too. Otherwise, from the atoms true in every model:
    - the verdict is the one `verdict(c, Verdict)`, or `Indeterminate` if no verdict holds in every completion;
    - `basis(c, X, Role)` gives a definite verdict's basis;
    - `elim(X, P, Y, Strat)` gives `eliminated`. A row within a policy reads no world, so it is the same in every model. A cross-policy row is dropped in a model whose world `c` makes its entry a candidate and removes its forbid's entry in its own policy, so the cautious answer keeps only the rows that hold in every completion (`explain.lp`, `override_broken/4`; `decisions/0052`).
@@ -219,7 +220,7 @@ The spike has no fallback beyond `max_mixed` or `max_frontier_vars` (`decisions/
 - in `explain.lp`, over relations derived from the world-`k` findings and duty statuses: the `elim` rows (a `forbid` its own policy did not remove), the closure (`not closed_by`, `not maybe_closed`), the listed frontier (`not uncertain`, `not conflicted`, `not listed_out`, `not listed_apart`, `not listed_dominated`), and the liveness walk (`not polar`, `not xone_by`), which reads node ranks and no relation it derives. A `u` finding gives no `elim` row, and the rows are only ever read as "no remover", never as a truth value. `not holds(owed(Y), f)` and `not holds(fulfilled(Y), t)` read a finding that has exactly one value (`kleene.lp`), so they mean "`t` or `u`" and "`f` or `u`";
 - in `duty.lp`'s witness test, over input records, which are complete: an evidence record lists every field it has, its issuer included. So `not evidence_object`, and an actor that is not the performer (`not performer`) and that the request does not leave open (`not open_actor`), make a check `f`. For the object this reads the equality `e.object = d.relation_value` of `due2-workflows.md` §5.3, with `object` optional: evidence that records no object does not record the duty's relation value. `not attested`, `not keyed`, `not discharged`, and `not activation` read the policy, the request, and the SOTW the same way, and `not ev_reaches` and `not member_bearer` read closed-world closures. Where an input that the test needs is absent, the check is `u`, not `f`: `not effective_pos` makes `effective` `u`, and `not subject` makes `actor` `u` (`duty.lp`). The activation is the one exception: it takes the spec's default, `effective_at`. `not passed` cannot hide an undecided deadline, because a deadline that has no position declines the vector.
 
-A missing truth value has no `holds` fact. Then an integrity constraint fails, instead of the value defaulting to `f`.
+A missing truth value has no `holds` fact. Then `integrity.lp` derives a defect, and the reply is an `error`, instead of the value defaulting to `f`.
 
 ## Declines
 
@@ -291,6 +292,6 @@ These are an `error` reply, not a decline:
 - an unknown `odrl:profile` (`UnrecognisedProfile`);
 - a policy that is not admissible (`reject`). The codes are `NoPolicy`, `MultiplePolicies`, `InvalidConflict`, `MissingAction`, `MissingTarget`, `TargetAndOutput`, `RuleReferenceCycle`, `InvalidTiming`, and `TimingOutsideDuty` (`structure.lp`); `UnsupportedConstruct` and `ReplacedPolicy` (`lift.lp`); `MalformedConstraint`, `UnsupportedOperator`, `UnsupportedConnective`, `FloatingPointOperand`, and `MixedDuration` (`constraint.lp`); `UnboundLeftOperand`, `InvalidBinding`, `ConflictingProfileDeclaration`, `RetypedOperand`, `OperandRangeMismatch`, and `WitnessOutsideDuty` (`bind.lp`); `OperatorTypeMismatch`, and `InvalidBinding` for a right operand outside the operand's scheme (`operand.lp`); `MixedDutyConstraint` (`duty.lp`); and `IdentityConflict` (`interpret.py`, after solve 0). Each is defined in `due2-diagnostics.md`;
 - a malformed vector (`flatten.py`), among them a name in `request` or `sotw` whose prefix is undeclared, or that has none: it would equal no policy term and make a part `F` (#146);
-- an unsatisfiable program.
+- a program with no model, or with a model that has a defect.
 
-`interpret` receives only admissible policies from well-formed vectors, so each of these is a defect, in the vector or in the spike.
+`interpret` receives only admissible policies from well-formed vectors, so each of these is a bug, in the vector or in the spike.

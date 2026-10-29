@@ -31,8 +31,8 @@ part_of(X, P, part(X, P, cons(C))) :- space(X, P), atom_constraint(X, C).
 %*! item(I)
 
 `I` must have exactly one truth value: each part, `applies(X, P)` for each entry, and each
-constraint node in each of its data spaces. compare.lp adds the nodes, and integrity.lp holds
-the constraint.
+constraint node in each of its data spaces. compare.lp adds the nodes, and integrity.lp checks
+it.
 *%
 item(I) :- part_of(_, _, I).
 item(applies(X, P)) :- atom(X), space(X, P).
@@ -133,7 +133,7 @@ holds(part(X, P, cons(C)), V) :- atom_constraint(X, C), space(X, P), holds(c(C, 
 % The Kleene conjunction of the parts. `#min` is used as a function: `Min` is the least rank
 % among the entry's parts, and `V` is the value of that rank. Every entry has an action and a
 % target part, so the set is never empty. If it were, `#min` would be `#sup`, no rank would
-% match it, `applies(X, P)` would have no value, and the item constraint in integrity.lp would
-% fail.
+% match it, `applies(X, P)` would have no value, and integrity.lp's one-value check would
+% derive a defect.
 holds(applies(X, P), V) :- atom(X), space(X, P), rank(V, Min),
     Min = #min { N : part_of(X, P, I), holds(I, Vp), rank(Vp, N) }.

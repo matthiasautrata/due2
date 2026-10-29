@@ -173,7 +173,7 @@ pending(W) :- frontier(W, _, _), not ready(W).
 
 World `W` has verdict `Verdict`: `"Deny"`, `"Permit"`, `"Pending"`, or `"NotApplicable"`, the
 first whose condition holds, in that order. The order is that of due2-workflows.md §6.4.
-Exactly one, by the constraint in integrity.lp. interpret.py combines the verdicts of every
+Exactly one, by the check in integrity.lp. interpret.py combines the verdicts of every
 completion into the reply's verdict.
 *%
 verdict(W, "Deny") :- deny(W).

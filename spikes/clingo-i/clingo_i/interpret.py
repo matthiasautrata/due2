@@ -237,7 +237,7 @@ class Interpreter:
             Declined: The vector uses something the spike does not read.
             ValueError: The vector is malformed, or the policy is not admissible, which includes
                 naming a profile with no module (`UnrecognisedProfile`).
-            RuntimeError: The program has no model, so it is wrong.
+            RuntimeError: The program has no model, or a model with a defect, so it is wrong.
         """
         text, atoms = self._corpus(vector)
         self._structure(atoms)
@@ -434,7 +434,7 @@ class Interpreter:
         These files make no choice and are stratified, so the program has at most one model.
 
         Raises:
-            RuntimeError: No model: a constraint of `files` failed.
+            RuntimeError: No model: the program is wrong.
         """
         shows = "\n".join(f"#show {n}/{k}." for n, k in STRUCTURE)
         ctl = Control([], logger=_log)
@@ -477,11 +477,14 @@ class Interpreter:
         clingo reports the consequences of the enumeration so far with each model, so the last
         model's atoms are the final answer. The variables are counted in the first model:
         `var/1` is the same in every model, but grounding keeps `var/1` atoms that no model
-        makes true, so counting the ground atoms would overcount (completion.lp).
+        makes true, so counting the ground atoms would overcount (completion.lp). The defect
+        search solves the same ground program again, with `defect_sought` true, and asks whether
+        any model has a `defect/1` atom (integrity.lp): the cautious consequences would hide a
+        defect in one completion. It names at most three.
 
         Raises:
             Declined: More than `VARIABLE_CAP` completion variables.
-            RuntimeError: No model: an integrity constraint failed.
+            RuntimeError: No model, or a model with a defect: the program is wrong.
         """
         ctl = Control(["0", f"--enum-mode={mode}"], logger=_log)
         ctl.add("base", [], facts + "\n" + self._program(files))
@@ -498,7 +501,21 @@ class Interpreter:
             return not over  # False stops the enumeration
 
         if not ctl.solve(on_model=on_model).satisfiable:
-            raise RuntimeError(f"no model satisfies the integrity constraints ({mode})")
+            raise RuntimeError(f"no model ({mode})")
         if over:
             raise Declined("variable-cap")
+        defects: list[str] = []
+
+        # The first model's consequences, cautious or brave, are its own atoms, so stopping
+        # there reads exactly one model's defects.
+        def on_defect(model: Model) -> bool:
+            defects.extend(
+                sorted(str(a) for a in model.symbols(shown=True) if a.match("defect", 1))
+            )
+            return False  # one model with a defect is enough
+
+        ctl.assign_external(Function("defect_sought"), True)
+        if ctl.solve(on_model=on_defect).satisfiable:
+            more = ", ..." if len(defects) > 3 else ""
+            raise RuntimeError(f"{', '.join(defects[:3])}{more} ({mode})")
         return last

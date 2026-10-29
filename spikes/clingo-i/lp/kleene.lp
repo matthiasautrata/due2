@@ -1,7 +1,7 @@
 %# kleene.lp: truth values
 %
-% The three truth values and their order (due2-workflows.md §5.1). The integrity constraints
-% over them are in integrity.lp. Variable letters: DESIGN.md § Vocabulary.
+% The three truth values and their order (due2-workflows.md §5.1). The checks over them
+% are in integrity.lp. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** nothing.
 % - **Provides:** `rank/2`, `two_valued/1`.

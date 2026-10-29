@@ -194,13 +194,14 @@ evaluates(wit(E), C, P) :- evidence(E, _, _, _), in_witness(C), cspace(C, P).
 %   tested against the evidence. A `u` instance is tested too, so that its `fulfilled` finding has
 %   a value whatever the guard turns out to be.
 
-% Each finding is an item, so integrity.lp's one-value constraint covers it.
+% Each finding is an item, so integrity.lp's one-value check covers it.
 item(owed(Y, P)) :- pre(X, Y), space(X, P).
 item(in_force(Y, P)) :- obligation_policy(Y, P).
 
 % The Kleene conjunction of the guards. The 2 in the set is the conjunction's identity, so a
 % duty with no guard is owed `t`: due2-workflows.md §5.2 makes it owed whenever its parent
-% applies, and this finding does not read the parent, since W3 reads it for a parent only.
+% applies, and this finding does not read the parent, since W3 reads it for a parent only. A
+% `#min` skips a guard with no value, so integrity.lp's `guard_value` check requires one.
 holds(owed(Y, P), V) :- pre(X, Y), space(X, P), rank(V, N),
     N = #min { 2; M, C : guard(Y, C), holds(c(C, P), Vc), rank(Vc, M) }.
 
@@ -503,7 +504,8 @@ holds(check(Y, P, E, discharges), f) :- witness_pair(Y, P, E), keyed(Y), not dis
 % and the vector declines as `duty: evidence without effective_at`.
 
 % Each pair is an item: the witness test conjoined with the witness conditions in world wit(E).
-% The seven checks are always in the set, so the #min always has a value.
+% The seven checks are always in the set, so the #min always has a value. It skips a witness
+% condition with no rank, so integrity.lp's `witness_rank` check requires one.
 item(witness(Y, P, E)) :- witness_pair(Y, P, E).
 holds(witness(Y, P, E), V) :- witness_pair(Y, P, E), rank(V, N),
     N = #min { M, check, K : holds(check(Y, P, E, K), Vk), rank(Vk, M);

@@ -1,7 +1,7 @@
 """Duty atoms, the guard/witness split, the duty findings, and W3 over them (TESTS.md).
 
 The atoms and the split are read from solve 1's model, which `rows` grounds directly; the
-findings and statuses from one model of solve 2's files, integrity constraints included,
+findings and statuses from one model of solve 2's files, integrity.lp's defects included,
 which `findings` grounds; and the verdict, frontier, obligations, and explanation from the
 reply, which `output` asks for.
 """
@@ -358,8 +358,8 @@ def test_unknown_instance_scope_declines(duty_interpreter: Interpreter) -> None:
 def findings(interp: Interpreter, body: str, profile: bool = False, **sections: Obj) -> set[str]:
     """One model of solve 2's files, integrity.lp included, of `ex:p` with `body`, IRIs shortened.
 
-    Grounding solve 2's files and not solve 1's makes the integrity constraints apply: a model
-    exists only if every item has one value and every instance one status. World `k` is fixed
+    Grounding solve 2's files and not solve 1's makes integrity.lp's checks apply: the model has
+    no defect only if every item has one value and every instance one status. World `k` is fixed
     before completion, so every model has the same findings.
     """
     head = f"ex:p a odrl:Set{' ; odrl:profile dprod:' if profile else ''} ;\n"
@@ -370,7 +370,9 @@ def findings(interp: Interpreter, body: str, profile: bool = False, **sections: 
     ctl.ground([("base", [])])
     out: set[str] = set()
     result = ctl.solve(on_model=lambda m: out.update(str(s) for s in m.symbols(atoms=True)))
-    assert result.satisfiable, "an integrity constraint failed"
+    assert result.satisfiable, "no model"
+    defects = {s for s in out if s.startswith("defect(")}
+    assert not defects, defects
     for long, short in SHORT.items():
         out = {s.replace(f'"{long}', f'"{short}') for s in out}
     return out
@@ -444,7 +446,7 @@ def test_each_failing_check_fails_the_witness(
 ) -> None:
     # Each check of the witness test (due2-workflows.md §5.3) on its own: one f check makes the
     # witness f, and the duty, with no other witness, stays outstanding. Without the check's
-    # rule its item would have no value and the integrity constraint would fail. A duty with an
+    # rule its item would have no value and integrity.lp would derive a defect. A duty with an
     # attester fails evidence with no issuer as well as evidence from another issuer.
     body = PRE.replace("odrl:compensate .", f"odrl:compensate{extra} .")
     duty = D.replace("none,none", '"ex:receipt",none') if kind == "object" else D

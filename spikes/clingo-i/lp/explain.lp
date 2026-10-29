@@ -46,7 +46,7 @@
 %   `uncertain/2`, `conflict_removes/2`, `candidate_state/3`, `listed/2`, `listed_out/3`,
 %   `listed_apart/4`, `listed_dominated/2`, `listed_front/2`, `front_duty/3`, `obligation_row/2`,
 %   `reported/1`, `polar/5`, `flip/2`, `conj/2`, `disj/2`, `xone_pol/4`, `xone_by/4`, `live/5`,
-%   `witness_status/4`, `unknown_part/3`.
+%   `witness_status/4`, `unknown_part/3`, `defect/1`.
 
 %## Findings
 
@@ -232,13 +232,13 @@ listed_out(X, P, Y) :- may_candidate(X, P), not uncertain(X, P), pre(X, Y), open
 
 In world `k`, the candidate entry `(X, P)` has state `S`: `ready`, `pending`, or `uncertain`. The
 states are given by the table of due2-workflows.md §6.1. Every candidate entry has exactly one
-(the constraint below).
+(the `defect/1` check below; the defect search reports it, DESIGN.md § Vocabulary).
 *%
 candidate_state(X, P, uncertain) :- uncertain(X, P).
 candidate_state(X, P, pending) :- may_candidate(X, P), not uncertain(X, P), listed_out(X, P, _).
 candidate_state(X, P, ready) :- may_candidate(X, P), not uncertain(X, P),
     #count { Y : listed_out(X, P, Y) } = 0.
-:- may_candidate(X, P), #count { S : candidate_state(X, P, S) } != 1.
+defect(candidate_state(X, P)) :- may_candidate(X, P), #count { S : candidate_state(X, P, S) } != 1.
 
 %*! conflict_removes(X, P)
 
