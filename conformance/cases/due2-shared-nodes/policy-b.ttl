@@ -1,0 +1,35 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# The second policy of due2-shared-nodes, for ex:datasetB. It states ex:readCatalogue,
+# ex:outsideEU, and ex:councilApproval as policy.ttl does, and adds two action edges of its
+# own: ex:browse is included in odrl:read, and ex:signOff in ex:approve. Both are local to this
+# policy, so they widen its own entries of the shared nodes, never ex:policyA's.
+
+ex:policyB a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readB, ex:readCatalogue .
+
+ex:readB a odrl:Permission ;
+    odrl:action odrl:read ; odrl:target ex:datasetB ;
+    odrl:constraint ex:outsideEU ;
+    odrl:duty ex:councilApproval .
+
+ex:readCatalogue a odrl:Permission ;
+    odrl:action odrl:read ; odrl:target ex:catalogue .
+
+ex:outsideEU a odrl:Constraint ;
+    odrl:leftOperand ex:region ; odrl:operator odrl:neq ; odrl:rightOperand ex:eu .
+
+ex:councilApproval a odrl:Duty ;
+    odrl:assignee ex:council ; odrl:action ex:approve .
+
+ex:region a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:region .
+
+ex:approve a odrl:Action ; odrl:includedIn odrl:use .
+
+ex:browse a odrl:Action ; odrl:includedIn odrl:read .
+ex:signOff a odrl:Action ; odrl:includedIn ex:approve .

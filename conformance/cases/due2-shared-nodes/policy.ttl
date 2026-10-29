@@ -1,0 +1,35 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix dprod: <https://ekgf.org/dprod/spec/develop/> .
+@prefix ex:    <https://example.org/> .
+
+# due2-native: nodes that two policies share (due2-workflows.md §4, Several policies are one
+# corpus). Two datasets, each with its own policy, under rules their provider writes once: a
+# read only when the request's region is not the EU, a duty on the data-use council to approve
+# the read, and a catalogue that anyone may read. Each policy states the shared nodes in full,
+# because W1 normalises each policy alone and the two descriptions must agree. The other policy
+# is in policy-b.ttl.
+
+ex:policyA a odrl:Set ;
+    odrl:profile <https://ekgf.org/dprod/spec/develop/> ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:readA, ex:readCatalogue .
+
+ex:readA a odrl:Permission ;
+    odrl:action odrl:read ; odrl:target ex:datasetA ;
+    odrl:constraint ex:outsideEU ;
+    odrl:duty ex:councilApproval .
+
+# ex:readCatalogue, ex:outsideEU, and ex:councilApproval are shared with ex:policyB.
+ex:readCatalogue a odrl:Permission ;
+    odrl:action odrl:read ; odrl:target ex:catalogue .
+
+ex:outsideEU a odrl:Constraint ;
+    odrl:leftOperand ex:region ; odrl:operator odrl:neq ; odrl:rightOperand ex:eu .
+
+ex:councilApproval a odrl:Duty ;
+    odrl:assignee ex:council ; odrl:action ex:approve .
+
+ex:region a odrl:LeftOperand ;
+    dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:region .
+
+ex:approve a odrl:Action ; odrl:includedIn odrl:use .

@@ -1,0 +1,395 @@
+{
+  "case": "due2-shared-nodes",
+  "source": "due2-native: a permission, a duty, and a constraint that two policies share (due2-workflows.md §4, decisions/0036, decisions/0050)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "No origin: the case is due2-native, and every verdict is derived by hand. ex:outsideEU, ex:councilApproval, and ex:readCatalogue are each one node that both policies state; each policy states them in full, as W1 normalises each policy alone and the two descriptions must agree (due2-workflows.md §4, decisions/0036). Policy B adds two edges of its own, ex:browse below odrl:read and ex:signOff below ex:approve, and they widen only policy B's entries (decisions/0050): scenarios 7 to 9 show that, and clingo-i declines them (shared node: read apart by its policies), so only the hand derivation checks them. ex:councilApproval has no deadline and no recurrence, so sotw.activation is empty. A case could not give activation per policy anyway: sotw.activation is one instant per duty IRI, for every entry of the duty (conformance/README.md, sotw.activation).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "one approval serves dataset A",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetA",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:approval",
+            "occurred_at": "2026-05-20T09:00:00Z",
+            "actor": "ex:council",
+            "action": "ex:approve"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readA",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:readA applies: its action and target match, and ex:region is ex:us, not ex:eu, so ex:outsideEU is T. ex:approval is a witness for ex:councilApproval: its actor is the bearer ex:council and its action is ex:approve (due2-workflows.md §5.3), so the precondition is T and the candidate is ready: Permit."
+      }
+    },
+    {
+      "name": "the same approval serves dataset B",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetB",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:approval",
+            "occurred_at": "2026-05-20T09:00:00Z",
+            "actor": "ex:council",
+            "action": "ex:approve"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readB",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:councilApproval is one atom with an entry in each policy (due2-workflows.md §4, Several policies are one corpus), and ex:approval witnesses it in ex:policyB's data space as in ex:policyA's (due2-workflows.md §5.3). ex:readB applies as ex:readA does in scenario 1, so it is ready: Permit."
+      }
+    },
+    {
+      "name": "no approval yet",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetB",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:councilApproval"
+          ]
+        ],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readB",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:councilApproval",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:readB applies, and ex:councilApproval has no witness and no deadline, so it is outstanding and the only route is pending (due2-workflows.md §5.3, §6.3): Pending."
+      }
+    },
+    {
+      "name": "the shared constraint fails inside the EU",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetA",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:eu"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:approval",
+            "occurred_at": "2026-05-20T09:00:00Z",
+            "actor": "ex:council",
+            "action": "ex:approve"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:region is ex:eu, so ex:outsideEU is F and so is ex:readA (due2-workflows.md §5.2). ex:readB and ex:readCatalogue name other targets: NotApplicable."
+      }
+    },
+    {
+      "name": "the shared constraint is unknown without a region",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetB",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:approval",
+            "occurred_at": "2026-05-20T09:00:00Z",
+            "actor": "ex:council",
+            "action": "ex:approve"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Indeterminate",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readB",
+            "role": "unknown"
+          }
+        ],
+        "verdict_range": {
+          "low": "NotApplicable",
+          "high": "Permit"
+        },
+        "unknown_parts": [
+          {
+            "ref": "ex:readB",
+            "input": "ex:region",
+            "status": "missing"
+          }
+        ],
+        "eliminated": [],
+        "why": "The request gives no ex:region, so ex:outsideEU is U, its part missing (due2-workflows.md §5.2), and so is ex:readB. ex:approval witnesses ex:councilApproval as in scenario 2, so the precondition is T. A missing part is opaque and ex:readB is completed alone (due2-workflows.md §6.4, decisions/0016 #2): Indeterminate, NotApplicable..Permit."
+      }
+    },
+    {
+      "name": "a permission both policies state",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:catalogue",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readCatalogue",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:readCatalogue is one atom with an entry in each policy, and every part of it is T in both (due2-workflows.md §5.2): Permit, with the atom named once."
+      }
+    },
+    {
+      "name": "a policy's action edge reaches only its own entry",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:browse",
+        "target": "ex:catalogue",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readCatalogue",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "In ex:policyB's data space ex:browse is included in odrl:read, so ex:readCatalogue's entry there is T; its entry in ex:policyA reads no such edge, so its action part is F (due2-workflows.md §3.3, §5.2, decisions/0050). One applicable entry is enough: Permit."
+      }
+    },
+    {
+      "name": "a sign-off witnesses the duty only where it is an approval",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetB",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:signOff",
+            "occurred_at": "2026-05-20T09:00:00Z",
+            "actor": "ex:council",
+            "action": "ex:signOff"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readB",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "In ex:policyB's data space ex:signOff is included in ex:approve, so ex:signOff, whose actor is the bearer ex:council, is a witness for ex:councilApproval's entry there (due2-workflows.md §5.3, Witness). ex:readB applies as in scenario 2, so it is ready: Permit."
+      }
+    },
+    {
+      "name": "the sign-off does not reach the other policy",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:read",
+        "target": "ex:datasetA",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {},
+        "params": {
+          "ex:region": {
+            "@id": "ex:us"
+          }
+        }
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [
+          {
+            "id": "ex:signOff",
+            "occurred_at": "2026-05-20T09:00:00Z",
+            "actor": "ex:council",
+            "action": "ex:signOff"
+          }
+        ],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Pending",
+        "frontier": [
+          [
+            "ex:councilApproval"
+          ]
+        ],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:readA",
+            "role": "permission"
+          },
+          {
+            "ref": "ex:councilApproval",
+            "role": "duty"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:councilApproval's entry in ex:policyA reads no edge from ex:signOff to ex:approve, so ex:signOff is no witness there and the duty is outstanding (due2-workflows.md §3.3, §5.3, Witness, decisions/0050): Pending."
+      }
+    }
+  ]
+}
