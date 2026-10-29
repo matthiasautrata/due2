@@ -22,12 +22,12 @@
 %   `src/2`, `prop/2` (bind.lp); `has_scheme/1`, `read_ok/2`, `read_status/3`,
 %   `unchecked_unit/1` (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `holds/2`, `part_of/2`,
 %   `atom_constraint/2` (applies.lp); `rank/2` (kleene.lp); `pre/2`, `obligation/1` (structure.lp);
-%   `guard/2`, `instance/1` (duty.lp).
+%   `guard/2`, `instance/1` (duty.lp); `space/2` (structure.lp); `cspace/2` (constraint.lp).
 % - **Provides:** `duty_item/1`, `completed_item/1`, `u_item/1`, `item_root/2`, `finding_atom/2`,
 %   `leaf_status/2`, `opaque_leaf/1`, `opened/2`, `open/1`, `opaque_item/1`, `complement/2`,
-%   `op_literal/3`, `leaf_key/5`, `leaf_attr/2`, `attr_apart/2`, `same_key/2`, `leaf_lit/3`,
+%   `op_literal/3`, `leaf_key/5`, `leaf_attr/2`, `hier_leaf/1`, `attr_apart/2`, `same_key/2`, `leaf_lit/3`,
 %   `var/1`, `reads/2`, `world/1`, `assigned/3`, `part_in/3`, `root_in/4`, `pre_in/3`,
-%   `completed/3`; extends `crank/3` and `evaluates/2` (compare.lp).
+%   `completed/3`; extends `crank/3` and `evaluates/2` (compare.lp) and `unsupported/1` (lift.lp).
 
 %## Findings
 
@@ -173,7 +173,7 @@ opaque_item(I) :- opened(I, C), completed_item(I), opaque_leaf(C).
 %## Paired variables
 
 % Two opened paired leaves read one variable when they make the same comparison (due2-workflows.md
-% §6.4). The key has six components:
+% §6.4). The key has seven components:
 %
 % | Component | Relation | Note |
 % |---|---|---|
@@ -183,6 +183,7 @@ opaque_item(I) :- opened(I, C), completed_item(I), opaque_leaf(C).
 % | right operand values | `leaf_attr(C, right(Term))` | a set of terms |
 % | units | `leaf_attr(C, unit(Iri))` | a set |
 % | concept | `leaf_attr(C, concept)` | whether the operand has a concept scheme: with one, `eq` is ⊑, and without, identity |
+% | policy | `leaf_attr(C, policy(P))` | for a leaf that compares under a hierarchy (`hier_leaf/1`), the policy whose data space reads it |
 %
 % `leaf_key/5` holds the first three components, and `leaf_attr/2` the sets. A node reached from
 % both a rule's constraint and an action's refinement has two scopes, and so two keys for one value.
@@ -222,6 +223,31 @@ concept scheme. Two operands bound to one property, one with a scheme and one wi
 leaf_attr(C, right(Term)) :- leaf_key(C, _, _, _, _), right(C, Term).
 leaf_attr(C, unit(Iri)) :- leaf_key(C, _, _, _, _), unit(C, Iri).
 leaf_attr(C, concept) :- leaf_key(C, _, _, _, _), left(C, Op), has_scheme(Op).
+leaf_attr(C, policy(P)) :- leaf_key(C, _, _, _, _), hier_leaf(C), cspace(C, P).
+
+%*! hier_leaf(C)
+
+Leaf `C` compares under a hierarchy: its operator is `isA`, `isPartOf`, or `hasPart`, or its left
+operand has a concept scheme. Its completion key includes the policy whose data space reads it,
+because one value can be below a right operand in one policy's hierarchy and not in another's
+(due2-workflows.md §6.4, decisions/0050 #9).
+*%
+hier_leaf(C) :- leaf(C), op(C, (isA; isPartOf; hasPart)).
+hier_leaf(C) :- leaf(C), left(C, Op), has_scheme(Op).
+
+% The program has one completion variable per node: one leaf, one opaque finding, one `fulfilled`.
+% A node in two data spaces needs one per policy (decisions/0050 #9), so the vector declines.
+% Nothing here depends on a choice, so the atom is in every answer set, and interpret.py reads it
+% from the first.
+unsupported("shared node: a completion variable per policy") :- leaf_key(C, _, _, _, _),
+    hier_leaf(C), cspace(C, P), cspace(C, Q), P != Q.
+unsupported("shared node: a completion variable per policy") :- opaque_item(applies(X)),
+    space(X, P), space(X, Q), P != Q.
+unsupported("shared node: a completion variable per policy") :- opaque_item(owed(Y)),
+    space(Y, P), space(Y, Q), P != Q.
+unsupported("shared node: a completion variable per policy") :- var(ful(Y)), space(Y, P),
+    space(Y, Q), P != Q.
+#show unsupported/1.
 
 %*! attr_apart(C, D)
 

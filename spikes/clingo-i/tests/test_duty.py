@@ -460,7 +460,7 @@ def test_attested_issuer_and_discharged_reference_pass(
 ) -> None:
     # The counterparts of the attester and discharges failures: an issuer at or below the
     # attester, the attester itself or a member of it under the party closure, and a discharge
-    # naming the request's reference make both checks t. Without the le_k rule of attested/2,
+    # naming the request's reference make both checks t. Without the le_k rule of attested/3,
     # the branch's evidence would not count.
     evidence: Obj = {
         **PAID,
@@ -706,6 +706,25 @@ def test_violated_precondition_closes_the_route(duty_interpreter: Interpreter) -
     assert (out["verdict"], routes(out)) == ("NotApplicable", [])
     assert refs(out, "eliminated") == {("ex:perm", "ex:d", "violated_precondition")}
     assert refs(out, "verdict_basis") == {("ex:perm", "closed")}
+
+
+@pytest.mark.parametrize("other_first", [False, True], ids=["p-first", "other-first"])
+def test_another_text_leaves_the_deadline_comparable(
+    duty_interpreter: Interpreter, other_first: bool
+) -> None:
+    # test_violated_precondition_closes_the_route's run beside a policy that names no duty (decisions/0050 #1, L11). Each text's
+    # solve 0 raises the declines it raises alone, so it reads the SOTW too. When solve 0 had
+    # no inputs with several texts, it found no effective_at, and ex:p declined as `duty:
+    # deadline not comparable`.
+    body = PRE.replace("odrl:compensate .", f"odrl:compensate ; dprod:deadline {PAST} .")
+    p = HEAD + "ex:p a odrl:Set ; odrl:profile dprod: ;\n" + body
+    other = HEAD + "ex:q a odrl:Set ; odrl:permission ex:rq .\n"
+    other += "ex:rq a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:b .\n"
+    v = vector(p)
+    v["policies"] = [other, p] if other_first else [p, other]
+    out = duty_interpreter.reply(v).get("output")
+    assert isinstance(out, dict), out
+    assert refs(out, "eliminated") == {("ex:perm", "ex:d", "violated_precondition")}
 
 
 def two_routes(duties2: str) -> str:

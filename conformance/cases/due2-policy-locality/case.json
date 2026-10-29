@@ -1,0 +1,144 @@
+{
+  "case": "due2-policy-locality",
+  "source": "due2-native: a policy is its own data space (decisions/0050, #152)",
+  "classification": "odrl-core",
+  "needs": [],
+  "notes": "Authored for due2; no origin result. Two policies by different parties, one corpus (conformance/README.md). ex:partner states two hierarchy edges, ex:copy odrl:includedIn odrl:use and ex:alice odrl:partOf ex:team. Under the union that decisions/0050 replaces, both reached ex:offer's rules, and scenarios 2 and 3 were Permit: the two runs of decisions/0050 § Question, on clingo-i at 0928921. An edge that a policy states is local to it, so each edge widens only ex:partner's own permission (scenario 1). Membership that both policies should see is world data, recorded in the SOTW (scenario 4). Each of scenarios 2 and 3 gives ex:offer alone the same answer, which is law L11 (due2-workflows.md §8). The two policies agree on ex:team, the one node they share (due2-workflows.md §4, Several policies are one corpus).",
+  "prefixes": {
+    "ex": "https://example.org/"
+  },
+  "scenarios": [
+    {
+      "name": "the partner's own edges widen its own permission",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:copy",
+        "target": "ex:a",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:teamUseA",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "In ex:partner's data space, ex:copy is included in odrl:use and ex:alice is part of ex:team, so every part of ex:teamUseA is T (due2-workflows.md §5.2): Permit."
+      }
+    },
+    {
+      "name": "the partner's action edge does not reach the offer",
+      "request": {
+        "reference": "req-1",
+        "action": "ex:copy",
+        "target": "ex:b",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:useB's entry in ex:offer reads ex:offer's closure and the SOTW's, which hold no odrl:includedIn edge from ex:copy, so its action part is F (due2-workflows.md §3.3, §5.2). ex:teamUseA's target part is F: NotApplicable."
+      }
+    },
+    {
+      "name": "the partner's membership edge does not reach the offer",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:c",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": []
+      },
+      "expected": {
+        "verdict": "NotApplicable",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "ex:teamUseC's entry in ex:offer reads no odrl:partOf edge from ex:alice to ex:team, since only ex:partner states one, so its party part is F (due2-workflows.md §3.3, §5.2). ex:teamUseA's target part is F: NotApplicable."
+      }
+    },
+    {
+      "name": "membership recorded in the world reaches both policies",
+      "request": {
+        "reference": "req-1",
+        "action": "odrl:use",
+        "target": "ex:c",
+        "at": "2026-06-01T12:00:00Z",
+        "parties": {
+          "odrl:assignee": "ex:alice"
+        },
+        "params": {}
+      },
+      "sotw": {
+        "effective_at": "2026-06-01T12:00:00Z",
+        "facts": {},
+        "evidence": [],
+        "activation": {},
+        "closure": [
+          [
+            "odrl:partOf",
+            "ex:alice",
+            "ex:team"
+          ]
+        ]
+      },
+      "expected": {
+        "verdict": "Permit",
+        "frontier": [],
+        "obligations": [],
+        "verdict_basis": [
+          {
+            "ref": "ex:teamUseC",
+            "role": "permission"
+          }
+        ],
+        "eliminated": [],
+        "unknown_parts": [],
+        "why": "The SOTW's closure is in every policy's data space (due2-workflows.md §3.3), so ex:alice is part of ex:team for ex:teamUseC's entry in ex:offer too, and every part of it is T: Permit."
+      }
+    }
+  ]
+}

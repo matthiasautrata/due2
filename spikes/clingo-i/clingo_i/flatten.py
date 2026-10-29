@@ -11,11 +11,15 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 
 - `triple/3`, `triple(S, P, O)`: each policy triple. Read by lift.lp, structure.lp,
   constraint.lp, and bind.lp.
+- `text_triple/4`, `text_triple(Text, S, P, O)`: each policy triple with the text that states it,
+  named by its text id, so that lift.lp reads each policy's hierarchy edges from its own texts
+  (decisions/0050). Read by lift.lp.
 - `module/4`, `module(Path, S, P, O)`: each triple of a selected module, `Path` the module's
   path. Its blank nodes are scoped by `Path`. Read by lift.lp and bind.lp.
 - `layer/2`, `layer(Path, core | module(Iri))`: each selected module file, `core` for a core
   file and `module(Iri)` for a file of the selected profile `Iri`, so a profile whose module is
-  several files is one layer; a file in both is `core` (`interpret.py`). Read by bind.lp.
+  several files is one layer; a file in both is `core` (`interpret.py`). Read by lift.lp and
+  bind.lp.
 - `pred_ns/2`, `pred_ns(P, NS)`: each policy predicate. `NS` is `P` up to and including its
   last `#` or `/`. Read by lift.lp.
 - `policy_texts/1`, `policy_texts(N)`: the number of Turtle texts in the solve, one per policy:
@@ -30,7 +34,7 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 
 - `request_reference/1`: `reference`, as given. Read by duty.lp.
 - `request_action/1`, `request_action(A)`: `action`. Read by applies.lp.
-- `request_target/1`, `request_target(T)`: `target`. Read by applies.lp.
+- `request_target/1`, `request_target(T)`: `target`. Read by lift.lp and applies.lp.
 - `request_absent/1`, `request_absent(target)`: the absence of `target`. Read by applies.lp.
 - `request_at/1`, `request_at(Lit)`: `at`. Read by lift.lp, and by operand.lp for
   `actionTime`.
@@ -55,7 +59,7 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
 - `evidence/4`, `evidence(E, OccurredAt, Actor, Action)`: each `evidence` record, `E` its
   `id`. Read by lift.lp, operand.lp (`actionTime` in `wit(E)`), and duty.lp.
 - `evidence_object/2`, `evidence_issuer/2`: its optional `object` and `issuer`. Read by
-  duty.lp.
+  duty.lp, and `evidence_issuer/2` by lift.lp too.
 - `evidence_discharges/3`, `evidence_discharges(E, Duty, Ref)`: its optional `discharges`.
   Read by duty.lp.
 - `evidence_param/3`, `evidence_param(E, Prop, Value)`: each of its `params`. Read by lift.lp
@@ -64,7 +68,7 @@ file of `lp/` consumes and no file defines is listed below, with the files that 
   rule IRI, and its instant. duty.lp reads a key that is a duty's IRI, as the case format names an
   activation (`conformance/README.md`, SOTW). Read by lift.lp and duty.lp.
 - `sotw_closure/3`, `sotw_closure(Pred, Lo, Hi)`: each `closure` triple, `Pred` expanded. Read
-  by lift.lp: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/3`, and
+  by lift.lp: an edge of a hierarchy the spike reads (`closure_key/1`) joins `closure/4`, and
   any other relation declines.
 
 **Values** (`values.py`): `value/3`, read by operand.lp, compare.lp, and duty.lp;
@@ -177,11 +181,13 @@ def render(facts: Iterable[Symbol]) -> str:
 
 
 def policy_facts(graph: ReadOnlyGraphAggregate, scope: str = "policy") -> list[Symbol]:
-    """The policy graph: one `triple(S, P, O)` and one `pred_ns` per triple, blank nodes scoped
-    by `scope`, the text's `text_id` in a vector."""
+    """The policy graph: one `triple(S, P, O)`, one `text_triple(Text, S, P, O)`, and one
+    `pred_ns` per triple, blank nodes scoped by `scope`, the text's `text_id` in a vector."""
     out: list[Symbol] = []
     for s, p, o in graph:
-        out.append(Function("triple", [term(s, scope), term(p, scope), term(o, scope)]))
+        spo = [term(s, scope), term(p, scope), term(o, scope)]
+        out.append(Function("triple", spo))
+        out.append(Function("text_triple", [String(scope), *spo]))
         out.append(Function("pred_ns", [term(p, scope), String(namespace(str(p)))]))
     return out
 

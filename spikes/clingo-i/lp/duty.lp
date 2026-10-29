@@ -12,7 +12,7 @@
 % per piece of evidence `E`, in world `wit(E)`, by the rules of compare.lp. Absent evidence makes
 % `fulfilled` `f`, never `u`. Variable letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `context_property/2`, `closure/3`, `triple/3`, `voc/2` (lift.lp); `rank/2`
+% - **Consumes:** `context_property/2`, `closure/4`, `triple/3`, `voc/2` (lift.lp); `rank/2`
 %   (kleene.lp); `duty_atom/1`, `rule/1`, `policy/1`, `atom/1`, `atom_policy/2`, `pre/2`,
 %   `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`, `duty_deadline/2`,
 %   `deadline_kind/2`, `duty_scope/2`, `attester/2`, `has_attester/1` (structure.lp);
@@ -20,14 +20,15 @@
 %   (constraint.lp); `left/2`, `src/2`, `prop/2` (bind.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
 %   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`,
 %   `evidence_discharges/3`, `activation/2`, `sotw_effective_at/1`,
-%   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver); `le_k/3` (lift.lp).
+%   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver); `le_k/4` (lift.lp); `space/2`
+%   (structure.lp); `node_space/2` (constraint.lp).
 % - **Provides:** `duty_root/2`, `duty_part/2`, `split_part/2`, `witness_leaf/1`,
 %   `has_witness/1`, `has_guard/1`, `guard/2`, `witness_cond/2`, `in_witness/1`, `rule_node/1`,
 %   `witness_only/1`, `cons_part/1`, `match_part/2`, `matched/2`, `obligation_policy/2`,
 %   `policy_match/2`, `instance/1`, `witness_pair/2`, `check_kind/1`, `effective_pos/1`,
 %   `occurred_pos/2`, `activated/1`, `activation_at/2`, `deadline_at/2`, `passed/1`,
-%   `ev_reaches/2`, `subject/1`, `member_bearer/2`, `has_member_bearer/1`, `performer/2`,
-%   `open_actor/2`, `attested/2`, `keyed/1`, `discharged/2`,
+%   `ev_reaches/3`, `ev_action/3`, `subject/1`, `member_bearer/3`, `member_bearer/2`,
+%   `has_member_bearer/1`, `performer/2`, `open_actor/3`, `open_actor/2`, `attested/3`, `attested/2`, `keyed/1`, `discharged/2`,
 %   `status/3`; extends `evaluates/2` (compare.lp), `item/1`, `holds/2` (applies.lp),
 %   `reject/2` (structure.lp), and `unsupported/1` (lift.lp).
 
@@ -257,7 +258,7 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % |---|---|---|---|
 % | `effective` | `occurred_at` ≤ the SOTW's `effective_at` | `occurred_at` is later | the SOTW has no `effective_at`, which declines (*Fulfilled and status*) |
 % | `deadline` | the duty has no deadline, or `occurred_at` ≤ the deadline (`deadline_at/2`) | `occurred_at` is later | never: an unplaceable deadline declines |
-% | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/2`) | otherwise | never: the closure is closed-world |
+% | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/3`) | otherwise | never: the closure is closed-world |
 % | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
 % | `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
 % | `attester` | the duty has no attester (`has_attester/1`, structure.lp), or the evidence's issuer is at or below one (`attested/2`) | the duty has an attester, and the evidence has no issuer or one that is not at or below it | never |
@@ -353,19 +354,25 @@ holds(check(Y, E, deadline), t) :- witness_pair(Y, E), occurred_pos(E, N), deadl
 holds(check(Y, E, deadline), f) :- witness_pair(Y, E), occurred_pos(E, N), deadline_at(Y, M),
     N > M.
 
-%*! ev_reaches(A, B)
+%*! ev_reaches(P, A, B)
 
-The evidence action `A` is included in `B`: the reflexive-transitive closure of `odrl:includedIn`
-from `A`, over declared edges only, as `reaches/2` is for the request action.
+In policy `P`'s data space, the evidence action `A` is included in `B`: the reflexive-transitive
+closure of `odrl:includedIn` from `A`, over declared edges only, as `reaches/3` is for the
+request action.
 *%
-ev_reaches(A, A) :- evidence(_, _, _, A).
-ev_reaches(A, B) :- ev_reaches(A, Mid), closure(includedIn, Mid, B).
+ev_reaches(P, A, A) :- policy(P), evidence(_, _, _, A).
+ev_reaches(P, A, B) :- ev_reaches(P, A, Mid), closure(P, includedIn, Mid, B).
+
+%*! ev_action(Y, E, P)
+
+In policy `P`'s data space, the action of evidence `E` is duty atom `Y`'s action, or narrower.
+*%
+ev_action(Y, E, P) :- witness_pair(Y, E), space(Y, P), evidence(E, _, _, A), duty_action(Y, B),
+    ev_reaches(P, A, B).
 
 % The closure is closed-world over declared edges (due2-profiles.md §6), so f, not u.
-holds(check(Y, E, action), t) :- witness_pair(Y, E), evidence(E, _, _, A), duty_action(Y, B),
-    ev_reaches(A, B).
-holds(check(Y, E, action), f) :- witness_pair(Y, E), evidence(E, _, _, A), duty_action(Y, B),
-    not ev_reaches(A, B).
+holds(check(Y, E, action), t) :- ev_action(Y, E, _).
+holds(check(Y, E, action), f) :- witness_pair(Y, E), not ev_action(Y, E, _).
 
 % Evidence with no object does not record the duty's relation value, so it is not a witness for
 % a duty that has one.
@@ -381,12 +388,20 @@ due2-workflows.md §3.2's.
 *%
 subject(Party) :- request_party(F, Party), voc(assignee, F).
 
+%*! member_bearer(Y, Party, P)
+
+In policy `P`'s data space, the request subject `Party` is a member of duty atom `Y`'s bearer, a
+party collection, so it bears `Y` for this request: each member of a collection bears its duty
+(decisions/0018).
+*%
+member_bearer(Y, Party, P) :- bearer(Y, Coll), subject(Party), space(Y, P),
+    le_k(P, Party, Coll, party).
+
 %*! member_bearer(Y, Party)
 
-The request subject `Party` is a member of duty atom `Y`'s bearer, a party collection, so it
-bears `Y` for this request: each member of a collection bears its duty (decisions/0018).
+The request subject `Party` is a member of duty atom `Y`'s bearer in a data space of `Y`.
 *%
-member_bearer(Y, Party) :- bearer(Y, Coll), subject(Party), le_k(Party, Coll, party).
+member_bearer(Y, Party) :- member_bearer(Y, Party, _).
 
 %*! has_member_bearer(Y)
 
@@ -404,13 +419,20 @@ performer(Y, Party) :- member_bearer(Y, Party).
 performer(Y, Party) :- bearer(Y, Party), Party != none, not has_member_bearer(Y).
 performer(Y, Party) :- bearer(Y, none), subject(Party).
 
+%*! open_actor(Y, Actor, P)
+
+In policy `P`'s data space, an act by `Actor` may witness duty atom `Y`, and the request cannot
+tell: it names no subject, and `Actor` is a member of `Y`'s bearer, so `Actor` may be the subject
+(decisions/0018).
+*%
+open_actor(Y, Actor, P) :- bearer(Y, Coll), not subject(_), evidence(_, _, Actor, _),
+    space(Y, P), le_k(P, Actor, Coll, party).
+
 %*! open_actor(Y, Actor)
 
-An act by `Actor` may witness duty atom `Y`, and the request cannot tell: it names no subject,
-and `Actor` is a member of `Y`'s bearer, so `Actor` may be the subject (decisions/0018).
+An act by `Actor` may witness duty atom `Y` in a data space of `Y`, and the request cannot tell.
 *%
-open_actor(Y, Actor) :- bearer(Y, Coll), not subject(_), evidence(_, _, Actor, _),
-    le_k(Actor, Coll, party).
+open_actor(Y, Actor) :- open_actor(Y, Actor, _).
 
 % The actor must be the performer. An actor the request cannot tell apart from the subject is u,
 % never f: a member of a collection bearer, or anyone when the bearer is `none` and the request
@@ -423,14 +445,33 @@ holds(check(Y, E, actor), u) :- witness_pair(Y, E), evidence(E, _, Actor, _),
     open_actor(Y, Actor).
 holds(check(Y, E, actor), u) :- witness_pair(Y, E), bearer(Y, none), not subject(_).
 
+%*! attested(Duty, E, P)
+
+In policy `P`'s data space, the evidence `E` has an issuer at or below an attester of `Duty`: the
+attester itself, or a party below it under the party closure (`le_k/4`), such as a member of an
+attester that is a party collection. The attester is due2-workflows.md §5.3's.
+*%
+attested(Duty, E, P) :- attester(Duty, Issuer), evidence_issuer(E, Issuer), node_space(Duty, P).
+attested(Duty, E, P) :- attester(Duty, A), evidence_issuer(E, Issuer), node_space(Duty, P),
+    le_k(P, Issuer, A, party).
+
 %*! attested(Duty, E)
 
-The evidence `E` has an issuer at or below an attester of `Duty`: the attester itself, or a
-party below it under the party closure (`le_k/3`), such as a member of an attester that is a
-party collection. The attester is due2-workflows.md §5.3's.
+The evidence `E` has an issuer at or below an attester of `Duty` in a data space of `Duty`.
 *%
-attested(Duty, E) :- attester(Duty, Issuer), evidence_issuer(E, Issuer).
-attested(Duty, E) :- attester(Duty, A), evidence_issuer(E, Issuer), le_k(Issuer, A, party).
+attested(Duty, E) :- attested(Duty, E, _).
+
+% A duty in two policies is read in each one's data space. The program keeps one witness test
+% per duty atom, so where two of its spaces read a check apart, the vector declines (lift.lp,
+% *Hierarchies*).
+unsupported("shared node: read apart by its policies") :- space(Y, P), space(Y, Q),
+    ev_action(Y, E, P), not ev_action(Y, E, Q).
+unsupported("shared node: read apart by its policies") :- space(Y, P), space(Y, Q),
+    member_bearer(Y, Party, P), not member_bearer(Y, Party, Q).
+unsupported("shared node: read apart by its policies") :- space(Y, P), space(Y, Q),
+    open_actor(Y, Actor, P), not open_actor(Y, Actor, Q).
+unsupported("shared node: read apart by its policies") :- node_space(Duty, P),
+    node_space(Duty, Q), attested(Duty, E, P), not attested(Duty, E, Q).
 
 % A duty with no attester counts evidence from any issuer, or none. One with an attester counts
 % only attested evidence, so evidence with no issuer is `f`, never `u`: the SOTW states every

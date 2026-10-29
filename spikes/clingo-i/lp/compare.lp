@@ -14,15 +14,16 @@
 % Every constraint node gets its rank in each world that evaluates it, `crank(W, C, N)`, and every
 % node item its truth value, `holds(c(C), V)`, its rank in world `k`.
 %
-% - **Consumes:** `kind/2`, `dt_kind/2`, `closure/3`, `le_k/3` (lift.lp); `value/3` (driver);
-%   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `op/2`, `right/2`
-%   (constraint.lp); `left/2` (bind.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`,
+% - **Consumes:** `kind/2`, `dt_kind/2`, `closure/4`, `le_k/4` (lift.lp); `value/3` (driver);
+%   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `op/2`, `right/2`,
+%   `cspace/2` (constraint.lp); `left/2` (bind.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`,
 %   `unchecked_unit/1` (operand.lp); `witness_only/1` (duty.lp).
 % - **Provides:** `cpair/4`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
-%   `above/2`, `ceqr/4`, `ordered/1`,
-%   `cmpr/3`, `order_rank/3`, `part_pair/2`, `ler/3`, `isa_left/1`, `inst/2`, `isar/3`,
+%   `above/3`, `concept_below/3`, `ceqr/4`, `ordered/1`, `cmpr/3`, `order_rank/3`,
+%   `part_space/3`, `part_pair/2`, `part_below/2`, `ler/3`, `isa_space/3`, `inst/3`, `is_inst/2`,
+%   `isar/3`,
 %   `any_eq/4`, `any_le/4`, `crank/3`, `evaluates/2`, `xone_count/4`; extends `item/1`, `holds/2`
-%   (applies.lp) and `unsupported_value/1` (lift.lp).
+%   (applies.lp), and `unsupported_value/1` and `unsupported/1` (lift.lp).
 
 %## Pairs
 
@@ -115,7 +116,7 @@ eqr(Lv, Rv, 1) :- pair(Lv, Rv), kind(Lv, lit), not placed(Lv), kind(Rv, lit), no
 
 % On a leaf whose operand has a scheme, two IRIs are a concept pair (`concept_pair/3`), and `ceqr(C,
 % Lv, Rv, N)` reads `Lv = Rv` as `Lv ⊑ Rv`: `t` when `Lv` is `Rv`, or a chain of `skos:broader`
-% edges (`above/2`, the transitive closure) leads from `Lv` to `Rv`; `f` otherwise (decisions/0015
+% edges (`above/3`, the transitive closure) leads from `Lv` to `Rv`; `f` otherwise (decisions/0015
 % #3, #5). A read concept outside the schemes never gets here, since its read is `invalid`. Every
 % other pair, a literal on either side included, has its `eqr/3` rank, so a string against a concept
 % is a misfit.
@@ -128,14 +129,22 @@ Only IRIs are concepts, so a literal on either side is compared by `eqr/3` (deci
 concept_pair(C, Lv, Rv) :- cpair(_, C, Lv, Rv), left(C, Op), has_scheme(Op), kind(Lv, iri),
     kind(Rv, iri).
 
-%*! above(Lv, Hi)
+%*! above(P, Lv, Hi)
 
-A chain of one or more `skos:broader` edges leads from the read concept `Lv` to `Hi`: the
-transitive closure SKOS calls `skos:broaderTransitive` (decisions/0015 #5). Not reflexive:
-`ceqr/4` adds identity.
+In policy `P`'s data space, a chain of one or more `skos:broader` edges leads from the read
+concept `Lv` to `Hi`: the transitive closure SKOS calls `skos:broaderTransitive` (decisions/0015
+#5). Not reflexive: `ceqr/4` adds identity.
 *%
-above(Lv, Hi) :- concept_pair(_, Lv, _), closure(broader, Lv, Hi).
-above(Lv, Hi) :- above(Lv, Mid), closure(broader, Mid, Hi).
+above(P, Lv, Hi) :- concept_pair(C, Lv, _), cspace(C, P), closure(P, broader, Lv, Hi).
+above(P, Lv, Hi) :- above(P, Lv, Mid), closure(P, broader, Mid, Hi).
+
+%*! concept_below(C, Lv, Rv)
+
+Leaf `C` compares the concept `Lv` with `Rv`, and `Lv` is below `Rv` in a data space of `C`.
+*%
+concept_below(C, Lv, Rv) :- concept_pair(C, Lv, Rv), cspace(C, P), above(P, Lv, Rv).
+unsupported("shared node: read apart by its policies") :- concept_pair(C, Lv, Rv),
+    cspace(C, P), cspace(C, Q), above(P, Lv, Rv), not above(Q, Lv, Rv).
 
 %*! ceqr(C, Lv, Rv, N)
 
@@ -145,8 +154,8 @@ concept in none of the operand's schemes never gets here: its read is `invalid` 
 Every other pair has its `eqr/3` rank.
 *%
 ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), Lv = Rv.
-ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), above(Lv, Rv).
-ceqr(C, Lv, Rv, 0) :- concept_pair(C, Lv, Rv), Lv != Rv, not above(Lv, Rv).
+ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), concept_below(C, Lv, Rv).
+ceqr(C, Lv, Rv, 0) :- concept_pair(C, Lv, Rv), Lv != Rv, not concept_below(C, Lv, Rv).
 ceqr(C, Lv, Rv, N) :- cpair(_, C, Lv, Rv), not concept_pair(C, Lv, Rv), eqr(Lv, Rv, N).
 
 %## Order
@@ -184,15 +193,33 @@ order_rank(O, u, 1) :- order_rank(O, lt, _).
 %## Hierarchies
 
 % `isPartOf` and `hasPart` ask `Lo ⊑ Hi` (`ler/3`): two IRIs by identity or the typed `partOf`
-% closure `le_k/3`, and anything else a misfit. `isA` asks whether the read IRI is an instance of
-% the class (`inst/2`): one `rdf:type` edge, then `rdfs:subClassOf` edges, all from `closure/3`.
+% closure `le_k/4`, and anything else a misfit. `isA` asks whether the read IRI is an instance of
+% the class (`inst/3`): one `rdf:type` edge, then `rdfs:subClassOf` edges, all from `closure/4`.
+% Both read the hierarchy of the data space of each leaf that compares the pair (`part_space/3`,
+% `isa_space/3`). `ler/3` and `isar/3` are keyed by the pair, not the leaf, so two leaves that
+% compare one pair in two policies whose hierarchies read it apart decline.
+
+%*! part_space(Lo, Hi, P)
+
+`isPartOf` or `hasPart` asks whether `Lo ⊑ Hi`, for a pair in either orientation, in a leaf read
+in policy `P`'s data space.
+*%
+part_space(Lv, Rv, P) :- cpair(_, C, Lv, Rv), op(C, isPartOf), cspace(C, P).
+part_space(Rv, Lv, P) :- cpair(_, C, Lv, Rv), op(C, hasPart), cspace(C, P).
 
 %*! part_pair(Lo, Hi)
 
 `isPartOf` or `hasPart` asks whether `Lo ⊑ Hi`, for a pair in either orientation.
 *%
-part_pair(Lv, Rv) :- cpair(_, C, Lv, Rv), op(C, isPartOf).
-part_pair(Rv, Lv) :- cpair(_, C, Lv, Rv), op(C, hasPart).
+part_pair(Lo, Hi) :- part_space(Lo, Hi, _).
+
+%*! part_below(Lo, Hi)
+
+`Lo` is part of the collection `Hi` in a data space that reads the pair.
+*%
+part_below(Lo, Hi) :- part_space(Lo, Hi, P), le_k(P, Lo, Hi, _).
+unsupported("shared node: read apart by its policies") :- part_space(Lo, Hi, P),
+    part_space(Lo, Hi, Q), le_k(P, Lo, Hi, _), not le_k(Q, Lo, Hi, _).
 
 %*! ler(Lo, Hi, N)
 
@@ -200,33 +227,43 @@ part_pair(Rv, Lv) :- cpair(_, C, Lv, Rv), op(C, hasPart).
 over the declared edges; any other pair is a misfit. The closure is due2-profiles.md §6's.
 *%
 ler(Lo, Hi, 2) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), Lo = Hi.
-ler(Lo, Hi, 2) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), le_k(Lo, Hi, _).
-ler(Lo, Hi, 0) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), Lo != Hi, not le_k(Lo, Hi, _).
+ler(Lo, Hi, 2) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), part_below(Lo, Hi).
+ler(Lo, Hi, 0) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), Lo != Hi,
+    not part_below(Lo, Hi).
 ler(Lo, Hi, 1) :- part_pair(Lo, Hi), not kind(Lo, iri).
 ler(Lo, Hi, 1) :- part_pair(Lo, Hi), kind(Lo, iri), not kind(Hi, iri).
 
-%*! isa_left(Lv)
+%*! isa_space(Lv, Cls, P)
 
-`isA` asks about the classes of the read value `Lv`.
+`isA` asks whether the read value `Lv` is an instance of `Cls`, in a leaf read in policy `P`'s
+data space.
 *%
-isa_left(Lv) :- cpair(_, C, Lv, _), op(C, isA).
+isa_space(Lv, Cls, P) :- cpair(_, C, Lv, Cls), op(C, isA), cspace(C, P).
 
-%*! inst(Lv, Cls)
+%*! inst(P, Lv, Cls)
 
-`Lv` is an instance of `Cls`: an `rdf:type` edge, then `rdfs:subClassOf` edges. That is the
-reading of `isA` in due2-profiles.md §6.
+In policy `P`'s data space, `Lv` is an instance of `Cls`: an `rdf:type` edge, then
+`rdfs:subClassOf` edges. That is the reading of `isA` in due2-profiles.md §6.
 *%
-inst(Lv, Cls) :- isa_left(Lv), closure(type, Lv, Cls).
-inst(Lv, Sup) :- inst(Lv, Cls), closure(subclass, Cls, Sup).
+inst(P, Lv, Cls) :- isa_space(Lv, _, P), closure(P, type, Lv, Cls).
+inst(P, Lv, Sup) :- inst(P, Lv, Cls), closure(P, subclass, Cls, Sup).
+
+%*! is_inst(Lv, Cls)
+
+`Lv` is an instance of `Cls` in a data space that reads the pair.
+*%
+is_inst(Lv, Cls) :- isa_space(Lv, Cls, P), inst(P, Lv, Cls).
+unsupported("shared node: read apart by its policies") :- isa_space(Lv, Cls, P),
+    isa_space(Lv, Cls, Q), inst(P, Lv, Cls), not inst(Q, Lv, Cls).
 
 %*! isar(Lv, Cls, N)
 
 `Lv` is an instance of `Cls` with rank `N`. Only an IRI is compared with a class.
 *%
 isar(Lv, Cls, 2) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri),
-    inst(Lv, Cls).
+    is_inst(Lv, Cls).
 isar(Lv, Cls, 0) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri),
-    not inst(Lv, Cls).
+    not is_inst(Lv, Cls).
 isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), not kind(Lv, iri).
 isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), not kind(Cls, iri).
 

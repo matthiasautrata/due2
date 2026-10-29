@@ -925,10 +925,11 @@ def test_shared_leaf_binds_alike(q_property: str, expected: str) -> None:
         assert "IdentityConflict at https://example.org/c" in str(reply["error"]), reply
 
 
-# W1 sees one policy and no SOTW (due2-workflows.md §4), so a decline that reads the SOTW is the
-# corpus's. The world puts ex:alice in ex:team, which only P types, and Q never names ex:team.
-# When solve 0 saw the SOTW, Q's solve found the edge without the type and declined it as an
-# untyped collection, and the corpus kept Q's decline. With ex:team typed in no text, the corpus
+# A world edge is declined only in a data space that reads it (decisions/0050 #1). The world puts
+# ex:alice in ex:team, which only P types and compares the request's assignee with; Q never names
+# ex:team. Every text's solve 0 sees the SOTW. When the decline fired on any edge reachable from
+# a request entity, Q's solve 0 found the edge without the type and declined it as an untyped
+# collection, and the corpus kept Q's decline (#151). With ex:team typed in no text, P's read
 # still declines it.
 @pytest.mark.parametrize("q_first", [False, True], ids=["p-first", "q-first"])
 @pytest.mark.parametrize(
@@ -936,7 +937,7 @@ def test_shared_leaf_binds_alike(q_property: str, expected: str) -> None:
     [(True, "Permit"), (False, "odrl:partOf: untyped collection")],
     ids=["typed", "untyped"],
 )
-def test_world_edge_is_read_over_the_corpus(
+def test_world_edge_declines_only_where_read(
     interpreter: Interpreter, typed_in_p: bool, expected: str, q_first: bool
 ) -> None:
     p = (
@@ -955,6 +956,78 @@ def test_world_edge_is_read_over_the_corpus(
     v = vector(p, request={"action": "odrl:use"}, sotw={"closure": [edge]})
     v["policies"] = [q, p] if q_first else [p, q]
     assert outcome(interpreter.reply(v)) == expected
+
+
+def two_texts(p_extra: str, q_rule: str, shared: bool = False) -> list[str]:
+    """Policy ex:p, which permits use of ex:a and states `p_extra`, and policy ex:q, whose
+    permission is `q_rule`'s body; with `shared`, ex:p states ex:q's rule too, named ex:rq."""
+    rq = f"ex:rq a odrl:Permission ; {q_rule} .\n"
+    p = (
+        CONSTRAINT_PREFIXES
+        + f"ex:p a odrl:Set ; odrl:permission ex:r{', ex:rq' if shared else ''} .\n"
+        + "ex:r a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a .\n"
+        + (rq if shared else "")
+        + p_extra
+    )
+    q = CONSTRAINT_PREFIXES + "ex:q a odrl:Set ; odrl:permission ex:rq .\n" + rq
+    return [p, q]
+
+
+# The two runs of decisions/0050 (§ Question): policy ex:p states an edge from the request's
+# entity, ex:copy or ex:alice, to what ex:q's rule names, and ex:p's own rule is on ex:a, so it
+# does not match. ex:q alone is NotApplicable, and stays so beside ex:p in both orders. With one
+# hierarchy over the corpus, both runs were Permit at 0928921. The `own` rows put the same edge
+# in ex:q's text, where it widens ex:q's rule: a fix that dropped policy edges is caught.
+TEAM = "ex:team a odrl:PartyCollection .\n"
+EDGE_RUNS: dict[str, tuple[str, str, str, Obj]] = {
+    "includedIn": ("ex:copy odrl:includedIn odrl:use .\n", ("odrl:action odrl:use ;"
+                   " odrl:target ex:b"), "", {"action": "ex:copy", "target": "ex:b"}),
+    "partOf": (TEAM + "ex:alice odrl:partOf ex:team .\n", ("odrl:assignee ex:team ;"
+               " odrl:action odrl:use ; odrl:target ex:b"), TEAM, {"action": "odrl:use", "target": "ex:b"}),
+}  # fmt: skip
+
+
+@pytest.mark.parametrize("q_first", [False, True], ids=["p-first", "q-first"])
+@pytest.mark.parametrize(("own", "expected"), [(False, "NotApplicable"), (True, "Permit")],
+                         ids=["other", "own"])  # fmt: skip
+@pytest.mark.parametrize("run", sorted(EDGE_RUNS))
+def test_policy_reads_only_its_own_edges(
+    interpreter: Interpreter, run: str, own: bool, expected: str, q_first: bool
+) -> None:
+    edge, q_rule, q_extra, request = EDGE_RUNS[run]
+    p, q = two_texts("" if own else edge, q_rule)
+    q += edge if own else q_extra
+    v = vector(q, request=request)
+    assert outcome(interpreter.reply(v)) == ("Permit" if own else "NotApplicable")
+    v["policies"] = [q, p] if q_first else [p, q]
+    assert outcome(interpreter.reply(v)) == expected
+
+
+# A rule that two policies state is one atom with an entry in each (decisions/0050 #4). The
+# program keeps one finding per atom, so where the entries' data spaces read a part apart it
+# declines rather than give both entries one reading. Here ex:p's ex:copy edge makes ex:rq's
+# action part t in ex:p and f in ex:q. The request's target is absent in the second row, so
+# ex:rq's target part is u: one completion variable per atom would correlate the two entries,
+# which decisions/0050 #9 keeps apart, so that row declines too.
+@pytest.mark.parametrize(
+    ("p_extra", "asked", "reason"),
+    [
+        ("ex:copy odrl:includedIn odrl:use .\n", {"action": "ex:copy", "target": "ex:b"},
+         "shared node: read apart by its policies"),
+        ("", {"action": "odrl:use", "target": None},
+         "shared node: a completion variable per policy"),
+    ],
+    ids=["read-apart", "completion"],
+)  # fmt: skip
+def test_shared_rule_read_apart_declines(
+    interpreter: Interpreter, p_extra: str, asked: Obj, reason: str
+) -> None:
+    v = vector(request=asked)
+    if asked.get("target") is None:
+        del as_obj(v["request"], "request")["target"]
+    texts: list[Json] = [*two_texts(p_extra, "odrl:action odrl:use ; odrl:target ex:b", True)]
+    v["policies"] = texts
+    assert outcome(interpreter.reply(v)) == reason
 
 
 # The core owns ex:x's type: a decimal range, and the default cardinality. A policy may restate
@@ -1018,8 +1091,15 @@ def test_operand_range_mismatch(op_range: str, prop_range: str, expected: str) -
         ("ex:a1 odrl:partOf ex:a .", {"target": "ex:a1"}, "odrl:partOf: untyped collection"),
         (
             "ex:a a odrl:AssetCollection . ex:bob a odrl:Party ; odrl:partOf ex:a .",
-            {},
+            {"target": "ex:bob"},
             "odrl:partOf: cross-kind edge",
+        ),
+        # The decline is demand-driven: the request names ex:a itself, so no read walks the
+        # cross-kind edge out of ex:bob, and the rule answers (lift.lp, *Hierarchies*).
+        (
+            "ex:a a odrl:AssetCollection . ex:bob a odrl:Party ; odrl:partOf ex:a .",
+            {},
+            "Permit",
         ),
         # The named party is part of the assignee collection.
         (

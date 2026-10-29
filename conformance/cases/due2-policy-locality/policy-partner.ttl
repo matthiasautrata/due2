@@ -1,0 +1,19 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# The second policy of due2-policy-locality, written by another party. It defines its own
+# action ex:copy below odrl:use, and makes ex:alice a member of ex:team. Both edges are
+# local to this policy: they widen its own permission, never the offer's.
+
+ex:partner a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:teamUseA .
+
+ex:teamUseA a odrl:Permission ;
+    odrl:assignee ex:team ; odrl:action odrl:use ; odrl:target ex:a .
+
+ex:copy a odrl:Action ;
+    odrl:includedIn odrl:use .
+
+ex:team a odrl:PartyCollection .
+ex:alice odrl:partOf ex:team .

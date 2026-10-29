@@ -1,0 +1,18 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix ex:   <https://example.org/> .
+
+# due2-native: a policy is its own data space (decisions/0050). This provider's offer
+# permits any party to use ex:b, and the team ex:team to use ex:c. It types ex:team but
+# names no member of it. The other policy is in policy-partner.ttl.
+
+ex:offer a odrl:Set ;
+    odrl:conflict odrl:prohibit ;
+    odrl:permission ex:useB, ex:teamUseC .
+
+ex:useB a odrl:Permission ;
+    odrl:action odrl:use ; odrl:target ex:b .
+
+ex:teamUseC a odrl:Permission ;
+    odrl:assignee ex:team ; odrl:action odrl:use ; odrl:target ex:c .
+
+ex:team a odrl:PartyCollection .

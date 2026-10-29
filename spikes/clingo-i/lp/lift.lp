@@ -7,12 +7,14 @@
 % § Vocabulary.
 %
 % - **Consumes:** the driver's facts (flatten.py): the graphs (`triple/3`,
-%   `module/4`, `pred_ns/2`, `selected_profile/1`), the request (`request_at/1`,
-%   `request_param/2`, `request_party/2`), the SOTW (`sotw_effective_at/1`, `fact_answer/3`,
-%   `fact_answer_value/3`, `evidence/4`, `evidence_param/3`, `activation/2`,
-%   `sotw_closure/3`), and the driver's own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`,
-%   `action_term/1`, `duty_node/1`, `pre_rule/2`, and `node_deadline/2` (structure.lp);
-%   `right/2` (constraint.lp).
+%   `text_triple/4`, `module/4`, `layer/2`, `pred_ns/2`, `selected_profile/1`), the request
+%   (`request_at/1`, `request_param/2`, `request_party/2`, `request_target/1`), the SOTW
+%   (`sotw_effective_at/1`, `fact_answer/3`, `fact_answer_value/3`, `evidence/4`,
+%   `evidence_param/3`, `evidence_issuer/2`, `activation/2`, `sotw_closure/3`), and the driver's
+%   own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`, `action_term/1`,
+%   `duty_node/1`, `pre_rule/2`, `node_deadline/2`, `atom_target/2`, `atom_party/3`, `bearer/2`,
+%   `attester/2`, and `space/2` (structure.lp); `right/2`, `op/2`, `node_space/2`, and `cspace/2`
+%   (constraint.lp); `cpair/4` (compare.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
 %   `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `vocab_ns/1`, `annotation/1`,
 %   `annotation_ns/1`, `operator/2`,
@@ -23,12 +25,12 @@
 %   `term/1`, `kind/2`, `list_cell/2`, `list_item/2`, `is_list/1`); the combined facts
 %   (`valued/2`, `differs/1`, `fact/2`, `fact_value/2`); the kinds (`declared_datatype/1`,
 %   `datatype/1`, `dt_kind/2`, `term_kind/2`); the hierarchies
-%   (`closure_key/1`, `closure/3`, `declared_in_scheme/2`, `coll_kind/2`, `node_kind/2`,
-%   `le_k/3`); the declines (`policy_predicate/1`, `family_predicate/1`, `anywhere_predicate/1`,
-%   `timing_predicate/1`, `consumed/2`, `annotated/1`, `unsupported/1`, `closure_relation/1`,
-%   `unsupported_input/1`, `compared/1`, `input_instant/1`, `off_shape/1`,
-%   `unsupported_value/1`); extends `reject/2`
-%   (structure.lp).
+%   (`closure_key/1`, `hierarchy_predicate/1`, `policy_text/2`, `policy_layer/2`, `edge/4`,
+%   `closure/4`, `declared_in_scheme/2`, `coll_kind/3`, `node_kind/3`, `le_k/4`, `collection/1`,
+%   `compares/3`, `part_up/3`, `part_down/3`, `walked/3`); the declines (`policy_predicate/1`,
+%   `family_predicate/1`, `anywhere_predicate/1`, `timing_predicate/1`, `consumed/2`,
+%   `annotated/1`, `unsupported/1`, `closure_relation/1`, `unsupported_input/1`, `compared/1`,
+%   `input_instant/1`, `off_shape/1`, `unsupported_value/1`); extends `reject/2` (structure.lp).
 
 %## Vocabulary
 
@@ -599,18 +601,33 @@ fact_value(Prop, Value) :- valued(Prop, Source), fact_answer_value(Prop, Source,
 
 %## Hierarchies
 
-% `closure(Key, Lo, Hi)` holds each declared `includedIn`, `partOf`, `rdf:type`, `rdfs:subClassOf`,
-% `skos:broader`, or `skos:inScheme` edge from the policy, a selected module, or the SOTW closure. A
-% `skos:narrower` triple is the inverse `broader` edge, and `skos:topConceptOf` and the inverse
-% `skos:hasTopConcept` are `inScheme` edges (decisions/0015 #5, #8); `declared_in_scheme/2` holds
-% the memberships of the policy and the modules alone. bind.lp reads each
-% `due2:conceptScheme` a layer states (`concept_scheme/2`).
-% The edges are closed-world: an undeclared edge does not hold (due2-profiles.md §6).
+% A policy is its own data space (decisions/0050 #1): what the program derives for policy `P`
+% reads only `P`'s own text, the core and the modules of the profiles `P` names, and the SOTW.
+% So every hierarchy is keyed by its policy. `closure(P, Key, Lo, Hi)` holds each declared
+% `includedIn`, `partOf`, `rdf:type`, `rdfs:subClassOf`, `skos:broader`, or `skos:inScheme` edge
+% that `P`'s data space states (`edge/4`), and every edge of the SOTW closure, which every policy
+% reads. A `skos:narrower` triple is the inverse `broader` edge, and `skos:topConceptOf` and the
+% inverse `skos:hasTopConcept` are `inScheme` edges (decisions/0015 #5, #8). The edges are
+% closed-world: an undeclared edge does not hold (due2-profiles.md §6). Edges that another
+% policy's text states, or a profile that `P` does not name, never reach `P`, even when that
+% policy and `P` are evaluated together (`test_policy_reads_only_its_own_edges`).
 %
-% `coll_kind/2` types a collection (`odrl:AssetCollection` is `asset`, `odrl:PartyCollection` is
-% `party`), and `node_kind/2` also types an `odrl:Asset` or `odrl:Party`. `le_k(Lo, Hi, K)` is the
-% typed `partOf` of due2-profiles.md §6: the transitive closure through collections of kind `K`
-% only. It is not reflexive; its readers add identity.
+% `declared_in_scheme/2` holds the memberships that some text or module declares, for the checks
+% of normalisation (operand.lp), which run on one text at a time. bind.lp reads each
+% `due2:conceptScheme` a layer states (`concept_scheme/2`).
+%
+% `coll_kind(P, Node, K)` types a collection in `P`'s data space (`odrl:AssetCollection` is
+% `asset`, `odrl:PartyCollection` is `party`), and `node_kind/3` also types an `odrl:Asset` or
+% `odrl:Party`. `le_k(P, Lo, Hi, K)` is the typed `partOf` of due2-profiles.md §6 in `P`'s data
+% space: the transitive closure through collections of kind `K` only. It is not reflexive; its
+% readers add identity.
+%
+% The readers of the hierarchies are keyed by policy too, and each node is read in the data spaces
+% of its policies: an atom in `space/2` (structure.lp), a constraint node in `cspace/2`
+% (constraint.lp). A node that is in two policies is read in each, and when the readings differ the
+% vector declines as `shared node: read apart by its policies`: the program keeps one finding per
+% node, where due2-workflows.md §3.3 gives one per entry. When they agree, the one finding is each
+% entry's.
 
 %*! closure_key(Key)
 
@@ -620,74 +637,165 @@ decisions/0015.
 *%
 closure_key(includedIn; partOf; type; subclass; broader; inScheme).
 
-%*! closure(Key, Lo, Hi)
+%*! hierarchy_predicate(Pred)
 
-A declared `Key` edge from `Lo` to the broader `Hi`, from the policy, a selected module, or the
-SOTW closure. The edges are closed-world: an undeclared edge does not hold (due2-profiles.md
-§6).
+`Pred` is the IRI of a predicate that states a hierarchy edge: one of `closure_key/1`, or
+`skos:narrower`, `skos:topConceptOf`, or `skos:hasTopConcept`.
 *%
-closure(Key, Lo, Hi) :- triple(Lo, Pred, Hi), voc(Key, Pred), closure_key(Key).
-closure(Key, Lo, Hi) :- module(_, Lo, Pred, Hi), voc(Key, Pred), closure_key(Key).
-closure(Key, Lo, Hi) :- sotw_closure(Pred, Lo, Hi), voc(Key, Pred), closure_key(Key).
+hierarchy_predicate(Pred) :- voc(Key, Pred), closure_key(Key).
+hierarchy_predicate(Pred) :- voc((narrower; topConceptOf; hasTopConcept), Pred).
+
+%*! policy_text(P, Text)
+
+Policy `P` is stated by the policy text `Text`: the text has a triple about `P`. A policy that two
+agreeing texts state is stated by both (due2-workflows.md §4).
+*%
+policy_text(P, Text) :- policy(P), text_triple(Text, P, _, _).
+
+%*! policy_layer(P, Path)
+
+The module at `Path` is in policy `P`'s data space: a core module, or a module of a profile that
+`P` names with `odrl:profile`. A profile named by another policy is not in it.
+*%
+policy_layer(P, Path) :- policy(P), layer(Path, core).
+policy_layer(P, Path) :- policy(P), layer(Path, module(Iri)), triple(P, Pred, Iri),
+    voc(profile, Pred).
+
+%*! edge(P, S, Pred, O)
+
+Policy `P`'s data space states the hierarchy triple `S Pred O`: a text that states `P`, or a
+module in `P`'s layers, has it.
+*%
+edge(P, S, Pred, O) :- policy_text(P, Text), text_triple(Text, S, Pred, O),
+    hierarchy_predicate(Pred).
+edge(P, S, Pred, O) :- policy_layer(P, Path), module(Path, S, Pred, O), hierarchy_predicate(Pred).
+
+%*! closure(P, Key, Lo, Hi)
+
+In policy `P`'s data space, a declared `Key` edge leads from `Lo` to the broader `Hi`: an edge of
+`P`'s text or layers, or of the SOTW closure. The edges are closed-world: an undeclared edge
+does not hold (due2-profiles.md §6).
+*%
+closure(P, Key, Lo, Hi) :- edge(P, Lo, Pred, Hi), voc(Key, Pred), closure_key(Key).
+closure(P, Key, Lo, Hi) :- policy(P), sotw_closure(Pred, Lo, Hi), voc(Key, Pred),
+    closure_key(Key).
 % A `skos:narrower` triple is the inverse `skos:broader` edge (decisions/0015 #5). The SOTW
 % states its edges in one orientation, so it gives `skos:broader` only.
-closure(broader, Lo, Hi) :- triple(Hi, Pred, Lo), voc(narrower, Pred).
-closure(broader, Lo, Hi) :- module(_, Hi, Pred, Lo), voc(narrower, Pred).
-closure(inScheme, C, S) :- declared_in_scheme(C, S).
+closure(P, broader, Lo, Hi) :- edge(P, Hi, Pred, Lo), voc(narrower, Pred).
+closure(P, inScheme, C, S) :- edge(P, C, Pred, S), voc(topConceptOf, Pred).
+closure(P, inScheme, C, S) :- edge(P, S, Pred, C), voc(hasTopConcept, Pred).
 
 %*! declared_in_scheme(C, S)
 
-The policy graph or a selected module states that concept `C` is in scheme `S`: by
+A policy text or a selected module states that concept `C` is in scheme `S`: by
 `skos:inScheme`, by its sub-property `skos:topConceptOf`, or by the inverse
 `skos:hasTopConcept` (SKOS Reference S7, S8). Membership is not inherited along `skos:broader`.
 Normalisation checks right operands against these memberships alone, since it does not see the
-SOTW (decisions/0015 #8); `closure(inScheme, C, S)` adds the SOTW's.
+SOTW (decisions/0015 #8). It runs in solve 0, on one text and its own layers, so these are that
+text's memberships. `closure(P, inScheme, C, S)` adds the SOTW's.
 *%
 declared_in_scheme(C, S) :- triple(C, Pred, S), voc((inScheme; topConceptOf), Pred).
 declared_in_scheme(C, S) :- module(_, C, Pred, S), voc((inScheme; topConceptOf), Pred).
 declared_in_scheme(C, S) :- triple(S, Pred, C), voc(hasTopConcept, Pred).
 declared_in_scheme(C, S) :- module(_, S, Pred, C), voc(hasTopConcept, Pred).
 
-%*! coll_kind(Node, K)
+%*! coll_kind(P, Node, K)
 
-`Node` is a collection of kind `K`: an `odrl:AssetCollection` is `asset`, an
-`odrl:PartyCollection` is `party`.
+In policy `P`'s data space, `Node` is a collection of kind `K`: an `odrl:AssetCollection` is
+`asset`, an `odrl:PartyCollection` is `party`.
 *%
-coll_kind(Node, asset) :- closure(type, Node, Cls), voc(assetCollection, Cls).
-coll_kind(Node, party) :- closure(type, Node, Cls), voc(partyCollection, Cls).
+coll_kind(P, Node, asset) :- closure(P, type, Node, Cls), voc(assetCollection, Cls).
+coll_kind(P, Node, party) :- closure(P, type, Node, Cls), voc(partyCollection, Cls).
 
-%*! node_kind(Node, K)
+%*! node_kind(P, Node, K)
 
-`Node` is of kind `K`: a collection of that kind, or typed `odrl:Asset` or `odrl:Party`.
+In policy `P`'s data space, `Node` is of kind `K`: a collection of that kind, or typed
+`odrl:Asset` or `odrl:Party`.
 *%
-node_kind(Node, K) :- coll_kind(Node, K).
-node_kind(Node, asset) :- closure(type, Node, Cls), voc(asset, Cls).
-node_kind(Node, party) :- closure(type, Node, Cls), voc(party, Cls).
+node_kind(P, Node, K) :- coll_kind(P, Node, K).
+node_kind(P, Node, asset) :- closure(P, type, Node, Cls), voc(asset, Cls).
+node_kind(P, Node, party) :- closure(P, type, Node, Cls), voc(party, Cls).
 
-%*! le_k(Lo, Hi, K)
+%*! le_k(P, Lo, Hi, K)
 
-`Lo` is part of the collection `Hi` of kind `K`: the transitive `odrl:partOf` closure, through
-collections of kind `K` only. That is the typed `partOf` of due2-profiles.md §6. Not reflexive: the
-matchers add identity.
+In policy `P`'s data space, `Lo` is part of the collection `Hi` of kind `K`: the transitive
+`odrl:partOf` closure, through collections of kind `K` only. That is the typed `partOf` of
+due2-profiles.md §6. Not reflexive: the matchers add identity.
 *%
-le_k(Lo, Hi, K) :- closure(partOf, Lo, Hi), coll_kind(Hi, K).
-le_k(Lo, Hi, K) :- le_k(Lo, Mid, K), closure(partOf, Mid, Hi), coll_kind(Hi, K).
+le_k(P, Lo, Hi, K) :- closure(P, partOf, Lo, Hi), coll_kind(P, Hi, K).
+le_k(P, Lo, Hi, K) :- le_k(P, Lo, Mid, K), closure(P, partOf, Mid, Hi), coll_kind(P, Hi, K).
+
+%*! collection(Node)
+
+Some text, selected module, or SOTW edge types `Node` as an asset or party collection. The
+`odrl:source` and refinement rejections and `consumed/2` read it, since a text is checked
+whatever policy it states.
+*%
+collection(Node) :- triple(Node, Pred, Cls), voc(type, Pred),
+    voc((assetCollection; partyCollection), Cls).
+collection(Node) :- module(_, Node, Pred, Cls), voc(type, Pred),
+    voc((assetCollection; partyCollection), Cls).
+collection(Node) :- sotw_closure(Pred, Node, Cls), voc(type, Pred),
+    voc((assetCollection; partyCollection), Cls).
+
+%*! compares(P, Lo, Hi)
+
+Policy `P` asks whether `Lo` is part of `Hi`: a request entity against the target or party of
+one of `P`'s atoms, the two values of one of `P`'s `isPartOf` or `hasPart` leaves, or an actor or
+issuer that the witness test of one of `P`'s duties compares with a bearer or an attester.
+*%
+compares(P, Asked, T) :- request_target(Asked), atom_target(X, T), space(X, P).
+compares(P, Asked, Party) :- request_party(F, Asked), atom_party(X, F, Party), space(X, P).
+compares(P, Lv, Rv) :- cpair(_, C, Lv, Rv), op(C, isPartOf), cspace(C, P).
+compares(P, Rv, Lv) :- cpair(_, C, Lv, Rv), op(C, hasPart), cspace(C, P).
+compares(P, Party, Coll) :- request_party(F, Party), voc(assignee, F), bearer(Y, Coll),
+    Coll != none, space(Y, P).
+compares(P, Actor, Coll) :- evidence(_, _, Actor, _), bearer(Y, Coll), Coll != none,
+    space(Y, P).
+compares(P, Issuer, A) :- evidence_issuer(_, Issuer), attester(Duty, A), node_space(Duty, P).
+
+%*! part_up(P, Lo, N)
+
+In policy `P`'s data space, `N` is `Lo` or above it along `partOf` edges of any kind, for a `Lo`
+that `P` compares.
+*%
+part_up(P, Lo, Lo) :- compares(P, Lo, _).
+part_up(P, Lo, N2) :- part_up(P, Lo, N), closure(P, partOf, N, N2).
+
+%*! part_down(P, Hi, N)
+
+In policy `P`'s data space, `N` is `Hi` or below it along `partOf` edges of any kind, for a `Hi`
+that `P` compares.
+*%
+part_down(P, Hi, Hi) :- compares(P, _, Hi).
+part_down(P, Hi, N) :- part_down(P, Hi, N2), closure(P, partOf, N, N2).
+
+%*! walked(P, Lo, Hi)
+
+The `partOf` edge from `Lo` to `Hi` lies on a path, of any kinds, between two nodes that policy
+`P` compares, so `P`'s reading of that comparison may cross it.
+*%
+walked(P, A, B) :- compares(P, Lo, Hi), part_up(P, Lo, A), closure(P, partOf, A, B),
+    part_down(P, Hi, B).
 
 % A path may pass only through collections of one kind, and a cross-kind path is invalid
 % (due2-profiles.md §6). An edge into an untyped node, or across kinds, has no reading the spike
-% trusts, so it is declined.
-unsupported("odrl:partOf: untyped collection") :- closure(partOf, _, Hi), not coll_kind(Hi, _).
-unsupported("odrl:partOf: untyped collection") :- closure(partOf, _, Hi), coll_kind(Hi, asset),
-    coll_kind(Hi, party).
-unsupported("odrl:partOf: cross-kind edge") :- closure(partOf, Lo, Hi), node_kind(Lo, K),
-    coll_kind(Hi, K2), K != K2.
+% trusts, so it is declined, but only where some policy's comparison may cross it (`walked/3`).
+% Every typed path is a path of any kinds, so an edge on no path of any kinds between two compared
+% nodes is on no typed one either, under any typing: whatever it means, it changes no answer
+% (`test_typed_part_of`, `test_policy_reads_only_its_own_edges`).
+unsupported("odrl:partOf: untyped collection") :- walked(P, _, Hi), not coll_kind(P, Hi, _).
+unsupported("odrl:partOf: untyped collection") :- walked(P, _, Hi), coll_kind(P, Hi, asset),
+    coll_kind(P, Hi, party).
+unsupported("odrl:partOf: cross-kind edge") :- walked(P, Lo, Hi), node_kind(P, Lo, K),
+    coll_kind(P, Hi, K2), K != K2.
 % odrl:source on a collection names where its members come from; the spike reads membership
 % only from the partOf edges, so it is inert there. Elsewhere it is not admissible, and neither
 % is a collection's refinement (due2-diagnostics.md, UnsupportedConstruct).
 reject("UnsupportedConstruct", Node) :- triple(Node, Pred, _), voc(source, Pred),
-    not coll_kind(Node, _).
+    not collection(Node).
 reject("UnsupportedConstruct", Node) :- triple(Node, Pred, _), voc(refinement, Pred),
-    coll_kind(Node, _).
+    collection(Node).
 % A policy with `dct:isReplacedBy` is void, and its replacement is the policy to evaluate
 % (IM 2.2 §2.8). Every other `dct:` term on it stays an annotation.
 reject("ReplacedPolicy", P) :- policy(P), triple(P, Pred, _), voc(isReplacedBy, Pred).
@@ -699,7 +807,13 @@ reject("ReplacedPolicy", P) :- policy(P), triple(P, Pred, _), voc(isReplacedBy, 
 % - A `partOf` edge into an untyped node, or one typed both ways, declines as `odrl:partOf: untyped
 %   collection`, and an edge from a node of one kind into a collection of the other as `odrl:partOf:
 %   cross-kind edge`. A cross-kind path is invalid (due2-profiles.md §6), and the spike has no
-%   reading it trusts for either.
+%   reading it trusts for either. Only an edge that some data space walks declines (`walked/3`,
+%   *Hierarchies*): an edge that no comparison of a policy crosses changes no reply.
+% - A node in two policies whose data spaces read it apart declines as `shared node: read apart by
+%   its policies` (applies.lp, compare.lp, operand.lp, duty.lp), and one that would need a
+%   completion variable per policy as `shared node: a completion variable per policy`
+%   (completion.lp). The program keeps one finding per atom, where decisions/0050 #4 and #9 give
+%   one per entry.
 % - `odrl:source` off a collection, or `odrl:refinement` on a collection, is
 %   `reject("UnsupportedConstruct", Node)` (due2-diagnostics.md). On a collection, `odrl:source` is
 %   inert: the spike reads membership only from the `partOf` edges.
@@ -764,7 +878,7 @@ consumed(Node, Pred) :- triple(Node, Pred, _), voc((output; instanceScope), Pred
 % Timing is read on the policy and its rules too, where it is rejected (structure.lp).
 consumed(Node, Pred) :- triple(Node, Pred, _), timing_predicate(Pred), structure_node(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), action_term(Node).
-consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), coll_kind(Node, _).
+consumed(Node, Pred) :- triple(Node, Pred, _), voc(refinement, Pred), collection(Node).
 consumed(Node, Pred) :- triple(Node, Pred, _), voc(value, Pred), action_term(Node).
 
 %*! annotated(Pred)

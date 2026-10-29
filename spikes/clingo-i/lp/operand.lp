@@ -9,16 +9,16 @@
 % `reject`. Variable letters: DESIGN.md § Vocabulary.
 %
 % - **Consumes:** `voc/2`, `context_property/2`, `kind/2`, `term_kind/2`,
-%   `declared_in_scheme/2`, `closure/3`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
+%   `declared_in_scheme/2`, `closure/4`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
 %   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3`
-%   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`, `owned/3`,
+%   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2`, `cspace/2` (constraint.lp); `left/2`, `owned/3`,
 %   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`,
 %   `scheme/2` (bind.lp); `evaluates/2` (compare.lp).
 % - **Provides:** `has_range_kind/1`, `has_allowed/1`, `single_left/1`, `has_scheme/1`,
-%   `concept_operator/1`, `declared_concept/2`, `read_concept/2`, `candidate_value/2`,
+%   `concept_operator/1`, `declared_concept/2`, `op_space/2`, `read_concept/3`, `read_concept/2`, `candidate_value/2`,
 %   `conforms/2`, `read_world/1`, `read_in/2`, `read_value/3`, `read_resolved/2`,
 %   `nonconforming/2`, `card_ok/2`, `read_ok/2`, `read_u/2`, `read_status/3`,
-%   `unchecked_unit/1`; extends `reject/2` (structure.lp).
+%   `unchecked_unit/1`; extends `reject/2` (structure.lp) and `unsupported/1` (lift.lp).
 
 %## Operator checks
 
@@ -109,12 +109,28 @@ the policy or a selected module declares.
 *%
 declared_concept(Op, V) :- left(C, Op), right(C, V), scheme(Op, S), declared_in_scheme(V, S).
 
+%*! op_space(Op, P)
+
+Operand `Op` is read in policy `P`'s data space: it is the left operand of a leaf read there,
+as `cspace/2` gives it.
+*%
+op_space(Op, P) :- left(C, Op), cspace(C, P).
+
+%*! read_concept(P, Op, V)
+
+The IRI `V` that `Op` reads, in some world, is in one of `Op`'s schemes in policy `P`'s data
+space, by a membership the policy, one of its layers, or the SOTW states.
+*%
+read_concept(P, Op, V) :- read_value(_, Op, V), scheme(Op, S), op_space(Op, P),
+    closure(P, inScheme, V, S).
+
 %*! read_concept(Op, V)
 
-The IRI `V` that `Op` reads, in some world, is in one of `Op`'s schemes, by a membership the
-policy, a selected module, or the SOTW states.
+The IRI `V` that `Op` reads is in one of `Op`'s schemes in a data space of `Op`.
 *%
-read_concept(Op, V) :- read_value(_, Op, V), scheme(Op, S), closure(inScheme, V, S).
+read_concept(Op, V) :- read_concept(_, Op, V).
+unsupported("shared node: read apart by its policies") :- op_space(Op, P), op_space(Op, Q),
+    read_concept(P, Op, V), not read_concept(Q, Op, V).
 
 % The three checks of decisions/0015 #8. Normalisation does not see the SOTW, so a right
 % operand counts only the memberships the policy and its modules declare. A literal is not a
