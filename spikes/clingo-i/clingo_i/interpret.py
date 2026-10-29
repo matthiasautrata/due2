@@ -114,15 +114,19 @@ def _rule(atom: Symbol) -> str:
 def _frontier(shown: list[Symbol]) -> list[Json]:
     """The listed frontier: one sorted list of duty IRIs per alternative, sorted.
 
-    Candidates whose outstanding duties have one set of IRIs are one alternative
-    (due2-workflows.md §6.3), so the sets are collapsed here.
+    explain.lp lists candidate entries, an atom in one of its policies. Entries whose
+    outstanding duties have one set of IRIs are one alternative (due2-workflows.md §6.3), so
+    the sets are collapsed here.
     """
-    duties: dict[str, set[str]] = {
-        str(s.arguments[0]): set() for s in shown if s.match("listed_front", 1)
+    duties: dict[tuple[str, str], set[str]] = {
+        (str(s.arguments[0]), str(s.arguments[1])): set()
+        for s in shown
+        if s.match("listed_front", 2)
     }
     for s in shown:
-        if s.match("front_duty", 2):
-            duties[str(s.arguments[0])].add(_rule(s.arguments[1]))
+        if s.match("front_duty", 3):
+            entry = (str(s.arguments[0]), str(s.arguments[1]))
+            duties[entry].add(_rule(s.arguments[2]))
     routes = sorted({tuple(sorted(d)) for d in duties.values()}, key=lambda a: (len(a), a))
     return [list(a) for a in routes]
 
@@ -430,8 +434,7 @@ class Interpreter:
         makes true, so counting the ground atoms would overcount (completion.lp).
 
         Raises:
-            Declined: A node in two data spaces needs a completion variable per policy
-                (completion.lp), or more than `VARIABLE_CAP` completion variables.
+            Declined: More than `VARIABLE_CAP` completion variables.
             RuntimeError: No model: an integrity constraint failed.
         """
         ctl = Control(["0", f"--enum-mode={mode}"], logger=_log)
@@ -439,24 +442,17 @@ class Interpreter:
         ctl.ground([("base", [])])
         last: list[Symbol] = []
         over = False
-        declined: list[str] = []
 
         def on_model(model: Model) -> bool:
             nonlocal over
             if not last and not over:
-                shown = model.symbols(shown=True)
-                declined[:] = sorted(
-                    _text(a.arguments[0]) for a in shown if a.match("unsupported", 1)
-                )
-                variables = sum(1 for a in shown if a.match("var", 1))
-                over = bool(declined) or variables > VARIABLE_CAP
+                variables = sum(1 for a in model.symbols(shown=True) if a.match("var", 1))
+                over = variables > VARIABLE_CAP
             last[:] = model.symbols(shown=True)
             return not over  # False stops the enumeration
 
         if not ctl.solve(on_model=on_model).satisfiable:
             raise RuntimeError(f"no model satisfies the integrity constraints ({mode})")
-        if declined:
-            raise Declined(declined[0])
         if over:
             raise Declined("variable-cap")
         return last

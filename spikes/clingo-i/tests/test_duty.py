@@ -376,6 +376,9 @@ def findings(interp: Interpreter, body: str, profile: bool = False, **sections: 
     return out
 
 
+P = '"ex:p"'  # the one policy of these tests, which each duty item names (decisions/0050 #4)
+
+
 def value_of(found: set[str], item: str) -> str | None:
     """The truth value of `item` in `found`, or None if it is not an item."""
     values = {s[len(f"holds({item},") : -1] for s in found if s.startswith(f"holds({item},")}
@@ -394,9 +397,9 @@ def test_unguarded_duty_without_evidence_is_outstanding(duty_interpreter: Interp
     # makes fulfilled f, and no deadline means none has passed. Without the empty-set 2 in
     # owed's #min, an unguarded duty would have no owed value and no instance.
     found = findings(duty_interpreter, PRE)
-    assert value_of(found, f"owed({D})") == "t"
-    assert value_of(found, f"fulfilled({D})") == "f"
-    assert pick(found, "status") == {f"status(k,{D},outstanding)"}
+    assert value_of(found, f"owed({D},{P})") == "t"
+    assert value_of(found, f"fulfilled({D},{P})") == "f"
+    assert pick(found, "status") == {f"status(k,{D},{P},outstanding)"}
 
 
 @pytest.mark.parametrize(
@@ -411,16 +414,16 @@ def test_guard_decides_owed(duty_interpreter: Interpreter, fact: Obj, owed: str)
     found = findings(
         duty_interpreter, duty_with(leaf("g"), GUARD), profile=True, sotw={"facts": {"ex:g": fact}}
     )
-    assert value_of(found, f"owed({D})") == owed
-    assert (value_of(found, f"fulfilled({D})") is None) == (owed == "f")
+    assert value_of(found, f"owed({D},{P})") == owed
+    assert (value_of(found, f"fulfilled({D},{P})") is None) == (owed == "f")
 
 
 def test_matching_evidence_fulfils(duty_interpreter: Interpreter) -> None:
     # Every check is t, so the witness and the duty are: without the witness pair, evidence
     # would never be read and every duty would stay outstanding.
     found = findings(duty_interpreter, PRE, sotw={"evidence": [PAID]})
-    assert value_of(found, f'witness({D},"ex:e1")') == "t"
-    assert pick(found, "status") == {f"status(k,{D},fulfilled)"}
+    assert value_of(found, f'witness({D},{P},"ex:e1")') == "t"
+    assert pick(found, "status") == {f"status(k,{D},{P},fulfilled)"}
 
 
 ATTESTED = " ; due2:attestingParty ex:bank"
@@ -446,9 +449,9 @@ def test_each_failing_check_fails_the_witness(
     body = PRE.replace("odrl:compensate .", f"odrl:compensate{extra} .")
     duty = D.replace("none,none", '"ex:receipt",none') if kind == "object" else D
     found = findings(duty_interpreter, body, profile=True, sotw={"evidence": [PAID | change]})
-    assert value_of(found, f'check({duty},"ex:e1",{kind})') == "f"
-    assert value_of(found, f'witness({duty},"ex:e1")') == "f"
-    assert pick(found, "status") == {f"status(k,{duty},outstanding)"}
+    assert value_of(found, f'check({duty},{P},"ex:e1",{kind})') == "f"
+    assert value_of(found, f'witness({duty},{P},"ex:e1")') == "f"
+    assert pick(found, "status") == {f"status(k,{duty},{P},outstanding)"}
 
 
 @pytest.mark.parametrize(
@@ -477,9 +480,9 @@ def test_attested_issuer_and_discharged_reference_pass(
         profile=True,
         sotw={"evidence": [evidence], "closure": closure},
     )
-    assert value_of(found, f'check({D},"ex:e1",attester)') == "t"
-    assert value_of(found, f'check({D},"ex:e1",discharges)') == "t"
-    assert pick(found, "status") == {f"status(k,{D},fulfilled)"}
+    assert value_of(found, f'check({D},{P},"ex:e1",attester)') == "t"
+    assert value_of(found, f'check({D},{P},"ex:e1",discharges)') == "t"
+    assert pick(found, "status") == {f"status(k,{D},{P},fulfilled)"}
 
 
 @pytest.mark.parametrize(
@@ -499,8 +502,8 @@ def test_witness_condition_is_read_from_the_evidence(
         profile=True,
         sotw={"evidence": [evidence]},
     )
-    assert value_of(found, f'witness({D},"ex:e1")') == witness
-    assert pick(found, "status") == {f"status(k,{D},{status})"}
+    assert value_of(found, f'witness({D},{P},"ex:e1")') == witness
+    assert pick(found, "status") == {f"status(k,{D},{P},{status})"}
 
 
 def test_witness_only_nodes_are_not_world_k_items(duty_interpreter: Interpreter) -> None:
@@ -514,12 +517,11 @@ def test_witness_only_nodes_are_not_world_k_items(duty_interpreter: Interpreter)
         sotw={"evidence": [PAID]},
     )
     guards = {s[s.rindex(",b(") + 1 : -1] for s in pick(found, "guard")}  # guard(Y, C)
-    assert {
-        s[len("item(c(") : -2] for s in pick(found, "item") if s.startswith("item(c(")
-    } == guards
+    nodes = {s[len("item(c(") : -2] for s in pick(found, "item") if s.startswith("item(c(")}
+    assert nodes == {f"{c},{P}" for c in guards}
     witness = {s[s.rindex(",b(") + 1 : -1] for s in pick(found, "witness_cond")}
     assert {s for s in pick(found, "evaluates") if s.startswith("evaluates(wit(")} == {
-        f'evaluates(wit("ex:e1"),{c})' for c in witness
+        f'evaluates(wit("ex:e1"),{c},{P})' for c in witness
     }
 
 
@@ -527,8 +529,8 @@ def test_no_named_subject_leaves_the_actor_unknown(duty_interpreter: Interpreter
     # The bearer is the request subject, and the request names none: the actor check is u, not
     # f, so the duty is unknown rather than outstanding.
     found = findings(duty_interpreter, PRE, sotw={"evidence": [PAID]}, request={"parties": {}})
-    assert value_of(found, f'check({D},"ex:e1",actor)') == "u"
-    assert pick(found, "status") == {f"status(k,{D},unknown)"}
+    assert value_of(found, f'check({D},{P},"ex:e1",actor)') == "u"
+    assert pick(found, "status") == {f"status(k,{D},{P},unknown)"}
 
 
 def root_obligation(deadline: str) -> str:
@@ -556,8 +558,8 @@ def test_deadline_decides_outstanding_or_violated(
     found = findings(
         duty_interpreter, root_obligation(deadline), profile=True, sotw={"activation": activation}
     )
-    assert value_of(found, f"in_force({O})") == "t"
-    assert pick(found, "status") == {f"status(k,{O},{status})"}
+    assert value_of(found, f"in_force({O},{P})") == "t"
+    assert pick(found, "status") == {f"status(k,{O},{P},{status})"}
 
 
 CHECKS = ("effective", "deadline", "action", "object", "actor", "attester", "discharges")
@@ -575,14 +577,14 @@ def test_late_witness_is_not_timely(duty_interpreter: Interpreter) -> None:
         sotw={"evidence": [late]},
     )
     # The steps of the worked example in duty.lp (*Worked example*), each one pinned.
-    assert pick(found, "policy_match") == {f"policy_match({O},2)"}
-    assert value_of(found, f"in_force({O})") == "t"
-    checks = {k: value_of(found, f'check({O},"ex:e1",{k})') for k in CHECKS}
+    assert pick(found, "policy_match") == {f"policy_match({O},{P},2)"}
+    assert value_of(found, f"in_force({O},{P})") == "t"
+    checks = {k: value_of(found, f'check({O},{P},"ex:e1",{k})') for k in CHECKS}
     assert checks == {k: "f" if k == "deadline" else "t" for k in CHECKS}
-    assert value_of(found, f'witness({O},"ex:e1")') == "f"
-    assert value_of(found, f"fulfilled({O})") == "f"
+    assert value_of(found, f'witness({O},{P},"ex:e1")') == "f"
+    assert value_of(found, f"fulfilled({O},{P})") == "f"
     assert {f"deadline_at({O},0)", f"passed({O})"} <= found
-    assert pick(found, "status") == {f"status(k,{O},violated)"}
+    assert pick(found, "status") == {f"status(k,{O},{P},violated)"}
 
 
 def test_obligation_without_a_matching_rule_is_not_in_force(duty_interpreter: Interpreter) -> None:
@@ -591,7 +593,7 @@ def test_obligation_without_a_matching_rule_is_not_in_force(duty_interpreter: In
     # and there is no instance. The request asks for the obligation's own action on its target,
     # so a program that matched the obligation itself would find it in force.
     found = findings(duty_interpreter, obligation(""), request={"action": "odrl:delete"})
-    assert value_of(found, f"in_force({O})") == "f"
+    assert value_of(found, f"in_force({O},{P})") == "f"
     assert pick(found, "status") == set()
 
 
@@ -611,7 +613,7 @@ def test_action_time_is_the_evidence_time(
         profile=True,
         sotw={"evidence": [PAID | {"occurred_at": f"{occurred}T00:00:00Z"}]},
     )
-    assert value_of(found, f'witness({D},"ex:e1")') == witness
+    assert value_of(found, f'witness({D},{P},"ex:e1")') == witness
 
 
 # --- the bearer of a collection's duty -----------------------------------------------------
@@ -646,7 +648,7 @@ def test_each_member_bears_a_collection_duty(
         sotw={**MEMBERS, "evidence": [{**PAID, "actor": actor}]},
         request={"parties": parties},
     )
-    assert value_of(found, f'check({COLL},"ex:e1",actor)') == check
+    assert value_of(found, f'check({COLL},{P},"ex:e1",actor)') == check
 
 
 # --- W3: candidates, the frontier, and the verdict ----------------------------------------
@@ -953,8 +955,8 @@ def test_obligation_findings_have_no_variable_of_their_own(
         duty_interpreter, guarded_obligation(), profile=True,
         sotw={"evidence": [evidence], "facts": facts}, request={"parties": {}},
     )  # fmt: skip
-    assert value_of(found, f"in_force({O})") == "u"
-    assert value_of(found, f"fulfilled({O})") == "u"
+    assert value_of(found, f"in_force({O},{P})") == "u"
+    assert value_of(found, f"fulfilled({O},{P})") == "u"
     assert pick(found, "var") == set()
 
 

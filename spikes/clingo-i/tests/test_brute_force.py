@@ -903,12 +903,12 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "opaque_leaf(C) :- leaf_status(C, S), S != unresolved.",
-                "opaque_leaf(C) :- leaf_status(C, S), S != unresolved, S != missing.",
+                "opaque_leaf(C, P) :- leaf_status(C, P, S), S != unresolved.",
+                "opaque_leaf(C, P) :- leaf_status(C, P, S), S != unresolved, S != missing.",
             ),
             (
-                "opened(_, C), leaf_status(C, unresolved), scope",
-                "opened(_, C), not opaque_leaf(C), scope",
+                "item_space(I, P),\n    leaf_status(C, P, unresolved), scope",
+                "item_space(I, P),\n    not opaque_leaf(C, P), scope",
             ),
         ],
     ),
@@ -926,8 +926,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "crank(W, C, 1) :- world(W), open(C), opaque_leaf(C).",
-                "crank(W, C, 0) :- world(W), open(C), opaque_leaf(C).",
+                "crank(W, C, P, 1) :- world(W), open(C, P), opaque_leaf(C, P).",
+                "crank(W, C, P, 0) :- world(W), open(C, P), opaque_leaf(C, P).",
             )
         ],
     ),
@@ -936,8 +936,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "reported(applies(X)) :- atom(X), not holds(applies(X), f).",
-                "reported(applies(X)) :- atom(X).",
+                "reported(applies(X, P)) :- atom(X), space(X, P), not holds(applies(X, P), f).",
+                "reported(applies(X, P)) :- atom(X), space(X, P).",
             )
         ],
     ),
@@ -946,8 +946,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "reported(applies(X)) :- atom(X), not holds(applies(X), f).",
-                "reported(applies(X)) :- holds(applies(X), u).",
+                "reported(applies(X, P)) :- atom(X), space(X, P), not holds(applies(X, P), f).",
+                "reported(applies(X, P)) :- holds(applies(X, P), u).",
             )
         ],
     ),
@@ -957,8 +957,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "conj(K, P), member(C, D),\n    not polar(W, D2, P, 0) : member(C, D2), D2 != D.",
-                "conj(K, P), member(C, D).",
+                "conj(K, Pol), member(C, D),\n    not polar(W, D2, P, Pol, 0) : member(C, D2), D2 != D.",
+                "conj(K, Pol), member(C, D).",
             )
         ],
     ),
@@ -967,8 +967,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "conn(C, negation), member(C, D), flip(P, Q).",
-                "conn(C, negation), member(C, D), Q = P.",
+                "conn(C, negation), member(C, D), flip(Pol, Q).",
+                "conn(C, negation), member(C, D), Q = Pol.",
             )
         ],
     ),
@@ -977,7 +977,7 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "xone_pol(C, D, G, Q),\n    not polar(W, H, R, 0) : xone_pol(C, D, H, R), H != G.",
+                "xone_pol(C, D, G, Q),\n    not polar(W, H, P, R, 0) : xone_pol(C, D, H, R), H != G.",
                 "xone_pol(C, D, G, Q).",
             )
         ],
@@ -987,7 +987,7 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "flip(R, Q),\n    not xone_by(W, C, D2) : member(C, D2), D2 != D.",
+                "flip(R, Q),\n    not xone_by(W, C, P, D2) : member(C, D2), D2 != D.",
                 "flip(R, Q).",
             )
         ],
@@ -995,15 +995,15 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     # One variable per leaf: leaves with the same key become independent.
     "variable-per-leaf": (
         "completion.lp",
-        [("leaf_lit(C, cons(D), Pol) :-", "leaf_lit(C, cons(C), Pol) :- D = C,")],
+        [("M = #min { (D, Q) : same_key(C, P, D, Q) }.", "M = (C, P).")],
     ),
     # A complement read as its base: `neq` as `eq`.
     "polarity-ignored": (
         "completion.lp",
         [
             (
-                "crank(W, C, 2 - N) :- open(C), leaf_lit(C, L, neg)",
-                "crank(W, C, N) :- open(C), leaf_lit(C, L, neg)",
+                "crank(W, C, P, 2 - N) :- open(C, P), leaf_lit(C, P, L, neg)",
+                "crank(W, C, P, N) :- open(C, P), leaf_lit(C, P, L, neg)",
             )
         ],
     ),
@@ -1011,8 +1011,11 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "explain.lp",
         [
             (
-                "surely_applies(X) :- holds(applies(X), t).",
-                "surely_applies(X) :- holds(applies(X), t).\nsurely_applies(X) :- holds(applies(X), u).",
+                "surely_applies(X, P) :- holds(applies(X, P), t).",
+                (
+                    "surely_applies(X, P) :- holds(applies(X, P), t).\n"
+                    "surely_applies(X, P) :- holds(applies(X, P), u)."
+                ),
             )
         ],
     ),
@@ -1027,8 +1030,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "compare.lp",
         [
             (
-                "crank(W, C, 2 - N) :- evaluates(W, C), conn(C, negation)",
-                "crank(W, C, N) :- evaluates(W, C), conn(C, negation)",
+                "crank(W, C, P, 2 - N) :- evaluates(W, C, P), conn(C, negation)",
+                "crank(W, C, P, N) :- evaluates(W, C, P), conn(C, negation)",
             )
         ],
     ),
@@ -1037,8 +1040,8 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "compare.lp",
         [
             (
-                "crank(W, C, 0) :- xone_count(W, C, NT, _), NT >= 2.",
-                "crank(W, C, 2) :- xone_count(W, C, NT, _), NT >= 2.",
+                "crank(W, C, P, 0) :- xone_count(W, C, P, NT, _), NT >= 2.",
+                "crank(W, C, P, 2) :- xone_count(W, C, P, NT, _), NT >= 2.",
             )
         ],
     ),
@@ -1046,9 +1049,9 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     "xone-unknown-as-false": (
         "compare.lp",
         [
-            ("xone_count(W, C, 1, 0).", "xone_count(W, C, 1, _)."),
-            ("xone_count(W, C, 0, 0).", "xone_count(W, C, 0, _)."),
-            ("crank(W, C, 1) :- xone_count(W, C, NT, NU), NT < 2, NU > 0.", ""),
+            ("xone_count(W, C, P, 1, 0).", "xone_count(W, C, P, 1, _)."),
+            ("xone_count(W, C, P, 0, 0).", "xone_count(W, C, P, 0, _)."),
+            ("crank(W, C, P, 1) :- xone_count(W, C, P, NT, NU), NT < 2, NU > 0.", ""),
         ],
     ),
 }
@@ -1595,8 +1598,8 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "duty_item(I), crank(W, C, N).",
-                "duty_item(I), crank(W, C, M), N = 2 - M.",
+                "item_space(I, P),\n    crank(W, C, P, N).",
+                "item_space(I, P),\n    crank(W, C, P, M), N = 2 - M.",
             )
         ],
     ),
@@ -1604,9 +1607,12 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     "fulfilled-share-a-variable": (
         "completion.lp",
         [
-            ("var(ful(Y)) :- u_item(fulfilled(Y)),", "var(ful(0)) :- u_item(fulfilled(Y)),"),
-            ("reads(fulfilled(Y), ful(Y))", "reads(fulfilled(Y), ful(0))"),
-            ("assigned(W, ful(Y), V).", "assigned(W, ful(0), V)."),
+            (
+                "var(ful(Y, P)) :- u_item(fulfilled(Y, P)),",
+                "var(ful(0)) :- u_item(fulfilled(Y, P)),",
+            ),
+            ("reads(fulfilled(Y, P), ful(Y, P))", "reads(fulfilled(Y, P), ful(0))"),
+            ("assigned(W, ful(Y, P), V).", "assigned(W, ful(0), V)."),
         ],
     ),
     # A u `fulfilled` read as f in each world: unknown as false.
@@ -1614,8 +1620,11 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "completion.lp",
         [
             (
-                "completed(W, fulfilled(Y), V) :- u_item(fulfilled(Y)), assigned(W, ful(Y), V).",
-                "completed(W, fulfilled(Y), f) :- u_item(fulfilled(Y)), world(W).",
+                (
+                    "completed(W, fulfilled(Y, P), V) :- u_item(fulfilled(Y, P)), "
+                    "assigned(W, ful(Y, P), V)."
+                ),
+                "completed(W, fulfilled(Y, P), f) :- u_item(fulfilled(Y, P)), world(W).",
             )
         ],
     ),
@@ -1625,7 +1634,7 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         [
             (
                 "unknown(X) :- reads(I, L), pivot(L), finding_atom(I, X).",
-                "unknown(X) :- reads(applies(X), L), pivot(L).",
+                "unknown(X) :- reads(applies(X, _), L), pivot(L).",
             )
         ],
     ),
@@ -1635,8 +1644,8 @@ DUTY_MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         [
             (
                 (
-                    "uncertain(X) :- may_candidate(X), pre(X, Y), status(k, Y, violated), "
-                    "holds(owed(Y), u).\n"
+                    "uncertain(X, P) :- may_candidate(X, P), pre(X, Y), status(k, Y, P, violated),\n"
+                    "    holds(owed(Y, P), u).\n"
                 ),
                 "",
             )

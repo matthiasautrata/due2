@@ -12,24 +12,29 @@
 % per piece of evidence `E`, in world `wit(E)`, by the rules of compare.lp. Absent evidence makes
 % `fulfilled` `f`, never `u`. Variable letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `triple/3` (driver); `context_property/2`, `closure/4`, `voc/2` (lift.lp); `rank/2`
-%   (kleene.lp); `duty_atom/1`, `rule/1`, `policy/1`, `atom/1`, `atom_policy/2`, `pre/2`,
+% A duty atom has one entry for each policy whose data space it is read in (`space/2`,
+% structure.lp): the policies of its parent permission, or the policies that state it as an
+% obligation. Each finding and each check is keyed by the duty atom and that policy, as an atom's
+% are (applies.lp), so a duty two policies share is owed, tested, and fulfilled once in each.
+%
+% - **Consumes:** `triple/3` (driver); `context_property/2`, `closure/4`, `voc/2` (lift.lp);
+%   `rank/2` (kleene.lp); `duty_atom/1`, `rule/1`, `policy/1`, `atom/1`, `atom_policy/2`, `pre/2`,
 %   `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`, `duty_deadline/2`,
-%   `deadline_kind/2`, `duty_scope/2`, `attester/2` (structure.lp);
-%   `top_constraint/2`, `top_refinement/2`, `conn/2`, `member/2`, `leaf/1`, `node_tree/2`
-%   (constraint.lp); `left/2`, `src/2`, `prop/2` (bind.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
-%   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`,
-%   `evidence_discharges/3`, `activation/2`, `sotw_effective_at/1`,
-%   `request_party/2`, `request_reference/1`, `value/3`, `plus/3` (driver); `le_k/4` (lift.lp); `space/2`
-%   (structure.lp); `node_space/2` (constraint.lp).
+%   `deadline_kind/2`, `duty_scope/2`, `attester/2` (structure.lp); `top_constraint/2`,
+%   `top_refinement/2`, `conn/2`, `member/2`, `leaf/1`, `node_tree/2` (constraint.lp); `left/2`,
+%   `src/2`, `prop/2` (bind.lp); `crank/4` (compare.lp); `part_of/3`, `atom_constraint/2`, `holds/2`
+%   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`, `evidence_discharges/3`,
+%   `activation/2`, `sotw_effective_at/1`, `request_party/2`, `request_reference/1`, `value/3`,
+%   `plus/3` (driver); `le_k/4` (lift.lp); `space/2` (structure.lp); `node_space/2`, `cspace/2`
+%   (constraint.lp).
 % - **Provides:** `duty_root/2`, `duty_part/2`, `split_part/2`, `witness_leaf/1`,
 %   `has_witness/1`, `has_guard/1`, `guard/2`, `witness_cond/2`, `in_witness/1`, `rule_node/1`,
-%   `witness_only/1`, `cons_part/1`, `match_part/2`, `matched/2`, `obligation_policy/2`,
-%   `policy_match/2`, `instance/1`, `witness_pair/2`, `check_kind/1`, `effective_pos/1`,
+%   `witness_only/1`, `cons_part/1`, `match_part/3`, `matched/3`, `obligation_policy/2`,
+%   `policy_match/3`, `instance/2`, `witness_pair/3`, `check_kind/1`, `effective_pos/1`,
 %   `occurred_pos/2`, `activation_at/2`, `deadline_at/2`, `passed/1`,
-%   `ev_reaches/3`, `ev_action/3`, `subject/1`, `member_bearer/3`, `member_bearer/2`,
-%   `performer/2`, `open_actor/3`, `open_actor/2`, `attested/3`, `attested/2`, `keyed/1`, `discharged/2`,
-%   `status/3`; extends `evaluates/2` (compare.lp), `item/1`, `holds/2` (applies.lp),
+%   `ev_reaches/3`, `ev_action/3`, `subject/1`, `member_bearer/3`,
+%   `performer/3`, `open_actor/3`, `attested/3`, `keyed/1`, `discharged/2`,
+%   `status/4`; extends `evaluates/3` (compare.lp), `item/1`, `holds/2` (applies.lp),
 %   `reject/2` (structure.lp), and `unsupported/1` (lift.lp).
 
 %## The split
@@ -114,7 +119,7 @@ reject("MixedDutyConstraint", C) :- split_part(_, C), has_witness(C), has_guard(
 %*! guard(Y, C)
 
 Node `C` is a guard of duty atom `Y`: a split part with no witness leaf. Its world-`k` value is
-a conjunct of `owed(Y)` and `in_force(Y)`.
+a conjunct of `owed(Y, P)` and `in_force(Y, P)`.
 *%
 guard(Y, C) :- split_part(Y, C), not has_witness(C).
 
@@ -134,8 +139,9 @@ witness_cond(Y, C) :- split_part(Y, C), has_witness(C), not has_guard(C).
 % in a rule's tree (`rule_node/1`) is not one: world `k` evaluates it for the rule. That happens to
 % a `due2:actionTime` leaf that a rule and a duty share, which reads the request's `at` in `k` and
 % the evidence's `occurred_at` in `wit(E)` (operand.lp). Each piece of evidence `E` has its world
-% `wit(E)`, which evaluates every node of every witness condition (`evaluates(wit(E), C)`), so
-% compare.lp gives each one a rank `crank(wit(E), C, N)` from what `E` records. One algebra serves
+% `wit(E)`, which evaluates every node of every witness condition in each of its data spaces
+% (`evaluates(wit(E), C, P)`), so compare.lp gives each one a rank `crank(wit(E), C, P, N)` from
+% what `E` records. One algebra serves
 % the request and the evidence: the same leaf and connective rules, in another world.
 
 %*! in_witness(C)
@@ -164,59 +170,61 @@ duty's conditions with a witness condition below it, and it lies in no rule's tr
 witness_only(C) :- in_witness(C), not rule_node(C).
 witness_only(C) :- duty_part(_, C), conn(C, and), has_witness(C), not rule_node(C).
 
-% World `wit(E)` evaluates every node of a witness condition, so compare.lp gives each one a
-% rank in that world, from the values operand.lp reads from `E`.
-evaluates(wit(E), C) :- evidence(E, _, _, _), in_witness(C).
+% World `wit(E)` evaluates every node of a witness condition, in each of its data spaces, so
+% compare.lp gives each one a rank in that world, from the values operand.lp reads from `E`.
+evaluates(wit(E), C, P) :- evidence(E, _, _, _), in_witness(C), cspace(C, P).
 
 %## Owed and in force
 
-% These are the findings of due2-workflows.md §5.2, in world `k`:
+% These are the findings of due2-workflows.md §5.2, in world `k`, one for each of the duty atom's
+% entries:
 %
-% - `owed(Y)`, for a precondition duty atom: the Kleene conjunction of its guards, `t` when it has
-%   none. due2-workflows.md §5.2 makes an unguarded duty owed whenever its parent applies. The
-%   finding does not read the parent: W3 reads it only for a parent candidate (due2-workflows.md
-%   §6.1).
-% - `in_force(Y)`, for a root obligation atom: the Kleene conjunction of `policy_match(Y, N)` and
-%   its guards. `policy_match` is the Kleene disjunction, `f` when there are none, over the `Permit`
-%   and `Forbid` atoms of the obligation's policy (`obligation_policy/2`) of `matched(X, N)`: the
-%   conjunction of the atom's action, target, and party parts (`match_part/2`), its constraint parts
-%   left out (`cons_part/1`). An obligation is in force when its policy matches the request, not
-%   when its own action does: in the worked example at the end of this file, the request plays and
-%   the duty is to delete.
-% - `instance(Y)` when `owed(Y)` or `in_force(Y)` is `t` or `u`. Only an instance is tested against
-%   the evidence. A `u` instance is tested too, so that its `fulfilled` finding has a value whatever
-%   the guard turns out to be.
+% - `owed(Y, P)`, for a precondition duty atom of a permission in policy `P`: the Kleene
+%   conjunction of its guards in `P`'s data space, `t` when it has none. due2-workflows.md §5.2
+%   makes an unguarded duty owed whenever its parent applies. The finding does not read the
+%   parent: W3 reads it only for a parent candidate (due2-workflows.md §6.1).
+% - `in_force(Y, P)`, for a root obligation atom of policy `P`: the Kleene conjunction of
+%   `policy_match(Y, P, N)` and its guards. `policy_match` is the Kleene disjunction, `f` when there
+%   are none, over the `Permit` and `Forbid` atoms of `P` of `matched(X, P, N)`: the conjunction of
+%   the entry's action, target, and party parts (`match_part/3`), its constraint parts left out
+%   (`cons_part/1`). An obligation is in force when its policy matches the request, not when its
+%   own action does: in the worked example at the end of this file, the request plays and the duty
+%   is to delete.
+% - `instance(Y, P)` when `owed(Y, P)` or `in_force(Y, P)` is `t` or `u`. Only an instance is
+%   tested against the evidence. A `u` instance is tested too, so that its `fulfilled` finding has
+%   a value whatever the guard turns out to be.
 
 % Each finding is an item, so integrity.lp's one-value constraint covers it.
-item(owed(Y)) :- pre(_, Y).
-item(in_force(Y)) :- obligation(Y).
+item(owed(Y, P)) :- pre(X, Y), space(X, P).
+item(in_force(Y, P)) :- obligation_policy(Y, P).
 
 % The Kleene conjunction of the guards. The 2 in the set is the conjunction's identity, so a
 % duty with no guard is owed `t`: due2-workflows.md §5.2 makes it owed whenever its parent
 % applies, and this finding does not read the parent, since W3 reads it for a parent only.
-holds(owed(Y), V) :- pre(_, Y), rank(V, N),
-    N = #min { 2; M, C : guard(Y, C), holds(c(C), Vc), rank(Vc, M) }.
+holds(owed(Y, P), V) :- pre(X, Y), space(X, P), rank(V, N),
+    N = #min { 2; M, C : guard(Y, C), holds(c(C, P), Vc), rank(Vc, M) }.
 
 %*! cons_part(I)
 
-Item `I` is a constraint part of an atom, `part(X, cons(C))`.
+Item `I` is a constraint part of an entry, `part(X, P, cons(C))`.
 *%
-cons_part(part(X, cons(C))) :- atom_constraint(X, C).
+cons_part(part(X, P, cons(C))) :- atom_constraint(X, C), space(X, P).
 
-%*! match_part(X, I)
+%*! match_part(X, P, I)
 
-Item `I` is a part of atom `X` that the request matches: its action, its target, or a party,
-but not a constraint.
+Item `I` is a part of atom `X`'s entry in policy `P` that the request matches: its action, its
+target, or a party, but not a constraint.
 *%
-match_part(X, I) :- part_of(X, I), not cons_part(I).
+match_part(X, P, I) :- part_of(X, P, I), not cons_part(I).
 
-%*! matched(X, N)
+%*! matched(X, P, N)
 
-The request matches atom `X`, constraints aside, with rank `N`: the Kleene conjunction of its
-`match_part/2` parts.
+The request matches atom `X`'s entry in policy `P`, constraints aside, with rank `N`: the Kleene
+conjunction of its `match_part/3` parts.
 *%
-% Every atom has an action and a target part, so the set is never empty.
-matched(X, N) :- atom(X), N = #min { M, I : match_part(X, I), holds(I, V), rank(V, M) }.
+% Every entry has an action and a target part, so the set is never empty.
+matched(X, P, N) :- atom(X), space(X, P),
+    N = #min { M, I : match_part(X, P, I), holds(I, V), rank(V, M) }.
 
 %*! obligation_policy(Y, P)
 
@@ -225,34 +233,36 @@ The root obligation atom `Y` travels with policy `P`: `P` states `odrl:obligatio
 obligation_policy(a(Duty, Term, T, Party), P) :- obligation(a(Duty, Term, T, Party)),
     policy(P), triple(P, Pred, Duty), voc(obligation, Pred).
 
-%*! policy_match(Y, N)
+%*! policy_match(Y, P, N)
 
-Some `Permit` or `Forbid` atom of root obligation `Y`'s policy matches the request with rank
-`N`: the Kleene disjunction of `matched/2` over those atoms, `f` when there are none.
+Some `Permit` or `Forbid` atom of policy `P`, which states root obligation `Y`, matches the
+request with rank `N`: the Kleene disjunction of `matched/3` over the entries of `P`, `f` when
+there are none.
 *%
-policy_match(Y, N) :- obligation(Y),
-    N = #max { 0; M, X : obligation_policy(Y, P), atom_policy(X, P), matched(X, M) }.
+policy_match(Y, P, N) :- obligation_policy(Y, P),
+    N = #max { 0; M, X : atom_policy(X, P), matched(X, P, M) }.
 
 % An obligation is in force when its policy matches and its guards hold, not when its own action
 % matches (due2-workflows.md §5.2).
-holds(in_force(Y), V) :- obligation(Y), rank(V, N),
-    N = #min { Np, match : policy_match(Y, Np);
-               M, C : guard(Y, C), holds(c(C), Vc), rank(Vc, M) }.
+holds(in_force(Y, P), V) :- obligation_policy(Y, P), rank(V, N),
+    N = #min { Np, match : policy_match(Y, P, Np);
+               M, C : guard(Y, C), holds(c(C, P), Vc), rank(Vc, M) }.
 
-%*! instance(Y)
+%*! instance(Y, P)
 
-Duty atom `Y` has an instance: it is owed `t` or `u`, or in force `t` or `u`. Only an instance
-has a `fulfilled` finding (due2-workflows.md §5.3).
+Duty atom `Y` has an instance in policy `P`: it is owed `t` or `u` there, or in force `t` or
+`u`. Only an instance has a `fulfilled` finding (due2-workflows.md §5.3).
 *%
-instance(Y) :- holds(owed(Y), V), V != f.
-instance(Y) :- holds(in_force(Y), V), V != f.
+instance(Y, P) :- holds(owed(Y, P), V), V != f.
+instance(Y, P) :- holds(in_force(Y, P), V), V != f.
 
 %## The witness test
 
 % Under due2-workflows.md §5.3, each instance is paired with each piece of evidence
-% (`witness_pair(Y, E)`), and each pair has seven checks, `check(Y, E, K)` for each `check_kind(K)`,
-% each an item. `occurred_pos(E, N)` and `effective_pos(N)` place the evidence's `occurred_at` and
-% the SOTW's `effective_at` in the `instant` space:
+% (`witness_pair(Y, P, E)`), and each pair has seven checks, `check(Y, P, E, K)` for each
+% `check_kind(K)`, each an item. The checks that read a hierarchy read the instance's data space.
+% `occurred_pos(E, N)` and `effective_pos(N)` place the evidence's `occurred_at` and the SOTW's
+% `effective_at` in the `instant` space:
 %
 % | Check `K` | `t` when | `f` when | `u` when |
 % |---|---|---|---|
@@ -260,8 +270,8 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % | `deadline` | the duty has no deadline, or `occurred_at` ≤ the deadline (`deadline_at/2`) | `occurred_at` is later | never: an unplaceable deadline declines |
 % | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/3`) | otherwise | never: the closure is closed-world |
 % | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
-% | `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
-% | `attester` | the duty has no attester (`attester/2`, structure.lp), or the evidence's issuer is at or below one (`attested/2`) | the duty has an attester, and the evidence has no issuer or one that is not at or below it | never |
+% | `actor` | the actor is the performer (`performer/3`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/3`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/3`, for the collection) |
+% | `attester` | the duty has no attester (`attester/2`, structure.lp), or the evidence's issuer is at or below one (`attested/3`) | the duty has an attester, and the evidence has no issuer or one that is not at or below it | never |
 % | `discharges` | the instance is not the request's grant (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is the request's grant, and the evidence does not | never |
 %
 % The collection rows are decisions/0018: each member bears a duty whose bearer is a party
@@ -274,11 +284,11 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % instance is the request's grant (`keyed/1`) when its scope is `grant` and the request has a
 % `reference`; without one, a `grant` duty falls back to `member`.
 
-%*! witness_pair(Y, E)
+%*! witness_pair(Y, P, E)
 
-The evidence `E` is tested as a witness for the instance of duty atom `Y`.
+The evidence `E` is tested as a witness for the instance of duty atom `Y` in policy `P`.
 *%
-witness_pair(Y, E) :- instance(Y), evidence(E, _, _, _).
+witness_pair(Y, P, E) :- instance(Y, P), evidence(E, _, _, _).
 
 %*! check_kind(K)
 
@@ -289,7 +299,7 @@ witness_pair(Y, E) :- instance(Y), evidence(E, _, _, _).
 check_kind(effective; deadline; action; object; actor; attester; discharges).
 
 % Each check of each pair is an item, so a check that a rule forgets fails loudly.
-item(check(Y, E, K)) :- witness_pair(Y, E), check_kind(K).
+item(check(Y, P, E, K)) :- witness_pair(Y, P, E), check_kind(K).
 
 %*! effective_pos(N)
 
@@ -305,14 +315,15 @@ occurred_pos(E, N) :- evidence(E, Lit, _, _), value(Lit, instant, N).
 
 % Evidence counts only if it occurred no later than effective_at. Without an effective_at, it
 % cannot be told, so the check is u.
-holds(check(Y, E, effective), t) :- witness_pair(Y, E), occurred_pos(E, N), effective_pos(M),
-    N <= M.
-holds(check(Y, E, effective), f) :- witness_pair(Y, E), occurred_pos(E, N), effective_pos(M),
-    N > M.
-holds(check(Y, E, effective), u) :- witness_pair(Y, E), not effective_pos(_).
+holds(check(Y, P, E, effective), t) :- witness_pair(Y, P, E), occurred_pos(E, N),
+    effective_pos(M), N <= M.
+holds(check(Y, P, E, effective), f) :- witness_pair(Y, P, E), occurred_pos(E, N),
+    effective_pos(M), N > M.
+holds(check(Y, P, E, effective), u) :- witness_pair(Y, P, E), not effective_pos(_).
 % The u check reads no input that due2-workflows.md §3.5 lets `unknown_part` name, so the reply
 % could not say what is missing: solve 1 declines the vector instead.
-unsupported("duty: evidence without effective_at") :- witness_pair(_, _), not effective_pos(_).
+unsupported("duty: evidence without effective_at") :- witness_pair(_, _, _),
+    not effective_pos(_).
 
 %*! activation_at(Y, Start)
 
@@ -342,11 +353,11 @@ unsupported("duty: deadline not comparable") :- duty_deadline(Y, _), not deadlin
 unsupported("duty: deadline not comparable") :- duty_deadline(_, _), not effective_pos(_).
 
 % A witness after the deadline does not fulfil; a duty without a deadline has no such bound.
-holds(check(Y, E, deadline), t) :- witness_pair(Y, E), not duty_deadline(Y, _).
-holds(check(Y, E, deadline), t) :- witness_pair(Y, E), occurred_pos(E, N), deadline_at(Y, M),
-    N <= M.
-holds(check(Y, E, deadline), f) :- witness_pair(Y, E), occurred_pos(E, N), deadline_at(Y, M),
-    N > M.
+holds(check(Y, P, E, deadline), t) :- witness_pair(Y, P, E), not duty_deadline(Y, _).
+holds(check(Y, P, E, deadline), t) :- witness_pair(Y, P, E), occurred_pos(E, N),
+    deadline_at(Y, M), N <= M.
+holds(check(Y, P, E, deadline), f) :- witness_pair(Y, P, E), occurred_pos(E, N),
+    deadline_at(Y, M), N > M.
 
 %*! ev_reaches(P, A, B)
 
@@ -361,18 +372,19 @@ ev_reaches(P, A, B) :- ev_reaches(P, A, Mid), closure(P, includedIn, Mid, B).
 
 In policy `P`'s data space, the action of evidence `E` is duty atom `Y`'s action, or narrower.
 *%
-ev_action(Y, E, P) :- witness_pair(Y, E), space(Y, P), evidence(E, _, _, A), duty_action(Y, B),
+ev_action(Y, E, P) :- witness_pair(Y, P, E), evidence(E, _, _, A), duty_action(Y, B),
     ev_reaches(P, A, B).
 
 % The closure is closed-world over declared edges (due2-profiles.md §6), so f, not u.
-holds(check(Y, E, action), t) :- ev_action(Y, E, _).
-holds(check(Y, E, action), f) :- witness_pair(Y, E), not ev_action(Y, E, _).
+holds(check(Y, P, E, action), t) :- ev_action(Y, E, P).
+holds(check(Y, P, E, action), f) :- witness_pair(Y, P, E), not ev_action(Y, E, P).
 
 % Evidence with no object does not record the duty's relation value, so it is not a witness for
 % a duty that has one.
-holds(check(Y, E, object), t) :- witness_pair(Y, E), not duty_relation(Y, _).
-holds(check(Y, E, object), t) :- witness_pair(Y, E), duty_relation(Y, T), evidence_object(E, T).
-holds(check(Y, E, object), f) :- witness_pair(Y, E), duty_relation(Y, T),
+holds(check(Y, P, E, object), t) :- witness_pair(Y, P, E), not duty_relation(Y, _).
+holds(check(Y, P, E, object), t) :- witness_pair(Y, P, E), duty_relation(Y, T),
+    evidence_object(E, T).
+holds(check(Y, P, E, object), f) :- witness_pair(Y, P, E), duty_relation(Y, T),
     not evidence_object(E, T).
 
 %*! subject(Party)
@@ -391,21 +403,17 @@ party collection, so it bears `Y` for this request: each member of a collection 
 member_bearer(Y, Party, P) :- bearer(Y, Coll), subject(Party), space(Y, P),
     le_k(P, Party, Coll, party).
 
-%*! member_bearer(Y, Party)
+%*! performer(Y, P, Party)
 
-The request subject `Party` is a member of duty atom `Y`'s bearer in a data space of `Y`.
+In policy `P`'s data space, `Party` is the one actor whose act can witness duty atom `Y`: the
+request subject when it is a member of `Y`'s bearer, else the bearer, or the subject when the
+bearer is `none`. A duty with no performer has a bearer that the request leaves open
+(`open_actor/3`).
 *%
-member_bearer(Y, Party) :- member_bearer(Y, Party, _).
-
-%*! performer(Y, Party)
-
-`Party` is the one actor whose act can witness duty atom `Y`: the request subject when it is a
-member of `Y`'s bearer, else the bearer, or the subject when the bearer is `none`. A duty with
-no performer has a bearer that the request leaves open (`open_actor/2`).
-*%
-performer(Y, Party) :- member_bearer(Y, Party).
-performer(Y, Party) :- bearer(Y, Party), Party != none, not member_bearer(Y, _).
-performer(Y, Party) :- bearer(Y, none), subject(Party).
+performer(Y, P, Party) :- member_bearer(Y, Party, P).
+performer(Y, P, Party) :- bearer(Y, Party), Party != none, space(Y, P),
+    not member_bearer(Y, _, P).
+performer(Y, P, Party) :- bearer(Y, none), space(Y, P), subject(Party).
 
 %*! open_actor(Y, Actor, P)
 
@@ -416,22 +424,16 @@ tell: it names no subject, and `Actor` is a member of `Y`'s bearer, so `Actor` m
 open_actor(Y, Actor, P) :- bearer(Y, Coll), not subject(_), evidence(_, _, Actor, _),
     space(Y, P), le_k(P, Actor, Coll, party).
 
-%*! open_actor(Y, Actor)
-
-An act by `Actor` may witness duty atom `Y` in a data space of `Y`, and the request cannot tell.
-*%
-open_actor(Y, Actor) :- open_actor(Y, Actor, _).
-
 % The actor must be the performer. An actor the request cannot tell apart from the subject is u,
 % never f: a member of a collection bearer, or anyone when the bearer is `none` and the request
 % names no subject, which leaves the duty with no performer.
-holds(check(Y, E, actor), t) :- witness_pair(Y, E), evidence(E, _, Actor, _),
-    performer(Y, Actor).
-holds(check(Y, E, actor), f) :- witness_pair(Y, E), evidence(E, _, Actor, _), performer(Y, _),
-    not performer(Y, Actor), not open_actor(Y, Actor).
-holds(check(Y, E, actor), u) :- witness_pair(Y, E), evidence(E, _, Actor, _),
-    open_actor(Y, Actor).
-holds(check(Y, E, actor), u) :- witness_pair(Y, E), bearer(Y, none), not subject(_).
+holds(check(Y, P, E, actor), t) :- witness_pair(Y, P, E), evidence(E, _, Actor, _),
+    performer(Y, P, Actor).
+holds(check(Y, P, E, actor), f) :- witness_pair(Y, P, E), evidence(E, _, Actor, _),
+    performer(Y, P, _), not performer(Y, P, Actor), not open_actor(Y, Actor, P).
+holds(check(Y, P, E, actor), u) :- witness_pair(Y, P, E), evidence(E, _, Actor, _),
+    open_actor(Y, Actor, P).
+holds(check(Y, P, E, actor), u) :- witness_pair(Y, P, E), bearer(Y, none), not subject(_).
 
 %*! attested(Duty, E, P)
 
@@ -443,33 +445,15 @@ attested(Duty, E, P) :- attester(Duty, Issuer), evidence_issuer(E, Issuer), node
 attested(Duty, E, P) :- attester(Duty, A), evidence_issuer(E, Issuer), node_space(Duty, P),
     le_k(P, Issuer, A, party).
 
-%*! attested(Duty, E)
-
-The evidence `E` has an issuer at or below an attester of `Duty` in a data space of `Duty`.
-*%
-attested(Duty, E) :- attested(Duty, E, _).
-
-% A duty in two policies is read in each one's data space. The program keeps one witness test
-% per duty atom, so where two of its spaces read a check apart, the vector declines (lift.lp,
-% *Hierarchies*).
-unsupported("shared node: read apart by its policies") :- space(Y, P), space(Y, Q),
-    ev_action(Y, E, P), not ev_action(Y, E, Q).
-unsupported("shared node: read apart by its policies") :- space(Y, P), space(Y, Q),
-    member_bearer(Y, Party, P), not member_bearer(Y, Party, Q).
-unsupported("shared node: read apart by its policies") :- space(Y, P), space(Y, Q),
-    open_actor(Y, Actor, P), not open_actor(Y, Actor, Q).
-unsupported("shared node: read apart by its policies") :- node_space(Duty, P),
-    node_space(Duty, Q), attested(Duty, E, P), not attested(Duty, E, Q).
-
 % A duty with no attester counts evidence from any issuer, or none. One with an attester counts
 % only attested evidence, so evidence with no issuer is `f`, never `u`: the SOTW states every
 % issuer it has.
-holds(check(a(Duty, Term, T, Party), E, attester), t) :- witness_pair(a(Duty, Term, T, Party), E),
-    not attester(Duty, _).
-holds(check(a(Duty, Term, T, Party), E, attester), t) :- witness_pair(a(Duty, Term, T, Party), E),
-    attested(Duty, E).
-holds(check(a(Duty, Term, T, Party), E, attester), f) :- witness_pair(a(Duty, Term, T, Party), E),
-    attester(Duty, _), not attested(Duty, E).
+holds(check(a(Duty, Term, T, Party), P, E, attester), t) :-
+    witness_pair(a(Duty, Term, T, Party), P, E), not attester(Duty, _).
+holds(check(a(Duty, Term, T, Party), P, E, attester), t) :-
+    witness_pair(a(Duty, Term, T, Party), P, E), attested(Duty, E, P).
+holds(check(a(Duty, Term, T, Party), P, E, attester), f) :-
+    witness_pair(a(Duty, Term, T, Party), P, E), attester(Duty, _), not attested(Duty, E, P).
 
 %*! keyed(Y)
 
@@ -484,22 +468,23 @@ keyed(Y) :- duty_scope(Y, grant), request_reference(_).
 The evidence `E` was submitted against the request's instance of duty atom `Y`: its
 `discharges` names `Y`'s duty and the request's `reference`.
 *%
-discharged(a(Duty, Term, T, Party), E) :- witness_pair(a(Duty, Term, T, Party), E),
+discharged(a(Duty, Term, T, Party), E) :- witness_pair(a(Duty, Term, T, Party), _, E),
     request_reference(Ref), evidence_discharges(E, Duty, Ref).
 
-holds(check(Y, E, discharges), t) :- witness_pair(Y, E), not keyed(Y).
-holds(check(Y, E, discharges), t) :- witness_pair(Y, E), keyed(Y), discharged(Y, E).
-holds(check(Y, E, discharges), f) :- witness_pair(Y, E), keyed(Y), not discharged(Y, E).
+holds(check(Y, P, E, discharges), t) :- witness_pair(Y, P, E), not keyed(Y).
+holds(check(Y, P, E, discharges), t) :- witness_pair(Y, P, E), keyed(Y), discharged(Y, E).
+holds(check(Y, P, E, discharges), f) :- witness_pair(Y, P, E), keyed(Y), not discharged(Y, E).
 
 %## Fulfilled and status
 
-% `witness(Y, E)` is the Kleene conjunction of the seven checks and of the ranks of `Y`'s witness
-% conditions in world `wit(E)`. `fulfilled(Y)` is the Kleene disjunction of the witnesses, `f` when
-% there is no evidence. `passed(Y)` holds when the deadline is earlier than `effective_at`. It is
-% fixed per evaluation, since both instants are inputs, so it is a fact about the vector, not a
-% finding. The duty status `status(k, Y, S)` is the table of due2-workflows.md §5.3:
+% `witness(Y, P, E)` is the Kleene conjunction of the seven checks and of the ranks of `Y`'s
+% witness conditions in world `wit(E)` and `P`'s data space. `fulfilled(Y, P)` is the Kleene
+% disjunction of the witnesses, `f` when there is no evidence. `passed(Y)` holds when the deadline
+% is earlier than `effective_at`. It is fixed per evaluation, since both instants are inputs, so
+% it is a fact about the vector, not a finding, and it reads no data space. The duty status
+% `status(k, Y, P, S)` is the table of due2-workflows.md §5.3:
 %
-% | `fulfilled(Y)` | `passed(Y)` | Duty status |
+% | `fulfilled(Y, P)` | `passed(Y)` | Duty status |
 % |---|---|---|
 % | `t` | either | `fulfilled` |
 % | `f` | no | `outstanding` |
@@ -519,17 +504,17 @@ holds(check(Y, E, discharges), f) :- witness_pair(Y, E), keyed(Y), not discharge
 
 % Each pair is an item: the witness test conjoined with the witness conditions in world wit(E).
 % The seven checks are always in the set, so the #min always has a value.
-item(witness(Y, E)) :- witness_pair(Y, E).
-holds(witness(Y, E), V) :- witness_pair(Y, E), rank(V, N),
-    N = #min { M, check, K : holds(check(Y, E, K), Vk), rank(Vk, M);
-               M, cond, C : witness_cond(Y, C), crank(wit(E), C, M) }.
+item(witness(Y, P, E)) :- witness_pair(Y, P, E).
+holds(witness(Y, P, E), V) :- witness_pair(Y, P, E), rank(V, N),
+    N = #min { M, check, K : holds(check(Y, P, E, K), Vk), rank(Vk, M);
+               M, cond, C : witness_cond(Y, C), crank(wit(E), C, P, M) }.
 
 % The Kleene disjunction over the evidence: `t` if some witness satisfies the duty, `f` if every
 % one fails, which includes having none (due2-workflows.md §5.3). The 0 is the disjunction's
 % identity, which gives the empty set its `f`.
-item(fulfilled(Y)) :- instance(Y).
-holds(fulfilled(Y), V) :- instance(Y), rank(V, N),
-    N = #max { 0; M, E : holds(witness(Y, E), Vw), rank(Vw, M) }.
+item(fulfilled(Y, P)) :- instance(Y, P).
+holds(fulfilled(Y, P), V) :- instance(Y, P), rank(V, N),
+    N = #max { 0; M, E : holds(witness(Y, P, E), Vw), rank(Vw, M) }.
 
 %*! passed(Y)
 
@@ -538,16 +523,16 @@ evaluation, so it is not a finding (due2-workflows.md §5.3).
 *%
 passed(Y) :- deadline_at(Y, M), effective_pos(N), N > M.
 
-%*! status(W, Y, S)
+%*! status(W, Y, P, S)
 
-In world `W`, the instance of duty atom `Y` has duty status `S`: `fulfilled`, `outstanding`,
-`violated`, or `unknown`. It is the status table of due2-workflows.md §5.3, from the
-`fulfilled` finding and `passed/1`. Without a deadline a duty is never violated.
+In world `W`, the instance of duty atom `Y` in policy `P` has duty status `S`: `fulfilled`,
+`outstanding`, `violated`, or `unknown`. It is the status table of due2-workflows.md §5.3, from
+the `fulfilled` finding and `passed/1`. Without a deadline a duty is never violated.
 *%
-status(k, Y, fulfilled) :- holds(fulfilled(Y), t).
-status(k, Y, outstanding) :- holds(fulfilled(Y), f), not passed(Y).
-status(k, Y, violated) :- holds(fulfilled(Y), f), passed(Y).
-status(k, Y, unknown) :- holds(fulfilled(Y), u).
+status(k, Y, P, fulfilled) :- holds(fulfilled(Y, P), t).
+status(k, Y, P, outstanding) :- holds(fulfilled(Y, P), f), not passed(Y).
+status(k, Y, P, violated) :- holds(fulfilled(Y, P), f), passed(Y).
+status(k, Y, P, unknown) :- holds(fulfilled(Y, P), u).
 
 %## Worked example
 
@@ -566,16 +551,16 @@ status(k, Y, unknown) :- holds(fulfilled(Y), u).
 % effective at 1 June, and records one piece of evidence, `ex:e1`: `ex:alice` deleted `ex:a` on
 % 15 May. With `O` the obligation's atom `a("ex:o", "odrl:delete", "ex:a", none)`:
 %
-% 1. `matched(a("ex:perm", "odrl:use", "ex:a", none), 2)`: `odrl:play` is included in
-%    `odrl:use`, and the target is `ex:a`. So `policy_match(O, 2)`, and with no guard
-%    `holds(in_force(O), t)` and `instance(O)`.
-% 2. `witness_pair(O, "ex:e1")`. Six checks are `t`: `effective`, `action`, `object`, `actor`
-%    (the bearer is `none` and `ex:alice` is the subject), `attester`, and `discharges`. `deadline`
-%    is `f`, since 15 May is after 1 May. So `holds(witness(O, "ex:e1"), f)`, and
-%    `holds(fulfilled(O), f)`.
+% 1. `matched(a("ex:perm", "odrl:use", "ex:a", none), "ex:p", 2)`: `odrl:play` is included in
+%    `odrl:use`, and the target is `ex:a`. So `policy_match(O, "ex:p", 2)`, and with no guard
+%    `holds(in_force(O, "ex:p"), t)` and `instance(O, "ex:p")`.
+% 2. `witness_pair(O, "ex:p", "ex:e1")`. Six checks are `t`: `effective`, `action`, `object`,
+%    `actor` (the bearer is `none` and `ex:alice` is the subject), `attester`, and `discharges`.
+%    `deadline` is `f`, since 15 May is after 1 May. So `holds(witness(O, "ex:p", "ex:e1"), f)`,
+%    and `holds(fulfilled(O, "ex:p"), f)`.
 % 3. `deadline_at(O, 0)`, since 1 May is the earliest instant of the vector and positions are
 %    dense ranks from 0 (values.py). `effective_at` is later, so `passed(O)`, and
-%    `status(k, O, violated)`.
+%    `status(k, O, "ex:p", violated)`.
 %
 % Evidence that came too late is no witness: the duty was violated on 1 May, and deleting the
 % asset afterwards does not undo that.

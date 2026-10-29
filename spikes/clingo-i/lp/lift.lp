@@ -13,8 +13,8 @@
 %   `evidence_param/3`, `evidence_issuer/2`, `activation/2`, `sotw_closure/3`), and the driver's
 %   own finding `unplaceable/2`; `policy/1`, `rule/1`, `structure_node/1`, `action_term/1`,
 %   `duty_node/1`, `pre_rule/2`, `node_deadline/2`, `atom_target/2`, `atom_party/3`, `bearer/2`,
-%   `attester/2`, and `space/2` (structure.lp); `right/2`, `op/2`, `node_space/2`, and `cspace/2`
-%   (constraint.lp); `cpair/4` (compare.lp).
+%   `attester/2`, and `space/2` (structure.lp); `right/2`, `op/2`, and `node_space/2`
+%   (constraint.lp); `cpair/5` (compare.lp).
 % - **Provides:** the vocabulary (`voc/2`, `conflict_value/2`, `policy_class/1`, `function/1`,
 %   `match_key/1`, `bearer_fn/1`, `attester_fn/1`, `vocab_ns/1`, `annotation/1`,
 %   `annotation_ns/1`, `operator/2`,
@@ -624,10 +624,8 @@ fact_value(Prop, Value) :- valued(Prop, Source), fact_answer_value(Prop, Source,
 %
 % The readers of the hierarchies are keyed by policy too, and each node is read in the data spaces
 % of its policies: an atom in `space/2` (structure.lp), a constraint node in `cspace/2`
-% (constraint.lp). A node that is in two policies is read in each, and when the readings differ the
-% vector declines as `shared node: read apart by its policies`: the program keeps one finding per
-% node, where due2-workflows.md §3.3 gives one per entry. When they agree, the one finding is each
-% entry's.
+% (constraint.lp). A node that is in two policies is read in each, and each reading gives that
+% entry's finding (due2-workflows.md §3.3, §6.2 *Entries*).
 
 %*! closure_key(Key)
 
@@ -746,8 +744,8 @@ issuer that the witness test of one of `P`'s duties compares with a bearer or an
 *%
 compares(P, Asked, T) :- request_target(Asked), atom_target(X, T), space(X, P).
 compares(P, Asked, Party) :- request_party(F, Asked), atom_party(X, F, Party), space(X, P).
-compares(P, Lv, Rv) :- cpair(_, C, Lv, Rv), op(C, isPartOf), cspace(C, P).
-compares(P, Rv, Lv) :- cpair(_, C, Lv, Rv), op(C, hasPart), cspace(C, P).
+compares(P, Lv, Rv) :- cpair(_, C, P, Lv, Rv), op(C, isPartOf).
+compares(P, Rv, Lv) :- cpair(_, C, P, Lv, Rv), op(C, hasPart).
 compares(P, Party, Coll) :- request_party(F, Party), voc(assignee, F), bearer(Y, Coll),
     Coll != none, space(Y, P).
 compares(P, Actor, Coll) :- evidence(_, _, Actor, _), bearer(Y, Coll), Coll != none,
@@ -809,11 +807,6 @@ reject("ReplacedPolicy", P) :- policy(P), triple(P, Pred, _), voc(isReplacedBy, 
 %   cross-kind edge`. A cross-kind path is invalid (due2-profiles.md §6), and the spike has no
 %   reading it trusts for either. Only an edge that some data space walks declines (`walked/3`,
 %   *Hierarchies*): an edge that no comparison of a policy crosses changes no reply.
-% - A node in two policies whose data spaces read it apart declines as `shared node: read apart by
-%   its policies` (applies.lp, compare.lp, operand.lp, duty.lp), and one that would need a
-%   completion variable per policy as `shared node: a completion variable per policy`
-%   (completion.lp). The program keeps one finding per atom, where decisions/0050 #4 and #9 give
-%   one per entry.
 % - `odrl:source` off a collection, or `odrl:refinement` on a collection, is
 %   `reject("UnsupportedConstruct", Node)` (due2-diagnostics.md). On a collection, `odrl:source` is
 %   inert: the spike reads membership only from the `partOf` edges.

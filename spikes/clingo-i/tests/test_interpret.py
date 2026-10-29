@@ -4,9 +4,9 @@ a few verdicts that the other tests rely on."""
 from __future__ import annotations
 
 import pytest
-from clingo import Control
+from clingo import Control, Model
 
-from clingo_i.interpret import PROGRAM_FILES, VARIABLE_CAP, Interpreter, load_programs
+from clingo_i.interpret import PROGRAM_FILES, SOLVE_2, VARIABLE_CAP, Interpreter, load_programs
 from clingo_i.json_types import Json, Obj, as_obj
 from tests.conftest import INIT, POLICY, PREFIXES, PROF, vector
 
@@ -73,7 +73,10 @@ def test_anonymous_rule(interpreter: Interpreter) -> None:
 
 DELETIONS = [
     ("kleene.lp", "rank(u, 1)."),
-    ("applies.lp", "holds(part(X, action), f) :- atom(X), not action_matches(X)."),
+    (
+        "applies.lp",
+        "holds(part(X, P, action), f) :- atom(X), space(X, P), not action_matches(X, P).",
+    ),
     ("completion.lp", "completed(W, I, V) :- pre_in(W, I, 1), assigned(W, fin(I), V)."),
     (
         "resolve.lp",
@@ -302,14 +305,14 @@ def test_same_rule_eliminations_are_dropped(interpreter: Interpreter) -> None:
 
 
 def test_combination_rows_on_facts() -> None:
-    # structure.lp admits one policy per vector, so the cross-policy rows are tested on facts:
-    # q's t forbid y removes the candidates of the other policies, p's u candidate x and r's t
-    # candidate w; r's forbid z, removed in r by w under perm, removes nothing.
+    # The cross-policy rows, on explain.lp alone: q's t forbid y removes the candidate entries of
+    # the other policies, p's u candidate x and r's t candidate w; r's forbid z, removed in r by w
+    # under perm, removes nothing.
     facts = """
-atom(x). atom_effect(x, permit). atom_policy(x, p). atom_rule(x, "x"). holds(applies(x), u).
-atom(y). atom_effect(y, forbid). atom_policy(y, q). atom_rule(y, "y"). holds(applies(y), t).
-atom(z). atom_effect(z, forbid). atom_policy(z, r). atom_rule(z, "z"). holds(applies(z), t).
-atom(w). atom_effect(w, permit). atom_policy(w, r). atom_rule(w, "w"). holds(applies(w), t).
+atom(x). atom_effect(x, permit). atom_policy(x, p). atom_rule(x, "x"). holds(applies(x, p), u).
+atom(y). atom_effect(y, forbid). atom_policy(y, q). atom_rule(y, "y"). holds(applies(y, q), t).
+atom(z). atom_effect(z, forbid). atom_policy(z, r). atom_rule(z, "z"). holds(applies(z, r), t).
+atom(w). atom_effect(w, permit). atom_policy(w, r). atom_rule(w, "w"). holds(applies(w, r), t).
 conflict(p, prohibit). conflict(q, prohibit). conflict(r, perm).
 """
     ctl = Control([])
@@ -338,7 +341,10 @@ conflict(a, invalid). conflict(b, perm).
 def test_shared_permission_survives_in_its_other_policy() -> None:
     # The risk is a fold that removes the atom when one policy removes its entry: that would
     # leave no candidate, and the verdict would be NotApplicable.
-    facts = SHARED + "world(c). completed(c, applies(read), t). completed(c, applies(no), t).\n"
+    facts = SHARED + (
+        "world(c). completed(c, applies(read, a), t). completed(c, applies(read, b), t).\n"
+        "completed(c, applies(no, a), t).\n"
+    )
     ctl = Control(["--warn=none"])
     ctl.add("base", [], facts + load_programs()["resolve.lp"])
     ctl.ground([("base", [])])
@@ -348,10 +354,12 @@ def test_shared_permission_survives_in_its_other_policy() -> None:
 
 
 def test_shared_permission_rows_name_the_entry() -> None:
-    # Each removed entry has a row naming its policy, and `read` keeps its entry in `b`, so it
-    # is not conflicted and stays on the listed frontier. The risk is reading one row as removing
-    # the atom: `read` would be conflicted, so not listed, and the listed frontier would lose it.
-    facts = SHARED + "holds(applies(read), t). holds(applies(no), t).\n"
+    # Each removed entry has a row naming its policy, and `read` keeps its entry in `b`, which
+    # stays on the listed frontier. The risk is reading one row as removing the atom: `read`
+    # would not be listed in `b`, and the listed frontier would lose it.
+    facts = SHARED + (
+        "holds(applies(read, a), t). holds(applies(read, b), t). holds(applies(no, a), t).\n"
+    )
     ctl = Control(["--warn=none"])
     ctl.add("base", [], facts + load_programs()["explain.lp"])
     ctl.ground([("base", [])])
@@ -361,9 +369,10 @@ def test_shared_permission_rows_name_the_entry() -> None:
         "elim(read,a,no,invalid)",
         "elim(no,a,read,invalid)",
     }
-    assert "conflicted(read)" not in rows
-    assert "listed(read)" in rows
-    assert "conflicted(no)" in rows
+    assert "conflict_removes(read,a)" in rows
+    assert "conflict_removes(read,b)" not in rows
+    assert "listed(read,b)" in rows
+    assert "listed(read,a)" not in rows
 
 
 # --- constraints (due2-profiles.md §3 to §6) ---
@@ -1007,9 +1016,8 @@ def test_policy_reads_only_its_own_edges(
 # own data space (`node_space/2`, constraint.lp), so the refinement is read in ex:p alone. ex:x is
 # a state property with no fact, so the refinement is U and ex:p alone is Indeterminate. isA reads
 # a hierarchy, so its completion variable is keyed by policy (decisions/0050 #9). Before #154 no
-# node gave the policy's tree a space, the refinement was read in every policy, and beside ex:q
-# the vector declined as `shared node: a completion variable per policy`. The `rule` rows state the same
-# refined action on ex:p's rule, whose tree always had ex:p's space.
+# node gave the policy's tree a space, so the refinement was read in every policy. The `rule`
+# rows state the same refined action on ex:p's rule, whose tree always had ex:p's space.
 REFINED_USE = (
     "[ rdf:value odrl:use ; odrl:refinement"
     " [ odrl:leftOperand ex:x ; odrl:operator odrl:isA ; odrl:rightOperand ex:c ] ]"
@@ -1040,31 +1048,105 @@ def test_policy_refinement_stays_with_its_policy(
     assert outcome(interpreter.reply(v)) == "Indeterminate"
 
 
-# A rule that two policies state is one atom with an entry in each (decisions/0050 #4). The
-# program keeps one finding per atom, so where the entries' data spaces read a part apart it
-# declines rather than give both entries one reading. Here ex:p's ex:copy edge makes ex:rq's
-# action part t in ex:p and f in ex:q. The request's target is absent in the second row, so
-# ex:rq's target part is u: one completion variable per atom would correlate the two entries,
-# which decisions/0050 #9 keeps apart, so that row declines too.
+# A rule that two policies state is one atom with an entry in each, and each entry is read in its
+# own policy's data space (decisions/0050 #4). In the `read-apart` row, ex:p's ex:copy edge makes
+# ex:rq's action part t in ex:p and f in ex:q, so ex:rq's entry in ex:p permits. The risk is one
+# reading per atom: ex:q's would make it NotApplicable. (A union of the spaces would permit too;
+# test_locality.py's shared-node variant catches it through the findings.) In the `completion`
+# row the request's target is absent, so each entry's target part is u and gets its own
+# completion variable (decisions/0050 #9); the reply names ex:rq once.
 @pytest.mark.parametrize(
-    ("p_extra", "asked", "reason"),
+    ("p_extra", "asked", "expected", "parts"),
     [
         ("ex:copy odrl:includedIn odrl:use .\n", {"action": "ex:copy", "target": "ex:b"},
-         "shared node: read apart by its policies"),
+         {"verdict": "Permit", "verdict_basis": basis("ex:rq permission"), "eliminated": []}, []),
         ("", {"action": "odrl:use", "target": None},
-         "shared node: a completion variable per policy"),
+         {"verdict": "Indeterminate", "verdict_basis": basis("ex:r unknown", "ex:rq unknown"),
+          "eliminated": [], "verdict_range": {"low": "NotApplicable", "high": "Permit"}},
+         [("ex:r", "odrl:target", "missing"), ("ex:rq", "odrl:target", "missing")]),
     ],
     ids=["read-apart", "completion"],
 )  # fmt: skip
-def test_shared_rule_read_apart_declines(
-    interpreter: Interpreter, p_extra: str, asked: Obj, reason: str
+def test_shared_rule_entries_read_apart(
+    interpreter: Interpreter,
+    p_extra: str,
+    asked: Obj,
+    expected: Obj,
+    parts: list[tuple[str, str, str]],
 ) -> None:
     v = vector(request=asked)
     if asked.get("target") is None:
         del as_obj(v["request"], "request")["target"]
     texts: list[Json] = [*two_texts(p_extra, "odrl:action odrl:use ; odrl:target ex:b", True)]
     v["policies"] = texts
-    assert outcome(interpreter.reply(v)) == reason
+    reply = interpreter.reply(v)
+    assert explained(reply) == expected
+    assert unknown_parts(reply) == parts
+
+
+def approving(policy: str, rule: str, extra: str = "") -> str:
+    """Policy `policy`, whose permission `rule` on use of ex:a carries duty ex:approval: the
+    council is to compensate. Each policy states ex:approval alike, so it is one atom."""
+    return (
+        PREFIXES
+        + f"ex:{policy} a odrl:Set ; odrl:permission ex:{rule} .\n"
+        + f"ex:{rule} a odrl:Permission ; odrl:action odrl:use ; odrl:target ex:a ;"
+        + " odrl:duty ex:approval .\n"
+        + "ex:approval a odrl:Duty ; odrl:assignee ex:council ; odrl:action odrl:compensate .\n"
+        + extra
+    )
+
+
+def fulfilled_values(interp: Interpreter, v: Obj) -> dict[str, str]:
+    """Each policy's value of the one `fulfilled` item, in one model of solve 2's files."""
+    programs = load_programs()
+    ctl = Control(["--warn=none", "--models=1"])
+    ctl.add("base", [], interp.facts(v) + "\n" + "\n".join(programs[f] for f in SOLVE_2))
+    ctl.ground([("base", [])])
+    out: dict[str, str] = {}
+
+    def keep(model: Model) -> None:
+        for s in model.symbols(atoms=True):
+            if s.match("holds", 2) and s.arguments[0].match("fulfilled", 2):
+                out[s.arguments[0].arguments[1].string] = str(s.arguments[1])
+
+    assert ctl.solve(on_model=keep).satisfiable
+    return out
+
+
+# Duty ex:approval is one atom with an entry in each of ex:p and ex:q, and both entries are owed,
+# as each policy's permission applies. Each entry's `fulfilled` is read in its own policy's data
+# space (decisions/0050 #4). In the `both` row the council compensates, so the one event fulfils
+# both entries and both permissions are ready. In the `local` row the event's action is
+# ex:payOut, which ex:p alone places under odrl:compensate: ex:p's entry is fulfilled and ex:q's
+# is not, so only ex:rp is in the basis. The risk is one finding per duty: it would make both
+# entries alike in the `local` row, either both fulfilled or ex:rp pending.
+@pytest.mark.parametrize("q_first", [False, True], ids=["p-first", "q-first"])
+@pytest.mark.parametrize(
+    ("action", "edge", "fulfilled", "permissions"),
+    [("odrl:compensate", "", {"p": "t", "q": "t"}, ["ex:rp", "ex:rq"]),
+     ("ex:payOut", "ex:payOut odrl:includedIn odrl:compensate .\n", {"p": "t", "q": "f"},
+      ["ex:rp"])],
+    ids=["both", "local"],
+)  # fmt: skip
+def test_shared_duty_entries_fulfilled_apart(
+    duty_interpreter: Interpreter,
+    action: str,
+    edge: str,
+    fulfilled: dict[str, str],
+    permissions: list[str],
+    q_first: bool,
+) -> None:
+    event: Obj = {"id": "ex:e1", "occurred_at": "2026-05-01T00:00:00Z", "actor": "ex:council",
+                  "action": action}  # fmt: skip
+    v = vector(request={"action": "odrl:use"}, sotw={"evidence": [event]})
+    texts: list[Json] = [approving("p", "rp", edge), approving("q", "rq")]
+    v["policies"] = texts[::-1] if q_first else texts
+    rows = basis(*(f"{r} permission" for r in permissions))
+    expected = {"verdict": "Permit", "verdict_basis": rows, "eliminated": []}
+    assert explained(duty_interpreter.reply(v)) == expected
+    values = fulfilled_values(duty_interpreter, v)
+    assert values == {EX + p: value for p, value in fulfilled.items()}
 
 
 # The core owns ex:x's type: a decimal range, and the default cardinality. A policy may restate
@@ -1321,8 +1403,11 @@ def test_constraint_declines(
 
 
 CONSTRAINT_DELETIONS = [
-    ("compare.lp", "crank(W, C, N) :- op(C, eq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N)."),
-    ("operand.lp", "read_u(W, Op) :- read_in(W, Op), not read_resolved(W, Op)."),
+    (
+        "compare.lp",
+        "crank(W, C, P, N) :- op(C, eq), cpair(W, C, P, Lv, Rv), ceqr(C, P, Lv, Rv, N).",
+    ),
+    ("operand.lp", "read_u(W, Op, P) :- read_in(W, Op, P), not read_resolved(W, Op)."),
 ]
 
 

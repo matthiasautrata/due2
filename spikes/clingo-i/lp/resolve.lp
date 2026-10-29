@@ -5,165 +5,154 @@
 % frontier of alternatives, by outstanding duties; and the verdict. Every relation carries the
 % world `W`, and within a world every completed value is `f` or `t`, so negation as failure
 % reads a definite `f`: `not deny(W)` means "nothing denies in this completion", never
-% "unknown". Variable letters: DESIGN.md § Vocabulary.
+% "unknown". The candidates, the conflict fold, and the frontier read entries, an atom in one of
+% its policies, each with that entry's findings (due2-workflows.md §6.1, §6.2 *Entries*); the
+% verdict basis is projected to atoms, the level the reply names. Variable letters: DESIGN.md
+% § Vocabulary.
 %
-% - **Consumes:** `completed/3`, `world/1` (completion.lp); `atom_effect/2`, `atom_policy/2`,
-%   `pre/2` (structure.lp); `conflict/2` (bind.lp); `passed/1` (duty.lp).
-% - **Provides:** `applying/2`, `permitting/2`, `violated/2`, `closed/2`, `candidate/2`,
-%   `outstanding/3`, `forbidding/2`, `has_candidate/2`, `has_forbidding/2`,
-%   `entry_eliminated/3`, `entry_kept/2`, `eliminated/2`, `deny/1`, `survives/2`,
-%   `not_within/3`, `dominated/2`, `frontier/2`,
+% - **Consumes:** `completed/3`, `world/1` (completion.lp); `atom_effect/2`, `pre/2`
+%   (structure.lp); `conflict/2` (bind.lp); `passed/1` (duty.lp).
+% - **Provides:** `applying/3`, `permitting/3`, `violated/3`, `closed/3`, `candidate/3`,
+%   `outstanding/4`, `forbidding/3`, `has_candidate/2`, `has_forbidding/2`,
+%   `entry_eliminated/3`, `deny/1`, `survives/3`, `not_within/5`, `dominated/3`, `frontier/3`,
 %   `ready/1`, `pending/1`, `verdict/2`, `basis/3`.
 
 %## Candidates
 
-%*! applying(W, X)
+%*! applying(W, X, P)
 
-Atom `X` applies in world `W`: its completed finding is `t`.
+Atom `X`'s entry in policy `P` applies in world `W`: its completed finding is `t`.
 *%
-applying(W, X) :- completed(W, applies(X), t).
+applying(W, X, P) :- completed(W, applies(X, P), t).
 
-%*! permitting(W, X)
+%*! permitting(W, X, P)
 
-Atom `X` is a permission that applies in world `W`.
+Atom `X` is a permission whose entry in policy `P` applies in world `W`.
 *%
-permitting(W, X) :- applying(W, X), atom_effect(X, permit).
+permitting(W, X, P) :- applying(W, X, P), atom_effect(X, permit).
 
-%*! violated(W, Y)
+%*! violated(W, Y, P)
 
-In world `W`, the instance of duty atom `Y` is violated: it is not fulfilled, and its deadline
-has passed. Violation is defined in due2-workflows.md §5.3. Only an instance has a `fulfilled`
-value.
+In world `W`, the instance of duty atom `Y` in policy `P` is violated: it is not fulfilled, and
+its deadline has passed. Violation is defined in due2-workflows.md §5.3. Only an instance has a
+`fulfilled` value.
 *%
-violated(W, Y) :- completed(W, fulfilled(Y), f), passed(Y).
+violated(W, Y, P) :- completed(W, fulfilled(Y, P), f), passed(Y).
 
-%*! closed(W, X)
+%*! closed(W, X, P)
 
-In world `W`, the permission `X` applies, but a precondition of it is owed and violated, so the
-route can no longer be taken and `X` is no candidate. This is the closure of due2-workflows.md
-§6.1. It comes before conflict, so a closed permission removes no prohibition. A violated
-precondition removes only its own permission: another permission that matches the request is
-still a candidate.
+In world `W`, the entry of permission `X` in policy `P` applies, but a precondition of it is owed
+and violated in `P`, so the route can no longer be taken and the entry is no candidate. This is
+the closure of due2-workflows.md §6.1. It comes before conflict, so a closed permission removes no
+prohibition. A violated precondition removes only its own permission's entry: another permission
+that matches the request, or the same permission's entry in another policy, is still a candidate.
 *%
-closed(W, X) :- permitting(W, X), pre(X, Y), completed(W, owed(Y), t), violated(W, Y).
+closed(W, X, P) :- permitting(W, X, P), pre(X, Y), completed(W, owed(Y, P), t),
+    violated(W, Y, P).
 
-%*! candidate(W, X)
+%*! candidate(W, X, P)
 
-Atom `X` is a permission that applies in world `W` and is not closed. It is a candidate in the
-sense of due2-workflows.md §6.1.
+Atom `X` is a permission whose entry in policy `P` applies in world `W` and is not closed. It is
+a candidate in the sense of due2-workflows.md §6.1.
 *%
-candidate(W, X) :- permitting(W, X), not closed(W, X).
+candidate(W, X, P) :- permitting(W, X, P), not closed(W, X, P).
 
-%*! outstanding(W, X, Y)
+%*! outstanding(W, X, P, Y)
 
-In world `W`, the duty atom `Y` is in the outstanding set of the candidate `X`: a precondition
-of `X` that is owed and not fulfilled, so its open value is `t`. The set is that of
-due2-workflows.md §6.1. A violated precondition that is owed closed `X` instead.
+In world `W`, the duty atom `Y` is in the outstanding set of the candidate entry `(X, P)`: a
+precondition of `X` that is owed in `P` and not fulfilled there, so its open value is `t`. The set
+is that of due2-workflows.md §6.1. A violated precondition that is owed closed the entry instead.
 *%
-outstanding(W, X, Y) :- candidate(W, X), pre(X, Y), completed(W, owed(Y), t),
-    completed(W, fulfilled(Y), f).
+outstanding(W, X, P, Y) :- candidate(W, X, P), pre(X, Y), completed(W, owed(Y, P), t),
+    completed(W, fulfilled(Y, P), f).
 
-%*! forbidding(W, X)
+%*! forbidding(W, X, P)
 
-Atom `X` is a prohibition that applies in world `W`.
+Atom `X` is a prohibition whose entry in policy `P` applies in world `W`.
 *%
-forbidding(W, X) :- applying(W, X), atom_effect(X, forbid).
+forbidding(W, X, P) :- applying(W, X, P), atom_effect(X, forbid).
 
 %## Conflict within the policy
 
 % By the policy's conflict strategy (due2-workflows.md §6.2 #1). A `permit` or `forbid` atom
-% takes part once in each policy that states it (`atom_policy/2`): its entry in that policy
-% (due2-workflows.md §6.2, *Entries*). Each policy's fold reads its own entries, and removes an
-% entry, not the atom.
+% takes part once in each policy that states it: its entry in that policy, with that entry's
+% finding (due2-workflows.md §6.2, *Entries*). Each policy's fold reads its own entries, and
+% removes an entry, not the atom.
 
 %*! has_candidate(W, P)
 
-Policy `P` has a candidate in world `W`: an atom that is a candidate and has an entry in `P`.
+Policy `P` has a candidate entry in world `W`.
 *%
-has_candidate(W, P) :- candidate(W, X), atom_policy(X, P).
+has_candidate(W, P) :- candidate(W, _, P).
 
 %*! has_forbidding(W, P)
 
-Policy `P` has an applying prohibition in world `W`.
+Policy `P` has an applying prohibition entry in world `W`.
 *%
-has_forbidding(W, P) :- forbidding(W, X), atom_policy(X, P).
+has_forbidding(W, P) :- forbidding(W, _, P).
 
 %*! entry_eliminated(W, X, P)
 
-Atom `X` applies in world `W`, and policy `P`'s conflict strategy removes its entry in `P`: under
-`prohibit` a forbid removes the candidates, under `perm` a candidate removes the forbids, and
-under `invalid` a candidate and a forbid together void the policy, removing its applying permit
-and forbid entries. A void policy's root obligations stay in force (decisions/0029).
+Atom `X`'s entry in policy `P` applies in world `W`, and `P`'s conflict strategy removes it:
+under `prohibit` a forbid removes the candidates, under `perm` a candidate removes the forbids,
+and under `invalid` a candidate and a forbid together void the policy, removing its applying
+permit and forbid entries. A void policy's root obligations stay in force (decisions/0029).
 *%
-entry_eliminated(W, X, P) :- candidate(W, X), atom_policy(X, P), conflict(P, prohibit),
-    has_forbidding(W, P).
-entry_eliminated(W, X, P) :- forbidding(W, X), atom_policy(X, P), conflict(P, perm),
-    has_candidate(W, P).
-entry_eliminated(W, X, P) :- applying(W, X), not atom_effect(X, oblige), atom_policy(X, P),
+entry_eliminated(W, X, P) :- candidate(W, X, P), conflict(P, prohibit), has_forbidding(W, P).
+entry_eliminated(W, X, P) :- forbidding(W, X, P), conflict(P, perm), has_candidate(W, P).
+entry_eliminated(W, X, P) :- applying(W, X, P), not atom_effect(X, oblige),
     conflict(P, invalid), has_candidate(W, P), has_forbidding(W, P).
-
-%*! entry_kept(W, X)
-
-The applying permit or forbid atom `X` has an entry that its policy does not eliminate in
-world `W`.
-*%
-entry_kept(W, X) :- applying(W, X), not atom_effect(X, oblige), atom_policy(X, P),
-    not entry_eliminated(W, X, P).
-
-%*! eliminated(W, X)
-
-Atom `X` applies in world `W`, and every policy that states it removes its entry there. An atom
-is not eliminated while any of its entries survives (due2-workflows.md §6.2, *Entries*), so a
-permission that two policies state is removed only when both remove it. structure.lp admits
-one policy, so no vector has a shared atom; `test_shared_permission_survives_in_its_other_policy`
-runs this rule on hand-written facts.
-*%
-eliminated(W, X) :- entry_eliminated(W, X, _), not entry_kept(W, X).
 
 %## Across policies
 
 %*! deny(W)
 
-A prohibition survives in world `W`, so the world denies. Only a prohibition denies
-(due2-workflows.md §6.4), and across policies the combination is prohibit-overrides (due2-workflows.md §6.2 #2): a surviving forbid eliminates
-every candidate. An obligation never denies: a violated one is reported beside the verdict
-(`decisions/0045`).
+A prohibition entry survives in world `W`, so the world denies. Only a prohibition denies
+(due2-workflows.md §6.4), and across policies the combination is prohibit-overrides
+(due2-workflows.md §6.2 #2): a surviving forbid eliminates every candidate. An obligation never
+denies: a violated one is reported beside the verdict (`decisions/0045`).
 *%
-deny(W) :- forbidding(W, X), not eliminated(W, X).
+deny(W) :- forbidding(W, X, P), not entry_eliminated(W, X, P).
 
-%*! survives(W, X)
+%*! survives(W, X, P)
 
-The candidate `X` survives conflict in world `W`, and nothing denies.
+The candidate entry `(X, P)` survives conflict in world `W`, and nothing denies. An atom remains
+a candidate while any of its entries survives (due2-workflows.md §6.2, *Entries*), so a
+permission that two policies state is removed only when both remove it.
 *%
-survives(W, X) :- candidate(W, X), not eliminated(W, X), not deny(W).
+survives(W, X, P) :- candidate(W, X, P), not entry_eliminated(W, X, P), not deny(W).
 
 %## The frontier
 
 % Alternatives are sets of outstanding duties, compared by duty atom (due2-workflows.md §6.3).
-% Two candidates with one set are one alternative, so the program never forms the sets: it
-% compares the candidates, and the collapse happens where interpret.py projects them.
+% Two candidate entries with one set are one alternative, so the program never forms the sets: it
+% compares the entries, and the collapse happens where interpret.py projects them. One permission's
+% entries in two policies can have different sets, since each policy reads the duty's guards and
+% evidence in its own data space.
 
-%*! not_within(W, X, X2)
+%*! not_within(W, X, P, X2, P2)
 
-In world `W`, the surviving candidate `X` has an outstanding duty that the surviving candidate
-`X2` lacks, so `X`'s set is not a subset of `X2`'s.
+In world `W`, the surviving candidate entry `(X, P)` has an outstanding duty that the surviving
+entry `(X2, P2)` lacks, so the first's set is not a subset of the second's.
 *%
-not_within(W, X, X2) :- outstanding(W, X, Y), survives(W, X2), not outstanding(W, X2, Y).
+not_within(W, X, P, X2, P2) :- outstanding(W, X, P, Y), survives(W, X2, P2),
+    not outstanding(W, X2, P2, Y).
 
-%*! dominated(W, X2)
+%*! dominated(W, X2, P2)
 
-In world `W`, a surviving candidate's outstanding set is a strict subset of `X2`'s: a subset
-(`not not_within(W, X, X2)`) that is not equal (`not_within(W, X2, X)`).
+In world `W`, a surviving candidate entry's outstanding set is a strict subset of that of
+`(X2, P2)`: a subset (`not not_within(W, X, P, X2, P2)`) that is not equal
+(`not_within(W, X2, P2, X, P)`).
 *%
-dominated(W, X2) :- survives(W, X), survives(W, X2), not not_within(W, X, X2),
-    not_within(W, X2, X).
+dominated(W, X2, P2) :- survives(W, X, P), survives(W, X2, P2),
+    not not_within(W, X, P, X2, P2), not_within(W, X2, P2, X, P).
 
-%*! frontier(W, X)
+%*! frontier(W, X, P)
 
-The surviving candidate `X` is in world `W`'s frontier: no other's outstanding set is a strict
-subset of its own.
+The surviving candidate entry `(X, P)` is in world `W`'s frontier: no other's outstanding set is
+a strict subset of its own.
 *%
-frontier(W, X) :- survives(W, X), not dominated(W, X).
+frontier(W, X, P) :- survives(W, X, P), not dominated(W, X, P).
 
 %## The verdict
 
@@ -172,13 +161,13 @@ frontier(W, X) :- survives(W, X), not dominated(W, X).
 World `W`'s frontier has a ready alternative: one with no outstanding duty. The empty set is a
 strict subset of every other, so then it is the only alternative of the frontier.
 *%
-ready(W) :- frontier(W, X), not outstanding(W, X, _).
+ready(W) :- frontier(W, X, P), not outstanding(W, X, P, _).
 
 %*! pending(W)
 
 World `W`'s frontier is not empty, and has no ready alternative.
 *%
-pending(W) :- frontier(W, _), not ready(W).
+pending(W) :- frontier(W, _, _), not ready(W).
 
 %*! verdict(W, Verdict)
 
@@ -194,17 +183,18 @@ verdict(W, "NotApplicable") :- world(W), not deny(W), not ready(W), not pending(
 
 %*! basis(W, X, Role)
 
-Atom `X` determines world `W`'s verdict in role `Role`. The roles follow due2-workflows.md §6.4:
+Atom `X` determines world `W`'s verdict in role `Role`, through one of its entries; the reply
+names atoms, so the entry's policy is dropped here. The roles follow due2-workflows.md §6.4:
 `prohibition` for each surviving forbid, `permission` for each candidate of the frontier, under
 `Permit` the ready ones; `duty` for each outstanding duty of the frontier under `Pending`; and
 `closed` for each closed permission under `NotApplicable`. Role `obligation` is not derived
 here: it names every obligation in force under any verdict, and explain.lp reads it from the
 findings.
 *%
-basis(W, X, prohibition) :- forbidding(W, X), not eliminated(W, X).
-basis(W, X, permission) :- frontier(W, X).
-basis(W, Y, duty) :- pending(W), frontier(W, X), outstanding(W, X, Y).
-basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X).
+basis(W, X, prohibition) :- forbidding(W, X, P), not entry_eliminated(W, X, P).
+basis(W, X, permission) :- frontier(W, X, _).
+basis(W, Y, duty) :- pending(W), frontier(W, X, P), outstanding(W, X, P, Y).
+basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X, _).
 
 #show verdict/2.
 #show basis/3.
@@ -235,22 +225,22 @@ basis(W, X, closed) :- verdict(W, "NotApplicable"), closed(W, X).
 %
 % **Without a paired leaf, the basis is not empty.** Suppose no `u` finding reads a `cons` variable,
 % so no open leaf is paired; duty findings may be `u`, and the connectives are any. Then every
-% variable is a `fin(I)` or a `ful(Y)`, read by one finding only, and that finding is its variable's
-% value in every completion: an opaque part keeps rank 1, and with no paired leaf nothing an open
-% node reads differs from world `k`, so every open node keeps rank 1, and the finding's conjunction
-% stays `u`. Call a variable's value *lenient* when it makes its finding the one that permits more:
-% `applies` `t` for a permission and `f` for a prohibition, `owed` `f`, `fulfilled` `t`; and
-% *strict* when it is the other value. An obligation's findings read no `fin` or `ful` variable
-% (completion.lp, *Findings*). Let `L` be the completion with every variable lenient, and `S` the
-% one with every variable strict. Every completion `C` lies between them, finding by finding: a
-% permission applies in `C` if it does in `S`, and a prohibition applies in `C` only if it does in
-% `S`; a precondition is owed in `C` only if it is in `S`, and fulfilled in `C` if it is in `S`. So
-% a permission that applies in `S` is closed in `C`, or waits on a duty there, only if it is so in
-% `S`. And a permission that is a candidate in `C` is one in `L`: it applies in `L`, since a
-% permission that applies anywhere applies in `L`, and it is not closed in `L`, since a precondition
-% owed and violated in `L` is owed and violated in every completion. These are facts about findings,
-% not about verdicts, which are not monotone in them: under `invalid`, a permission that applies can
-% void the policy. The two cases use only these facts.
+% variable is a `fin(I)` or a `ful(Y, P)`, read by one finding only, and that finding is its
+% variable's value in every completion: an opaque part keeps rank 1, and with no paired leaf nothing
+% an open node reads differs from world `k`, so every open node keeps rank 1, and the finding's
+% conjunction stays `u`. Call a variable's value *lenient* when it makes its finding the one that
+% permits more: `applies` `t` for a permission and `f` for a prohibition, `owed` `f`, `fulfilled`
+% `t`; and *strict* when it is the other value. An obligation's findings read no `fin` or `ful`
+% variable (completion.lp, *Findings*). Let `L` be the completion with every variable lenient, and
+% `S` the one with every variable strict. Every completion `C` lies between them, finding by
+% finding: a permission applies in `C` if it does in `S`, and a prohibition applies in `C` only if
+% it does in `S`; a precondition is owed in `C` only if it is in `S`, and fulfilled in `C` if it is
+% in `S`. So a permission that applies in `S` is closed in `C`, or waits on a duty there, only if it
+% is so in `S`. And a permission that is a candidate in `C` is one in `L`: it applies in `L`, since
+% a permission that applies anywhere applies in `L`, and it is not closed in `L`, since a
+% precondition owed and violated in `L` is owed and violated in every completion. These are facts
+% about findings, not about verdicts, which are not monotone in them: under `invalid`, a permission
+% that applies can void the policy. The two cases use only these facts.
 %
 % - **A definite `Permit`.** `S` permits, so some candidate `X` survives in `S` and is ready. `X`'s
 %   finding is `t`, since strict makes a `u` permission `f`. In `C`, `X` applies, it is not closed

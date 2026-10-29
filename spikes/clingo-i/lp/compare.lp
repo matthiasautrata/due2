@@ -11,48 +11,51 @@
 % those and the completion worlds of completion.lp. Ranks are those of kleene.lp.
 % Variable letters: DESIGN.md § Vocabulary.
 %
-% Every constraint node gets its rank in each world that evaluates it, `crank(W, C, N)`, and every
-% node item its truth value, `holds(c(C), V)`, its rank in world `k`.
+% A node is evaluated once in each data space it is read in (`cspace/2`, constraint.lp): a node
+% that two policies share reads each policy's hierarchies and schemes, which may differ
+% (decisions/0050 #1). Every constraint node gets its rank in each world and data space that
+% evaluates it, `crank(W, C, P, N)`, and every node item its truth value, `holds(c(C, P), V)`, its
+% rank in world `k`.
 %
 % - **Consumes:** `kind/2`, `dt_kind/2`, `closure/4`, `le_k/4` (lift.lp); `value/3` (driver);
-%   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `op/2`, `right/2`,
-%   `cspace/2` (constraint.lp); `left/2` (bind.lp); `read_ok/2`, `read_u/2`, `read_value/3`, `has_scheme/1`,
+%   `rank/2` (kleene.lp); `cnode/1`, `conn/2`, `member/2`, `leaf/1`, `op/2`, `right/2`, `cspace/2`
+%   (constraint.lp); `left/2` (bind.lp); `read_ok/3`, `read_u/3`, `read_value/3`, `has_scheme/1`,
 %   `unchecked_unit/1` (operand.lp); `witness_only/1` (duty.lp).
-% - **Provides:** `cpair/4`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/3`,
-%   `above/3`, `concept_below/3`, `ceqr/4`, `ordered/1`, `cmpr/3`, `order_rank/3`,
-%   `part_space/3`, `part_pair/2`, `part_below/2`, `ler/3`, `isa_space/3`, `inst/3`, `is_inst/2`,
-%   `isar/3`,
-%   `any_eq/4`, `any_le/4`, `crank/3`, `evaluates/2`, `xone_count/4`; extends `item/1`, `holds/2`
-%   (applies.lp), and `unsupported_value/1` and `unsupported/1` (lift.lp).
+% - **Provides:** `cpair/5`, `pair/2`, `placed/1`, `same_type/2`, `eqr/3`, `concept_pair/4`,
+%   `above/3`, `ceqr/5`, `ordered/1`, `cmpr/3`, `order_rank/3`,
+%   `part_space/3`, `ler/4`, `isa_space/3`, `inst/3`, `isar/4`,
+%   `any_eq/5`, `any_le/5`, `crank/4`, `evaluates/3`, `xone_count/5`; extends `item/1`, `holds/2`
+%   (applies.lp), and `unsupported_value/1` (lift.lp).
 
 %## Pairs
 
-% A leaf on a `u` read has rank 1. On an `ok` read, `cpair(W, C, Lv, Rv)` pairs each value read in
-% world `W` with each right operand value, and the pair is compared on its own. The comparisons of
-% *Equality*, *Concepts*, *Order*, and *Hierarchies* read only the two values, so they carry no
-% world.
+% A leaf on a `u` read has rank 1. On an `ok` read, `cpair(W, C, P, Lv, Rv)` pairs each value read
+% in world `W` with each right operand value, for the leaf read in policy `P`'s data space, and the
+% pair is compared on its own. The comparisons of *Equality* and *Order* read only the two values,
+% so they carry neither world nor policy. Those of *Concepts* and *Hierarchies* read a hierarchy,
+% so they carry the policy whose data space holds it.
 %
 % A leaf whose unit its binding does not declare (`unchecked_unit/1`, operand.lp) has rank 1
 % whatever is read, and gives no pairs: nothing says what unit the read value is in
 % (decisions/0049 #3). A unit the binding declares is the unit of every read value, so a leaf
 % that states it, or states none, compares the values alone (`test_units`).
 
-%*! cpair(W, C, Lv, Rv)
+%*! cpair(W, C, P, Lv, Rv)
 
-In world `W`, leaf `C` compares the read value `Lv` with the right operand value `Rv`. A `u`
-read, or a unit the binding does not declare, gives no pairs: the leaf is `u` whatever its
-values.
+In world `W`, leaf `C`, read in policy `P`'s data space, compares the read value `Lv` with the
+right operand value `Rv`. A `u` read, or a unit the binding does not declare, gives no pairs: the
+leaf is `u` whatever its values.
 *%
-% Gated on `evaluates/2`: an operand that a rule leaf and a witness leaf share (`due2:actionTime`)
+% Gated on `evaluates/3`: an operand that a rule leaf and a witness leaf share (`due2:actionTime`)
 % is read in both worlds, and only the witness leaf is evaluated in `wit(E)`.
-cpair(W, C, Lv, Rv) :- evaluates(W, C), left(C, Op), read_ok(W, Op), read_value(W, Op, Lv),
-    right(C, Rv), not unchecked_unit(C).
+cpair(W, C, P, Lv, Rv) :- evaluates(W, C, P), left(C, Op), read_ok(W, Op, P),
+    read_value(W, Op, Lv), right(C, Rv), not unchecked_unit(C).
 
 %*! pair(Lv, Rv)
 
 Some leaf compares `Lv` with `Rv`. The comparisons below depend only on the two values.
 *%
-pair(Lv, Rv) :- cpair(_, _, Lv, Rv).
+pair(Lv, Rv) :- cpair(_, _, _, Lv, Rv).
 
 %*! placed(Term)
 
@@ -114,49 +117,42 @@ eqr(Lv, Rv, 1) :- pair(Lv, Rv), kind(Lv, lit), not placed(Lv), kind(Rv, lit), no
 
 %## Concepts
 
-% On a leaf whose operand has a scheme, two IRIs are a concept pair (`concept_pair/3`), and `ceqr(C,
-% Lv, Rv, N)` reads `Lv = Rv` as `Lv ⊑ Rv`: `t` when `Lv` is `Rv`, or a chain of `skos:broader`
-% edges (`above/3`, the transitive closure) leads from `Lv` to `Rv`; `f` otherwise (decisions/0015
-% #3, #5). A read concept outside the schemes never gets here, since its read is `invalid`. Every
-% other pair, a literal on either side included, has its `eqr/3` rank, so a string against a concept
-% is a misfit.
+% On a leaf whose operand has a scheme, two IRIs are a concept pair (`concept_pair/4`), and
+% `ceqr(C, P, Lv, Rv, N)` reads `Lv = Rv` as `Lv ⊑ Rv` in policy `P`'s data space: `t` when `Lv`
+% is `Rv`, or a chain of `skos:broader` edges (`above/3`, the transitive closure) leads from `Lv`
+% to `Rv` there; `f` otherwise (decisions/0015 #3, #5). A read concept outside the schemes never
+% gets here, since its read is `invalid`. Every other pair, a literal on either side included,
+% has its `eqr/3` rank, so a string against a concept is a misfit.
 
-%*! concept_pair(C, Lv, Rv)
+%*! concept_pair(C, P, Lv, Rv)
 
-Leaf `C` compares the IRIs `Lv` and `Rv` as concepts: its left operand has a concept scheme.
-Only IRIs are concepts, so a literal on either side is compared by `eqr/3` (decisions/0015 #7).
+Leaf `C`, read in policy `P`'s data space, compares the IRIs `Lv` and `Rv` as concepts: its left
+operand has a concept scheme. Only IRIs are concepts, so a literal on either side is compared by
+`eqr/3` (decisions/0015 #7).
 *%
-concept_pair(C, Lv, Rv) :- cpair(_, C, Lv, Rv), left(C, Op), has_scheme(Op), kind(Lv, iri),
-    kind(Rv, iri).
+concept_pair(C, P, Lv, Rv) :- cpair(_, C, P, Lv, Rv), left(C, Op), has_scheme(Op),
+    kind(Lv, iri), kind(Rv, iri).
 
 %*! above(P, Lv, Hi)
 
 In policy `P`'s data space, a chain of one or more `skos:broader` edges leads from the read
 concept `Lv` to `Hi`: the transitive closure SKOS calls `skos:broaderTransitive` (decisions/0015
-#5). Not reflexive: `ceqr/4` adds identity.
+#5). Not reflexive: `ceqr/5` adds identity.
 *%
-above(P, Lv, Hi) :- concept_pair(C, Lv, _), cspace(C, P), closure(P, broader, Lv, Hi).
+above(P, Lv, Hi) :- concept_pair(_, P, Lv, _), closure(P, broader, Lv, Hi).
 above(P, Lv, Hi) :- above(P, Lv, Mid), closure(P, broader, Mid, Hi).
 
-%*! concept_below(C, Lv, Rv)
+%*! ceqr(C, P, Lv, Rv, N)
 
-Leaf `C` compares the concept `Lv` with `Rv`, and `Lv` is below `Rv` in a data space of `C`.
+In leaf `C`, read in policy `P`'s data space, `Lv = Rv` has rank `N`. For a concept pair it is
+`Lv ⊑ Rv`: `t` when `Lv` is `Rv` or below it in `P`'s data space, `f` otherwise, closed-world over
+the declared edges (decisions/0015 #3, #4). A read concept in none of the operand's schemes never
+gets here: its read is `invalid` (operand.lp). Every other pair has its `eqr/3` rank.
 *%
-concept_below(C, Lv, Rv) :- concept_pair(C, Lv, Rv), cspace(C, P), above(P, Lv, Rv).
-unsupported("shared node: read apart by its policies") :- concept_pair(C, Lv, Rv),
-    cspace(C, P), cspace(C, Q), above(P, Lv, Rv), not above(Q, Lv, Rv).
-
-%*! ceqr(C, Lv, Rv, N)
-
-In leaf `C`, `Lv = Rv` has rank `N`. For a concept pair it is `Lv ⊑ Rv`: `t` when `Lv` is `Rv` or
-below it, `f` otherwise, closed-world over the declared edges (decisions/0015 #3, #4). A read
-concept in none of the operand's schemes never gets here: its read is `invalid` (operand.lp).
-Every other pair has its `eqr/3` rank.
-*%
-ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), Lv = Rv.
-ceqr(C, Lv, Rv, 2) :- concept_pair(C, Lv, Rv), concept_below(C, Lv, Rv).
-ceqr(C, Lv, Rv, 0) :- concept_pair(C, Lv, Rv), Lv != Rv, not concept_below(C, Lv, Rv).
-ceqr(C, Lv, Rv, N) :- cpair(_, C, Lv, Rv), not concept_pair(C, Lv, Rv), eqr(Lv, Rv, N).
+ceqr(C, P, Lv, Rv, 2) :- concept_pair(C, P, Lv, Rv), Lv = Rv.
+ceqr(C, P, Lv, Rv, 2) :- concept_pair(C, P, Lv, Rv), above(P, Lv, Rv).
+ceqr(C, P, Lv, Rv, 0) :- concept_pair(C, P, Lv, Rv), Lv != Rv, not above(P, Lv, Rv).
+ceqr(C, P, Lv, Rv, N) :- cpair(_, C, P, Lv, Rv), not concept_pair(C, P, Lv, Rv), eqr(Lv, Rv, N).
 
 %## Order
 
@@ -192,53 +188,39 @@ order_rank(O, u, 1) :- order_rank(O, lt, _).
 
 %## Hierarchies
 
-% `isPartOf` and `hasPart` ask `Lo ⊑ Hi` (`ler/3`): two IRIs by identity or the typed `partOf`
+% `isPartOf` and `hasPart` ask `Lo ⊑ Hi` (`ler/4`): two IRIs by identity or the typed `partOf`
 % closure `le_k/4`, and anything else a misfit. `isA` asks whether the read IRI is an instance of
 % the class (`inst/3`): one `rdf:type` edge, then `rdfs:subClassOf` edges, all from `closure/4`.
-% Both read the hierarchy of the data space of each leaf that compares the pair (`part_space/3`,
-% `isa_space/3`). `ler/3` and `isar/3` are keyed by the pair, not the leaf, so two leaves that
-% compare one pair in two policies whose hierarchies read it apart decline.
+% Both read the hierarchy of the data space the leaf is read in (`part_space/3`, `isa_space/3`),
+% so `ler/4` and `isar/4` are keyed by that policy as well as by the pair.
 
 %*! part_space(Lo, Hi, P)
 
 `isPartOf` or `hasPart` asks whether `Lo ⊑ Hi`, for a pair in either orientation, in a leaf read
 in policy `P`'s data space.
 *%
-part_space(Lv, Rv, P) :- cpair(_, C, Lv, Rv), op(C, isPartOf), cspace(C, P).
-part_space(Rv, Lv, P) :- cpair(_, C, Lv, Rv), op(C, hasPart), cspace(C, P).
+part_space(Lv, Rv, P) :- cpair(_, C, P, Lv, Rv), op(C, isPartOf).
+part_space(Rv, Lv, P) :- cpair(_, C, P, Lv, Rv), op(C, hasPart).
 
-%*! part_pair(Lo, Hi)
+%*! ler(P, Lo, Hi, N)
 
-`isPartOf` or `hasPart` asks whether `Lo ⊑ Hi`, for a pair in either orientation.
+In policy `P`'s data space, `Lo ⊑ Hi` has rank `N`: two IRIs are ordered by identity and the
+typed `partOf` closure, closed over the declared edges; any other pair is a misfit. The closure
+is due2-profiles.md §6's.
 *%
-part_pair(Lo, Hi) :- part_space(Lo, Hi, _).
-
-%*! part_below(Lo, Hi)
-
-`Lo` is part of the collection `Hi` in a data space that reads the pair.
-*%
-part_below(Lo, Hi) :- part_space(Lo, Hi, P), le_k(P, Lo, Hi, _).
-unsupported("shared node: read apart by its policies") :- part_space(Lo, Hi, P),
-    part_space(Lo, Hi, Q), le_k(P, Lo, Hi, _), not le_k(Q, Lo, Hi, _).
-
-%*! ler(Lo, Hi, N)
-
-`Lo ⊑ Hi` has rank `N`: two IRIs are ordered by identity and the typed `partOf` closure, closed
-over the declared edges; any other pair is a misfit. The closure is due2-profiles.md §6's.
-*%
-ler(Lo, Hi, 2) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), Lo = Hi.
-ler(Lo, Hi, 2) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), part_below(Lo, Hi).
-ler(Lo, Hi, 0) :- part_pair(Lo, Hi), kind(Lo, iri), kind(Hi, iri), Lo != Hi,
-    not part_below(Lo, Hi).
-ler(Lo, Hi, 1) :- part_pair(Lo, Hi), not kind(Lo, iri).
-ler(Lo, Hi, 1) :- part_pair(Lo, Hi), kind(Lo, iri), not kind(Hi, iri).
+ler(P, Lo, Hi, 2) :- part_space(Lo, Hi, P), kind(Lo, iri), kind(Hi, iri), Lo = Hi.
+ler(P, Lo, Hi, 2) :- part_space(Lo, Hi, P), kind(Lo, iri), kind(Hi, iri), le_k(P, Lo, Hi, _).
+ler(P, Lo, Hi, 0) :- part_space(Lo, Hi, P), kind(Lo, iri), kind(Hi, iri), Lo != Hi,
+    not le_k(P, Lo, Hi, _).
+ler(P, Lo, Hi, 1) :- part_space(Lo, Hi, P), not kind(Lo, iri).
+ler(P, Lo, Hi, 1) :- part_space(Lo, Hi, P), kind(Lo, iri), not kind(Hi, iri).
 
 %*! isa_space(Lv, Cls, P)
 
 `isA` asks whether the read value `Lv` is an instance of `Cls`, in a leaf read in policy `P`'s
 data space.
 *%
-isa_space(Lv, Cls, P) :- cpair(_, C, Lv, Cls), op(C, isA), cspace(C, P).
+isa_space(Lv, Cls, P) :- cpair(_, C, P, Lv, Cls), op(C, isA).
 
 %*! inst(P, Lv, Cls)
 
@@ -248,31 +230,23 @@ In policy `P`'s data space, `Lv` is an instance of `Cls`: an `rdf:type` edge, th
 inst(P, Lv, Cls) :- isa_space(Lv, _, P), closure(P, type, Lv, Cls).
 inst(P, Lv, Sup) :- inst(P, Lv, Cls), closure(P, subclass, Cls, Sup).
 
-%*! is_inst(Lv, Cls)
+%*! isar(P, Lv, Cls, N)
 
-`Lv` is an instance of `Cls` in a data space that reads the pair.
+In policy `P`'s data space, `Lv` is an instance of `Cls` with rank `N`. Only an IRI is compared
+with a class.
 *%
-is_inst(Lv, Cls) :- isa_space(Lv, Cls, P), inst(P, Lv, Cls).
-unsupported("shared node: read apart by its policies") :- isa_space(Lv, Cls, P),
-    isa_space(Lv, Cls, Q), inst(P, Lv, Cls), not inst(Q, Lv, Cls).
-
-%*! isar(Lv, Cls, N)
-
-`Lv` is an instance of `Cls` with rank `N`. Only an IRI is compared with a class.
-*%
-isar(Lv, Cls, 2) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri),
-    is_inst(Lv, Cls).
-isar(Lv, Cls, 0) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), kind(Cls, iri),
-    not is_inst(Lv, Cls).
-isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), not kind(Lv, iri).
-isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), not kind(Cls, iri).
+isar(P, Lv, Cls, 2) :- isa_space(Lv, Cls, P), kind(Lv, iri), kind(Cls, iri), inst(P, Lv, Cls).
+isar(P, Lv, Cls, 0) :- isa_space(Lv, Cls, P), kind(Lv, iri), kind(Cls, iri),
+    not inst(P, Lv, Cls).
+isar(P, Lv, Cls, 1) :- isa_space(Lv, Cls, P), not kind(Lv, iri).
+isar(P, Lv, Cls, 1) :- isa_space(Lv, Cls, P), kind(Lv, iri), not kind(Cls, iri).
 
 %## The operators
 
 % The operators combine the pairs (due2-profiles.md §4). `eq`, `neq`, and the order operators
 % compare the one read value with the one right value; `neq` is the negation of `eq`. `any_eq(W, C,
-% Rv, N)` is the disjunction, over the values read in world `W`, of `= Rv`. Each `=` is `ceqr/4`, so
-% on a concept-scheme operand `neq` and `isNoneOf` exclude every concept below a right value.
+% P, Rv, N)` is the disjunction, over the values read in world `W`, of `= Rv`. Each `=` is `ceqr/5`,
+% so on a concept-scheme operand `neq` and `isNoneOf` exclude every concept below a right value.
 % `isAnyOf` is the greatest `any_eq` over the right values, and `isNoneOf` its negation. `isAllOf`
 % is the least `any_eq` over the right values: every right value is read. `isPartOf` is the least,
 % over the read values, of "part of some right value", and `hasPart` the least, over the right
@@ -280,84 +254,92 @@ isar(Lv, Cls, 1) :- cpair(_, C, Lv, Cls), op(C, isA), kind(Lv, iri), not kind(Cl
 % least over the listed classes. The aggregates carry their identities (`#max { 0; … }`, `#min { 2;
 % … }`), so an empty set has the value the operator's quantifier gives it.
 
-%*! any_eq(W, C, Rv, N)
+%*! any_eq(W, C, P, Rv, N)
 
-In world `W`, some value leaf `C` reads equals its right value `Rv`, with rank `N`: the Kleene
-disjunction over the read values, under `skos:broader` for concepts (`ceqr/4`).
+In world `W`, some value leaf `C` reads equals its right value `Rv`, with rank `N`, in policy
+`P`'s data space: the Kleene disjunction over the read values, under `skos:broader` for concepts
+(`ceqr/5`).
 *%
-any_eq(W, C, Rv, N) :- evaluates(W, C), right(C, Rv), left(C, Op), read_ok(W, Op),
-    N = #max { 0; M, Lv : cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, M) }.
+any_eq(W, C, P, Rv, N) :- evaluates(W, C, P), right(C, Rv), left(C, Op), read_ok(W, Op, P),
+    N = #max { 0; M, Lv : cpair(W, C, P, Lv, Rv), ceqr(C, P, Lv, Rv, M) }.
 
-%*! any_le(W, C, Lo, N)
+%*! any_le(W, C, P, Lo, N)
 
-In world `W`, for `isPartOf`, the read value `Lo` is part of some right value; for `hasPart`,
-the right value `Lo` is part of some read value. `N` is the rank of that Kleene disjunction.
+In world `W` and policy `P`'s data space, for `isPartOf`, the read value `Lo` is part of some
+right value; for `hasPart`, the right value `Lo` is part of some read value. `N` is the rank of
+that Kleene disjunction.
 *%
-any_le(W, C, Lv, N) :- op(C, isPartOf), evaluates(W, C), left(C, Op), read_value(W, Op, Lv),
-    read_ok(W, Op), N = #max { 0; M, Rv : cpair(W, C, Lv, Rv), ler(Lv, Rv, M) }.
-any_le(W, C, Rv, N) :- op(C, hasPart), evaluates(W, C), right(C, Rv), left(C, Op),
-    read_ok(W, Op), N = #max { 0; M, Lv : cpair(W, C, Lv, Rv), ler(Rv, Lv, M) }.
+any_le(W, C, P, Lv, N) :- op(C, isPartOf), evaluates(W, C, P), left(C, Op),
+    read_value(W, Op, Lv), read_ok(W, Op, P),
+    N = #max { 0; M, Rv : cpair(W, C, P, Lv, Rv), ler(P, Lv, Rv, M) }.
+any_le(W, C, P, Rv, N) :- op(C, hasPart), evaluates(W, C, P), right(C, Rv), left(C, Op),
+    read_ok(W, Op, P), N = #max { 0; M, Lv : cpair(W, C, P, Lv, Rv), ler(P, Rv, Lv, M) }.
 
-%*! crank(W, C, N)
+%*! crank(W, C, P, N)
 
-In world `W`, node `C` has rank `N`. World `k` is the Kleene world: the ranks before
-completion, under strong Kleene logic. A witness world `wit(E)` gives the nodes of a duty's
-witness conditions their ranks against the evidence `E` (duty.lp). completion.lp adds the ranks
-of the completion worlds `c` and `flip`. In a world that reads, a leaf whose read is `u` has
-rank 1, and so does a leaf whose unit its binding does not declare. Otherwise its operator
-decides (due2-profiles.md §4): `eq` and the order operators compare the one read value with the
-one right value; `isAnyOf` is the greatest `eq` over the right values, and `isNoneOf` its
-negation; `isAllOf` is the least, over right values, of `any_eq`; `isPartOf` and `hasPart` are
-the least of `any_le`, and an empty read set holds vacuously; `isA` is the least over the listed
-classes. Each `eq`, on a concept-scheme operand, is `⊑` (`ceqr/4`).
+In world `W`, node `C`, read in policy `P`'s data space, has rank `N`. World `k` is the Kleene
+world: the ranks before completion, under strong Kleene logic. A witness world `wit(E)` gives
+the nodes of a duty's witness conditions their ranks against the evidence `E` (duty.lp).
+completion.lp adds the ranks of the completion worlds `c` and `flip`. In a world that reads, a
+leaf whose read is `u` has rank 1, and so does a leaf whose unit its binding does not declare.
+Otherwise its operator decides (due2-profiles.md §4): `eq` and the order operators compare the
+one read value with the one right value; `isAnyOf` is the greatest `eq` over the right values,
+and `isNoneOf` its negation; `isAllOf` is the least, over right values, of `any_eq`; `isPartOf`
+and `hasPart` are the least of `any_le`, and an empty read set holds vacuously; `isA` is the
+least over the listed classes. Each `eq`, on a concept-scheme operand, is `⊑` (`ceqr/5`).
 *%
-crank(W, C, 1) :- evaluates(W, C), leaf(C), left(C, Op), read_u(W, Op).
-crank(W, C, 1) :- evaluates(W, C), unchecked_unit(C).
+crank(W, C, P, 1) :- evaluates(W, C, P), leaf(C), left(C, Op), read_u(W, Op, P).
+crank(W, C, P, 1) :- evaluates(W, C, P), unchecked_unit(C).
 % The aggregate rules below would give such a leaf, with no pairs, the aggregate's start value,
 % a second rank, so they exclude it.
-crank(W, C, N) :- op(C, eq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N).
-crank(W, C, 2 - N) :- op(C, neq), cpair(W, C, Lv, Rv), ceqr(C, Lv, Rv, N).
-crank(W, C, N) :- op(C, O), cpair(W, C, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
-crank(W, C, N) :- op(C, isAnyOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    not unchecked_unit(C), N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
-crank(W, C, 2 - N) :- op(C, isNoneOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    not unchecked_unit(C), N = #max { 0; M, Rv : any_eq(W, C, Rv, M) }.
-crank(W, C, N) :- op(C, isAllOf), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    not unchecked_unit(C), N = #min { 2; M, Rv : any_eq(W, C, Rv, M) }.
-crank(W, C, N) :- op(C, O), O = (isPartOf; hasPart), evaluates(W, C), left(C, Op),
-    read_ok(W, Op), not unchecked_unit(C), N = #min { 2; M, Lo : any_le(W, C, Lo, M) }.
-crank(W, C, N) :- op(C, isA), evaluates(W, C), left(C, Op), read_ok(W, Op),
-    not unchecked_unit(C), N = #min { 2; M, Lv, Cls : cpair(W, C, Lv, Cls), isar(Lv, Cls, M) }.
+crank(W, C, P, N) :- op(C, eq), cpair(W, C, P, Lv, Rv), ceqr(C, P, Lv, Rv, N).
+crank(W, C, P, 2 - N) :- op(C, neq), cpair(W, C, P, Lv, Rv), ceqr(C, P, Lv, Rv, N).
+crank(W, C, P, N) :- op(C, O), cpair(W, C, P, Lv, Rv), cmpr(Lv, Rv, Rel), order_rank(O, Rel, N).
+crank(W, C, P, N) :- op(C, isAnyOf), evaluates(W, C, P), left(C, Op), read_ok(W, Op, P),
+    not unchecked_unit(C), N = #max { 0; M, Rv : any_eq(W, C, P, Rv, M) }.
+crank(W, C, P, 2 - N) :- op(C, isNoneOf), evaluates(W, C, P), left(C, Op), read_ok(W, Op, P),
+    not unchecked_unit(C), N = #max { 0; M, Rv : any_eq(W, C, P, Rv, M) }.
+crank(W, C, P, N) :- op(C, isAllOf), evaluates(W, C, P), left(C, Op), read_ok(W, Op, P),
+    not unchecked_unit(C), N = #min { 2; M, Rv : any_eq(W, C, P, Rv, M) }.
+crank(W, C, P, N) :- op(C, O), O = (isPartOf; hasPart), evaluates(W, C, P), left(C, Op),
+    read_ok(W, Op, P), not unchecked_unit(C), N = #min { 2; M, Lo : any_le(W, C, P, Lo, M) }.
+crank(W, C, P, N) :- op(C, isA), evaluates(W, C, P), left(C, Op), read_ok(W, Op, P),
+    not unchecked_unit(C),
+    N = #min { 2; M, Lv, Cls : cpair(W, C, P, Lv, Cls), isar(P, Lv, Cls, M) }.
 
 %## Connectives
 
-%*! evaluates(W, C)
+%*! evaluates(W, C, P)
 
-World `W` evaluates node `C` with the leaf and connective rules of this file. World `k`
-evaluates every node but those of a duty's witness conditions, which the witness worlds evaluate
-(duty.lp). A completion world evaluates only the open nodes (completion.lp): every other node
-keeps its world-`k` rank there, so one set of connective rules serves every world.
+World `W` evaluates node `C`, in policy `P`'s data space, with the leaf and connective rules of
+this file. World `k` evaluates every node but those of a duty's witness conditions, which the
+witness worlds evaluate (duty.lp), once in each data space the node is read in. A completion
+world evaluates only the open nodes (completion.lp): every other node keeps its world-`k` rank
+there, so one set of connective rules serves every world.
 *%
 % A node of a duty's witness conditions has no world-`k` value: it reads the evidence, which
 % world `k` does not have. duty.lp gives those nodes the worlds `wit(E)` instead.
-evaluates(k, C) :- cnode(C), not witness_only(C).
+evaluates(k, C, P) :- cnode(C), cspace(C, P), not witness_only(C).
 
 % Kleene conjunction and disjunction as #min and #max with their identities (⋀∅ = t,
 % ⋁∅ = f); `dprod:not` maps rank N to 2 - N. The identities only seed the aggregates: a
 % connective with no member is rejected in constraint.lp (decisions/0017). Strong Kleene logic
 % gives a tree the value of its NNF and DNF, because De Morgan's laws, double negation, and
 % distributivity hold in it, so these rules realise the structural rules of normalisation stage 2
-% without rewriting.
-crank(W, C, N) :- evaluates(W, C), conn(C, and),
-    N = #min { 2; M, D : member(C, D), crank(W, D, M) }.
-crank(W, C, N) :- evaluates(W, C), conn(C, or),
-    N = #max { 0; M, D : member(C, D), crank(W, D, M) }.
-crank(W, C, 2 - N) :- evaluates(W, C), conn(C, negation), member(C, D), crank(W, D, N).
+% without rewriting. A member is in every data space of its connective, since both lie in one
+% tree (`cspace/2`, constraint.lp), so a connective reads its members' ranks in its own space.
+crank(W, C, P, N) :- evaluates(W, C, P), conn(C, and),
+    N = #min { 2; M, D : member(C, D), crank(W, D, P, M) }.
+crank(W, C, P, N) :- evaluates(W, C, P), conn(C, or),
+    N = #max { 0; M, D : member(C, D), crank(W, D, P, M) }.
+crank(W, C, P, 2 - N) :- evaluates(W, C, P), conn(C, negation), member(C, D),
+    crank(W, D, P, N).
 % `xone` means its expansion, the disjunction of its terms, each term a member conjoined with the
 % negation of every other member: ⋁ᵢ (aᵢ ∧ ⋀ⱼ≠ᵢ ¬aⱼ) (due2-profiles.md §5). The program counts
-% instead: `xone_count(W, C, NT, NU)` says that `NT` members of `C` are `t` and `NU` are `u` in
-% world `W`. The `xone` is `t` when NT = 1 and NU = 0; `f` when NT ≥ 2, or when NT = NU = 0; and
-% `u` otherwise. That is the value of the expansion for any values of the members, case by case:
+% instead: `xone_count(W, C, P, NT, NU)` says that `NT` members of `C` are `t` and `NU` are `u` in
+% world `W` and policy `P`'s data space. The `xone` is `t` when NT = 1 and NU = 0; `f` when NT ≥ 2,
+% or when NT = NU = 0; and `u` otherwise. That is the value of the expansion for any values of the
+% members, case by case:
 %
 % - **NT ≥ 2.** Every term conjoins the negation of some `t` member, which is `f`, so every term
 %   is `f`, and so is their disjunction.
@@ -379,23 +361,25 @@ crank(W, C, 2 - N) :- evaluates(W, C), conn(C, negation), member(C, D), crank(W,
 % give. A count that skipped the `u` members would give that `t`, and the mutant
 % `xone-unknown-as-false` of TESTS.md is that shortcut.
 
-%*! xone_count(W, C, NT, NU)
+%*! xone_count(W, C, P, NT, NU)
 
-In world `W`, `NT` members of the `xone` node `C` are `t` and `NU` are `u`.
+In world `W` and policy `P`'s data space, `NT` members of the `xone` node `C` are `t` and `NU`
+are `u`.
 *%
-xone_count(W, C, NT, NU) :- evaluates(W, C), conn(C, xone),
-    NT = #count { D : member(C, D), crank(W, D, 2) },
-    NU = #count { D : member(C, D), crank(W, D, 1) }.
-crank(W, C, 2) :- xone_count(W, C, 1, 0).
-crank(W, C, 0) :- xone_count(W, C, NT, _), NT >= 2.
-crank(W, C, 0) :- xone_count(W, C, 0, 0).
-crank(W, C, 1) :- xone_count(W, C, NT, NU), NT < 2, NU > 0.
+xone_count(W, C, P, NT, NU) :- evaluates(W, C, P), conn(C, xone),
+    NT = #count { D : member(C, D), crank(W, D, P, 2) },
+    NU = #count { D : member(C, D), crank(W, D, P, 1) }.
+crank(W, C, P, 2) :- xone_count(W, C, P, 1, 0).
+crank(W, C, P, 0) :- xone_count(W, C, P, NT, _), NT >= 2.
+crank(W, C, P, 0) :- xone_count(W, C, P, 0, 0).
+crank(W, C, P, 1) :- xone_count(W, C, P, NT, NU), NT < 2, NU > 0.
 
 %## Values
 
-% Every node world `k` evaluates is an item `c(C)`, so a node without a rank fails integrity.lp.
-item(c(C)) :- evaluates(k, C).
-holds(c(C), V) :- crank(k, C, N), rank(V, N).
+% Every node world `k` evaluates is an item `c(C, P)`, one per data space, so a node without a
+% rank fails integrity.lp.
+item(c(C, P)) :- evaluates(k, C, P).
+holds(c(C, P), V) :- crank(k, C, P, N), rank(V, N).
 
 %## Worked example
 
@@ -413,12 +397,12 @@ holds(c(C), V) :- crank(k, C, N), rank(V, N).
 % ex:count dprod:operandSource dprod:requestSource ; dprod:operandProperty ex:count .
 % ```
 %
-% | Request `params` | Reads | Leaves | `crank(k, ex:c, N)` | Reply |
+% | Request `params` | Reads | Leaves | `crank(k, ex:c, ex:p, N)` | Reply |
 % |---|---|---|---|---|
-% | purpose `ex:marketing` | `read_ok(ex:purpose)`, `read_u(ex:count)` | `eqr(ex:marketing, ex:research, 0)` and `eqr(ex:marketing, ex:teaching, 0)`, so `any_eq` is 0 for both and `crank(k, ex:c1, 0)`; `crank(k, ex:c2, 1)` | 0 | `NotApplicable` |
-% | purpose `ex:research` | as above | `eqr(ex:research, ex:research, 2)`, so `crank(k, ex:c1, 2)`; `crank(k, ex:c2, 1)` | 1 | `Indeterminate`, from `NotApplicable` to `Permit` |
-% | purpose `ex:research`, count `3` | both `ok` | `cpair(k, ex:c2, lit("3", xsd:integer), lit("5", xsd:integer))`, `crank(k, ex:c2, 2)` | 2 | `Permit` |
-% | purpose `ex:research`, count `7` | both `ok` | `crank(k, ex:c2, 0)` | 0 | `NotApplicable` |
+% | purpose `ex:marketing` | `read_ok(k, ex:purpose, ex:p)`, `read_u(k, ex:count, ex:p)` | `eqr(ex:marketing, ex:research, 0)` and `eqr(ex:marketing, ex:teaching, 0)`, so `any_eq` is 0 for both and `crank(k, ex:c1, ex:p, 0)`; `crank(k, ex:c2, ex:p, 1)` | 0 | `NotApplicable` |
+% | purpose `ex:research` | as above | `eqr(ex:research, ex:research, 2)`, so `crank(k, ex:c1, ex:p, 2)`; `crank(k, ex:c2, ex:p, 1)` | 1 | `Indeterminate`, from `NotApplicable` to `Permit` |
+% | purpose `ex:research`, count `3` | both `ok` | `cpair(k, ex:c2, ex:p, lit("3", xsd:integer), lit("5", xsd:integer))`, `crank(k, ex:c2, ex:p, 2)` | 2 | `Permit` |
+% | purpose `ex:research`, count `7` | both `ok` | `crank(k, ex:c2, ex:p, 0)` | 0 | `NotApplicable` |
 %
 % The first row is the point of Kleene evaluation: `ex:count` is unknown, but `f ∧ u` is `f`, so
 % the unknown does not matter, and the atom does not apply. In the second row `t ∧ u` is `u`, the

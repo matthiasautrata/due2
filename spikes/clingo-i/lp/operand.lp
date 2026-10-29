@@ -11,14 +11,14 @@
 % - **Consumes:** `voc/2`, `context_property/2`, `kind/2`, `term_kind/2`,
 %   `declared_in_scheme/2`, `closure/4`, `fact/2`, `fact_value/2` (lift.lp); `request_param/2`, `request_param_set/1`, `request_party/2`,
 %   `sotw_effective_at/1`, `request_at/1`, `evidence/4`, `evidence_param/3`, `value/3`
-%   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2`, `cspace/2` (constraint.lp); `left/2`, `owned/3`,
+%   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2` (constraint.lp); `left/2`, `owned/3`,
 %   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`,
-%   `scheme/2` (bind.lp); `evaluates/2` (compare.lp).
+%   `scheme/2` (bind.lp); `evaluates/3` (compare.lp).
 % - **Provides:** `single_left/1`, `has_scheme/1`,
-%   `concept_operator/1`, `declared_concept/2`, `op_space/2`, `read_concept/3`, `read_concept/2`, `candidate_value/2`,
-%   `conforms/2`, `read_world/1`, `read_in/2`, `read_value/3`, `read_resolved/2`,
-%   `nonconforming/2`, `card_ok/2`, `read_ok/2`, `read_u/2`, `read_status/3`,
-%   `unchecked_unit/1`; extends `reject/2` (structure.lp) and `unsupported/1` (lift.lp).
+%   `concept_operator/1`, `declared_concept/2`, `read_concept/3`, `candidate_value/2`,
+%   `conforms/2`, `read_world/1`, `read_in/3`, `read_in/2`, `read_value/3`, `read_resolved/2`,
+%   `nonconforming/3`, `card_ok/2`, `read_ok/3`, `read_u/3`, `read_status/4`,
+%   `unchecked_unit/1`; extends `reject/2` (structure.lp).
 
 %## Operator checks
 
@@ -102,28 +102,15 @@ the policy or a selected module declares.
 *%
 declared_concept(Op, V) :- left(C, Op), right(C, V), scheme(Op, S), declared_in_scheme(V, S).
 
-%*! op_space(Op, P)
-
-Operand `Op` is read in policy `P`'s data space: it is the left operand of a leaf read there,
-as `cspace/2` gives it.
-*%
-op_space(Op, P) :- left(C, Op), cspace(C, P).
-
 %*! read_concept(P, Op, V)
 
 The IRI `V` that `Op` reads, in some world, is in one of `Op`'s schemes in policy `P`'s data
-space, by a membership the policy, one of its layers, or the SOTW states.
+space, by a membership the policy, one of its layers, or the SOTW states. A leaf two policies
+share reads one value, which may be a concept in one policy's data space and not in the
+other's (decisions/0050 #1).
 *%
-read_concept(P, Op, V) :- read_value(_, Op, V), scheme(Op, S), op_space(Op, P),
+read_concept(P, Op, V) :- read_in(W, Op, P), read_value(W, Op, V), scheme(Op, S),
     closure(P, inScheme, V, S).
-
-%*! read_concept(Op, V)
-
-The IRI `V` that `Op` reads is in one of `Op`'s schemes in a data space of `Op`.
-*%
-read_concept(Op, V) :- read_concept(_, Op, V).
-unsupported("shared node: read apart by its policies") :- op_space(Op, P), op_space(Op, Q),
-    read_concept(P, Op, V), not read_concept(Q, Op, V).
 
 % The three checks of decisions/0015 #8. Normalisation does not see the SOTW, so a right
 % operand counts only the memberships the policy and its modules declare. A literal is not a
@@ -200,13 +187,19 @@ conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, literal), kind(T
 % - `card_ok(W, Op)`: a `set` operand takes any number of values, none included; a `one` operand
 %   takes exactly one. Two or more for `one` is `MultipleValues`, and none is no value
 %   (due2-profiles.md §3).
-% - `nonconforming(W, Op)`: some read value is outside the range, `TypeMismatch` (due2-profiles.md
-%   §3), or is an IRI in none of the operand's schemes by any membership, the SOTW's included
-%   (`read_concept/2`, decisions/0015 #4).
-% - `read_ok(W, Op)` when the read is resolved, its count fits, and every value conforms; `read_u(W,
-%   Op)` otherwise. A `u` read makes every leaf on it `u`, never `f` (ways-of-working.md §5.1).
-%   integrity.lp checks that every read is exactly one of the two.
-% - `read_status(W, Op, S)`, for a `u` read, the status of decisions/0016: a state fact's own
+%
+% What the source gives is the same for every policy, so the four relations above are keyed by
+% world and operand. Whether a value is in the operand's schemes is not: it reads `closure/4`,
+% which is keyed by policy (decisions/0050 #1). A leaf two policies share is read once in each
+% policy's data space (`read_in(W, Op, P)`), and the relations below are keyed by that policy:
+%
+% - `nonconforming(W, Op, P)`: some read value is outside the range, `TypeMismatch`
+%   (due2-profiles.md §3), or is an IRI in none of the operand's schemes in `P`'s data space by
+%   any membership, the SOTW's included (`read_concept/3`, decisions/0015 #4).
+% - `read_ok(W, Op, P)` when the read is resolved, its count fits, and every value conforms;
+%   `read_u(W, Op, P)` otherwise. A `u` read makes every leaf on it `u`, never `f`
+%   (ways-of-working.md §5.1). integrity.lp checks that every read is exactly one of the two.
+% - `read_status(W, Op, P, S)`, for a `u` read, the status of decisions/0016: a state fact's own
 %   status; `unresolved` for no fact; `missing` for an unanswered request, witness, or context read,
 %   or a resolved `one` read with no value; `conflict` for a resolved `one` read with several;
 %   `invalid` when a value is outside the range or its schemes. integrity.lp checks that each `u`
@@ -221,11 +214,18 @@ leaves are assigned (completion.lp).
 read_world(k).
 read_world(wit(E)) :- evidence(E, _, _, _).
 
+%*! read_in(W, Op, P)
+
+World `W` evaluates a constraint on left operand `Op` in policy `P`'s data space, so `Op` is
+read there.
+*%
+read_in(W, Op, P) :- read_world(W), evaluates(W, C, P), left(C, Op).
+
 %*! read_in(W, Op)
 
-World `W` evaluates a constraint on left operand `Op`, so `Op` is read in it.
+World `W` evaluates a constraint on left operand `Op`, in some policy's data space.
 *%
-read_in(W, Op) :- read_world(W), evaluates(W, C), left(C, Op).
+read_in(W, Op) :- read_in(W, Op, _).
 
 %*! read_value(W, Op, Term)
 
@@ -263,15 +263,15 @@ read_resolved(wit(E), Op) :- read_in(wit(E), Op), src(Op, witness), prop(Op, Pro
     evidence_param(E, Prop, _).
 read_resolved(W, Op) :- read_in(W, Op), src(Op, context), read_value(W, Op, _).
 
-%*! nonconforming(W, Op)
+%*! nonconforming(W, Op, P)
 
 In world `W`, some value `Op` reads is outside its range, or is an IRI in none of its concept
-schemes. The first is `TypeMismatch` in due2-profiles.md §3, the second decisions/0015 #4:
-either way the read is `invalid`, so `u`, never `f`.
+schemes in policy `P`'s data space. The first is `TypeMismatch` in due2-profiles.md §3, the
+second decisions/0015 #4: either way the read is `invalid`, so `u`, never `f`.
 *%
-nonconforming(W, Op) :- read_value(W, Op, Term), not conforms(Term, Op).
-nonconforming(W, Op) :- read_value(W, Op, V), kind(V, iri), has_scheme(Op),
-    not read_concept(Op, V).
+nonconforming(W, Op, P) :- read_in(W, Op, P), read_value(W, Op, Term), not conforms(Term, Op).
+nonconforming(W, Op, P) :- read_in(W, Op, P), read_value(W, Op, V), kind(V, iri),
+    has_scheme(Op), not read_concept(P, Op, V).
 
 %*! card_ok(W, Op)
 
@@ -282,38 +282,40 @@ card_ok(W, Op) :- read_resolved(W, Op), card(Op, set).
 card_ok(W, Op) :- read_resolved(W, Op), card(Op, one),
     #count { Term : read_value(W, Op, Term) } = 1.
 
-%*! read_ok(W, Op)
+%*! read_ok(W, Op, P)
 
-In world `W`, `Op`'s read gives a value set the operators compare.
+In world `W`, `Op`'s read gives a value set the operators compare, in policy `P`'s data space.
 *%
-read_ok(W, Op) :- read_resolved(W, Op), card_ok(W, Op), not nonconforming(W, Op).
+read_ok(W, Op, P) :- read_in(W, Op, P), read_resolved(W, Op), card_ok(W, Op),
+    not nonconforming(W, Op, P).
 
-%*! read_u(W, Op)
+%*! read_u(W, Op, P)
 
-In world `W`, `Op`'s read is unknown, so every constraint on it is `u` there. That is the
-resolution rule of due2-profiles.md §3.
+In world `W`, `Op`'s read is unknown in policy `P`'s data space, so every constraint on it is
+`u` there. That is the resolution rule of due2-profiles.md §3.
 *%
-read_u(W, Op) :- read_in(W, Op), not read_resolved(W, Op).
-read_u(W, Op) :- read_resolved(W, Op), not card_ok(W, Op).
-read_u(W, Op) :- nonconforming(W, Op).
+read_u(W, Op, P) :- read_in(W, Op, P), not read_resolved(W, Op).
+read_u(W, Op, P) :- read_in(W, Op, P), read_resolved(W, Op), not card_ok(W, Op).
+read_u(W, Op, P) :- nonconforming(W, Op, P).
 
-%*! read_status(W, Op, S)
+%*! read_status(W, Op, P, S)
 
-In world `W`, `Op`'s read is `u` with status `S`: `missing`, `invalid`, `conflict`, or
-`unresolved`. The statuses are those of due2-profiles.md §3. A request, witness, or context
-source that has no value is `missing`. A state property keeps the status of its fact, and is
-`unresolved` when it has none. A resolved read with no value on cardinality `one` is `missing`,
-and with several `conflict`. A read of the right number of values with one outside the range is
-`invalid`. Only `unresolved` is completed by pairing (completion.lp, decisions/0016).
+In world `W`, `Op`'s read is `u` in policy `P`'s data space, with status `S`: `missing`,
+`invalid`, `conflict`, or `unresolved`. The statuses are those of due2-profiles.md §3. A
+request, witness, or context source that has no value is `missing`. A state property keeps the
+status of its fact, and is `unresolved` when it has none. A resolved read with no value on
+cardinality `one` is `missing`, and with several `conflict`. A read of the right number of
+values with one outside the range, or outside its schemes in `P`'s data space, is `invalid`.
+Only `unresolved` is completed by pairing (completion.lp, decisions/0016).
 *%
-read_status(W, Op, missing) :- read_in(W, Op), src(Op, Src), Src != state,
+read_status(W, Op, P, missing) :- read_in(W, Op, P), src(Op, Src), Src != state,
     not read_resolved(W, Op).
-read_status(W, Op, S) :- read_in(W, Op), src(Op, state), prop(Op, Prop), fact(Prop, S),
+read_status(W, Op, P, S) :- read_in(W, Op, P), src(Op, state), prop(Op, Prop), fact(Prop, S),
     S != resolved.
-read_status(W, Op, unresolved) :- read_in(W, Op), src(Op, state), prop(Op, Prop),
+read_status(W, Op, P, unresolved) :- read_in(W, Op, P), src(Op, state), prop(Op, Prop),
     not fact(Prop, _).
-read_status(W, Op, missing) :- read_resolved(W, Op), card(Op, one),
+read_status(W, Op, P, missing) :- read_in(W, Op, P), read_resolved(W, Op), card(Op, one),
     #count { Term : read_value(W, Op, Term) } = 0.
-read_status(W, Op, conflict) :- read_resolved(W, Op), card(Op, one),
+read_status(W, Op, P, conflict) :- read_in(W, Op, P), read_resolved(W, Op), card(Op, one),
     #count { Term : read_value(W, Op, Term) } > 1.
-read_status(W, Op, invalid) :- card_ok(W, Op), nonconforming(W, Op).
+read_status(W, Op, P, invalid) :- card_ok(W, Op), nonconforming(W, Op, P).
