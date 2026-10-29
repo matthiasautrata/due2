@@ -104,7 +104,7 @@ def test_deleted_rule_fails_loudly(file: str, line: str) -> None:
 
 def test_two_effects_fail_loudly() -> None:
     programs = load_programs()
-    programs["explain.lp"] += "\natom_effect(X, forbid) :- atom(X).\n"
+    programs["integrity.lp"] += "\natom_effect(X, forbid) :- atom(X).\n"
     assert "error" in Interpreter(INIT, programs).reply(vector())
 
 

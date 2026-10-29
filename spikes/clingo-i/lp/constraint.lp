@@ -8,12 +8,12 @@
 % not admissible gets a `reject`; one whose reading the spike does not trust is declined. Variable
 % letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `triple/3`, `voc/2`, `operator/2`, `set_based/1`, `connective/1`,
-%   `is_list/1`, `list_cell/2`, `list_item/2`, `unplaceable/2`, `off_shape/1`, `stated/3`,
+% - **Consumes:** `triple/3`, `unplaceable/2` (driver); `voc/2`, `operator/2`, `set_based/1`,
+%   `connective/1`, `is_list/1`, `list_cell/2`, `list_item/2`, `off_shape/1`, `stated/3`,
 %   `has_rule/3` (lift.lp); `rule/1`, `duty_node/1`, `action_term/1`, `duty_of/2`, `policy/1`,
 %   `space/2` (structure.lp).
-% - **Provides:** `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`, `conn/2`,
-%   `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left_iri/2`, `c_operator/2`,
+% - **Provides:** `value_item/2`, `top_value/3`, `top_constraint/2`, `top_refinement/2`, `cnode/1`,
+%   `conn/2`, `member/2`, `reach_c/2`, `scope/2`, `node_tree/2`, `leaf/1`, `left_iri/2`, `c_operator/2`,
 %   `op/2`, `right_value/2`, `right/2`, `unit/2`, `node_space/2`, `cspace/2`;
 %   extends `reject/2` (structure.lp) and
 %   `unsupported/1` (lift.lp).
@@ -25,30 +25,42 @@
 % root per item. Each root is one conjunct of every atom of the rule or the action term
 % (applies.lp).
 
-%*! top_value(Kind, Owner, C)
+%*! value_item(Value, Item)
 
-`Owner` has the root `C`: `Kind` is `constraint` for the `odrl:constraint` of a rule or a duty,
-and `refinement` for an action term's `odrl:refinement`. A list value gives each of its items.
+`Item` is an item of the authored value `Value`: `Value` itself if it is not an RDF list, else
+each item of the list. A list and repeated values are read alike: as one set of right operands
+(decisions/0013), and as the members of a connective (due2-profiles.md §4).
 *%
-top_value(constraint, R, C) :- rule(R), triple(R, Pred, C), voc(constraint, Pred).
-top_value(constraint, Duty, C) :- duty_node(Duty), triple(Duty, Pred, C), voc(constraint, Pred).
-top_value(refinement, Term, C) :- action_term(Term), triple(Term, Pred, C), voc(refinement, Pred).
+% `triple(_, _, Value)` only grounds `Value`: every object in the graph is its own item, and each
+% caller binds `Value` to a constraint, refinement, member, or right-operand value.
+value_item(Value, Value) :- triple(_, _, Value), not is_list(Value).
+value_item(List, Item) :- list_item(List, Item).
+
+%*! top_value(Kind, Owner, Value)
+
+`Owner` states the value `Value`: `Kind` is `constraint` for the `odrl:constraint` of a rule or a
+duty, and `refinement` for an action term's `odrl:refinement`. `Value` is as authored, so it may
+be an RDF list; `top_constraint/2` and `top_refinement/2` split it into roots (`value_item/2`).
+*%
+top_value(constraint, R, Value) :- rule(R), triple(R, Pred, Value), voc(constraint, Pred).
+top_value(constraint, Duty, Value) :- duty_node(Duty), triple(Duty, Pred, Value),
+    voc(constraint, Pred).
+top_value(refinement, Term, Value) :- action_term(Term), triple(Term, Pred, Value),
+    voc(refinement, Pred).
 
 %*! top_constraint(Owner, C)
 
 The rule or duty `Owner` has the constraint root `C`. Each root of a rule is one conjunct of the
 rule's atoms (applies.lp); duty.lp splits a duty's roots into guards and witness conditions.
 *%
-top_constraint(Owner, C) :- top_value(constraint, Owner, C), not is_list(C).
-top_constraint(Owner, C) :- top_value(constraint, Owner, List), is_list(List), list_item(List, C).
+top_constraint(Owner, C) :- top_value(constraint, Owner, Value), value_item(Value, C).
 
 %*! top_refinement(Term, C)
 
 Action term `Term` has the refinement root `C`, one conjunct of every atom with that action
 term.
 *%
-top_refinement(Term, C) :- top_value(refinement, Term, C), not is_list(C).
-top_refinement(Term, C) :- top_value(refinement, Term, List), is_list(List), list_item(List, C).
+top_refinement(Term, C) :- top_value(refinement, Term, Value), value_item(Value, C).
 
 %## The nodes
 
@@ -79,8 +91,7 @@ conn(C, K) :- cnode(C), triple(C, Pred, _), voc(K, Pred), connective(K).
 `D` is a member of the connective `C`. Like a set right operand, the members may be one list
 or repeated values (due2-profiles.md §4).
 *%
-member(C, D) :- conn(C, K), triple(C, Pred, D), voc(K, Pred), not is_list(D).
-member(C, D) :- conn(C, K), triple(C, Pred, List), voc(K, Pred), is_list(List), list_item(List, D).
+member(C, D) :- conn(C, K), triple(C, Pred, Value), voc(K, Pred), value_item(Value, D).
 
 %*! reach_c(C, D)
 
@@ -162,8 +173,7 @@ right_value(C, Term) :- leaf(C), triple(C, Pred, Term), voc(rightOperand, Pred).
 `Term` is a right operand value of leaf `C`: a value that is not a list, or an item of a list.
 Repeated values and one list are the same set (decisions/0013).
 *%
-right(C, Term) :- right_value(C, Term), not is_list(Term).
-right(C, Term) :- right_value(C, List), is_list(List), list_item(List, Term).
+right(C, Term) :- right_value(C, Value), value_item(Value, Term).
 
 %*! unit(C, Iri)
 

@@ -24,7 +24,7 @@
 % Variable letters: DESIGN.md § Vocabulary; in an `elim` row `X` is removed, `P` is the policy of
 % its removed entry, and `Y` removes it.
 %
-% - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2`, `atom_party/3`,
+% - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_party/3`,
 %   `pre/2`, `obligation/1` (structure.lp); `conflict/2`, `left/2`, `prop/2` (bind.lp);
 %   `holds/2` (applies.lp); `conn/2`, `member/2`, `leaf/1` (constraint.lp); `read_ok/2`,
 %   `read_status/3`, `unchecked_unit/1` (operand.lp); `crank/3`, `evaluates/2` (compare.lp); `rank/2` (kleene.lp);
@@ -32,23 +32,13 @@
 %   `witness_cond/2`, `obligation_policy/2`, `instance/1`, `passed/1`, `status/3` (duty.lp);
 %   `duty_item/1`, `finding_atom/2`, `item_root/2`, `leaf_status/2` (completion.lp).
 % - **Provides:** `may_apply/1`, `surely_applies/1`, `same_policy/4`, `closed_by/2`,
-%   `surely_closed/1`, `maybe_closed/1`, `may_candidate/1`, `sure_candidate/1`, `may_contend/1`,
-%   `sure_contender/1`, `elim_within/4`, `void/1`, `removed_in/2`, `elim/4`, `open_k/2`,
+%   `maybe_closed/1`, `may_candidate/1`, `sure_candidate/1`, `may_contend/1`,
+%   `sure_contender/1`, `elim_within/4`, `void/1`, `elim/4`, `open_k/2`,
 %   `uncertain/1`, `conflict_removes/2`, `conflict_keeps/1`, `conflicted/1`,
 %   `candidate_state/2`, `listed/1`, `listed_out/2`,
 %   `listed_apart/2`, `listed_dominated/1`, `listed_front/1`, `front_duty/2`,
 %   `obligation_row/2`, `reported/1`, `polar/4`, `flip/2`, `conj/2`, `disj/2`,
 %   `xone_pol/4`, `xone_by/3`, `live/4`, `witness_status/3`, `unknown_part/3`.
-
-%## Integrity
-
-% Each atom has one effect and one source rule (due2-workflows.md §3.1), so that a row names
-% exactly one of each. It belongs to at least one policy, and has an entry in each. In the spec
-% an atom's policies are its `root` tuples (due2-workflows.md §3.1, decisions/0036); this rule
-% checks only that there is one.
-:- atom(X), #count { Eff : atom_effect(X, Eff) } != 1.
-:- atom(X), not atom_policy(X, _).
-:- atom(X), #count { R : atom_rule(X, R) } != 1.
 
 %## Findings
 
@@ -81,12 +71,6 @@ The permission `X`, with finding `t` or `u`, is removed by its precondition `Y`,
 closed_by(X, Y) :- may_apply(X), atom_effect(X, permit), pre(X, Y), holds(owed(Y), t),
     status(k, Y, violated).
 
-%*! surely_closed(X)
-
-Some precondition closes the permission `X` in every completion where it applies.
-*%
-surely_closed(X) :- closed_by(X, _).
-
 %*! maybe_closed(X)
 
 Some completion may close the permission `X`: a precondition of it whose deadline has passed
@@ -100,7 +84,7 @@ maybe_closed(X) :- atom_effect(X, permit), pre(X, Y), not holds(owed(Y), f), pas
 The permission `X` is a candidate in some completion: its finding is `t` or `u`, and no
 precondition surely closes it.
 *%
-may_candidate(X) :- may_apply(X), atom_effect(X, permit), not surely_closed(X).
+may_candidate(X) :- may_apply(X), atom_effect(X, permit), not closed_by(X, _).
 
 %*! sure_candidate(X)
 
@@ -159,12 +143,6 @@ elim_within(X, P, Y, invalid) :- void(P), may_contend(X), atom_policy(X, P), sur
 
 %## Across policies
 
-%*! removed_in(Y, Q)
-
-The entry of atom `Y` in policy `Q` is removed within `Q`, so it removes nothing across policies.
-*%
-removed_in(Y, Q) :- elim_within(Y, Q, _, _).
-
 %*! elim(X, P, Y, Strat)
 
 Atom `Y` removes the entry of atom `X` in policy `P` under rule `Strat`: `violated_precondition`,
@@ -178,7 +156,7 @@ one policy, so no vector reaches the cross-policy rule. It is there because due2
 elim(X, P, Y, violated_precondition) :- closed_by(X, Y), atom_policy(X, P).
 elim(X, P, Y, Strat) :- elim_within(X, P, Y, Strat).
 elim(X, P, Y, "prohibit-overrides") :- may_candidate(X), surely_applies(Y), atom_effect(Y, forbid),
-    atom_policy(Y, Q), not removed_in(Y, Q), atom_policy(X, P), P != Q.
+    atom_policy(Y, Q), not elim_within(Y, Q, _, _), atom_policy(X, P), P != Q.
 
 #show elim/4.
 

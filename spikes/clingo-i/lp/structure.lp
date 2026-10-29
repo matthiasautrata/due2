@@ -29,15 +29,15 @@
 %   `term_kind/2`, `voc/2`, `kind/2`, `off_shape/1` (lift.lp); `triple/3`, `unplaceable/2`,
 %   `policy_texts/1` (driver).
 % - **Provides:** `policy_type/1`, `policy/1`, `some_policy/0`, `reject/2`, `rule/1`,
-%   `structure_node/1`, `states_conflict/1`, `family/1`,
-%   `states_family/2`, `rule_value/3`, `has_value/2`, `has_match_value/1`,
+%   `structure_node/1`, `family/1`,
+%   `states_family/2`, `rule_value/3`, `has_match_value/1`,
 %   `assignee/2`, `action_term/1`, `action_of/2`, `has_action_value/1`, `atom/1`,
 %   `atom_rule/2`, `atom_action/2`, `atom_target/2`, `atom_policy/2`, `atom_effect/2`,
 %   `atom_party/3`; the duties (`obliges/2`, `root_obligation/1`, `pre_rule/2`, `duty_node/1`,
-%   `duty_stated/3`, `duty_states/2`, `duty_value/3`, `has_duty_value/2`, `duty_rel/2`,
+%   `duty_stated/3`, `duty_value/3`, `duty_rel/2`,
 %   `inherits/1`, `duty_states_party/1`, `states_bearer/1`, `bearer_value/3`, `own_bearer/2`,
-%   `has_own_bearer/1`, `parent_bearer/2`, `has_parent_bearer/1`, `inh_bearer/3`, `duty_bearer/2`,
-%   `attester/2`, `has_attester/1`, `duty_atom/1`, `duty_of/2`, `pre/2`, `obligation/1`,
+%   `parent_bearer/2`, `inh_bearer/3`, `duty_bearer/2`,
+%   `attester/2`, `duty_atom/1`, `duty_of/2`, `pre/2`, `obligation/1`,
 %   `bearer/2`, `duty_action/2`, `duty_relation/2`); their timing and scope (`node_deadline/2`, `deadline_kind/2`,
 %   `duty_deadline/2`, `duty_scope/2`, `scope_value/1`, `states_scope/1`); the data space (`space/2`); extends
 %   `unsupported/1` (lift.lp).
@@ -139,14 +139,8 @@ structure_node(Node) :- duty_node(Node).
 %## The conflict strategy
 
 % bind.lp gives each policy its strategy (`conflict/2`), from the profiles of its own text. Two
-% stated values, or a value outside the three, is `reject("InvalidConflict", P)`.
-
-%*! states_conflict(P)
-
-Policy `P` states an `odrl:conflict`, valid or not.
-*%
-states_conflict(P) :- stated_conflict_iri(P, _).
-% A policy that states an invalid value gets no conflict/2, and is rejected here.
+% stated values, or a value outside the three, is `reject("InvalidConflict", P)`. A policy that
+% states an invalid value gets no `conflict/2`, and is rejected here.
 reject("InvalidConflict", P) :- stated_conflict_iri(P, Iri), policy(P), not conflict_value(Iri, _).
 reject("InvalidConflict", P) :- stated_conflict(P, Strat), stated_conflict(P, Strat2), policy(P),
     Strat != Strat2.
@@ -180,13 +174,9 @@ rule_value(R, Fam, Term) :- rule(R), stated(R, Fam, Term).
 rule_value(R, Fam, Term) :- policy(P), has_rule(P, R, _), family(Fam), not states_family(R, Fam),
     stated(P, Fam, Term).
 
-%*! has_value(R, Fam)
-
-Rule `R` has a value for family `Fam` after interiorisation. A rule needs an action and a target.
-*%
-has_value(R, Fam) :- rule_value(R, Fam, _).
-reject("MissingAction", R) :- rule(R), not has_value(R, action).
-reject("MissingTarget", R) :- rule(R), not has_value(R, target).
+% A rule needs an action and a target.
+reject("MissingAction", R) :- rule(R), not rule_value(R, action, _).
+reject("MissingTarget", R) :- rule(R), not rule_value(R, target, _).
 
 %## Expansion
 
@@ -358,12 +348,6 @@ duty_stated(Duty, F, Party) :- duty_node(Duty), function(F), stated(Duty, F, Par
 reject("TargetAndOutput", Duty) :- duty_node(Duty), stated(Duty, target, _),
     stated(Duty, output, _).
 
-%*! duty_states(Duty, Fam)
-
-`Duty` itself states at least one value for `Fam`.
-*%
-duty_states(Duty, Fam) :- duty_stated(Duty, Fam, _).
-
 %*! duty_value(Duty, Fam, Term)
 
 `Term` is one of `Duty`'s own values for `Fam`: what it states, or, for a root obligation that
@@ -371,19 +355,15 @@ states nothing for the family, each value the policy states. An inherited party 
 belongs to the parent atom (`inh_bearer/3`).
 *%
 duty_value(Duty, Fam, Term) :- duty_stated(Duty, Fam, Term).
-duty_value(Duty, action, A) :- obliges(P, Duty), not duty_states(Duty, action),
+duty_value(Duty, action, A) :- obliges(P, Duty), not duty_stated(Duty, action, _),
     stated(P, action, A).
-duty_value(Duty, relation, T) :- obliges(P, Duty), not duty_states(Duty, relation),
+duty_value(Duty, relation, T) :- obliges(P, Duty), not duty_stated(Duty, relation, _),
     stated(P, target, T).
-duty_value(Duty, F, Party) :- obliges(P, Duty), function(F), not duty_states(Duty, F),
+duty_value(Duty, F, Party) :- obliges(P, Duty), function(F), not duty_stated(Duty, F, _),
     stated(P, F, Party).
 
-%*! has_duty_value(Duty, Fam)
-
-`Duty` has a value of its own for `Fam`. A duty needs an action; it may have no relation.
-*%
-has_duty_value(Duty, Fam) :- duty_value(Duty, Fam, _).
-reject("MissingAction", Duty) :- duty_node(Duty), not has_duty_value(Duty, action).
+% A duty needs an action; it may have no relation.
+reject("MissingAction", Duty) :- duty_node(Duty), not duty_value(Duty, action, _).
 
 %*! duty_rel(Duty, T)
 
@@ -391,7 +371,7 @@ reject("MissingAction", Duty) :- duty_node(Duty), not has_duty_value(Duty, actio
 without a relation still expands to atoms.
 *%
 duty_rel(Duty, T) :- duty_value(Duty, relation, T).
-duty_rel(Duty, none) :- duty_node(Duty), not has_duty_value(Duty, relation).
+duty_rel(Duty, none) :- duty_node(Duty), not duty_value(Duty, relation, _).
 
 %*! inherits(Duty)
 
@@ -435,12 +415,6 @@ unsupported("duty: bearer from two functions") :- bearer_value(Duty, F, Party),
 *%
 own_bearer(Duty, Party) :- bearer_value(Duty, _, Party).
 
-%*! has_own_bearer(Duty)
-
-`Duty` has a bearer of its own.
-*%
-has_own_bearer(Duty) :- own_bearer(Duty, _).
-
 %*! parent_bearer(X, Party)
 
 `Party` is a bearer the permission atom `X` passes to a duty that inherits from it: its party for a
@@ -452,12 +426,6 @@ parent_bearer(X, Party) :- atom(X), atom_rule(X, R), rule_value(R, F, Party), be
 unsupported("duty: parent with two bearers") :- parent_bearer(X, Party), parent_bearer(X, Party2),
     Party != Party2, atom_rule(X, R), pre_rule(R, Duty), inherits(Duty).
 
-%*! has_parent_bearer(X)
-
-The permission atom `X` passes a bearer.
-*%
-has_parent_bearer(X) :- parent_bearer(X, _).
-
 %*! inh_bearer(X, Duty, Party)
 
 `Duty`, which inherits, has bearer `Party` under its parent atom `X`: the bearer `X` passes, or
@@ -466,7 +434,7 @@ the sentinel `none` when it passes none.
 inh_bearer(X, Duty, Party) :- pre_rule(R, Duty), inherits(Duty), atom_rule(X, R),
     parent_bearer(X, Party).
 inh_bearer(X, Duty, none) :- pre_rule(R, Duty), inherits(Duty), atom_rule(X, R),
-    not has_parent_bearer(X).
+    not parent_bearer(X, _).
 
 %*! duty_bearer(Duty, Party)
 
@@ -474,7 +442,7 @@ inh_bearer(X, Duty, none) :- pre_rule(R, Duty), inherits(Duty), atom_rule(X, R),
 bearer `none` is the request subject (due2-profiles.md §6).
 *%
 duty_bearer(Duty, Party) :- own_bearer(Duty, Party).
-duty_bearer(Duty, none) :- duty_node(Duty), not inherits(Duty), not has_own_bearer(Duty).
+duty_bearer(Duty, none) :- duty_node(Duty), not inherits(Duty), not own_bearer(Duty, _).
 duty_bearer(Duty, Party) :- inh_bearer(_, Duty, Party).
 
 %*! attester(Duty, Party)
@@ -490,13 +458,6 @@ attester(Duty, Party) :- duty_value(Duty, F, Party), attester_fn(F).
 % declines an attester it would have to inherit rather than pick a reading.
 unsupported("duty: inherited attester") :- inherits(Duty), pre_rule(R, Duty), rule_value(R, F, _),
     attester_fn(F).
-
-%*! has_attester(Duty)
-
-`Duty` names an attester, so evidence with no issuer, or an issuer not at or below an attester,
-does not count for it.
-*%
-has_attester(Duty) :- attester(Duty, _).
 
 %*! duty_atom(Y)
 

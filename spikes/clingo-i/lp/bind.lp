@@ -12,9 +12,9 @@
 %
 % - **Consumes:** `voc/2`, `binding_key/1`, `conflict_value/2`, `stated_conflict/2`,
 %   `source_kind/2`, `context_property/2`, `cardinality_value/2`, `kind/2`, `xsd_datatype/1`,
-%   `declared_datatype/1`, `dt_kind/2`, `any_literal/1`, `any_resource/1` (lift.lp);
-%   `triple/3`, `module/4`, `layer/2`, `selected_profile/1`, `text_id/1` (driver); `policy/1`,
-%   `states_conflict/1`, `duty_node/1` (structure.lp); `left_iri/2`, `node_tree/2`
+%   `declared_datatype/1`, `dt_kind/2`, `any_literal/1`, `any_resource/1`,
+%   `stated_conflict_iri/2` (lift.lp); `triple/3`, `module/4`, `layer/2`, `selected_profile/1`,
+%   `text_id/1` (driver); `policy/1`, `duty_node/1` (structure.lp); `left_iri/2`, `node_tree/2`
 %   (constraint.lp).
 % - **Provides:** `left/2`, `profile_conflict/1`, `some_profile_conflict/0`, `conflict/2`,
 %   `decl/4`, `layer_rank/2`, `concept_scheme/2`, `range_iri/1`, `admits_kind/2`, `used/1`,
@@ -63,8 +63,8 @@ its own `odrl:conflict` if it states one, otherwise the selected profile's defau
 `invalid` (odrl-compound-to-atomic-normalization.md §3).
 *%
 conflict(P, Strat) :- policy(P), stated_conflict(P, Strat).
-conflict(P, Strat) :- policy(P), not states_conflict(P), profile_conflict(Strat).
-conflict(P, invalid) :- policy(P), not states_conflict(P), not some_profile_conflict.
+conflict(P, Strat) :- policy(P), not stated_conflict_iri(P, _), profile_conflict(Strat).
+conflict(P, invalid) :- policy(P), not stated_conflict_iri(P, _), not some_profile_conflict.
 
 %## The layers
 
@@ -228,7 +228,7 @@ owner_rank(Op, N) :- declares(_, Op), not module_differs(Op),
 
 `Op`'s binding has `Value` for attribute `Key`: its source and property from the highest layer
 that states each, its type attributes from the owner. An attribute the owner omits has none here,
-and its default is read where it is used (`card/2`, `has_allowed/1`, `conforms/2`).
+and its default is read where it is used (`card/2`, `allowed/2`, `conforms/2`).
 *%
 bdecl(Op, Key, Value) :- where_rank(Op, Key, N), op_decl(Layer, Op, Key, Value),
     layer_rank(Layer, N).

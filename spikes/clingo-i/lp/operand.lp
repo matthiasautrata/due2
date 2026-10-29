@@ -14,7 +14,7 @@
 %   (driver); `c_operator/2`, `op/2`, `right/2`, `unit/2`, `cspace/2` (constraint.lp); `left/2`, `owned/3`,
 %   `src/2`, `prop/2`, `card/2`, `has_range/1`, `range_kind/2`, `allowed/2`,
 %   `scheme/2` (bind.lp); `evaluates/2` (compare.lp).
-% - **Provides:** `has_range_kind/1`, `has_allowed/1`, `single_left/1`, `has_scheme/1`,
+% - **Provides:** `single_left/1`, `has_scheme/1`,
 %   `concept_operator/1`, `declared_concept/2`, `op_space/2`, `read_concept/3`, `read_concept/2`, `candidate_value/2`,
 %   `conforms/2`, `read_world/1`, `read_in/2`, `read_value/3`, `read_resolved/2`,
 %   `nonconforming/2`, `card_ok/2`, `read_ok/2`, `read_u/2`, `read_status/3`,
@@ -33,14 +33,6 @@
 % one left value over one (`single_left/1`: `eq`, `neq`, the order operators, `isAnyOf`, `isNoneOf`;
 % decisions/0025).
 
-%*! has_allowed(Op)
-
-`Op`'s binding lists its allowed operators. Without the list every core operator is allowed;
-the default's narrowing by signature (due2-profiles.md §3) is not checked (*Operator
-checks*).
-*%
-has_allowed(Op) :- allowed(Op, _).
-
 %*! single_left(O)
 
 Operator `O` compares one left value. That is its signature in due2-profiles.md §4.
@@ -49,8 +41,9 @@ single_left(eq; neq; lt; lteq; gt; gteq; isAnyOf; isNoneOf).
 
 % An operator the binding does not allow, a right operand outside the range, or isA or an
 % operator of one left value over a set-valued operand (due2-diagnostics.md,
-% OperatorTypeMismatch; decisions/0025).
-reject("OperatorTypeMismatch", C) :- left(C, Op), has_allowed(Op), c_operator(C, Iri),
+% OperatorTypeMismatch; decisions/0025). `allowed(Op, _)`: only an operand whose binding lists
+% its operators is restricted.
+reject("OperatorTypeMismatch", C) :- left(C, Op), allowed(Op, _), c_operator(C, Iri),
     not allowed(Op, Iri).
 reject("OperatorTypeMismatch", C) :- left(C, Op), right(C, V), not conforms(V, Op).
 reject("OperatorTypeMismatch", C) :- left(C, Op), card(Op, set), op(C, isA).
@@ -154,12 +147,6 @@ reject("InvalidBinding", C) :- left(C, Op), has_scheme(Op), range_kind(Op, K), K
 % `rdfs:Literal` takes any literal. A right operand value that does not conform is
 % `reject("OperatorTypeMismatch", C)`.
 
-%*! has_range_kind(Op)
-
-`Op`'s range has a kind. `rdfs:Resource` has none, so it admits every term.
-*%
-has_range_kind(Op) :- range_kind(Op, _).
-
 %*! candidate_value(Op, Term)
 
 `Term` is compared against `Op`'s range: a value `Op` reads in some world, or a right operand
@@ -176,7 +163,7 @@ due2-profiles.md §3, so `5` and `5.00` both conform to `xsd:decimal`, and a `xs
 to `xsd:dateTime`.
 *%
 conforms(Term, Op) :- candidate_value(Op, Term), not has_range(Op).
-conforms(Term, Op) :- candidate_value(Op, Term), has_range(Op), not has_range_kind(Op).
+conforms(Term, Op) :- candidate_value(Op, Term), has_range(Op), not range_kind(Op, _).
 conforms(Term, Op) :- candidate_value(Op, Term), range_kind(Op, K), term_kind(Term, K),
     K != numeric.
 % A numeric value must be placed in the numeric space. An ill-typed one is invalid, and so is an

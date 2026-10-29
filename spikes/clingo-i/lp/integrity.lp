@@ -1,18 +1,28 @@
 %# integrity.lp: the constraints that make a gap an error
 %
-% The integrity constraints over every earlier file. They are why a deleted rule fails loudly
-% (TESTS.md): without its rule, some item has no value, some read no outcome, or some
-% world no verdict, so the solve has no model and the reply is an `error`, never a verdict.
+% The integrity constraints over every earlier file. The first three check the shape of each atom.
+% The rest are why a deleted rule fails loudly (TESTS.md): without its rule, some item has no
+% value, some read no outcome, or some world no verdict, so the solve has no model and the reply
+% is an `error`, never a verdict.
 % Solves 0 and 1 do not load this file: its declines and rejections name what is wrong, where a
 % failed constraint would only say that something is. Variable letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `rank/2`, `two_valued/1` (kleene.lp); `read_in/2`, `read_ok/2`, `read_u/2`,
+% - **Consumes:** `atom/1`, `atom_effect/2`, `atom_policy/2`, `atom_rule/2` (structure.lp);
+%   `rank/2`, `two_valued/1` (kleene.lp); `read_in/2`, `read_ok/2`, `read_u/2`,
 %   `read_status/3` (operand.lp); `pair/2`, `eqr/3`, `crank/3`, `evaluates/2` (compare.lp);
 %   `item/1`, `holds/2` (applies.lp); `leaf/1` (constraint.lp); `instance/1`, `status/3`
 %   (duty.lp);
 %   `leaf_status/2`, `opaque_leaf/1`, `open/1`, `leaf_lit/3`, `var/1`, `world/1`, `assigned/3`,
 %   `completed/3`, `completed_item/1` (completion.lp); `verdict/2` (resolve.lp).
 % - **Provides:** nothing: integrity constraints only.
+
+% Each atom has one effect and one source rule (due2-workflows.md §3.1), so that each row of
+% explain.lp names exactly one of each. It belongs to at least one policy, and has an entry in
+% each. In the spec an atom's policies are its `root` tuples (due2-workflows.md §3.1,
+% decisions/0036); the second constraint checks only that there is one.
+:- atom(X), #count { Eff : atom_effect(X, Eff) } != 1.
+:- atom(X), not atom_policy(X, _).
+:- atom(X), #count { R : atom_rule(X, R) } != 1.
 
 % Every item has exactly one value, and only a ranked one.
 :- item(I), #count { V : holds(I, V) } != 1.

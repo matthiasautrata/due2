@@ -12,7 +12,7 @@
 % - **Provides:** `applying/2`, `permitting/2`, `violated/2`, `closed/2`, `candidate/2`,
 %   `outstanding/3`, `forbidding/2`, `has_candidate/2`, `has_forbidding/2`,
 %   `entry_eliminated/3`, `entry_kept/2`, `eliminated/2`, `deny/1`, `survives/2`,
-%   `not_within/3`, `dominated/2`, `frontier/2`, `has_outstanding/2`,
+%   `not_within/3`, `dominated/2`, `frontier/2`,
 %   `ready/1`, `pending/1`, `verdict/2`, `basis/3`.
 
 %## Candidates
@@ -165,12 +165,6 @@ subset of its own.
 *%
 frontier(W, X) :- survives(W, X), not dominated(W, X).
 
-%*! has_outstanding(W, X)
-
-The candidate `X` has an outstanding duty in world `W`.
-*%
-has_outstanding(W, X) :- outstanding(W, X, _).
-
 %## The verdict
 
 %*! ready(W)
@@ -178,7 +172,7 @@ has_outstanding(W, X) :- outstanding(W, X, _).
 World `W`'s frontier has a ready alternative: one with no outstanding duty. The empty set is a
 strict subset of every other, so then it is the only alternative of the frontier.
 *%
-ready(W) :- frontier(W, X), not has_outstanding(W, X).
+ready(W) :- frontier(W, X), not outstanding(W, X, _).
 
 %*! pending(W)
 

@@ -12,10 +12,10 @@
 % per piece of evidence `E`, in world `wit(E)`, by the rules of compare.lp. Absent evidence makes
 % `fulfilled` `f`, never `u`. Variable letters: DESIGN.md § Vocabulary.
 %
-% - **Consumes:** `context_property/2`, `closure/4`, `triple/3`, `voc/2` (lift.lp); `rank/2`
+% - **Consumes:** `triple/3` (driver); `context_property/2`, `closure/4`, `voc/2` (lift.lp); `rank/2`
 %   (kleene.lp); `duty_atom/1`, `rule/1`, `policy/1`, `atom/1`, `atom_policy/2`, `pre/2`,
 %   `obligation/1`, `bearer/2`, `duty_action/2`, `duty_relation/2`, `duty_deadline/2`,
-%   `deadline_kind/2`, `duty_scope/2`, `attester/2`, `has_attester/1` (structure.lp);
+%   `deadline_kind/2`, `duty_scope/2`, `attester/2` (structure.lp);
 %   `top_constraint/2`, `top_refinement/2`, `conn/2`, `member/2`, `leaf/1`, `node_tree/2`
 %   (constraint.lp); `left/2`, `src/2`, `prop/2` (bind.lp); `crank/3` (compare.lp); `part_of/2`, `atom_constraint/2`, `holds/2`
 %   (applies.lp); `evidence/4`, `evidence_object/2`, `evidence_issuer/2`,
@@ -26,9 +26,9 @@
 %   `has_witness/1`, `has_guard/1`, `guard/2`, `witness_cond/2`, `in_witness/1`, `rule_node/1`,
 %   `witness_only/1`, `cons_part/1`, `match_part/2`, `matched/2`, `obligation_policy/2`,
 %   `policy_match/2`, `instance/1`, `witness_pair/2`, `check_kind/1`, `effective_pos/1`,
-%   `occurred_pos/2`, `activated/1`, `activation_at/2`, `deadline_at/2`, `passed/1`,
+%   `occurred_pos/2`, `activation_at/2`, `deadline_at/2`, `passed/1`,
 %   `ev_reaches/3`, `ev_action/3`, `subject/1`, `member_bearer/3`, `member_bearer/2`,
-%   `has_member_bearer/1`, `performer/2`, `open_actor/3`, `open_actor/2`, `attested/3`, `attested/2`, `keyed/1`, `discharged/2`,
+%   `performer/2`, `open_actor/3`, `open_actor/2`, `attested/3`, `attested/2`, `keyed/1`, `discharged/2`,
 %   `status/3`; extends `evaluates/2` (compare.lp), `item/1`, `holds/2` (applies.lp),
 %   `reject/2` (structure.lp), and `unsupported/1` (lift.lp).
 
@@ -261,7 +261,7 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % | `action` | the evidence's action is the duty's, or included in it (`ev_reaches/3`) | otherwise | never: the closure is closed-world |
 % | `object` | the duty has no relation value, or the evidence's object is it | otherwise, an evidence record with no object included | never |
 % | `actor` | the actor is the performer (`performer/2`): the request subject (`subject/1`) when it is a member of a party-collection bearer (`member_bearer/2`); else the bearer; or the subject when the bearer is `none` | the actor is someone else | the request names no subject, and the bearer is `none`, or a collection the actor is a member of (`open_actor/2`, for the collection) |
-% | `attester` | the duty has no attester (`has_attester/1`, structure.lp), or the evidence's issuer is at or below one (`attested/2`) | the duty has an attester, and the evidence has no issuer or one that is not at or below it | never |
+% | `attester` | the duty has no attester (`attester/2`, structure.lp), or the evidence's issuer is at or below one (`attested/2`) | the duty has an attester, and the evidence has no issuer or one that is not at or below it | never |
 % | `discharges` | the instance is not the request's grant (`keyed/1`), or the evidence discharges the duty under the request's `reference` (`discharged/2`) | it is the request's grant, and the evidence does not | never |
 %
 % The collection rows are decisions/0018: each member bears a duty whose bearer is a party
@@ -269,7 +269,7 @@ instance(Y) :- holds(in_force(Y), V), V != f.
 % a member's act is `u`, since that member may be the subject, and a non-member's is `f`.
 %
 % The deadline is the absolute one, or the activation plus a relative one (`plus/3`). The activation
-% (`activation_at/2`) is the SOTW's record for the duty's IRI (`activated/1`), the key the case
+% (`activation_at/2`) is the SOTW's record for the duty's IRI (`activation/2`), the key the case
 % format gives an activation, or `effective_at` when the SOTW has none (due2-workflows.md §5.3). An
 % instance is the request's grant (`keyed/1`) when its scope is `grant` and the request has a
 % `reference`; without one, a `grant` duty falls back to `member`.
@@ -314,12 +314,6 @@ holds(check(Y, E, effective), u) :- witness_pair(Y, E), not effective_pos(_).
 % could not say what is missing: solve 1 declines the vector instead.
 unsupported("duty: evidence without effective_at") :- witness_pair(_, _), not effective_pos(_).
 
-%*! activated(Duty)
-
-The SOTW records an activation for `Duty`: its key is the duty's IRI.
-*%
-activated(Duty) :- activation(Duty, _).
-
 %*! activation_at(Y, Start)
 
 The instance of duty atom `Y` was first owed at the instant `Start`: the SOTW's activation for its
@@ -331,7 +325,7 @@ duty, or `effective_at` when there is none. That default is due2-workflows.md §
 activation_at(a(Duty, Term, T, Party), Start) :- duty_atom(a(Duty, Term, T, Party)),
     activation(Duty, Start).
 activation_at(a(Duty, Term, T, Party), Start) :- duty_atom(a(Duty, Term, T, Party)),
-    not activated(Duty), sotw_effective_at(Start).
+    not activation(Duty, _), sotw_effective_at(Start).
 
 %*! deadline_at(Y, N)
 
@@ -403,12 +397,6 @@ The request subject `Party` is a member of duty atom `Y`'s bearer in a data spac
 *%
 member_bearer(Y, Party) :- member_bearer(Y, Party, _).
 
-%*! has_member_bearer(Y)
-
-The request subject bears duty atom `Y` as a member of its bearer.
-*%
-has_member_bearer(Y) :- member_bearer(Y, _).
-
 %*! performer(Y, Party)
 
 `Party` is the one actor whose act can witness duty atom `Y`: the request subject when it is a
@@ -416,7 +404,7 @@ member of `Y`'s bearer, else the bearer, or the subject when the bearer is `none
 no performer has a bearer that the request leaves open (`open_actor/2`).
 *%
 performer(Y, Party) :- member_bearer(Y, Party).
-performer(Y, Party) :- bearer(Y, Party), Party != none, not has_member_bearer(Y).
+performer(Y, Party) :- bearer(Y, Party), Party != none, not member_bearer(Y, _).
 performer(Y, Party) :- bearer(Y, none), subject(Party).
 
 %*! open_actor(Y, Actor, P)
@@ -477,11 +465,11 @@ unsupported("shared node: read apart by its policies") :- node_space(Duty, P),
 % only attested evidence, so evidence with no issuer is `f`, never `u`: the SOTW states every
 % issuer it has.
 holds(check(a(Duty, Term, T, Party), E, attester), t) :- witness_pair(a(Duty, Term, T, Party), E),
-    not has_attester(Duty).
+    not attester(Duty, _).
 holds(check(a(Duty, Term, T, Party), E, attester), t) :- witness_pair(a(Duty, Term, T, Party), E),
     attested(Duty, E).
 holds(check(a(Duty, Term, T, Party), E, attester), f) :- witness_pair(a(Duty, Term, T, Party), E),
-    has_attester(Duty), not attested(Duty, E).
+    attester(Duty, _), not attested(Duty, E).
 
 %*! keyed(Y)
 
