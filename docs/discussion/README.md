@@ -8,4 +8,4 @@ Nothing here is normative. Where a discussion document and a specification disag
 
 | File | Question | Status |
 |---|---|---|
-| `evaluator-boundary.md` | What an id is, what a document is, and what crosses between two published components: minted ids, no derived id, JSON-LD as the only wire form | Proposed, 2026-10-30, for review; the plan for #172 |
+| `evaluator-boundary.md` | What an id is, what a document is, and what crosses between two published components: minted ids, no derived id, JSON-LD as the only wire form | Proposed, 2026-10-30, for review; the plan for #172, which it also amends, and the source of #174, #175 and #176 |

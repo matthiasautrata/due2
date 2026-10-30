@@ -161,10 +161,10 @@ Small, because almost everything is generated:
 | **#166** | Narrows: the wire form is JSON-LD either way, so the question is which subset of the trace a port publishes. Note that under this decision an Answer is a *view* of the trace, which makes the fork smaller, not larger. |
 | **#37** | Add: each collection states its `@id`; the harness renders to JSON-LD; one vector file shares an anonymous node (§7 above). #37 becomes the vehicle for the identity work, so it moves ahead of #167 in the order. |
 | **#170** | Move #172 from group 3 to group 1 (decide first), because it now gates #167's step 3 and the whole schema. Reason stated: the id rule is a prerequisite, not an outcome, of the slice. |
-| **New** | `open-decision`: W1's determinism as §8 law L12, with the property test that checks it. |
-| **New** | `corpus`: the case format's per-entry observables — `by_policy` in `expected.eliminated` (`decisions/0050` #10) and an activation per entry (`decisions/0050` #4). Today `sotw.activation` is one instant per duty IRI "for every entry", so 0050's semantics can change without a case moving. |
-| **New** | `work-item`: re-record `spikes/clingo-i/scorecard.json` on a clean tree. Its `revision` is `9d0e9d0+dirty`, three commits behind, and `117dfaf` changed `lp/explain.lp` after it, so README's 461/502 is pinned to a tree no commit reproduces. |
-| **#133, #165** | Unchanged. Note in each that `lineage.minted` is the record the renaming reads. |
+| **#174** (`open-decision`, filed) | W1's determinism as §8 law L12, with the property test that checks it. |
+| **#175** (`corpus`, filed) | The case format's per-entry observables — `by_policy` in `expected.eliminated` (`decisions/0050` #10) and an activation per entry (`decisions/0050` #4). Today `sotw.activation` is one instant per duty IRI "for every entry", so 0050's semantics can change without a case moving. |
+| **#176** (`work-item`, filed) | Re-record `spikes/clingo-i/scorecard.json` on a clean tree. Its `revision` is `9d0e9d0+dirty`, three commits behind, and `117dfaf` changed `lp/explain.lp` after it, so README's 461/502 is pinned to a tree no commit reproduces. |
+| **#133, #165** | Commented, not edited: `lineage.minted` is the record the renaming reads and the domain of L12's bijection, and an explicit `renamed (from, to)` relation would be decided here, because `put_corpus` is where the renaming is applied. |
 
 ---
 
