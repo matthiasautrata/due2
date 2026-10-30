@@ -131,6 +131,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `ways-of-working.md`
 
+**Changes in v0.11** (2026-10-29, #162): §12 says where the provisional picks apply: the production components, W1 first, and not the spikes or `tools/`. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.10** (2026-10-26, #23): the slow tier runs nightly and on demand (§8, §13 row 8, §14.3). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.9** (2026-10-26, `decisions/0038`, #107): §2.4 drops the canonical N-Quads term form, which no id is computed from any more, and says that a digest is a collection id. Earlier changes are in `docs/archive/changes.md`.

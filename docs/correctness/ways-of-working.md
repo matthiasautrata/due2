@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.11 (2026-10-29)
+**Status:** Draft v0.12 (2026-10-29)
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.11** (2026-10-29, #162): §12 says where the provisional picks apply: the production components, W1 first, and not the spikes or `tools/`. Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.12** (2026-10-29): §16, the working agreement: habits for design, checks, documentation, and text for other projects, each with its reason. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -426,3 +426,34 @@ What can be measured is checked, so that the rules hold without a reviewer.
 - `DESIGN.md`, the docs pages, and every Python and ASP file carry no bare `§` references.
 
 The rest is the skill's review checklist (`.claude/skills/technical-writing/`).
+
+---
+
+## 16. Working agreement **[D]**
+
+These habits apply to anyone who works on the repository, a person or an agent. The owner is the repository's maintainer, who commits to `main` (§14.3). Most of these habits are the owner's statements rather than consequences of other documents, and a citation points to where one was first applied. Each states its reason, so that a case where the reason does not apply can be argued rather than followed blindly.
+
+### 16.1 Design
+
+- **Answer from the record.** A question about why the design is as it is gets answered from the decision record (`docs/decisions/`) and the spec sections it amends, citing them. An item marked **[D]** is not reopened as if it were an open choice. A tension is raised only where two documents conflict, quoting both. Reason: a summary, or an argument from first principles, can miss what the record has settled.
+- **Authoring errors fail loudly upstream.** A policy with an error, such as two policies that describe one named node differently, is rejected at publish, and everything else carries on (`decisions/0036`, amendment; the checker is #133). Evaluation never detects, chooses between, or repairs such errors, as an interpreter does not fix the code it runs. Data is different: missing or unresolved request or SOTW data is still `U` (§5.1), because an authoring error is not data.
+- **Mint ids; do not derive them.** A new id is minted once, where its thing is created, and what it came from goes in link fields (`decisions/0038`). Before a design derives an id from content, it asks whether anything must recompute that id in a separate run; if nothing does, the id is minted. Reason: each derived id is a byte-level contract that every implementation must reproduce, and they caused faults downstream (#121, and #107, which stayed open because every new derived id needed bytes of its own).
+- **Shared nodes are the common case.** Policies routinely share permissions, duties, and constraints, such as one constraint on where data may go in many datasets' policies. The corpus case `due2-shared-nodes` shares a permission, a duty, and a constraint across two policies, and an id never includes its policy (`decisions/0036`). A component reads a shared node per entry, an atom in one of its policies (`due2-workflows.md` §3.1), and never declines sharing to stay simple. Missed channels are guarded by the locality law L11 (`due2-workflows.md` §8) and its generator (§16.2).
+- **Size mechanisms to the workload.** Governance workloads are small. Before adding machinery for time, concurrency, or scale, ask whether the problem occurs at this scale, and prefer one sentence to a mechanism: the ledger serialises writes per case rather than adding optimistic concurrency (`decisions/0008`).
+
+### 16.2 Checks
+
+- **Each check earns its place.** A new test, tier, or measurement says which risk it guards that nothing else does, and starts at its smallest useful version. Verification is not built ahead of the component that needs it: the correctness apparatus exists so that the evaluator can be built, not in place of building it. A test target is judged by whether a real ODRL or DPROD policy would contain its shape. A shape that only syntax can reach raises the question whether the admitted profile should include it at all; narrowing the profile changes decided text, so the owner decides.
+- **An isolation claim needs a law and a generator.** A claim that something cannot reach, or does not change, something else is stated as a law in `due2-workflows.md` §8 and checked by a metamorphic generator over the corpus, kept as a regression test. Reason: oracles that share the spec cannot catch a flaw in it, and cases where policies cooperate do not test non-interference. The cross-policy leak of #152 survived two point fixes (#149, #151); the L11 generator (`spikes/clingo-i/tests/test_locality.py`) then found three channels at once. When a bug class recurs, stop fixing instances and enumerate its channels.
+- **Corpus additions teach or expose.** An external source's policy enters the corpus only when it teaches something or exposes something due2 missed, and its `notes` say which. A source that adds nothing is recorded as investigated: on the "Searched and not vendored" line of `conformance/external/README.md`, with an entry in `references.md`.
+- **External semantics are inputs.** The formal semantics of RL2, DPROD Contracts, and OVAL are not taken as correct (#63). Each is reviewed before due2 relies on it, and none settles a question by itself: agreement with one is a comparison, not a proof.
+
+### 16.3 Documentation
+
+- **Cold-read the whole diff before committing.** The checklist of §15 runs over every changed sentence, and again after any break in context; its greps alone are not enough. The practice is to give a fresh agent, on a cheaper model than the author's, only the diff and the files it cites, and have it return findings with file and line, not edits. A fresh reader approximates a cold one better than the author can. The author judges each finding before applying it, and checks its citation claims, where such readers have proved least reliable. Test runs stay with the author.
+- **The result and the argument, not the history.** Reference text states what holds and why. How it was reached goes in the issue, the spike journal, or `docs/archive/`. Cite an argument instead of restating it, prefer a table to a list in prose, and before adding a paragraph, ask what it replaces. Reason: reference text had accreted changelogs, stacked notes, and history (#83).
+- **House-cleaning is welcome.** A repository-wide sweep is welcome when the docs drift, and a change that touches a document brings it up to §15. History moves to `docs/archive/` and is never deleted.
+
+### 16.4 Text for other projects
+
+- **Reports are friendly.** An issue or comment for another project, such as OVAL (#54), FORCE, or DPROD, thanks its authors, hedges ("if I read it right"), offers test policies, and suggests a fix rather than declaring a defect. It avoids internal shorthand, such as a bare "fails open". The owner signs it, and it carries no AI attribution or generated-by footer. Commits in this repository keep their trailers.
