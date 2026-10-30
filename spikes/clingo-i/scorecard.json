@@ -1,543 +1,543 @@
 {
  "machine": "Darwin arm64 · Python 3.14.9",
- "recorded_at": "2026-10-27T02:29:43Z",
- "revision": "9de9d48",
+ "recorded_at": "2026-10-29T23:43:55Z",
+ "revision": "9d0e9d0+dirty",
  "spike": "clingo-i",
  "startup_ms": [
-  82.4
+  90.2
  ],
  "tasks": {
   "interpret": {
    "items": {
     "dprod-analytics-contract/analytics distributes customer data": {
      "detail": "unsupported: recurrence",
-     "ms": 22.84,
+     "ms": 26.4,
      "status": "unsupported"
     },
     "dprod-analytics-contract/analytics reads, yesterday delivered, today still open": {
      "detail": "unsupported: recurrence",
-     "ms": 24.77,
+     "ms": 27.51,
      "status": "unsupported"
     },
     "dprod-analytics-contract/overdue usage report, the read still permitted": {
      "detail": "unsupported: recurrence",
-     "ms": 22.84,
+     "ms": 26.09,
      "status": "unsupported"
     },
     "dprod-analytics-contract/the grantor reads under its own contract": {
      "detail": "unsupported: recurrence",
-     "ms": 23.03,
+     "ms": 26.08,
      "status": "unsupported"
     },
     "dprod-audit-logs/compliance read of a two-year retention": {
-     "ms": 45.35,
+     "ms": 44.92,
      "status": "pass"
     },
     "dprod-audit-logs/compliance read of an eight-year retention": {
-     "ms": 45.21,
+     "ms": 44.35,
      "status": "pass"
     },
     "dprod-audit-logs/export the audit logs": {
-     "ms": 45.64,
+     "ms": 44.02,
      "status": "pass"
     },
     "dprod-audit-logs/read without stating the purpose": {
-     "ms": 64.22,
+     "ms": 64.25,
      "status": "pass"
     },
     "dprod-audit-logs/retention stated in days against a limit in years": {
-     "ms": 45.45,
+     "ms": 44.54,
      "status": "pass"
     },
     "dprod-compensation-access/analytics purpose is not admitted": {
-     "ms": 48.81,
+     "ms": 48.63,
      "status": "pass"
     },
     "dprod-compensation-access/compliance read stating a long retention period": {
-     "ms": 49.15,
+     "ms": 48.76,
      "status": "pass"
     },
     "dprod-compensation-access/division member reads for compliance on legitimate interest": {
-     "ms": 48.67,
+     "ms": 48.56,
      "status": "pass"
     },
     "dprod-compensation-access/purpose admitted, legal basis missing": {
-     "ms": 67.92,
+     "ms": 69.9,
      "status": "pass"
     },
     "dprod-compensation-access/purpose missing, legal basis wrong": {
-     "ms": 49.07,
+     "ms": 47.96,
      "status": "pass"
     },
     "dprod-compensation-access/requester outside the division, purpose missing": {
-     "ms": 48.29,
+     "ms": 47.84,
      "status": "pass"
     },
     "dprod-country-ref/distribute the reference table": {
-     "ms": 42.45,
+     "ms": 40.86,
      "status": "pass"
     },
     "dprod-country-ref/modify the reference table": {
-     "ms": 42.47,
+     "ms": 40.49,
      "status": "pass"
     },
     "dprod-country-ref/query the reference table": {
-     "ms": 42.62,
+     "ms": 40.48,
      "status": "pass"
     },
     "dprod-country-ref/read the reference table": {
-     "ms": 42.6,
+     "ms": 41.05,
      "status": "pass"
     },
     "dprod-customer-api-v1/display customer data": {
-     "ms": 41.66,
+     "ms": 40.07,
      "status": "pass"
     },
     "dprod-customer-api-v1/export customer data": {
-     "ms": 41.57,
+     "ms": 39.61,
      "status": "pass"
     },
     "dprod-customer-api-v1/read customer data under a retired offer": {
-     "ms": 41.51,
+     "ms": 39.45,
      "status": "pass"
     },
     "dprod-customer-api-v2/derivation without stating the type": {
      "detail": "unsupported: recurrence",
-     "ms": 22.19,
+     "ms": 26.65,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/distribute customer data": {
      "detail": "unsupported: recurrence",
-     "ms": 22.12,
+     "ms": 25.63,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/first read: one delivery owed today, not yet due": {
      "detail": "unsupported: recurrence",
-     "ms": 22.17,
+     "ms": 25.41,
      "status": "unsupported"
     },
     "dprod-customer-api-v2/third day: yesterday's delivery missed, today's window still open": {
      "detail": "unsupported: recurrence",
-     "ms": 22.54,
+     "ms": 27.53,
      "status": "unsupported"
     },
     "dprod-divergences/grantee displays": {
-     "ms": 47.39,
+     "ms": 46.19,
      "status": "pass"
     },
     "dprod-divergences/grantor derives without a retention period (error in a rule that does not apply)": {
-     "ms": 47.16,
+     "ms": 45.57,
      "status": "pass"
     },
     "dprod-divergences/grantor displays (exception 4)": {
-     "ms": 47.1,
+     "ms": 47.51,
      "status": "pass"
     },
     "dprod-divergences/grantor redistributes (exception 4, prohibition side)": {
-     "ms": 46.98,
+     "ms": 46.72,
      "status": "pass"
     },
     "dprod-divergences/non-party displays": {
-     "ms": 46.99,
+     "ms": 45.79,
      "status": "pass"
     },
     "dprod-divergences/retention given as an integer (exception 1)": {
-     "ms": 66.82,
+     "ms": 67.32,
      "status": "pass"
     },
     "dprod-divergences/retention in days against a limit in years (exception 1, duration order)": {
-     "ms": 66.87,
+     "ms": 67.27,
      "status": "pass"
     },
     "dprod-divergences/retention over a year": {
-     "ms": 48.3,
+     "ms": 46.92,
      "status": "pass"
     },
     "dprod-employee-directory/distribute the directory": {
-     "ms": 46.43,
+     "ms": 45.13,
      "status": "pass"
     },
     "dprod-employee-directory/model training on the directory": {
-     "ms": 46.28,
+     "ms": 45.21,
      "status": "pass"
     },
     "dprod-employee-directory/operational read of the directory": {
-     "ms": 46.57,
+     "ms": 44.97,
      "status": "pass"
     },
     "dprod-employee-directory/read for a purpose the policy does not admit": {
-     "ms": 46.55,
+     "ms": 44.68,
      "status": "pass"
     },
     "dprod-employee-directory/read without stating the purpose": {
-     "ms": 64.81,
+     "ms": 65.52,
      "status": "pass"
     },
     "dprod-hr-data-access/HR analytics reads a member asset of the collection": {
-     "ms": 51.46,
+     "ms": 52.21,
      "status": "pass"
     },
     "dprod-hr-data-access/HR analytics reads the collection for analytics in production": {
-     "ms": 52.05,
+     "ms": 53.02,
      "status": "pass"
     },
     "dprod-hr-data-access/audit log overdue": {
-     "ms": 52.09,
+     "ms": 52.88,
      "status": "pass"
     },
     "dprod-hr-data-access/compliance team asks for an analytics purpose": {
-     "ms": 52.04,
+     "ms": 54.03,
      "status": "pass"
     },
     "dprod-hr-data-access/development environment and processing mode not supplied": {
-     "ms": 53.37,
+     "ms": 53.58,
      "status": "pass"
     },
     "dprod-hr-data-access/environment not supplied": {
-     "ms": 73.94,
+     "ms": 73.57,
      "status": "pass"
     },
     "dprod-hr-data-access/read from a development environment": {
-     "ms": 52.64,
+     "ms": 52.04,
      "status": "pass"
     },
     "dprod-market-data-feed/display the feed": {
      "detail": "unsupported: recurrence",
-     "ms": 22.27,
+     "ms": 25.49,
      "status": "unsupported"
     },
     "dprod-market-data-feed/non-display use by an external recipient": {
      "detail": "unsupported: recurrence",
-     "ms": 22.05,
+     "ms": 25.14,
      "status": "unsupported"
     },
     "dprod-market-data-feed/non-display use by an internal recipient": {
      "detail": "unsupported: recurrence",
-     "ms": 22.04,
+     "ms": 25.59,
      "status": "unsupported"
     },
     "dprod-market-data-feed/non-display use without stating the recipient type": {
      "detail": "unsupported: recurrence",
-     "ms": 22.1,
+     "ms": 25.2,
      "status": "unsupported"
     },
     "dprod-market-data-feed/two intervals missed, the third still open": {
      "detail": "unsupported: recurrence",
-     "ms": 23.34,
+     "ms": 25.35,
      "status": "unsupported"
     },
     "dprod-multi-asset-offer/aggregate a listed asset in production": {
-     "ms": 49.06,
+     "ms": 48.32,
      "status": "pass"
     },
     "dprod-multi-asset-offer/aggregate the bundle in production": {
-     "ms": 49.03,
+     "ms": 47.9,
      "status": "pass"
     },
     "dprod-multi-asset-offer/distribute a listed asset": {
-     "ms": 48.86,
+     "ms": 49.07,
      "status": "pass"
     },
     "dprod-multi-asset-offer/read a listed asset": {
-     "ms": 49.04,
+     "ms": 48.34,
      "status": "pass"
     },
     "dprod-multi-asset-offer/read a member of a listed collection": {
-     "ms": 49.54,
+     "ms": 49.12,
      "status": "pass"
     },
     "dprod-multi-asset-offer/read after the offer's expiration date": {
-     "ms": 48.84,
+     "ms": 48.93,
      "status": "pass"
     },
     "dprod-not-negated-purpose/confidential data to an external environment": {
-     "ms": 49.43,
+     "ms": 51.52,
      "status": "pass"
     },
     "dprod-not-negated-purpose/environment missing, data public": {
-     "ms": 49.19,
+     "ms": 49.58,
      "status": "pass"
     },
     "dprod-not-negated-purpose/marketing read": {
-     "ms": 51.25,
+     "ms": 50.47,
      "status": "pass"
     },
     "dprod-not-negated-purpose/purpose missing": {
-     "ms": 68.6,
+     "ms": 72.26,
      "status": "pass"
     },
     "dprod-not-negated-purpose/research read of confidential data internally": {
-     "ms": 51.19,
+     "ms": 50.04,
      "status": "pass"
     },
     "dprod-not-negated-purpose/retention period given in the wrong type": {
-     "ms": 68.63,
+     "ms": 69.89,
      "status": "pass"
     },
     "dprod-not-negated-purpose/retention period over a year": {
-     "ms": 48.95,
+     "ms": 50.06,
      "status": "pass"
     },
     "dprod-odcs-seller-contract/a BigQuery Unica user modifies the seller data": {
      "detail": "unsupported: recurrence",
-     "ms": 38.89,
+     "ms": 49.42,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/a MicroStrategy user reads the seller data product": {
      "detail": "unsupported: recurrence",
-     "ms": 39.82,
+     "ms": 50.22,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/a party outside every role reads the product": {
      "detail": "unsupported: recurrence",
-     "ms": 37.95,
+     "ms": 50.22,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/external distribution of restricted data": {
      "detail": "unsupported: recurrence",
-     "ms": 38.34,
+     "ms": 50.14,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/use for model training": {
      "detail": "unsupported: recurrence",
-     "ms": 38.52,
+     "ms": 49.44,
      "status": "unsupported"
     },
     "dprod-odcs-seller-contract/use in a development environment": {
      "detail": "unsupported: recurrence",
-     "ms": 38.32,
+     "ms": 49.65,
      "status": "unsupported"
     },
     "dprod-quant-market-data/consumer displays while the provider is in breach of today's delivery": {
      "detail": "unsupported: recurrence",
-     "ms": 23.9,
+     "ms": 27.39,
      "status": "unsupported"
     },
     "dprod-quant-market-data/consumer files its usage report": {
      "detail": "unsupported: recurrence",
-     "ms": 23.25,
+     "ms": 27.07,
      "status": "unsupported"
     },
     "dprod-quant-market-data/consumer redistributes": {
      "detail": "unsupported: recurrence",
-     "ms": 23.67,
+     "ms": 27.38,
      "status": "unsupported"
     },
     "dprod-quant-market-data/provider asks to display under the consumer's rights": {
      "detail": "unsupported: recurrence",
-     "ms": 23.11,
+     "ms": 26.73,
      "status": "unsupported"
     },
     "dprod-quant-market-data/provider performs its delivery": {
      "detail": "unsupported: recurrence",
-     "ms": 23.42,
+     "ms": 27.08,
      "status": "unsupported"
     },
     "dprod-risk-metrics/display of non-real-time data": {
      "detail": "unsupported: recurrence",
-     "ms": 22.21,
+     "ms": 25.53,
      "status": "unsupported"
     },
     "dprod-risk-metrics/real-time display, first evaluation": {
      "detail": "unsupported: recurrence",
-     "ms": 22.06,
+     "ms": 25.36,
      "status": "unsupported"
     },
     "dprod-risk-metrics/timeliness not stated": {
      "detail": "unsupported: recurrence",
-     "ms": 21.95,
+     "ms": 25.68,
      "status": "unsupported"
     },
     "dprod-risk-metrics/two minutes missed": {
      "detail": "unsupported: recurrence",
-     "ms": 22.65,
+     "ms": 26.21,
      "status": "unsupported"
     },
     "dprod-trading-contract/analytics displays the feed, one interval missed": {
      "detail": "unsupported: recurrence",
-     "ms": 22.92,
+     "ms": 26.12,
      "status": "unsupported"
     },
     "dprod-trading-contract/analytics distributes market data externally": {
      "detail": "unsupported: recurrence",
-     "ms": 22.66,
+     "ms": 26.08,
      "status": "unsupported"
     },
     "dprod-trading-contract/analytics runs non-display analytics internally": {
      "detail": "unsupported: recurrence",
-     "ms": 22.68,
+     "ms": 26.03,
      "status": "unsupported"
     },
     "dprod-trading-contract/the grantor displays under its own contract": {
      "detail": "unsupported: recurrence",
-     "ms": 22.6,
+     "ms": 26.26,
      "status": "unsupported"
     },
     "dprod-transaction-files/June read: last month's cycle missed, this month's open": {
      "detail": "unsupported: recurrence",
-     "ms": 21.23,
+     "ms": 24.04,
      "status": "unsupported"
     },
     "dprod-transaction-files/export transaction files": {
      "detail": "unsupported: recurrence",
-     "ms": 21.09,
+     "ms": 23.71,
      "status": "unsupported"
     },
     "dprod-transaction-files/modify transaction files": {
      "detail": "unsupported: recurrence",
-     "ms": 21.06,
+     "ms": 23.58,
      "status": "unsupported"
     },
     "due2-anonymous-target/no target": {
-     "ms": 47.18,
+     "ms": 48.99,
      "status": "pass"
     },
     "due2-anonymous-target/target named": {
-     "ms": 31.61,
+     "ms": 31.21,
      "status": "pass"
     },
     "due2-concept-complement/export for direct marketing": {
-     "ms": 45.26,
+     "ms": 43.99,
      "status": "pass"
     },
     "due2-concept-complement/export for service provision": {
-     "ms": 45.04,
+     "ms": 43.64,
      "status": "pass"
     },
     "due2-concept-complement/read for a purpose in no scheme": {
-     "ms": 64.28,
+     "ms": 64.24,
      "status": "pass"
     },
     "due2-concept-complement/read for direct marketing": {
-     "ms": 45.8,
+     "ms": 43.43,
      "status": "pass"
     },
     "due2-concept-complement/read for service provision": {
-     "ms": 45.89,
+     "ms": 43.69,
      "status": "pass"
     },
     "due2-concept-purpose-prohibition/a purpose in no scheme": {
-     "ms": 61.63,
+     "ms": 62.11,
      "status": "pass"
     },
     "due2-concept-purpose-prohibition/direct marketing": {
-     "ms": 43.39,
+     "ms": 41.65,
      "status": "pass"
     },
     "due2-concept-purpose-prohibition/no purpose": {
-     "ms": 61.36,
+     "ms": 61.83,
      "status": "pass"
     },
     "due2-concept-purpose-prohibition/service provision": {
-     "ms": 43.23,
+     "ms": 41.96,
      "status": "pass"
     },
     "due2-concept-purpose/a broader edge without membership": {
-     "ms": 62.18,
+     "ms": 62.79,
      "status": "pass"
     },
     "due2-concept-purpose/a purpose in no scheme": {
-     "ms": 61.96,
+     "ms": 62.47,
      "status": "pass"
     },
     "due2-concept-purpose/a purpose written as a string": {
-     "ms": 61.87,
+     "ms": 61.8,
      "status": "pass"
     },
     "due2-concept-purpose/direct marketing, under marketing": {
-     "ms": 43.28,
+     "ms": 43.04,
      "status": "pass"
     },
     "due2-concept-purpose/edges from the SOTW": {
-     "ms": 43.55,
+     "ms": 42.02,
      "status": "pass"
     },
     "due2-concept-purpose/marketing itself": {
-     "ms": 43.39,
+     "ms": 42.96,
      "status": "pass"
     },
     "due2-concept-purpose/service provision, in the scheme with no path": {
-     "ms": 43.38,
+     "ms": 42.4,
      "status": "pass"
     },
     "due2-conditional-duties/all nine modules enabled, all fees paid": {
-     "ms": 80.47,
+     "ms": 77.72,
      "status": "pass"
     },
     "due2-conditional-duties/all nine modules enabled, nothing paid": {
-     "ms": 61.16,
+     "ms": 64.33,
      "status": "pass"
     },
     "due2-conditional-duties/all nine modules unknown, all fees paid": {
-     "ms": 80.48,
+     "ms": 78.52,
      "status": "pass"
     },
     "due2-conditional-duties/all nine modules unknown, nothing paid": {
-     "ms": 81.62,
+     "ms": 90.56,
      "status": "pass"
     },
     "due2-conditional-duties/one module enabled, eight unknown, all fees paid": {
-     "ms": 79.94,
+     "ms": 76.82,
      "status": "pass"
     },
     "due2-duty-disjunction/marketing purpose, paid 2.0 by card": {
-     "ms": 48.42,
-     "status": "pass"
-    },
-    "due2-duty-disjunction/marketing purpose, paid 6.0 by card": {
-     "ms": 48.42,
-     "status": "pass"
-    },
-    "due2-duty-disjunction/marketing purpose, paid with a voucher, no amount": {
-     "ms": 48.2,
-     "status": "pass"
-    },
-    "due2-duty-disjunction/research purpose, internal audience, no payment": {
-     "ms": 47.42,
-     "status": "pass"
-    },
-    "due2-duty-disjunction/research purpose, public audience, no payment": {
      "ms": 47.86,
      "status": "pass"
     },
+    "due2-duty-disjunction/marketing purpose, paid 6.0 by card": {
+     "ms": 47.71,
+     "status": "pass"
+    },
+    "due2-duty-disjunction/marketing purpose, paid with a voucher, no amount": {
+     "ms": 47.41,
+     "status": "pass"
+    },
+    "due2-duty-disjunction/research purpose, internal audience, no payment": {
+     "ms": 47.08,
+     "status": "pass"
+    },
+    "due2-duty-disjunction/research purpose, public audience, no payment": {
+     "ms": 46.96,
+     "status": "pass"
+    },
     "due2-fact-sources/no value: invalid before missing": {
-     "ms": 61.27,
+     "ms": 60.89,
      "status": "pass"
     },
     "due2-fact-sources/no value: unresolved before missing": {
-     "ms": 61.15,
+     "ms": 60.86,
      "status": "pass"
     },
     "due2-fact-sources/one source resolves, one does not": {
-     "ms": 42.9,
+     "ms": 41.97,
      "status": "pass"
     },
     "due2-fact-sources/two sources agree": {
-     "ms": 42.99,
+     "ms": 40.52,
      "status": "pass"
     },
     "due2-fact-sources/two sources disagree": {
-     "ms": 60.74,
+     "ms": 60.44,
      "status": "pass"
     },
     "due2-frontier-complete/nothing is unknown: both routes are listed": {
      "detail": "not emitted: frontier_complete",
-     "ms": 47.22,
+     "ms": 45.34,
      "status": "unsupported"
     },
     "due2-frontier-complete/the region is unknown: a completion adds a route": {
      "detail": "not emitted: frontier_complete",
-     "ms": 47.07,
+     "ms": 45.01,
      "status": "unsupported"
     },
     "due2-frontier-complete/the tier is unknown: the added route is always dominated": {
      "detail": "not emitted: frontier_complete",
-     "ms": 46.65,
+     "ms": 45.14,
      "status": "unsupported"
     },
     "due2-frontier-vars-bound/eight flags unknown: at the bound": {
      "detail": "not emitted: frontier_complete",
-     "ms": 62.1,
+     "ms": 62.99,
      "status": "unsupported"
     },
     "due2-frontier-vars-bound/nine flags unknown: beyond the bound": {
@@ -546,91 +546,91 @@
      "status": "unsupported"
     },
     "due2-grant-signers/payment attested by a branch of the bank": {
-     "ms": 33.28,
+     "ms": 33.91,
      "status": "pass"
     },
     "due2-grant-signers/payment discharges this download": {
-     "ms": 33.0,
+     "ms": 33.33,
      "status": "pass"
     },
     "due2-grant-signers/payment with no issuer": {
-     "ms": 33.26,
+     "ms": 32.79,
      "status": "pass"
     },
     "due2-grant-signers/request without a reference falls back to member scope": {
-     "ms": 32.98,
+     "ms": 33.11,
      "status": "pass"
     },
     "due2-grant-signers/self-attested payment": {
-     "ms": 33.17,
+     "ms": 33.63,
      "status": "pass"
     },
     "due2-grant-signers/the same payment, a second download": {
-     "ms": 33.03,
+     "ms": 32.91,
      "status": "pass"
     },
     "due2-grant-two-targets/both fees paid": {
-     "ms": 33.52,
+     "ms": 33.3,
      "status": "pass"
     },
     "due2-grant-two-targets/licence fee paid, data fee not": {
-     "ms": 33.48,
+     "ms": 33.14,
      "status": "pass"
     },
     "due2-incomparable-frontier/approval by the wrong party": {
-     "ms": 35.74,
+     "ms": 35.51,
      "status": "pass"
     },
     "due2-incomparable-frontier/manager has approved": {
-     "ms": 35.44,
+     "ms": 35.08,
      "status": "pass"
     },
     "due2-incomparable-frontier/nothing done yet": {
-     "ms": 34.97,
+     "ms": 35.31,
      "status": "pass"
     },
     "due2-list-part-and-class/list: hasPart, the package holds both parts": {
-     "ms": 48.27,
+     "ms": 47.52,
      "status": "pass"
     },
     "due2-list-part-and-class/list: hasPart, the package is not given": {
-     "ms": 66.57,
+     "ms": 67.95,
      "status": "pass"
     },
     "due2-list-part-and-class/list: hasPart, the package lacks the HR summary": {
-     "ms": 47.79,
+     "ms": 48.34,
      "status": "pass"
     },
     "due2-list-part-and-class/list: isA, an analyst only": {
-     "ms": 48.77,
+     "ms": 49.6,
      "status": "pass"
     },
     "due2-list-part-and-class/list: isA, an audit analyst": {
-     "ms": 48.33,
+     "ms": 51.45,
      "status": "pass"
     },
     "due2-list-part-and-class/list: isA, the role is unresolved": {
-     "ms": 66.94,
+     "ms": 68.01,
      "status": "pass"
     },
     "due2-list-part-and-class/repeated values: hasPart, the package holds both parts": {
-     "ms": 49.49,
+     "ms": 47.47,
      "status": "pass"
     },
     "due2-list-part-and-class/repeated values: hasPart, the package lacks the HR summary": {
-     "ms": 48.76,
+     "ms": 47.54,
      "status": "pass"
     },
     "due2-list-part-and-class/repeated values: isA, an analyst only": {
-     "ms": 48.0,
+     "ms": 47.7,
      "status": "pass"
     },
     "due2-list-part-and-class/repeated values: isA, an audit analyst": {
-     "ms": 48.23,
+     "ms": 47.85,
      "status": "pass"
     },
     "due2-max-mixed/all flags true, no approval": {
-     "ms": 64.54,
+     "ms": 66.64,
      "status": "pass"
     },
     "due2-max-mixed/all nine flags unknown (k = 9, beyond the bound)": {
@@ -639,367 +639,435 @@
      "status": "unsupported"
     },
     "due2-max-mixed/flag 1 true, eight unknown (k = 8, at the bound)": {
-     "ms": 63.51,
+     "ms": 67.2,
      "status": "pass"
     },
     "due2-max-mixed/flag 1 true, the rest false": {
-     "ms": 64.3,
+     "ms": 67.41,
      "status": "pass"
     },
     "due2-nested-unknowns/and of or: resolution 600, media and system unknown": {
-     "ms": 81.01,
+     "ms": 86.77,
      "status": "pass"
     },
     "due2-nested-unknowns/not of or: resolution 600, media and system unknown": {
-     "ms": 80.87,
+     "ms": 86.12,
      "status": "pass"
     },
     "due2-nested-unknowns/or of and: resolution 600, media and system unknown": {
-     "ms": 80.1,
+     "ms": 86.28,
      "status": "pass"
     },
     "due2-nested-unknowns/xone: poster, resolution unknown": {
-     "ms": 80.45,
+     "ms": 86.37,
      "status": "pass"
     },
     "due2-or-unknown/both fail": {
-     "ms": 45.18,
+     "ms": 43.81,
      "status": "pass"
     },
     "due2-or-unknown/both missing": {
-     "ms": 62.79,
+     "ms": 63.27,
      "status": "pass"
     },
     "due2-or-unknown/clearance fails, membership unknown": {
-     "ms": 63.82,
+     "ms": 63.31,
      "status": "pass"
     },
     "due2-or-unknown/clearance suffices, membership unknown": {
-     "ms": 45.02,
+     "ms": 43.38,
      "status": "pass"
     },
     "due2-or-unknown/membership suffices, clearance invalid": {
-     "ms": 44.92,
+     "ms": 43.51,
+     "status": "pass"
+    },
+    "due2-policy-locality/membership recorded in the world reaches both policies": {
+     "ms": 59.28,
+     "status": "pass"
+    },
+    "due2-policy-locality/the partner's action edge does not reach the offer": {
+     "ms": 59.87,
+     "status": "pass"
+    },
+    "due2-policy-locality/the partner's membership edge does not reach the offer": {
+     "ms": 59.1,
+     "status": "pass"
+    },
+    "due2-policy-locality/the partner's own edges widen its own permission": {
+     "ms": 59.46,
+     "status": "pass"
+    },
+    "due2-policy-refinement-locality/no purpose": {
+     "ms": 80.59,
+     "status": "pass"
+    },
+    "due2-policy-refinement-locality/research is below research in the offer's scheme": {
+     "ms": 62.4,
+     "status": "pass"
+    },
+    "due2-policy-refinement-locality/the partner's edge does not reach the offer's refinement": {
+     "ms": 62.57,
+     "status": "pass"
+    },
+    "due2-policy-refinement-locality/the partner's edge widens its own refinement": {
+     "ms": 62.86,
      "status": "pass"
     },
     "due2-prohibit-overrides/an embargoed report: prohibit-overrides across policies": {
-     "ms": 45.26,
+     "ms": 77.32,
      "status": "pass"
     },
     "due2-prohibit-overrides/an internal report: the licence's own strategy decides": {
-     "ms": 44.94,
+     "ms": 76.12,
      "status": "pass"
     },
     "due2-prohibit-overrides/an internal, embargoed report: both rules apply": {
-     "ms": 44.96,
+     "ms": 77.55,
      "status": "pass"
     },
     "due2-prohibit-overrides/the report's status is unknown": {
-     "ms": 64.88,
+     "ms": 96.41,
      "status": "pass"
     },
     "due2-rebound-pay-amount/amount not a number": {
-     "ms": 60.63,
+     "ms": 63.37,
      "status": "pass"
     },
     "due2-rebound-pay-amount/amount over the limit": {
-     "ms": 42.77,
+     "ms": 40.39,
      "status": "pass"
     },
     "due2-rebound-pay-amount/amount within the limit": {
-     "ms": 42.6,
+     "ms": 40.34,
      "status": "pass"
     },
     "due2-reevaluation-moves-at/asked 1 March, not paid": {
-     "ms": 32.8,
+     "ms": 33.86,
      "status": "pass"
     },
     "due2-reevaluation-moves-at/asked 1 March, paid 15 February": {
-     "ms": 33.31,
+     "ms": 33.73,
      "status": "pass"
     },
     "due2-reevaluation-moves-at/re-evaluated 20 April, paid 15 April": {
-     "ms": 33.26,
+     "ms": 33.61,
      "status": "pass"
     },
     "due2-reevaluation-moves-at/stale request: at 1 March, evaluated 20 April, paid 15 April": {
-     "ms": 34.97,
+     "ms": 33.72,
      "status": "pass"
     },
     "due2-refined-action-skolem/print in April": {
-     "ms": 33.01,
+     "ms": 32.9,
      "status": "pass"
     },
     "due2-refined-action-skolem/print in March": {
-     "ms": 34.19,
-     "status": "pass"
-    },
-    "due2-repeated-right-operand/list: region in the set": {
-     "ms": 44.56,
-     "status": "pass"
-    },
-    "due2-repeated-right-operand/list: region outside the set": {
-     "ms": 44.58,
-     "status": "pass"
-    },
-    "due2-repeated-right-operand/list: region unknown": {
-     "ms": 62.49,
-     "status": "pass"
-    },
-    "due2-repeated-right-operand/repeated values: region in the set": {
-     "ms": 46.14,
-     "status": "pass"
-    },
-    "due2-repeated-right-operand/repeated values: region outside the set": {
-     "ms": 46.47,
-     "status": "pass"
-    },
-    "due2-repeated-right-operand/repeated values: region unknown": {
-     "ms": 62.91,
-     "status": "pass"
-    },
-    "due2-shared-reads/both named": {
-     "ms": 32.03,
-     "status": "pass"
-    },
-    "due2-shared-reads/no assignee": {
-     "ms": 48.45,
-     "status": "pass"
-    },
-    "due2-shared-reads/no target": {
-     "ms": 48.2,
-     "status": "pass"
-    },
-    "due2-units/copy 120 MB": {
-     "ms": 46.04,
-     "status": "pass"
-    },
-    "due2-units/copy 80 MB": {
-     "ms": 45.8,
-     "status": "pass"
-    },
-    "due2-units/share 40 MB": {
-     "ms": 45.95,
-     "status": "pass"
-    },
-    "due2-units/show 12 hours": {
-     "ms": 64.55,
-     "status": "pass"
-    },
-    "due2-units/show 4 hours": {
-     "ms": 64.42,
-     "status": "pass"
-    },
-    "due2-unknown-fulfilment-deadline/asked after the deadline": {
-     "ms": 63.56,
-     "status": "pass"
-    },
-    "due2-unknown-fulfilment-deadline/asked before the deadline": {
-     "ms": 62.75,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x has no fact": {
-     "ms": 43.78,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x has two values": {
-     "ms": 62.79,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x is 3": {
-     "ms": 45.78,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x is a string": {
-     "ms": 63.02,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x is an IRI": {
-     "ms": 64.27,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x missing": {
-     "ms": 62.64,
-     "status": "pass"
-    },
-    "due2-unresolved-or-missing/x unresolved": {
-     "ms": 45.54,
-     "status": "pass"
-    },
-    "due2-violated-precondition-beside-permission/attestation missed, another purpose": {
-     "ms": 44.68,
-     "status": "pass"
-    },
-    "due2-violated-precondition-beside-permission/attestation missed, audit purpose": {
-     "ms": 44.63,
-     "status": "pass"
-    },
-    "due2-violated-precondition-beside-permission/attested in time, another purpose": {
-     "ms": 45.13,
-     "status": "pass"
-    },
-    "due2-void-keeps-obligation/marketing purpose, copy deleted in time": {
-     "ms": 44.05,
-     "status": "pass"
-    },
-    "due2-void-keeps-obligation/marketing purpose, copy not deleted": {
-     "ms": 44.0,
-     "status": "pass"
-    },
-    "due2-void-keeps-obligation/research purpose, copy not deleted": {
-     "ms": 43.86,
-     "status": "pass"
-    },
-    "due2-xone-unknown/EU only": {
-     "ms": 47.82,
-     "status": "pass"
-    },
-    "due2-xone-unknown/EU-domiciled, US domicile unknown, attestation on file": {
-     "ms": 48.02,
-     "status": "pass"
-    },
-    "due2-xone-unknown/EU-domiciled, US domicile unknown, no attestation": {
-     "ms": 67.68,
-     "status": "pass"
-    },
-    "due2-xone-unknown/both domiciles unknown, attestation on file": {
-     "ms": 67.44,
-     "status": "pass"
-    },
-    "due2-xone-unknown/dual-domiciled, no attestation": {
-     "ms": 48.01,
-     "status": "pass"
-    },
-    "due2-xone-unknown/neither domicile": {
-     "ms": 47.86,
-     "status": "pass"
-    },
-    "force-08/testcase-026-alice-read-x (temporal)": {
-     "ms": 31.66,
-     "status": "pass"
-    },
-    "force-08/testcase-027-alice-write-x (temporal)": {
-     "ms": 31.89,
-     "status": "pass"
-    },
-    "force-08/testcase-028-alice-read-y (temporal)": {
-     "ms": 31.85,
-     "status": "pass"
-    },
-    "force-08/testcase-029-bob-write-y (temporal)": {
-     "ms": 31.77,
-     "status": "pass"
-    },
-    "force-09/testcase-030-alice-read-x (temporal)": {
-     "ms": 32.71,
-     "status": "pass"
-    },
-    "force-09/testcase-031-alice-read-x-past (temporal-past)": {
-     "ms": 32.83,
-     "status": "pass"
-    },
-    "force-09/testcase-032-alice-read-x-future (temporal-future)": {
-     "ms": 32.58,
-     "status": "pass"
-    },
-    "force-10/testcase-033-alice-read-x (temporal)": {
-     "ms": 32.83,
-     "status": "pass"
-    },
-    "force-10/testcase-034-alice-read-x-past (temporal-past)": {
-     "ms": 32.85,
-     "status": "pass"
-    },
-    "force-10/testcase-035-alice-read-x-future (temporal-future)": {
-     "ms": 32.76,
-     "status": "pass"
-    },
-    "force-11/testcase-036-alice-read-x (temporal-future)": {
-     "ms": 33.0,
-     "status": "pass"
-    },
-    "force-11/testcase-037-alice-read-x-past (temporal-past)": {
-     "ms": 33.08,
-     "status": "pass"
-    },
-    "force-11/testcase-038-alice-read-x-future (temporal-future)": {
-     "ms": 32.88,
-     "status": "pass"
-    },
-    "force-12/testcase-039-alice-read-x (temporal)": {
-     "ms": 32.75,
-     "status": "pass"
-    },
-    "force-12/testcase-040-alice-read-x-past (temporal-past)": {
-     "ms": 32.96,
-     "status": "pass"
-    },
-    "force-12/testcase-041-alice-read-x-future (temporal-future)": {
-     "ms": 33.15,
-     "status": "pass"
-    },
-    "force-13/testcase-042-alice-read-x (temporal)": {
-     "ms": 33.0,
-     "status": "pass"
-    },
-    "force-13/testcase-043-alice-read-x-past (temporal-past)": {
-     "ms": 33.14,
-     "status": "pass"
-    },
-    "force-13/testcase-044-alice-read-x-future (temporal-future)": {
-     "ms": 32.97,
-     "status": "pass"
-    },
-    "force-14/testcase-045-alice-read-x (temporal)": {
-     "ms": 33.35,
-     "status": "pass"
-    },
-    "force-14/testcase-046-alice-read-x-past (temporal-past)": {
-     "ms": 33.04,
-     "status": "pass"
-    },
-    "force-14/testcase-047-alice-read-x-future (temporal-future)": {
-     "ms": 33.07,
-     "status": "pass"
-    },
-    "force-15/testcase-048-alice-read-x (temporal)": {
-     "ms": 33.87,
-     "status": "pass"
-    },
-    "force-15/testcase-049-alice-read-x-past (temporal-past)": {
-     "ms": 33.91,
-     "status": "pass"
-    },
-    "force-15/testcase-050-alice-read-x-future (temporal-future)": {
      "ms": 33.92,
      "status": "pass"
     },
-    "force-16/testcase-051-alice (partyMembership)": {
-     "ms": 32.21,
+    "due2-repeated-right-operand/list: region in the set": {
+     "ms": 42.6,
      "status": "pass"
     },
-    "force-16/testcase-052-bob-read-x (partyMembership)": {
+    "due2-repeated-right-operand/list: region outside the set": {
+     "ms": 43.25,
+     "status": "pass"
+    },
+    "due2-repeated-right-operand/list: region unknown": {
+     "ms": 65.51,
+     "status": "pass"
+    },
+    "due2-repeated-right-operand/repeated values: region in the set": {
+     "ms": 44.2,
+     "status": "pass"
+    },
+    "due2-repeated-right-operand/repeated values: region outside the set": {
+     "ms": 43.34,
+     "status": "pass"
+    },
+    "due2-repeated-right-operand/repeated values: region unknown": {
+     "ms": 62.38,
+     "status": "pass"
+    },
+    "due2-shared-nodes/a permission both policies state": {
+     "ms": 77.44,
+     "status": "pass"
+    },
+    "due2-shared-nodes/a policy's action edge reaches only its own entry": {
+     "ms": 77.3,
+     "status": "pass"
+    },
+    "due2-shared-nodes/a sign-off witnesses the duty only where it is an approval": {
+     "ms": 79.16,
+     "status": "pass"
+    },
+    "due2-shared-nodes/no approval yet": {
+     "ms": 77.47,
+     "status": "pass"
+    },
+    "due2-shared-nodes/one approval serves dataset A": {
+     "ms": 78.99,
+     "status": "pass"
+    },
+    "due2-shared-nodes/the same approval serves dataset B": {
+     "ms": 78.74,
+     "status": "pass"
+    },
+    "due2-shared-nodes/the shared constraint fails inside the EU": {
+     "ms": 79.21,
+     "status": "pass"
+    },
+    "due2-shared-nodes/the shared constraint is unknown without a region": {
+     "ms": 100.3,
+     "status": "pass"
+    },
+    "due2-shared-nodes/the sign-off does not reach the other policy": {
+     "ms": 78.94,
+     "status": "pass"
+    },
+    "due2-shared-reads/both named": {
+     "ms": 32.3,
+     "status": "pass"
+    },
+    "due2-shared-reads/no assignee": {
+     "ms": 49.55,
+     "status": "pass"
+    },
+    "due2-shared-reads/no target": {
+     "ms": 50.3,
+     "status": "pass"
+    },
+    "due2-units/copy 120 MB": {
+     "ms": 45.23,
+     "status": "pass"
+    },
+    "due2-units/copy 80 MB": {
+     "ms": 44.88,
+     "status": "pass"
+    },
+    "due2-units/share 40 MB": {
+     "ms": 44.48,
+     "status": "pass"
+    },
+    "due2-units/show 12 hours": {
+     "ms": 65.4,
+     "status": "pass"
+    },
+    "due2-units/show 4 hours": {
+     "ms": 64.14,
+     "status": "pass"
+    },
+    "due2-unknown-fulfilment-deadline/asked after the deadline": {
+     "ms": 62.16,
+     "status": "pass"
+    },
+    "due2-unknown-fulfilment-deadline/asked before the deadline": {
+     "ms": 62.35,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x has no fact": {
+     "ms": 42.16,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x has two values": {
+     "ms": 62.62,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x is 3": {
+     "ms": 42.44,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x is a string": {
+     "ms": 62.71,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x is an IRI": {
+     "ms": 62.67,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x missing": {
+     "ms": 62.59,
+     "status": "pass"
+    },
+    "due2-unresolved-or-missing/x unresolved": {
+     "ms": 42.79,
+     "status": "pass"
+    },
+    "due2-violated-precondition-beside-permission/attestation missed, another purpose": {
+     "ms": 43.3,
+     "status": "pass"
+    },
+    "due2-violated-precondition-beside-permission/attestation missed, audit purpose": {
+     "ms": 43.19,
+     "status": "pass"
+    },
+    "due2-violated-precondition-beside-permission/attested in time, another purpose": {
+     "ms": 43.11,
+     "status": "pass"
+    },
+    "due2-void-keeps-obligation/marketing purpose, copy deleted in time": {
+     "ms": 42.76,
+     "status": "pass"
+    },
+    "due2-void-keeps-obligation/marketing purpose, copy not deleted": {
+     "ms": 42.22,
+     "status": "pass"
+    },
+    "due2-void-keeps-obligation/research purpose, copy not deleted": {
+     "ms": 42.88,
+     "status": "pass"
+    },
+    "due2-xone-unknown/EU only": {
+     "ms": 47.03,
+     "status": "pass"
+    },
+    "due2-xone-unknown/EU-domiciled, US domicile unknown, attestation on file": {
+     "ms": 47.89,
+     "status": "pass"
+    },
+    "due2-xone-unknown/EU-domiciled, US domicile unknown, no attestation": {
+     "ms": 69.16,
+     "status": "pass"
+    },
+    "due2-xone-unknown/both domiciles unknown, attestation on file": {
+     "ms": 69.02,
+     "status": "pass"
+    },
+    "due2-xone-unknown/dual-domiciled, no attestation": {
+     "ms": 47.13,
+     "status": "pass"
+    },
+    "due2-xone-unknown/neither domicile": {
+     "ms": 46.97,
+     "status": "pass"
+    },
+    "force-08/testcase-026-alice-read-x (temporal)": {
      "ms": 31.89,
      "status": "pass"
     },
+    "force-08/testcase-027-alice-write-x (temporal)": {
+     "ms": 31.8,
+     "status": "pass"
+    },
+    "force-08/testcase-028-alice-read-y (temporal)": {
+     "ms": 32.25,
+     "status": "pass"
+    },
+    "force-08/testcase-029-bob-write-y (temporal)": {
+     "ms": 32.03,
+     "status": "pass"
+    },
+    "force-09/testcase-030-alice-read-x (temporal)": {
+     "ms": 33.18,
+     "status": "pass"
+    },
+    "force-09/testcase-031-alice-read-x-past (temporal-past)": {
+     "ms": 33.42,
+     "status": "pass"
+    },
+    "force-09/testcase-032-alice-read-x-future (temporal-future)": {
+     "ms": 33.31,
+     "status": "pass"
+    },
+    "force-10/testcase-033-alice-read-x (temporal)": {
+     "ms": 33.1,
+     "status": "pass"
+    },
+    "force-10/testcase-034-alice-read-x-past (temporal-past)": {
+     "ms": 33.12,
+     "status": "pass"
+    },
+    "force-10/testcase-035-alice-read-x-future (temporal-future)": {
+     "ms": 33.33,
+     "status": "pass"
+    },
+    "force-11/testcase-036-alice-read-x (temporal-future)": {
+     "ms": 32.96,
+     "status": "pass"
+    },
+    "force-11/testcase-037-alice-read-x-past (temporal-past)": {
+     "ms": 33.25,
+     "status": "pass"
+    },
+    "force-11/testcase-038-alice-read-x-future (temporal-future)": {
+     "ms": 33.08,
+     "status": "pass"
+    },
+    "force-12/testcase-039-alice-read-x (temporal)": {
+     "ms": 32.65,
+     "status": "pass"
+    },
+    "force-12/testcase-040-alice-read-x-past (temporal-past)": {
+     "ms": 33.21,
+     "status": "pass"
+    },
+    "force-12/testcase-041-alice-read-x-future (temporal-future)": {
+     "ms": 33.41,
+     "status": "pass"
+    },
+    "force-13/testcase-042-alice-read-x (temporal)": {
+     "ms": 32.71,
+     "status": "pass"
+    },
+    "force-13/testcase-043-alice-read-x-past (temporal-past)": {
+     "ms": 32.95,
+     "status": "pass"
+    },
+    "force-13/testcase-044-alice-read-x-future (temporal-future)": {
+     "ms": 33.22,
+     "status": "pass"
+    },
+    "force-14/testcase-045-alice-read-x (temporal)": {
+     "ms": 33.64,
+     "status": "pass"
+    },
+    "force-14/testcase-046-alice-read-x-past (temporal-past)": {
+     "ms": 33.19,
+     "status": "pass"
+    },
+    "force-14/testcase-047-alice-read-x-future (temporal-future)": {
+     "ms": 33.45,
+     "status": "pass"
+    },
+    "force-15/testcase-048-alice-read-x (temporal)": {
+     "ms": 34.54,
+     "status": "pass"
+    },
+    "force-15/testcase-049-alice-read-x-past (temporal-past)": {
+     "ms": 34.52,
+     "status": "pass"
+    },
+    "force-15/testcase-050-alice-read-x-future (temporal-future)": {
+     "ms": 34.59,
+     "status": "pass"
+    },
+    "force-16/testcase-051-alice (partyMembership)": {
+     "ms": 32.18,
+     "status": "pass"
+    },
+    "force-16/testcase-052-bob-read-x (partyMembership)": {
+     "ms": 32.52,
+     "status": "pass"
+    },
     "force-17/testcase-053-alice-read-x (assetMembership)": {
-     "ms": 32.06,
+     "ms": 32.46,
      "status": "pass"
     },
     "force-17/testcase-054-alice-read-y (assetMembership)": {
-     "ms": 32.15,
+     "ms": 32.06,
      "status": "pass"
     },
     "force-18/testcase-055-alice-read-x (bothMembership)": {
-     "ms": 32.47,
+     "ms": 33.2,
      "status": "pass"
     },
     "force-18/testcase-056-alice-read-y (bothMembership)": {
-     "ms": 32.39,
+     "ms": 32.48,
      "status": "pass"
     },
     "force-18/testcase-057-bob-read-x (bothMembership)": {
-     "ms": 32.31,
+     "ms": 32.92,
      "status": "pass"
     },
     "force-18/testcase-058-bob-write-y (bothMembership)": {
@@ -1007,1001 +1075,1001 @@
      "status": "pass"
     },
     "force-19/testcase-059-nonset (dutyNonset)": {
-     "ms": 32.34,
+     "ms": 32.87,
      "status": "pass"
     },
     "force-19/testcase-060-fulfilled (dutyFulfilled)": {
-     "ms": 32.69,
-     "status": "pass"
-    },
-    "force-19/testcase-061-violated (dutyViolated)": {
-     "ms": 32.13,
-     "status": "pass"
-    },
-    "force-20/testcase-062-big-policy (temporal)": {
-     "ms": 476.37,
-     "status": "pass"
-    },
-    "force-20/testcase-063-big-policy-OoO (out-of-office)": {
-     "ms": 479.34,
-     "status": "pass"
-    },
-    "force-20/testcase-064-big-policy-past (temporal-past)": {
-     "ms": 480.25,
-     "status": "pass"
-    },
-    "force-21/testcase-065-alice (all-2024)": {
-     "ms": 35.07,
-     "status": "pass"
-    },
-    "force-21/testcase-066-bob-sell (all-2024)": {
-     "ms": 34.94,
-     "status": "pass"
-    },
-    "force-21/testcase-067-alice-past (all-2023)": {
-     "ms": 34.95,
-     "status": "pass"
-    },
-    "force-21/testcase-068-bob-write-y-past (all-2023)": {
-     "ms": 34.55,
-     "status": "pass"
-    },
-    "oval-action-hierarchy/play under a permission on use (includedIn1)": {
-     "ms": 32.41,
-     "status": "pass"
-    },
-    "oval-action-hierarchy/sell under a permission on use (includedIn3)": {
-     "ms": 31.64,
-     "status": "pass"
-    },
-    "oval-action-hierarchy/use under a permission on play (includedIn2)": {
-     "ms": 32.07,
-     "status": "pass"
-    },
-    "oval-conflict-invalid/Alice uses the movie (added)": {
-     "ms": 32.41,
-     "status": "pass"
-    },
-    "oval-conflict-invalid/Bob uses the movie (OVAL request)": {
-     "ms": 32.38,
-     "status": "pass"
-    },
-    "oval-conflict-perm/Alice uses the movie (added)": {
-     "ms": 32.28,
-     "status": "pass"
-    },
-    "oval-conflict-perm/Bob uses the movie (OVAL request)": {
-     "ms": 32.25,
-     "status": "pass"
-    },
-    "oval-conflict-prohibit/Alice uses the movie (added)": {
-     "ms": 32.44,
-     "status": "pass"
-    },
-    "oval-conflict-prohibit/Bob uses the movie (OVAL request)": {
-     "ms": 32.77,
-     "status": "pass"
-    },
-    "oval-duty-payment/no payment (added)": {
-     "ms": 43.71,
-     "status": "pass"
-    },
-    "oval-duty-payment/paid 2 EUR (duty2, duty3)": {
-     "ms": 63.13,
-     "status": "pass"
-    },
-    "oval-duty-payment/paid 6.1 EUR before the request (duty1)": {
-     "ms": 63.01,
-     "status": "pass"
-    },
-    "oval-list-right-operand/one listed and one unlisted page (listRightOperand3)": {
-     "ms": 44.36,
-     "status": "pass"
-    },
-    "oval-list-right-operand/one listed page (listRightOperand1)": {
-     "ms": 44.73,
-     "status": "pass"
-    },
-    "oval-list-right-operand/one unlisted page (listRightOperand4)": {
-     "ms": 43.98,
-     "status": "pass"
-    },
-    "oval-list-right-operand/two listed pages (listRightOperand2)": {
-     "ms": 44.26,
-     "status": "pass"
-    },
-    "oval-no-target-permission/no target (default_sem1-3)": {
-     "ms": 47.54,
-     "status": "pass"
-    },
-    "oval-no-target-permission/target named (permission1-3)": {
-     "ms": 31.55,
-     "status": "pass"
-    },
-    "oval-no-target-prohibition/no target (default_sem4-6)": {
-     "ms": 47.33,
-     "status": "pass"
-    },
-    "oval-no-target-prohibition/target named (prohibition1-3)": {
-     "ms": 31.58,
-     "status": "pass"
-    },
-    "oval-party-collection/a member requests (partOf2)": {
-     "ms": 32.93,
-     "status": "pass"
-    },
-    "oval-party-collection/a non-member requests (partOf3)": {
-     "ms": 32.95,
-     "status": "pass"
-    },
-    "oval-party-collection/the collection itself requests (partOf1)": {
-     "ms": 32.55,
-     "status": "pass"
-    },
-    "rl2-anonymization-required/approved anonymization assessment": {
-     "ms": 43.85,
-     "status": "pass"
-    },
-    "rl2-anonymization-required/assessment missing": {
-     "ms": 62.94,
-     "status": "pass"
-    },
-    "rl2-anonymization-required/assessments disagree": {
-     "ms": 62.15,
-     "status": "pass"
-    },
-    "rl2-asset-collection-access/asset outside the collection": {
-     "ms": 32.64,
-     "status": "pass"
-    },
-    "rl2-asset-collection-access/direct member Demographics": {
-     "ms": 32.82,
-     "status": "pass"
-    },
-    "rl2-asset-collection-access/direct member Outcomes": {
-     "ms": 32.4,
-     "status": "pass"
-    },
-    "rl2-asset-collection-access/member of a nested collection": {
-     "ms": 32.63,
-     "status": "pass"
-    },
-    "rl2-attestation-gating/attest request, attestation fulfilled": {
-     "ms": 45.03,
-     "status": "pass"
-    },
-    "rl2-attestation-gating/attested before the window opened": {
-     "ms": 45.68,
-     "status": "pass"
-    },
-    "rl2-attestation-gating/attested inside the window": {
-     "ms": 45.5,
-     "status": "pass"
-    },
-    "rl2-attestation-gating/before the window opens": {
-     "ms": 44.58,
-     "status": "pass"
-    },
-    "rl2-attestation-gating/inside the window, not yet attested": {
-     "ms": 44.57,
-     "status": "pass"
-    },
-    "rl2-attestation-gating/window closed without attestation": {
-     "ms": 44.94,
-     "status": "pass"
-    },
-    "rl2-audit-trail/audit record created": {
-     "ms": 32.9,
-     "status": "pass"
-    },
-    "rl2-audit-trail/no audit record yet": {
      "ms": 33.04,
      "status": "pass"
     },
-    "rl2-audit-trail/record logged after the decision instant": {
-     "ms": 34.62,
+    "force-19/testcase-061-violated (dutyViolated)": {
+     "ms": 32.36,
      "status": "pass"
     },
-    "rl2-audit-trail/record written by someone else": {
-     "ms": 34.03,
+    "force-20/testcase-062-big-policy (temporal)": {
+     "ms": 2273.27,
      "status": "pass"
     },
-    "rl2-break-glass/break-glass active for the requester": {
-     "ms": 45.48,
+    "force-20/testcase-063-big-policy-OoO (out-of-office)": {
+     "ms": 2254.47,
      "status": "pass"
     },
-    "rl2-break-glass/break-glass not active": {
-     "ms": 44.75,
+    "force-20/testcase-064-big-policy-past (temporal-past)": {
+     "ms": 2322.09,
      "status": "pass"
     },
-    "rl2-break-glass/only another agent has activated break-glass": {
-     "ms": 64.0,
+    "force-21/testcase-065-alice (all-2024)": {
+     "ms": 36.34,
      "status": "pass"
     },
-    "rl2-check-signing-sod/Alice asks to sign": {
+    "force-21/testcase-066-bob-sell (all-2024)": {
+     "ms": 35.34,
+     "status": "pass"
+    },
+    "force-21/testcase-067-alice-past (all-2023)": {
+     "ms": 35.46,
+     "status": "pass"
+    },
+    "force-21/testcase-068-bob-write-y-past (all-2023)": {
+     "ms": 35.76,
+     "status": "pass"
+    },
+    "oval-action-hierarchy/play under a permission on use (includedIn1)": {
+     "ms": 32.24,
+     "status": "pass"
+    },
+    "oval-action-hierarchy/sell under a permission on use (includedIn3)": {
+     "ms": 32.21,
+     "status": "pass"
+    },
+    "oval-action-hierarchy/use under a permission on play (includedIn2)": {
+     "ms": 32.37,
+     "status": "pass"
+    },
+    "oval-conflict-invalid/Alice uses the movie (added)": {
+     "ms": 32.11,
+     "status": "pass"
+    },
+    "oval-conflict-invalid/Bob uses the movie (OVAL request)": {
+     "ms": 32.25,
+     "status": "pass"
+    },
+    "oval-conflict-perm/Alice uses the movie (added)": {
+     "ms": 32.55,
+     "status": "pass"
+    },
+    "oval-conflict-perm/Bob uses the movie (OVAL request)": {
+     "ms": 32.29,
+     "status": "pass"
+    },
+    "oval-conflict-prohibit/Alice uses the movie (added)": {
+     "ms": 33.01,
+     "status": "pass"
+    },
+    "oval-conflict-prohibit/Bob uses the movie (OVAL request)": {
+     "ms": 32.41,
+     "status": "pass"
+    },
+    "oval-duty-payment/no payment (added)": {
+     "ms": 42.58,
+     "status": "pass"
+    },
+    "oval-duty-payment/paid 2 EUR (duty2, duty3)": {
+     "ms": 64.19,
+     "status": "pass"
+    },
+    "oval-duty-payment/paid 6.1 EUR before the request (duty1)": {
+     "ms": 63.75,
+     "status": "pass"
+    },
+    "oval-list-right-operand/one listed and one unlisted page (listRightOperand3)": {
+     "ms": 43.7,
+     "status": "pass"
+    },
+    "oval-list-right-operand/one listed page (listRightOperand1)": {
+     "ms": 43.21,
+     "status": "pass"
+    },
+    "oval-list-right-operand/one unlisted page (listRightOperand4)": {
+     "ms": 43.15,
+     "status": "pass"
+    },
+    "oval-list-right-operand/two listed pages (listRightOperand2)": {
+     "ms": 43.12,
+     "status": "pass"
+    },
+    "oval-no-target-permission/no target (default_sem1-3)": {
+     "ms": 50.1,
+     "status": "pass"
+    },
+    "oval-no-target-permission/target named (permission1-3)": {
      "ms": 32.94,
      "status": "pass"
     },
-    "rl2-check-signing-sod/Alice prepared a different check": {
-     "ms": 33.67,
+    "oval-no-target-prohibition/no target (default_sem4-6)": {
+     "ms": 50.73,
      "status": "pass"
     },
-    "rl2-check-signing-sod/Alice prepared the check": {
-     "ms": 33.16,
+    "oval-no-target-prohibition/target named (prohibition1-3)": {
+     "ms": 32.02,
      "status": "pass"
     },
-    "rl2-check-signing-sod/Bob prepared the check himself": {
-     "ms": 33.42,
+    "oval-party-collection/a member requests (partOf2)": {
+     "ms": 33.55,
      "status": "pass"
     },
-    "rl2-chinese-wall/analyst reads before publication": {
-     "ms": 45.09,
+    "oval-party-collection/a non-member requests (partOf3)": {
+     "ms": 32.56,
      "status": "pass"
     },
-    "rl2-chinese-wall/banker reads after publication": {
-     "ms": 45.37,
+    "oval-party-collection/the collection itself requests (partOf1)": {
+     "ms": 33.31,
      "status": "pass"
     },
-    "rl2-chinese-wall/banker reads before publication": {
-     "ms": 47.74,
+    "rl2-anonymization-required/approved anonymization assessment": {
+     "ms": 42.88,
      "status": "pass"
     },
-    "rl2-chinese-wall/publication status unknown": {
-     "ms": 64.08,
+    "rl2-anonymization-required/assessment missing": {
+     "ms": 63.31,
      "status": "pass"
     },
-    "rl2-classification-targeting/assembler omits the anyAsset membership": {
-     "ms": 46.48,
+    "rl2-anonymization-required/assessments disagree": {
+     "ms": 62.02,
      "status": "pass"
     },
-    "rl2-classification-targeting/asset with another classification": {
-     "ms": 44.71,
+    "rl2-asset-collection-access/asset outside the collection": {
+     "ms": 32.89,
      "status": "pass"
     },
-    "rl2-classification-targeting/classification missing": {
-     "ms": 65.65,
+    "rl2-asset-collection-access/direct member Demographics": {
+     "ms": 32.56,
      "status": "pass"
     },
-    "rl2-classification-targeting/home-loan asset": {
-     "ms": 44.94,
+    "rl2-asset-collection-access/direct member Outcomes": {
+     "ms": 32.39,
      "status": "pass"
     },
-    "rl2-classification-targeting/home-loan read already logged": {
-     "ms": 47.06,
+    "rl2-asset-collection-access/member of a nested collection": {
+     "ms": 32.58,
      "status": "pass"
     },
-    "rl2-compliance-attestation/admissible attestation: certified": {
-     "ms": 43.87,
+    "rl2-attestation-gating/attest request, attestation fulfilled": {
+     "ms": 44.08,
      "status": "pass"
     },
-    "rl2-compliance-attestation/attestation from an issuer the profile does not accept": {
-     "ms": 61.96,
+    "rl2-attestation-gating/attested before the window opened": {
+     "ms": 47.12,
      "status": "pass"
     },
-    "rl2-compliance-attestation/attestation missing": {
-     "ms": 62.53,
+    "rl2-attestation-gating/attested inside the window": {
+     "ms": 44.53,
      "status": "pass"
     },
-    "rl2-compliance-attestation/attested as suspended": {
-     "ms": 44.16,
+    "rl2-attestation-gating/before the window opens": {
+     "ms": 43.85,
      "status": "pass"
     },
-    "rl2-compliance-attestation/conflicting attestations": {
-     "ms": 64.79,
-     "status": "pass"
-    },
-    "rl2-concurrent-seats/49 active seats": {
-     "ms": 45.71,
-     "status": "pass"
-    },
-    "rl2-concurrent-seats/50 active seats": {
-     "ms": 45.36,
-     "status": "pass"
-    },
-    "rl2-concurrent-seats/licence service unavailable": {
-     "ms": 63.61,
-     "status": "pass"
-    },
-    "rl2-concurrent-seats/seat count of the wrong type": {
-     "ms": 63.51,
-     "status": "pass"
-    },
-    "rl2-connector-certification/no current certification record": {
-     "ms": 62.12,
-     "status": "pass"
-    },
-    "rl2-connector-certification/registry reports the certification invalid": {
-     "ms": 43.21,
-     "status": "pass"
-    },
-    "rl2-connector-certification/valid certification": {
-     "ms": 43.48,
-     "status": "pass"
-    },
-    "rl2-data-freshness-promise/dataset seven hours old": {
-     "ms": 43.98,
-     "status": "pass"
-    },
-    "rl2-data-freshness-promise/dataset two hours old": {
-     "ms": 43.56,
-     "status": "pass"
-    },
-    "rl2-data-freshness-promise/request for the obligation's own action": {
-     "ms": 43.9,
-     "status": "pass"
-    },
-    "rl2-data-product-offer/read daily port after attestation": {
-     "ms": 47.51,
-     "status": "pass"
-    },
-    "rl2-data-product-offer/read daily port, no attestation yet": {
-     "ms": 46.43,
-     "status": "pass"
-    },
-    "rl2-data-product-offer/read history port, attestation by the wrong party, daily port stale": {
-     "ms": 47.61,
-     "status": "pass"
-    },
-    "rl2-data-retention-limit/deadline missed after expiry": {
+    "rl2-attestation-gating/inside the window, not yet attested": {
      "ms": 45.96,
      "status": "pass"
     },
-    "rl2-data-retention-limit/deleted before the window opened": {
-     "ms": 46.21,
+    "rl2-attestation-gating/window closed without attestation": {
+     "ms": 45.09,
      "status": "pass"
     },
-    "rl2-data-retention-limit/deleted inside the window": {
-     "ms": 46.64,
+    "rl2-audit-trail/audit record created": {
+     "ms": 33.79,
      "status": "pass"
     },
-    "rl2-data-retention-limit/retain after expiry, not yet deleted": {
-     "ms": 46.06,
+    "rl2-audit-trail/no audit record yet": {
+     "ms": 33.35,
      "status": "pass"
     },
-    "rl2-data-retention-limit/retain before expiry": {
-     "ms": 45.18,
+    "rl2-audit-trail/record logged after the decision instant": {
+     "ms": 34.68,
      "status": "pass"
     },
-    "rl2-data-sovereignty/other purpose": {
-     "ms": 44.09,
+    "rl2-audit-trail/record written by someone else": {
+     "ms": 33.58,
      "status": "pass"
     },
-    "rl2-data-sovereignty/production-support purpose": {
-     "ms": 44.44,
+    "rl2-break-glass/break-glass active for the requester": {
+     "ms": 42.61,
      "status": "pass"
     },
-    "rl2-data-sovereignty/purpose not supplied": {
+    "rl2-break-glass/break-glass not active": {
+     "ms": 42.95,
+     "status": "pass"
+    },
+    "rl2-break-glass/only another agent has activated break-glass": {
      "ms": 62.27,
      "status": "pass"
     },
-    "rl2-data-sovereignty/usage record submitted": {
-     "ms": 44.89,
+    "rl2-check-signing-sod/Alice asks to sign": {
+     "ms": 33.48,
      "status": "pass"
     },
-    "rl2-data-stewardship/no stewardship evidence yet": {
-     "ms": 33.06,
+    "rl2-check-signing-sod/Alice prepared a different check": {
+     "ms": 33.82,
      "status": "pass"
     },
-    "rl2-data-stewardship/stewardship dated after the decision time": {
-     "ms": 33.32,
+    "rl2-check-signing-sod/Alice prepared the check": {
+     "ms": 33.26,
      "status": "pass"
     },
-    "rl2-data-stewardship/stewardship performed": {
-     "ms": 33.12,
+    "rl2-check-signing-sod/Bob prepared the check himself": {
+     "ms": 33.69,
      "status": "pass"
     },
-    "rl2-deletion-after-use/completion status unresolved": {
-     "ms": 44.39,
+    "rl2-chinese-wall/analyst reads before publication": {
+     "ms": 45.05,
      "status": "pass"
     },
-    "rl2-deletion-after-use/deadline missed": {
-     "ms": 44.47,
+    "rl2-chinese-wall/banker reads after publication": {
+     "ms": 45.15,
      "status": "pass"
     },
-    "rl2-deletion-after-use/deleted inside the window": {
-     "ms": 44.72,
+    "rl2-chinese-wall/banker reads before publication": {
+     "ms": 45.27,
      "status": "pass"
     },
-    "rl2-deletion-after-use/processing after completion": {
-     "ms": 44.46,
+    "rl2-chinese-wall/publication status unknown": {
+     "ms": 65.41,
      "status": "pass"
     },
-    "rl2-derived-data-restriction/assessment of the wrong type": {
-     "ms": 62.45,
+    "rl2-classification-targeting/assembler omits the anyAsset membership": {
+     "ms": 43.22,
      "status": "pass"
     },
-    "rl2-derived-data-restriction/assessment says non-reconstructing": {
-     "ms": 43.62,
+    "rl2-classification-targeting/asset with another classification": {
+     "ms": 43.45,
      "status": "pass"
     },
-    "rl2-derived-data-restriction/assessment says reconstructing": {
-     "ms": 43.55,
+    "rl2-classification-targeting/classification missing": {
+     "ms": 64.7,
      "status": "pass"
     },
-    "rl2-derived-data-restriction/conflicting assessments": {
-     "ms": 61.97,
+    "rl2-classification-targeting/home-loan asset": {
+     "ms": 44.1,
      "status": "pass"
     },
-    "rl2-derived-data-restriction/no assessment": {
-     "ms": 62.32,
+    "rl2-classification-targeting/home-loan read already logged": {
+     "ms": 44.31,
      "status": "pass"
     },
-    "rl2-derived-data-restriction/unknown assessment for another party's request": {
-     "ms": 43.53,
+    "rl2-compliance-attestation/admissible attestation: certified": {
+     "ms": 43.04,
      "status": "pass"
     },
-    "rl2-display-vs-nondisplay/another party displays quotations": {
-     "ms": 32.33,
+    "rl2-compliance-attestation/attestation from an issuer the profile does not accept": {
+     "ms": 63.05,
      "status": "pass"
     },
-    "rl2-display-vs-nondisplay/automated trading by an unnamed requester": {
-     "ms": 48.29,
+    "rl2-compliance-attestation/attestation missing": {
+     "ms": 62.87,
      "status": "pass"
     },
-    "rl2-display-vs-nondisplay/subscriber displays quotations": {
-     "ms": 32.7,
+    "rl2-compliance-attestation/attested as suspended": {
+     "ms": 43.15,
      "status": "pass"
     },
-    "rl2-display-vs-nondisplay/subscriber trades automatically": {
-     "ms": 32.46,
+    "rl2-compliance-attestation/conflicting attestations": {
+     "ms": 61.91,
      "status": "pass"
     },
-    "rl2-ethics-approval/Alice holds a valid approval": {
-     "ms": 43.25,
-     "status": "pass"
-    },
-    "rl2-ethics-approval/approval fact missing": {
-     "ms": 61.72,
-     "status": "pass"
-    },
-    "rl2-ethics-approval/request names no subject": {
-     "ms": 61.22,
-     "status": "pass"
-    },
-    "rl2-ethics-approval/requester's approval is not valid": {
-     "ms": 43.21,
-     "status": "pass"
-    },
-    "rl2-exclusive-use-category/advertising use": {
-     "ms": 46.3,
-     "status": "pass"
-    },
-    "rl2-exclusive-use-category/category missing": {
-     "ms": 64.68,
-     "status": "pass"
-    },
-    "rl2-exclusive-use-category/category outside the three": {
-     "ms": 46.01,
-     "status": "pass"
-    },
-    "rl2-exclusive-use-category/conflicting categories": {
-     "ms": 65.03,
-     "status": "pass"
-    },
-    "rl2-exclusive-use-category/editorial use": {
-     "ms": 45.82,
-     "status": "pass"
-    },
-    "rl2-fire-alarm/alarm active": {
-     "ms": 44.32,
-     "status": "pass"
-    },
-    "rl2-fire-alarm/alarm inactive": {
-     "ms": 43.87,
-     "status": "pass"
-    },
-    "rl2-fire-alarm/alarm state invalid": {
-     "ms": 62.42,
-     "status": "pass"
-    },
-    "rl2-fire-alarm/alarm state missing": {
-     "ms": 61.63,
-     "status": "pass"
-    },
-    "rl2-fire-alarm/request names no assignee": {
-     "ms": 61.73,
-     "status": "pass"
-    },
-    "rl2-fire-alarm/requester is not the occupant": {
+    "rl2-concurrent-seats/49 active seats": {
      "ms": 43.58,
      "status": "pass"
     },
-    "rl2-fulfillment-evidence/delivered inside the window": {
-     "ms": 44.35,
-     "status": "pass"
-    },
-    "rl2-fulfillment-evidence/delivery requested before the window": {
-     "ms": 43.76,
-     "status": "pass"
-    },
-    "rl2-fulfillment-evidence/delivery requested inside the window": {
-     "ms": 44.2,
-     "status": "pass"
-    },
-    "rl2-fulfillment-evidence/window closed, not delivered": {
-     "ms": 43.74,
-     "status": "pass"
-    },
-    "rl2-fulfillment-evidence/window open, not delivered": {
-     "ms": 43.55,
-     "status": "pass"
-    },
-    "rl2-gdpr-erasure/erasure request validity unknown": {
-     "ms": 43.6,
-     "status": "pass"
-    },
-    "rl2-gdpr-erasure/no valid erasure request": {
-     "ms": 43.72,
-     "status": "pass"
-    },
-    "rl2-gdpr-erasure/valid erasure request present": {
-     "ms": 43.66,
-     "status": "pass"
-    },
-    "rl2-geo-restriction/EU jurisdiction": {
-     "ms": 43.81,
-     "status": "pass"
-    },
-    "rl2-geo-restriction/jurisdiction in conflict": {
-     "ms": 63.08,
-     "status": "pass"
-    },
-    "rl2-geo-restriction/jurisdiction unresolved": {
-     "ms": 62.26,
-     "status": "pass"
-    },
-    "rl2-geo-restriction/non-EU jurisdiction": {
-     "ms": 44.19,
-     "status": "pass"
-    },
-    "rl2-internal-use-only/external recipient": {
-     "ms": 43.65,
-     "status": "pass"
-    },
-    "rl2-internal-use-only/internal recipient": {
-     "ms": 44.01,
-     "status": "pass"
-    },
-    "rl2-internal-use-only/narrower action through the action closure": {
-     "ms": 43.67,
-     "status": "pass"
-    },
-    "rl2-internal-use-only/recipient class missing": {
-     "ms": 61.84,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/approval fact in conflict": {
-     "ms": 62.11,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/approval fact invalid": {
-     "ms": 62.01,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/approval fact missing": {
-     "ms": 62.15,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/legal review approved": {
-     "ms": 43.72,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/legal review not approved": {
-     "ms": 43.8,
-     "status": "pass"
-    },
-    "rl2-legal-review-gate/other asset, approval fact missing": {
-     "ms": 43.43,
-     "status": "pass"
-    },
-    "rl2-logging-notification/access after both duties were performed": {
-     "ms": 46.1,
-     "status": "pass"
-    },
-    "rl2-logging-notification/access during a confirmed incident": {
-     "ms": 45.44,
-     "status": "pass"
-    },
-    "rl2-logging-notification/access, incident state unknown": {
-     "ms": 45.04,
-     "status": "pass"
-    },
-    "rl2-logging-notification/incident notification requested": {
-     "ms": 44.59,
-     "status": "pass"
-    },
-    "rl2-multi-certification/certification lookup unanswered": {
-     "ms": 63.83,
-     "status": "pass"
-    },
-    "rl2-multi-certification/holds a superset": {
-     "ms": 45.52,
-     "status": "pass"
-    },
-    "rl2-multi-certification/holds every required certification": {
-     "ms": 44.33,
-     "status": "pass"
-    },
-    "rl2-multi-certification/holds no certifications": {
-     "ms": 43.87,
-     "status": "pass"
-    },
-    "rl2-multi-certification/one required certification missing": {
-     "ms": 44.67,
-     "status": "pass"
-    },
-    "rl2-multi-level-approval/all approvals valid": {
-     "ms": 43.76,
-     "status": "pass"
-    },
-    "rl2-multi-level-approval/an approval has expired": {
-     "ms": 43.76,
-     "status": "pass"
-    },
-    "rl2-multi-level-approval/approval data in conflict": {
-     "ms": 62.32,
-     "status": "pass"
-    },
-    "rl2-multi-level-approval/approval data missing": {
-     "ms": 62.29,
-     "status": "pass"
-    },
-    "rl2-negated-condition/active account": {
-     "ms": 43.9,
-     "status": "pass"
-    },
-    "rl2-negated-condition/another agent with an active account": {
-     "ms": 43.93,
-     "status": "pass"
-    },
-    "rl2-negated-condition/conflicting status": {
-     "ms": 62.27,
-     "status": "pass"
-    },
-    "rl2-negated-condition/status missing": {
-     "ms": 62.45,
-     "status": "pass"
-    },
-    "rl2-negated-condition/suspended account": {
-     "ms": 43.93,
-     "status": "pass"
-    },
-    "rl2-no-ml-training/a third party trains a model": {
-     "ms": 32.49,
-     "status": "pass"
-    },
-    "rl2-no-ml-training/licensee searches": {
-     "ms": 32.74,
-     "status": "pass"
-    },
-    "rl2-no-ml-training/licensee trains a model": {
-     "ms": 32.48,
-     "status": "pass"
-    },
-    "rl2-no-ml-training/training request naming no assignee": {
-     "ms": 48.83,
-     "status": "pass"
-    },
-    "rl2-no-redistribution/disclosure status unavailable": {
-     "ms": 63.25,
-     "status": "pass"
-    },
-    "rl2-no-redistribution/legally required disclosure": {
-     "ms": 43.91,
-     "status": "pass"
-    },
-    "rl2-no-redistribution/ordinary use of the data": {
-     "ms": 44.12,
-     "status": "pass"
-    },
-    "rl2-no-redistribution/redistribution, no required disclosure": {
-     "ms": 44.16,
-     "status": "pass"
-    },
-    "rl2-owner-access/Alice reads her own file": {
-     "ms": 45.53,
-     "status": "pass"
-    },
-    "rl2-owner-access/conflicting owner assertions": {
-     "ms": 64.31,
-     "status": "pass"
-    },
-    "rl2-owner-access/file owned by someone else": {
-     "ms": 45.18,
-     "status": "pass"
-    },
-    "rl2-owner-access/no owner recorded": {
-     "ms": 61.88,
-     "status": "pass"
-    },
-    "rl2-pass-through-terms/binding maintained": {
-     "ms": 45.06,
-     "status": "pass"
-    },
-    "rl2-pass-through-terms/customer bound by downstream terms": {
-     "ms": 44.57,
-     "status": "pass"
-    },
-    "rl2-pass-through-terms/customer not bound": {
-     "ms": 44.99,
-     "status": "pass"
-    },
-    "rl2-pass-through-terms/registry did not answer": {
-     "ms": 63.91,
-     "status": "pass"
-    },
-    "rl2-pass-through-terms/request for the obligated action itself": {
-     "ms": 44.54,
-     "status": "pass"
-    },
-    "rl2-pay-to-play/Alice has not paid": {
-     "ms": 32.81,
-     "status": "pass"
-    },
-    "rl2-pay-to-play/Alice has paid": {
-     "ms": 33.28,
-     "status": "pass"
-    },
-    "rl2-pay-to-play/another agent requests a view": {
-     "ms": 33.02,
-     "status": "pass"
-    },
-    "rl2-pay-to-play/only another customer has paid": {
-     "ms": 35.87,
-     "status": "pass"
-    },
-    "rl2-purpose-restriction/epidemiological research": {
-     "ms": 44.8,
-     "status": "pass"
-    },
-    "rl2-purpose-restriction/no purpose declared": {
-     "ms": 64.38,
-     "status": "pass"
-    },
-    "rl2-purpose-restriction/two purposes declared": {
-     "ms": 64.84,
-     "status": "pass"
-    },
-    "rl2-purpose-restriction/unrelated purpose": {
-     "ms": 45.62,
-     "status": "pass"
-    },
-    "rl2-quality-circuit-breaker/error rate 0.02": {
-     "ms": 47.22,
-     "status": "pass"
-    },
-    "rl2-quality-circuit-breaker/error rate 0.08": {
-     "ms": 46.56,
-     "status": "pass"
-    },
-    "rl2-quality-circuit-breaker/error rate exactly at the threshold": {
-     "ms": 46.36,
-     "status": "pass"
-    },
-    "rl2-quality-circuit-breaker/error rate not reported": {
-     "ms": 67.45,
-     "status": "pass"
-    },
-    "rl2-role-hierarchy/role fact missing": {
-     "ms": 62.78,
-     "status": "pass"
-    },
-    "rl2-role-hierarchy/role outside the analyst branch": {
-     "ms": 44.39,
-     "status": "pass"
-    },
-    "rl2-role-hierarchy/senior analyst reads": {
-     "ms": 44.47,
-     "status": "pass"
-    },
-    "rl2-schema-evolution/breaking change after the notice period": {
-     "ms": 47.35,
-     "status": "pass"
-    },
-    "rl2-schema-evolution/breaking change inside the notice period": {
-     "ms": 47.53,
-     "status": "pass"
-    },
-    "rl2-schema-evolution/breaking flag unresolved, notice elapsed": {
-     "ms": 67.08,
-     "status": "pass"
-    },
-    "rl2-schema-evolution/compatible change": {
-     "ms": 47.56,
-     "status": "pass"
-    },
-    "rl2-schema-evolution/request to notify consumers of a breaking change": {
-     "ms": 47.4,
-     "status": "pass"
-    },
-    "rl2-sla-credit-clause/uptime commitment violated, credit not yet issued": {
-     "ms": 46.85,
-     "status": "pass"
-    },
-    "rl2-sla-credit-clause/violation status unresolved": {
-     "ms": 46.16,
-     "status": "pass"
-    },
-    "rl2-step-up-auth/authentication level unresolved": {
-     "ms": 64.05,
-     "status": "pass"
-    },
-    "rl2-step-up-auth/multi-factor authentication": {
-     "ms": 45.63,
-     "status": "pass"
-    },
-    "rl2-step-up-auth/password only": {
-     "ms": 45.26,
-     "status": "pass"
-    },
-    "rl2-step-up-auth/password only, request to authenticate": {
-     "ms": 44.99,
-     "status": "pass"
-    },
-    "rl2-team-license/administrator has paid": {
-     "ms": 33.44,
-     "status": "pass"
-    },
-    "rl2-team-license/licence not yet paid": {
-     "ms": 32.81,
-     "status": "pass"
-    },
-    "rl2-team-license/member pays instead of the administrator": {
-     "ms": 33.1,
-     "status": "pass"
-    },
-    "rl2-team-license/payment does not extend to an unnamed agent": {
-     "ms": 33.07,
-     "status": "pass"
-    },
-    "rl2-time-window-access/action proposed inside, decided after the window": {
-     "ms": 44.24,
-     "status": "pass"
-    },
-    "rl2-time-window-access/at the exclusive end": {
-     "ms": 44.07,
-     "status": "pass"
-    },
-    "rl2-time-window-access/at the inclusive start": {
+    "rl2-concurrent-seats/50 active seats": {
      "ms": 43.96,
      "status": "pass"
     },
-    "rl2-time-window-access/inside the study period": {
-     "ms": 44.09,
+    "rl2-concurrent-seats/licence service unavailable": {
+     "ms": 67.61,
      "status": "pass"
     },
-    "rl2-trial-period/execute after expiry": {
-     "ms": 45.66,
+    "rl2-concurrent-seats/seat count of the wrong type": {
+     "ms": 64.62,
      "status": "pass"
     },
-    "rl2-trial-period/execute at expiry": {
-     "ms": 45.54,
+    "rl2-connector-certification/no current certification record": {
+     "ms": 61.26,
      "status": "pass"
     },
-    "rl2-trial-period/execute before expiry": {
-     "ms": 45.55,
+    "rl2-connector-certification/registry reports the certification invalid": {
+     "ms": 42.24,
      "status": "pass"
     },
-    "rl2-trial-period/other agent executes after expiry": {
-     "ms": 45.36,
+    "rl2-connector-certification/valid certification": {
+     "ms": 42.42,
      "status": "pass"
     },
-    "rl2-trial-period/read after expiry": {
-     "ms": 45.61,
+    "rl2-data-freshness-promise/dataset seven hours old": {
+     "ms": 41.93,
      "status": "pass"
     },
-    "rl2-universe-selection/another agent reads": {
-     "ms": 31.98,
+    "rl2-data-freshness-promise/dataset two hours old": {
+     "ms": 41.89,
      "status": "pass"
     },
-    "rl2-universe-selection/request names no assignee": {
-     "ms": 47.84,
+    "rl2-data-freshness-promise/request for the obligation's own action": {
+     "ms": 42.4,
      "status": "pass"
     },
-    "rl2-universe-selection/subscriber reads": {
-     "ms": 32.09,
+    "rl2-data-product-offer/read daily port after attestation": {
+     "ms": 45.6,
      "status": "pass"
     },
-    "rl2-usage-metering/metering service unavailable": {
-     "ms": 62.06,
+    "rl2-data-product-offer/read daily port, no attestation yet": {
+     "ms": 45.85,
      "status": "pass"
     },
-    "rl2-usage-metering/quota admits the request": {
-     "ms": 43.72,
+    "rl2-data-product-offer/read history port, attestation by the wrong party, daily port stale": {
+     "ms": 46.12,
      "status": "pass"
     },
-    "rl2-usage-metering/quota exhausted": {
-     "ms": 43.8,
+    "rl2-data-retention-limit/deadline missed after expiry": {
+     "ms": 45.17,
      "status": "pass"
     },
-    "rl2-volume-limit/above the per-request ceiling": {
-     "ms": 44.86,
+    "rl2-data-retention-limit/deleted before the window opened": {
+     "ms": 46.09,
      "status": "pass"
     },
-    "rl2-volume-limit/quota fact unavailable": {
-     "ms": 63.8,
+    "rl2-data-retention-limit/deleted inside the window": {
+     "ms": 45.38,
      "status": "pass"
     },
-    "rl2-volume-limit/within ceiling and quota": {
-     "ms": 45.0,
+    "rl2-data-retention-limit/retain after expiry, not yet deleted": {
+     "ms": 45.12,
      "status": "pass"
     },
-    "rl2-wire-transfer-sod/Bob approved a different transfer": {
-     "ms": 33.34,
+    "rl2-data-retention-limit/retain before expiry": {
+     "ms": 44.65,
      "status": "pass"
     },
-    "rl2-wire-transfer-sod/Bob approved the transfer": {
-     "ms": 33.47,
+    "rl2-data-sovereignty/other purpose": {
+     "ms": 43.47,
      "status": "pass"
     },
-    "rl2-wire-transfer-sod/approver tries to execute": {
+    "rl2-data-sovereignty/production-support purpose": {
+     "ms": 43.82,
+     "status": "pass"
+    },
+    "rl2-data-sovereignty/purpose not supplied": {
+     "ms": 63.6,
+     "status": "pass"
+    },
+    "rl2-data-sovereignty/usage record submitted": {
+     "ms": 44.11,
+     "status": "pass"
+    },
+    "rl2-data-stewardship/no stewardship evidence yet": {
+     "ms": 33.49,
+     "status": "pass"
+    },
+    "rl2-data-stewardship/stewardship dated after the decision time": {
+     "ms": 33.88,
+     "status": "pass"
+    },
+    "rl2-data-stewardship/stewardship performed": {
+     "ms": 33.72,
+     "status": "pass"
+    },
+    "rl2-deletion-after-use/completion status unresolved": {
+     "ms": 43.38,
+     "status": "pass"
+    },
+    "rl2-deletion-after-use/deadline missed": {
+     "ms": 43.16,
+     "status": "pass"
+    },
+    "rl2-deletion-after-use/deleted inside the window": {
+     "ms": 43.33,
+     "status": "pass"
+    },
+    "rl2-deletion-after-use/processing after completion": {
+     "ms": 43.49,
+     "status": "pass"
+    },
+    "rl2-derived-data-restriction/assessment of the wrong type": {
+     "ms": 62.97,
+     "status": "pass"
+    },
+    "rl2-derived-data-restriction/assessment says non-reconstructing": {
+     "ms": 41.85,
+     "status": "pass"
+    },
+    "rl2-derived-data-restriction/assessment says reconstructing": {
+     "ms": 42.72,
+     "status": "pass"
+    },
+    "rl2-derived-data-restriction/conflicting assessments": {
+     "ms": 62.37,
+     "status": "pass"
+    },
+    "rl2-derived-data-restriction/no assessment": {
+     "ms": 62.31,
+     "status": "pass"
+    },
+    "rl2-derived-data-restriction/unknown assessment for another party's request": {
+     "ms": 42.55,
+     "status": "pass"
+    },
+    "rl2-display-vs-nondisplay/another party displays quotations": {
+     "ms": 32.75,
+     "status": "pass"
+    },
+    "rl2-display-vs-nondisplay/automated trading by an unnamed requester": {
+     "ms": 50.29,
+     "status": "pass"
+    },
+    "rl2-display-vs-nondisplay/subscriber displays quotations": {
+     "ms": 33.1,
+     "status": "pass"
+    },
+    "rl2-display-vs-nondisplay/subscriber trades automatically": {
      "ms": 33.2,
      "status": "pass"
     },
-    "rl2-wire-transfer-sod/only Alice approved": {
-     "ms": 33.41,
+    "rl2-ethics-approval/Alice holds a valid approval": {
+     "ms": 42.1,
      "status": "pass"
     },
-    "w3c-fs-a1/A11: before the deadline": {
-     "ms": 33.09,
+    "rl2-ethics-approval/approval fact missing": {
+     "ms": 61.83,
      "status": "pass"
     },
-    "w3c-fs-a1/A12: after the deadline": {
-     "ms": 32.96,
+    "rl2-ethics-approval/request names no subject": {
+     "ms": 62.47,
      "status": "pass"
     },
-    "w3c-fs-b1/B11: 1000 dpi": {
+    "rl2-ethics-approval/requester's approval is not valid": {
+     "ms": 42.01,
+     "status": "pass"
+    },
+    "rl2-exclusive-use-category/advertising use": {
+     "ms": 44.92,
+     "status": "pass"
+    },
+    "rl2-exclusive-use-category/category missing": {
+     "ms": 65.93,
+     "status": "pass"
+    },
+    "rl2-exclusive-use-category/category outside the three": {
+     "ms": 44.63,
+     "status": "pass"
+    },
+    "rl2-exclusive-use-category/conflicting categories": {
+     "ms": 66.68,
+     "status": "pass"
+    },
+    "rl2-exclusive-use-category/editorial use": {
+     "ms": 45.17,
+     "status": "pass"
+    },
+    "rl2-fire-alarm/alarm active": {
+     "ms": 41.89,
+     "status": "pass"
+    },
+    "rl2-fire-alarm/alarm inactive": {
+     "ms": 41.93,
+     "status": "pass"
+    },
+    "rl2-fire-alarm/alarm state invalid": {
+     "ms": 61.73,
+     "status": "pass"
+    },
+    "rl2-fire-alarm/alarm state missing": {
+     "ms": 62.71,
+     "status": "pass"
+    },
+    "rl2-fire-alarm/request names no assignee": {
+     "ms": 63.14,
+     "status": "pass"
+    },
+    "rl2-fire-alarm/requester is not the occupant": {
+     "ms": 42.22,
+     "status": "pass"
+    },
+    "rl2-fulfillment-evidence/delivered inside the window": {
      "ms": 43.77,
      "status": "pass"
     },
+    "rl2-fulfillment-evidence/delivery requested before the window": {
+     "ms": 42.71,
+     "status": "pass"
+    },
+    "rl2-fulfillment-evidence/delivery requested inside the window": {
+     "ms": 43.8,
+     "status": "pass"
+    },
+    "rl2-fulfillment-evidence/window closed, not delivered": {
+     "ms": 42.2,
+     "status": "pass"
+    },
+    "rl2-fulfillment-evidence/window open, not delivered": {
+     "ms": 42.74,
+     "status": "pass"
+    },
+    "rl2-gdpr-erasure/erasure request validity unknown": {
+     "ms": 43.12,
+     "status": "pass"
+    },
+    "rl2-gdpr-erasure/no valid erasure request": {
+     "ms": 42.18,
+     "status": "pass"
+    },
+    "rl2-gdpr-erasure/valid erasure request present": {
+     "ms": 42.19,
+     "status": "pass"
+    },
+    "rl2-geo-restriction/EU jurisdiction": {
+     "ms": 43.28,
+     "status": "pass"
+    },
+    "rl2-geo-restriction/jurisdiction in conflict": {
+     "ms": 62.65,
+     "status": "pass"
+    },
+    "rl2-geo-restriction/jurisdiction unresolved": {
+     "ms": 62.48,
+     "status": "pass"
+    },
+    "rl2-geo-restriction/non-EU jurisdiction": {
+     "ms": 42.62,
+     "status": "pass"
+    },
+    "rl2-internal-use-only/external recipient": {
+     "ms": 41.86,
+     "status": "pass"
+    },
+    "rl2-internal-use-only/internal recipient": {
+     "ms": 42.21,
+     "status": "pass"
+    },
+    "rl2-internal-use-only/narrower action through the action closure": {
+     "ms": 42.04,
+     "status": "pass"
+    },
+    "rl2-internal-use-only/recipient class missing": {
+     "ms": 62.16,
+     "status": "pass"
+    },
+    "rl2-legal-review-gate/approval fact in conflict": {
+     "ms": 62.71,
+     "status": "pass"
+    },
+    "rl2-legal-review-gate/approval fact invalid": {
+     "ms": 61.67,
+     "status": "pass"
+    },
+    "rl2-legal-review-gate/approval fact missing": {
+     "ms": 62.95,
+     "status": "pass"
+    },
+    "rl2-legal-review-gate/legal review approved": {
+     "ms": 43.01,
+     "status": "pass"
+    },
+    "rl2-legal-review-gate/legal review not approved": {
+     "ms": 42.79,
+     "status": "pass"
+    },
+    "rl2-legal-review-gate/other asset, approval fact missing": {
+     "ms": 42.54,
+     "status": "pass"
+    },
+    "rl2-logging-notification/access after both duties were performed": {
+     "ms": 44.41,
+     "status": "pass"
+    },
+    "rl2-logging-notification/access during a confirmed incident": {
+     "ms": 44.64,
+     "status": "pass"
+    },
+    "rl2-logging-notification/access, incident state unknown": {
+     "ms": 43.03,
+     "status": "pass"
+    },
+    "rl2-logging-notification/incident notification requested": {
+     "ms": 43.29,
+     "status": "pass"
+    },
+    "rl2-multi-certification/certification lookup unanswered": {
+     "ms": 63.85,
+     "status": "pass"
+    },
+    "rl2-multi-certification/holds a superset": {
+     "ms": 43.62,
+     "status": "pass"
+    },
+    "rl2-multi-certification/holds every required certification": {
+     "ms": 44.02,
+     "status": "pass"
+    },
+    "rl2-multi-certification/holds no certifications": {
+     "ms": 43.38,
+     "status": "pass"
+    },
+    "rl2-multi-certification/one required certification missing": {
+     "ms": 43.39,
+     "status": "pass"
+    },
+    "rl2-multi-level-approval/all approvals valid": {
+     "ms": 44.33,
+     "status": "pass"
+    },
+    "rl2-multi-level-approval/an approval has expired": {
+     "ms": 44.15,
+     "status": "pass"
+    },
+    "rl2-multi-level-approval/approval data in conflict": {
+     "ms": 61.6,
+     "status": "pass"
+    },
+    "rl2-multi-level-approval/approval data missing": {
+     "ms": 62.25,
+     "status": "pass"
+    },
+    "rl2-negated-condition/active account": {
+     "ms": 44.08,
+     "status": "pass"
+    },
+    "rl2-negated-condition/another agent with an active account": {
+     "ms": 43.13,
+     "status": "pass"
+    },
+    "rl2-negated-condition/conflicting status": {
+     "ms": 63.05,
+     "status": "pass"
+    },
+    "rl2-negated-condition/status missing": {
+     "ms": 63.14,
+     "status": "pass"
+    },
+    "rl2-negated-condition/suspended account": {
+     "ms": 42.71,
+     "status": "pass"
+    },
+    "rl2-no-ml-training/a third party trains a model": {
+     "ms": 32.67,
+     "status": "pass"
+    },
+    "rl2-no-ml-training/licensee searches": {
+     "ms": 33.22,
+     "status": "pass"
+    },
+    "rl2-no-ml-training/licensee trains a model": {
+     "ms": 32.65,
+     "status": "pass"
+    },
+    "rl2-no-ml-training/training request naming no assignee": {
+     "ms": 50.6,
+     "status": "pass"
+    },
+    "rl2-no-redistribution/disclosure status unavailable": {
+     "ms": 63.06,
+     "status": "pass"
+    },
+    "rl2-no-redistribution/legally required disclosure": {
+     "ms": 43.89,
+     "status": "pass"
+    },
+    "rl2-no-redistribution/ordinary use of the data": {
+     "ms": 42.56,
+     "status": "pass"
+    },
+    "rl2-no-redistribution/redistribution, no required disclosure": {
+     "ms": 44.53,
+     "status": "pass"
+    },
+    "rl2-owner-access/Alice reads her own file": {
+     "ms": 42.48,
+     "status": "pass"
+    },
+    "rl2-owner-access/conflicting owner assertions": {
+     "ms": 62.69,
+     "status": "pass"
+    },
+    "rl2-owner-access/file owned by someone else": {
+     "ms": 46.05,
+     "status": "pass"
+    },
+    "rl2-owner-access/no owner recorded": {
+     "ms": 62.2,
+     "status": "pass"
+    },
+    "rl2-pass-through-terms/binding maintained": {
+     "ms": 43.15,
+     "status": "pass"
+    },
+    "rl2-pass-through-terms/customer bound by downstream terms": {
+     "ms": 43.23,
+     "status": "pass"
+    },
+    "rl2-pass-through-terms/customer not bound": {
+     "ms": 43.83,
+     "status": "pass"
+    },
+    "rl2-pass-through-terms/registry did not answer": {
+     "ms": 62.88,
+     "status": "pass"
+    },
+    "rl2-pass-through-terms/request for the obligated action itself": {
+     "ms": 42.87,
+     "status": "pass"
+    },
+    "rl2-pay-to-play/Alice has not paid": {
+     "ms": 33.25,
+     "status": "pass"
+    },
+    "rl2-pay-to-play/Alice has paid": {
+     "ms": 33.4,
+     "status": "pass"
+    },
+    "rl2-pay-to-play/another agent requests a view": {
+     "ms": 33.2,
+     "status": "pass"
+    },
+    "rl2-pay-to-play/only another customer has paid": {
+     "ms": 33.42,
+     "status": "pass"
+    },
+    "rl2-purpose-restriction/epidemiological research": {
+     "ms": 43.26,
+     "status": "pass"
+    },
+    "rl2-purpose-restriction/no purpose declared": {
+     "ms": 62.43,
+     "status": "pass"
+    },
+    "rl2-purpose-restriction/two purposes declared": {
+     "ms": 62.11,
+     "status": "pass"
+    },
+    "rl2-purpose-restriction/unrelated purpose": {
+     "ms": 42.76,
+     "status": "pass"
+    },
+    "rl2-quality-circuit-breaker/error rate 0.02": {
+     "ms": 45.8,
+     "status": "pass"
+    },
+    "rl2-quality-circuit-breaker/error rate 0.08": {
+     "ms": 45.45,
+     "status": "pass"
+    },
+    "rl2-quality-circuit-breaker/error rate exactly at the threshold": {
+     "ms": 46.02,
+     "status": "pass"
+    },
+    "rl2-quality-circuit-breaker/error rate not reported": {
+     "ms": 66.69,
+     "status": "pass"
+    },
+    "rl2-role-hierarchy/role fact missing": {
+     "ms": 62.95,
+     "status": "pass"
+    },
+    "rl2-role-hierarchy/role outside the analyst branch": {
+     "ms": 42.52,
+     "status": "pass"
+    },
+    "rl2-role-hierarchy/senior analyst reads": {
+     "ms": 43.65,
+     "status": "pass"
+    },
+    "rl2-schema-evolution/breaking change after the notice period": {
+     "ms": 47.44,
+     "status": "pass"
+    },
+    "rl2-schema-evolution/breaking change inside the notice period": {
+     "ms": 47.49,
+     "status": "pass"
+    },
+    "rl2-schema-evolution/breaking flag unresolved, notice elapsed": {
+     "ms": 68.89,
+     "status": "pass"
+    },
+    "rl2-schema-evolution/compatible change": {
+     "ms": 47.12,
+     "status": "pass"
+    },
+    "rl2-schema-evolution/request to notify consumers of a breaking change": {
+     "ms": 46.8,
+     "status": "pass"
+    },
+    "rl2-sla-credit-clause/uptime commitment violated, credit not yet issued": {
+     "ms": 45.93,
+     "status": "pass"
+    },
+    "rl2-sla-credit-clause/violation status unresolved": {
+     "ms": 48.56,
+     "status": "pass"
+    },
+    "rl2-step-up-auth/authentication level unresolved": {
+     "ms": 64.07,
+     "status": "pass"
+    },
+    "rl2-step-up-auth/multi-factor authentication": {
+     "ms": 48.1,
+     "status": "pass"
+    },
+    "rl2-step-up-auth/password only": {
+     "ms": 46.52,
+     "status": "pass"
+    },
+    "rl2-step-up-auth/password only, request to authenticate": {
+     "ms": 43.88,
+     "status": "pass"
+    },
+    "rl2-team-license/administrator has paid": {
+     "ms": 33.54,
+     "status": "pass"
+    },
+    "rl2-team-license/licence not yet paid": {
+     "ms": 33.14,
+     "status": "pass"
+    },
+    "rl2-team-license/member pays instead of the administrator": {
+     "ms": 33.36,
+     "status": "pass"
+    },
+    "rl2-team-license/payment does not extend to an unnamed agent": {
+     "ms": 33.27,
+     "status": "pass"
+    },
+    "rl2-time-window-access/action proposed inside, decided after the window": {
+     "ms": 42.57,
+     "status": "pass"
+    },
+    "rl2-time-window-access/at the exclusive end": {
+     "ms": 43.19,
+     "status": "pass"
+    },
+    "rl2-time-window-access/at the inclusive start": {
+     "ms": 43.7,
+     "status": "pass"
+    },
+    "rl2-time-window-access/inside the study period": {
+     "ms": 43.6,
+     "status": "pass"
+    },
+    "rl2-trial-period/execute after expiry": {
+     "ms": 44.96,
+     "status": "pass"
+    },
+    "rl2-trial-period/execute at expiry": {
+     "ms": 43.82,
+     "status": "pass"
+    },
+    "rl2-trial-period/execute before expiry": {
+     "ms": 43.57,
+     "status": "pass"
+    },
+    "rl2-trial-period/other agent executes after expiry": {
+     "ms": 44.4,
+     "status": "pass"
+    },
+    "rl2-trial-period/read after expiry": {
+     "ms": 45.03,
+     "status": "pass"
+    },
+    "rl2-universe-selection/another agent reads": {
+     "ms": 32.37,
+     "status": "pass"
+    },
+    "rl2-universe-selection/request names no assignee": {
+     "ms": 49.58,
+     "status": "pass"
+    },
+    "rl2-universe-selection/subscriber reads": {
+     "ms": 32.14,
+     "status": "pass"
+    },
+    "rl2-usage-metering/metering service unavailable": {
+     "ms": 62.93,
+     "status": "pass"
+    },
+    "rl2-usage-metering/quota admits the request": {
+     "ms": 42.09,
+     "status": "pass"
+    },
+    "rl2-usage-metering/quota exhausted": {
+     "ms": 41.82,
+     "status": "pass"
+    },
+    "rl2-volume-limit/above the per-request ceiling": {
+     "ms": 43.98,
+     "status": "pass"
+    },
+    "rl2-volume-limit/quota fact unavailable": {
+     "ms": 64.67,
+     "status": "pass"
+    },
+    "rl2-volume-limit/within ceiling and quota": {
+     "ms": 44.52,
+     "status": "pass"
+    },
+    "rl2-wire-transfer-sod/Bob approved a different transfer": {
+     "ms": 33.23,
+     "status": "pass"
+    },
+    "rl2-wire-transfer-sod/Bob approved the transfer": {
+     "ms": 33.21,
+     "status": "pass"
+    },
+    "rl2-wire-transfer-sod/approver tries to execute": {
+     "ms": 32.88,
+     "status": "pass"
+    },
+    "rl2-wire-transfer-sod/only Alice approved": {
+     "ms": 33.22,
+     "status": "pass"
+    },
+    "w3c-fs-a1/A11: before the deadline": {
+     "ms": 32.62,
+     "status": "pass"
+    },
+    "w3c-fs-a1/A12: after the deadline": {
+     "ms": 32.59,
+     "status": "pass"
+    },
+    "w3c-fs-b1/B11: 1000 dpi": {
+     "ms": 42.43,
+     "status": "pass"
+    },
     "w3c-fs-b1/B12: 1300 dpi": {
-     "ms": 43.69,
+     "ms": 41.81,
      "status": "pass"
     },
     "w3c-fs-b1/resolution not stated (added)": {
-     "ms": 62.17,
+     "ms": 62.64,
      "status": "pass"
     },
     "w3c-fs-c1/C11: not yet paid": {
-     "ms": 44.12,
+     "ms": 42.31,
      "status": "pass"
     },
     "w3c-fs-c1/C12: paid 5.00 EUR": {
-     "ms": 62.59,
+     "ms": 63.22,
      "status": "pass"
     },
     "w3c-fs-c2/C21: Tuesday — duty not owed": {
-     "ms": 45.68,
+     "ms": 43.74,
      "status": "pass"
     },
     "w3c-fs-c2/C22: Sunday, not paid": {
-     "ms": 45.06,
+     "ms": 44.33,
      "status": "pass"
     },
     "w3c-fs-c2/C23: Sunday, paid": {
-     "ms": 64.35,
+     "ms": 64.66,
      "status": "pass"
     },
     "w3c-fs-c2/weekday unknown, not paid (added)": {
-     "ms": 63.43,
+     "ms": 63.62,
      "status": "pass"
     },
     "w3c-fs-c2/weekday unknown, paid (added)": {
-     "ms": 64.2,
+     "ms": 64.29,
      "status": "pass"
     }
    },
    "summary": {
     "error": 0,
     "fail": 0,
-    "max_ms": 480.25,
-    "p50_ms": 45.05,
-    "p95_ms": 66.44,
-    "p99_ms": 80.95,
-    "pass": 444,
-    "total_ms": 22094.6,
+    "max_ms": 2322.09,
+    "p50_ms": 44.08,
+    "p95_ms": 76.82,
+    "p99_ms": 92.9,
+    "pass": 461,
+    "total_ms": 28754.1,
     "unsupported": 41,
-    "vectors": 485
+    "vectors": 502
    }
   }
  }

@@ -4,6 +4,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `due2-workflows.md`
 
+**Changes in v0.62** (2026-10-29, #160): §3.5 lists an `eliminated` tuple only when its remover removes the entry in every completion in which the entry reaches the step that removes it, so a `prohibit-overrides` row needs its `Forbid` to survive its own policy in each completion where the removed candidate is one; §6.2 #2 points to it (`decisions/0052`). Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.61** (2026-10-29, #159): §3.2 and §3.3 split a request's and an evidence record's parameters into a parameter and its values, so a set-valued operand can read several values, or none (`decisions/0051`). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.60** (2026-10-28, #152): a policy is its own data space (`decisions/0050`). §3.1 keys `closure` by policy and defines an entry, an atom in one of its policies, and a policy's data space; §3.3 reads one hierarchy per policy and keys `activation` by entry; §3.5 keys the W2 trace relations, `alternative`, and `verdict_basis` by entry, and `eliminated` gains `by_policy`; §4's union keeps each policy's `closure` apart; §5 evaluates entries, and a root obligation is in force per entry; §6 folds entries, and §6.4 keys a hierarchy comparison's completion variable by policy; §8 adds L11, locality. Earlier changes are in `docs/archive/changes.md`.
@@ -82,6 +84,8 @@ Each specification and design document opens with a **Changes** line for its lat
 
 ## `correctness-strategy.md`
 
+**Changes in v0.23** (2026-10-26, #105): §4.4 and §4.5 name their oracles, golden vectors, and generators, and split their done-gate into the spike gate of `decisions/0006` #4 and a full gate. §4.4's status matrix covers the values W2 finds unfit and an `unresolved` world-edge answer (`decisions/0048`), and §4.4 gains the selection property, which W2 must keep when it skips atoms. Earlier changes are in `docs/archive/changes.md`.
+
 **Changes in v0.22** (2026-10-26, `decisions/0045`): a violated obligation never denies, so §4.5's first case of L7 is a violated obligation beside a ready candidate, and claims M and W (§4.8) and §5's structural completeness drop `violations = deny`; claim M counts 73,012 inputs and claim W 61. Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.21** (2026-10-26, #23): §7 names the workflows of the tiers; the slow tier's runs the Alloy models and clingo-i's slow bounds. Earlier changes are in `docs/archive/changes.md`.
@@ -126,6 +130,8 @@ Each specification and design document opens with a **Changes** line for its lat
 **Companions:** `ways-of-working.md` (the discipline and the tools: types, contracts, Hypothesis, tiering, Dafny) · `due2-architecture.md` §10 (the conformance suite) · `due2-workflows.md` §8 (laws L1–L10) · `odrl-compound-to-atomic-normalization.md` §8, §10 (stage-1 invariants, `Den`, minimum suite) · `decisions/0002` (which oracles exist).
 
 ## `ways-of-working.md`
+
+**Changes in v0.10** (2026-10-26, #23): the slow tier runs nightly and on demand (§8, §13 row 8, §14.3). Earlier changes are in `docs/archive/changes.md`.
 
 **Changes in v0.9** (2026-10-26, `decisions/0038`, #107): §2.4 drops the canonical N-Quads term form, which no id is computed from any more, and says that a digest is a collection id. Earlier changes are in `docs/archive/changes.md`.
 

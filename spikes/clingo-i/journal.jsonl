@@ -183,3 +183,7 @@
 {"at": "2026-10-26T11:28:43Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 474.26, "p50_ms": 43.0, "p95_ms": 62.93, "p99_ms": 78.83, "pass": 419, "revision": "3a00983", "task": "interpret", "total_ms": 19786.7, "unsupported": 38, "vectors": 457}
 {"at": "2026-10-26T21:41:10Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 480.04, "p50_ms": 43.94, "p95_ms": 65.04, "p99_ms": 80.66, "pass": 420, "revision": "0bd0510+dirty", "task": "interpret", "total_ms": 20350.1, "unsupported": 36, "vectors": 456}
 {"at": "2026-10-27T02:29:43Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 480.25, "p50_ms": 45.05, "p95_ms": 66.44, "p99_ms": 80.95, "pass": 444, "revision": "9de9d48", "task": "interpret", "total_ms": 22094.6, "unsupported": 41, "vectors": 485}
+{"at": "2026-10-29T23:43:55Z", "error": 0, "fail": 0, "kind": "run", "max_ms": 2322.09, "p50_ms": 44.08, "p95_ms": 76.82, "p99_ms": 92.9, "pass": 461, "revision": "9d0e9d0+dirty", "task": "interpret", "total_ms": 28754.1, "unsupported": 41, "vectors": 502}
+{"at": "2026-10-30T00:00:15Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 1468, "name": "basedpyright"}
+{"at": "2026-10-30T00:00:15Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 21, "name": "ruff"}
+{"at": "2026-10-30T00:00:15Z", "diagnostics": 0, "exit": 0, "kind": "check", "ms": 20, "name": "ruff format"}

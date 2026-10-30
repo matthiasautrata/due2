@@ -1,9 +1,9 @@
 # Ways of Working — Correctness Discipline for Python
 
-**Status:** Draft v0.10 (2026-10-26)
+**Status:** Draft v0.11 (2026-10-29)
 **Scope:** Python services and libraries, with particular attention to decision/evaluation kernels where semantics are load-bearing.
 
-**Changes in v0.10** (2026-10-26, #23): the slow tier runs nightly and on demand (§8, §13 row 8, §14.3). Earlier changes are in `docs/archive/changes.md`.
+**Changes in v0.11** (2026-10-29, #162): §12 says where the provisional picks apply: the production components, W1 first, and not the spikes or `tools/`. Earlier changes are in `docs/archive/changes.md`.
 
 Each item is marked:
 
@@ -310,6 +310,8 @@ Each step is independently valuable. Stop wherever marginal cost exceeds the def
 11. The formal model: counterexamples first, then proofs, then the differential (§9)
 
 Steps 1–5 deliver most of the value. Step 8 is cheap before a second backend exists and expensive after. Steps 10–11 are for the parts where being wrong is expensive.
+
+**Where the picks apply.** The picks of steps 3 to 7 and 10 (the §7.2 profiles, msgspec, beartype, `icontract`, CrossHair, `mutmut`), and `pip-audit` in the slow tier of step 9, apply to the production components. The first is W1, in Python (`decisions/0027` #2); the W2/W3 evaluator takes the steps in its own language (#104). The spikes and `tools/` are not production components: a spike declares its own checkers (§11), and the oracles' checks are in `correctness-strategy.md` §4. Hypothesis itself is already used, in clingo-i's tests, without the §7.2 profiles. So each of these picks is adopted with the first production module that needs it, and none is used before then.
 
 ---
 

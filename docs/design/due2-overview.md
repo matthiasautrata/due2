@@ -146,7 +146,7 @@ clingo-i does not emit `frontier_complete` (#103), and has no inexact fallback, 
 | Interface | Defined in | Standing |
 |---|---|---|
 | Corpus, request, SOTW, reads, trace, lineage: the relations | `due2-workflows.md` §3 | [D] |
-| Their JSON form, and the `plan` and `decide` inputs and outputs | `schema/`, `decisions/0007` | Generated from the relations; version `2.2`, with a compatibility rule (`schema/README.md`) |
+| Their JSON form, and the `plan` and `decide` inputs and outputs | `schema/`, `decisions/0007` | Generated from the relations; each file states its version, under a compatibility rule (`schema/README.md`) |
 | W1 rejections and warnings | `due2-diagnostics.md` §1, `schema/normaliser.schema.json` | [D] codes and shape; JSON form generated |
 | A crash or failed call (`Error(cause)`) | `due2-workflows.md` §7, `due2-platform.md` §1.2 | [D] meaning; JSON form generated |
 | The case format | `conformance/README.md` | Checked by `tools/check_corpus.py` |
